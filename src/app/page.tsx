@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState } from "react";
@@ -67,6 +66,7 @@ export default function Home() {
   const handleLogout = () => {
     setLoggedIn(false);
     setUserRole(null);
+    setHasSubscription(false);
     setActiveView('home');
   };
 
@@ -78,6 +78,21 @@ export default function Home() {
       title: "Booking Confirmed!",
       description: `Your session with ${mentorName} on ${format(date, 'PPP')} at ${time} is booked.`,
     });
+  };
+  
+  const handleGetStartedOnPricing = () => {
+    // If user is logged in, show a "coming soon" message for the payment feature.
+    // Otherwise, direct them to log in.
+    if (isLoggedIn) {
+      toast({
+        title: "Coming Soon",
+        description: "Payment integration is coming soon.",
+      });
+      // Close the pricing modal after showing the message.
+      setActiveView('home');
+    } else {
+      setActiveView('login');
+    }
   };
 
   const renderDashboard = () => {
@@ -155,7 +170,7 @@ export default function Home() {
       {activeView === 'pricing' && <PricingView 
         isOpen={true} 
         onOpenChange={handleModalOpenChange('pricing')}
-        onGetStartedClick={() => setActiveView('login')}
+        onGetStartedClick={handleGetStartedOnPricing}
       />}
       
       {activeView === 'msmes' && <MsmesView 
