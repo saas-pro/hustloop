@@ -1,4 +1,4 @@
-import { Rocket, Twitter, Linkedin, Github } from "lucide-react";
+import { Rocket, Linkedin, Github } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -13,8 +13,11 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} Nexus Platform. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <a href="#" aria-label="Twitter" className="text-muted-foreground hover:text-primary transition-colors">
-              <Twitter className="h-5 w-5" />
+            <a href="#" aria-label="X" className="text-muted-foreground hover:text-primary transition-colors">
+              <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current">
+                <title>X</title>
+                <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.931L18.901 1.153Zm-1.653 19.57h2.608L6.856 2.597H4.062l13.185 18.126Z"/>
+              </svg>
             </a>
             <a href="#" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors">
               <Linkedin className="h-5 w-5" />

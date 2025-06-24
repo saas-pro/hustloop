@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -116,9 +117,43 @@ const corporateChallenges: CorporateChallenge[] = [
       rewards: "A strategic partnership with EcoSustain, including access to our supply chain, manufacturing facilities, and a seed funding round for the most promising venture."
     }
   },
+  {
+    company: "FinSecure Bank",
+    logo: "https://placehold.co/100x100.png",
+    hint: "bank logo",
+    title: "AI for Fraud Detection",
+    reward: "₹8,00,000",
+    description: "Build a real-time fraud detection system for digital transactions using machine learning.",
+    details: {
+      about: "The FinSecure AI Challenge invites startups to develop next-generation security solutions for digital banking. We are seeking a robust system to protect our customers from financial fraud.",
+      problemStatements: 10,
+      stages: 3,
+      rewardPerStatement: "Up to ₹8 Lakh",
+      mission: "To leverage AI to create a safer digital banking ecosystem, reduce financial losses due to fraud, and increase customer trust in online transactions.",
+      participation: "Startups specializing in cybersecurity, AI/ML, and financial technology with experience in transaction monitoring and anomaly detection.",
+      rewards: "Total prizes worth ₹2 Crore. The winning solution will be integrated into FinSecure's banking platform, with a long-term service contract."
+    }
+  },
+  {
+    company: "LearnSphere",
+    logo: "https://placehold.co/100x100.png",
+    hint: "education logo",
+    title: "Personalized Learning Paths",
+    reward: "₹4,00,000",
+    description: "Create an adaptive learning platform that generates personalized study paths for K-12 students.",
+    details: {
+      about: "LearnSphere is seeking to transform online education with truly personalized learning experiences. This challenge is to build the core engine that powers this vision.",
+      problemStatements: 6,
+      stages: 2,
+      rewardPerStatement: "Pilot Program",
+      mission: "To make education more effective and engaging by catering to individual learning styles and paces, ensuring every student can achieve their full potential.",
+      participation: "EdTech startups with expertise in adaptive learning algorithms, educational content curation, and student assessment tools.",
+      rewards: "A prize of ₹4 Lakhs and a paid pilot program across our network of partner schools, with the potential for a full-scale rollout."
+    }
+  },
 ];
 
-const msmeCollaborations: MSMECollaboration[] = [
+export const msmeCollaborations: MSMECollaboration[] = [
   {
     name: "Artisan Co-op",
     logo: "https://placehold.co/100x100.png",
@@ -207,6 +242,50 @@ const msmeCollaborations: MSMECollaboration[] = [
       }
     }
   },
+  {
+    name: "Spice Route Foods",
+    logo: "https://placehold.co/100x100.png",
+    hint: "spice market",
+    sector: "Food & Beverage",
+    description: "Seeking a tech partner to create a direct-to-consumer subscription box service.",
+    details: {
+      about: "Spice Route Foods sources high-quality, single-origin spices from across India. We want to bring these unique flavors directly to home cooks through a curated subscription service.",
+      scope: ["D2C E-commerce", "Subscription Billing", "Brand Development", "Content Marketing"],
+      lookingFor: "We need a partner who can build and manage a D2C subscription platform. This includes website development, payment gateway integration, and marketing automation.",
+      benefits: [
+        "Exclusive access to a premium range of spices.",
+        "A compelling product for a food-loving audience.",
+        "Co-create a new brand in the D2C space.",
+        "Equity stake in the new subscription venture."
+      ],
+      contact: {
+        name: "Mira Desai",
+        title: "Founder"
+      }
+    }
+  },
+  {
+    name: "Classic Weaves",
+    logo: "https://placehold.co/100x100.png",
+    hint: "textile loom",
+    sector: "Textiles",
+    description: "Looking for fashion tech startups to collaborate on a new line of smart fabrics.",
+    details: {
+      about: "Classic Weaves is a traditional textile manufacturer with over 50 years of experience. We are looking to innovate and enter the technical textiles market.",
+      scope: ["Smart Fabrics", "Wearable Tech", "Material Science", "Fashion Design"],
+      lookingFor: "We seek startups with expertise in integrating technology into fabrics. This could include conductive threads, embedded sensors, or sustainable performance finishes.",
+      benefits: [
+        "Access to large-scale textile manufacturing facilities.",
+        "Deep knowledge of weaving and fabric construction.",
+        "Joint R&D to develop and patent new materials.",
+        "Established distribution channels in the garment industry."
+      ],
+      contact: {
+        name: "Karan Singh",
+        title: "Director of R&D"
+      }
+    }
+  },
 ];
 
 interface MsmesViewProps {
@@ -237,54 +316,58 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
             <div className="space-y-12">
               <section>
                 <h2 className="text-2xl font-bold font-headline mb-6">Corporate Challenges</h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {corporateChallenges.map((challenge, index) => (
-                    <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
-                      <CardHeader>
-                        <div className="flex items-center gap-4">
-                            <Image src={challenge.logo} alt={`${challenge.company} logo`} width={60} height={60} className="rounded-lg" data-ai-hint={challenge.hint} />
-                            <div>
-                                <CardTitle className="text-base">{challenge.title}</CardTitle>
-                                <CardDescription>{challenge.company}</CardDescription>
-                            </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="flex-grow">
-                        <p className="text-sm text-muted-foreground">{challenge.description}</p>
-                      </CardContent>
-                      <CardFooter className="flex-col items-start space-y-2">
-                        <Badge variant="outline">Reward: {challenge.reward}</Badge>
-                        <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setSelectedChallenge(challenge)}>
-                            View Challenge
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                <div className="overflow-x-auto pb-4">
+                  <div className="flex w-max space-x-4">
+                    {corporateChallenges.map((challenge, index) => (
+                      <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col w-80 shrink-0">
+                        <CardHeader>
+                          <div className="flex items-center gap-4">
+                              <Image src={challenge.logo} alt={`${challenge.company} logo`} width={60} height={60} className="rounded-lg" data-ai-hint={challenge.hint} />
+                              <div>
+                                  <CardTitle className="text-base whitespace-normal">{challenge.title}</CardTitle>
+                                  <CardDescription>{challenge.company}</CardDescription>
+                              </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                          <p className="text-sm text-muted-foreground whitespace-normal">{challenge.description}</p>
+                        </CardContent>
+                        <CardFooter className="flex-col items-start space-y-2">
+                          <Badge variant="outline">Reward: {challenge.reward}</Badge>
+                          <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setSelectedChallenge(challenge)}>
+                              View Challenge
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               </section>
 
               <section>
                 <h2 className="text-2xl font-bold font-headline mb-6">MSME Collaboration</h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {msmeCollaborations.map((msme, index) => (
-                    <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
-                      <CardHeader>
-                          <div className="flex items-center gap-4">
-                              <Image src={msme.logo} alt={`${msme.name} logo`} width={60} height={60} className="rounded-full" data-ai-hint={msme.hint} />
-                              <div>
-                                  <CardTitle className="text-base">{msme.name}</CardTitle>
-                                  <CardDescription>{msme.sector}</CardDescription>
-                              </div>
-                          </div>
-                      </CardHeader>
-                      <CardContent className="flex-grow">
-                          <p className="text-sm text-muted-foreground">{msme.description}</p>
-                      </CardContent>
-                      <CardFooter>
-                          <Button variant="outline" className="w-full" onClick={() => setSelectedCollaboration(msme)}>Connect</Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                <div className="overflow-x-auto pb-4">
+                  <div className="flex w-max space-x-4">
+                    {msmeCollaborations.map((msme, index) => (
+                      <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col w-80 shrink-0">
+                        <CardHeader>
+                            <div className="flex items-center gap-4">
+                                <Image src={msme.logo} alt={`${msme.name} logo`} width={60} height={60} className="rounded-full" data-ai-hint={msme.hint} />
+                                <div>
+                                    <CardTitle className="text-base whitespace-normal">{msme.name}</CardTitle>
+                                    <CardDescription>{msme.sector}</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                            <p className="text-sm text-muted-foreground whitespace-normal">{msme.description}</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button variant="outline" className="w-full" onClick={() => setSelectedCollaboration(msme)}>Connect</Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               </section>
             </div>
@@ -306,3 +389,4 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
     </>
   );
 }
+    

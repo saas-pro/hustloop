@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import AnimatedBackground from "@/components/layout/animated-background";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Lightbulb, Briefcase, Handshake, BookOpen, Network, Rocket, Wrench, Package, Award, Target, CheckCircle, Send, Gift, TrendingUp } from "lucide-react";
+import { Users, Lightbulb, Briefcase, Handshake, BookOpen, Network, Rocket, Wrench, Package, Award, Target, CheckCircle, Send, Gift, TrendingUp, Eye, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import * as React from "react";
@@ -11,34 +11,53 @@ const services = [
   {
     title: "Mentorship Programs",
     description: "Connect with experienced industry leaders who provide personalized guidance and insights to help you navigate challenges and accelerate growth.",
-    icon: <Users className="h-8 w-8 text-primary" />,
+    icon: <Users className="h-10 w-10 text-primary" />,
   },
   {
     title: "Incubation Support",
     description: "Access state-of-the-art facilities, technical resources, and expert guidance through our network of leading incubators.",
-    icon: <Lightbulb className="h-8 w-8 text-primary" />,
+    icon: <Lightbulb className="h-10 w-10 text-primary" />,
   },
   {
     title: "Business Development",
     description: "Get comprehensive support in strategy, market research, financial planning, and operational excellence.",
-    icon: <Briefcase className="h-8 w-8 text-primary" />,
+    icon: <Briefcase className="h-10 w-10 text-primary" />,
   },
   {
     title: "MSME Partnerships",
     description: "Collaborate with established MSMEs for market access, technology transfer, and scaling opportunities.",
-    icon: <Handshake className="h-8 w-8 text-primary" />,
+    icon: <Handshake className="h-10 w-10 text-primary" />,
   },
   {
     title: "Educational Resources",
     description: "Access workshops, webinars, and learning materials designed to enhance your entrepreneurial skills.",
-    icon: <BookOpen className="h-8 w-8 text-primary" />,
+    icon: <BookOpen className="h-10 w-10 text-primary" />,
   },
   {
     title: "Networking Events",
     description: "Join exclusive events and connect with fellow entrepreneurs, investors, and industry experts.",
-    icon: <Network className="h-8 w-8 text-primary" />,
+    icon: <Network className="h-10 w-10 text-primary" />,
   },
 ];
+
+const whyChooseUs = [
+  {
+    title: "Our Mission",
+    description: "To empower entrepreneurs by providing the resources, guidance, and connections they need to transform innovative ideas into successful ventures.",
+    icon: <Target className="h-10 w-10 text-primary" />,
+  },
+  {
+    title: "Our Vision",
+    description: "To create a thriving ecosystem where startups, MSMEs, and incubators collaborate seamlessly to drive innovation and economic growth.",
+    icon: <Eye className="h-10 w-10 text-primary" />,
+  },
+  {
+    title: "Our Values",
+    description: "Innovation, collaboration, integrity, and excellence guide everything we do as we help shape the future of entrepreneurship.",
+    icon: <ShieldCheck className="h-10 w-10 text-primary" />,
+  },
+];
+
 
 type Path = 'incubation' | 'marketSolution' | 'partnership';
 
@@ -129,86 +148,97 @@ export default function HomeView({ setActiveView }: HomeViewProps) {
   return (
     <div className="relative w-full h-full overflow-y-auto">
       <AnimatedBackground />
-      <div className="relative z-10 container mx-auto px-4">
+      <div className="relative z-10">
         
-        <section className="text-center py-24 md:py-32">
+        {/* Hero Section */}
+        <section className="text-center py-24 md:py-32 container mx-auto px-4">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 font-headline tracking-tight">
             Empowering Tomorrow's Innovators
           </h1>
           <p className="max-w-4xl mx-auto text-lg md:text-xl text-muted-foreground mb-12">
-            At Nexus Platform, we bridge the gap between innovative ideas and successful businesses. Our platform connects entrepreneurs with industry-leading mentors, cutting-edge incubators, and established MSMEs to foster growth and innovation in the startup ecosystem.
+            Nexus Platform is your launchpad for success. We connect visionary entrepreneurs with elite mentors, top-tier incubators, and strategic MSME partners to fuel innovation and accelerate growth.
           </p>
-          <Button size="lg" className="bg-primary hover:bg-primary/90">Get Started Now</Button>
+          <Button size="lg" className="bg-primary hover:bg-primary/90" onClick={() => setActiveView('signup')}>Join a Thriving Ecosystem</Button>
         </section>
 
-        <section className="py-24 grid md:grid-cols-3 gap-16 text-center">
-          <div>
-            <h3 className="text-3xl font-bold mb-4 font-headline">Our Mission</h3>
-            <p className="text-muted-foreground">
-              To empower entrepreneurs by providing them with the resources, guidance, and connections they need to transform their innovative ideas into successful ventures.
+        {/* Services Section */}
+        <section className="py-24 bg-background/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 font-headline">What We Offer</h2>
+            <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-16">
+              A comprehensive suite of services designed to support you at every stage of your entrepreneurial journey.
             </p>
-          </div>
-          <div>
-            <h3 className="text-3xl font-bold mb-4 font-headline">Our Vision</h3>
-            <p className="text-muted-foreground">
-              To create a thriving ecosystem where startups, MSMEs, and incubators collaborate seamlessly to drive innovation and economic growth.
-            </p>
-          </div>
-          <div>
-            <h3 className="text-3xl font-bold mb-4 font-headline">Our Values</h3>
-            <p className="text-muted-foreground">
-              Innovation, collaboration, integrity, and excellence guide everything we do as we help shape the future of entrepreneurship.
-            </p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+              {services.map((service) => (
+                <Card key={service.title} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 hover:bg-card/75 transition-all">
+                  <CardHeader className="flex flex-row items-center gap-4 p-6">
+                    {service.icon}
+                    <CardTitle className="text-xl">{service.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 pt-0">
+                    <p className="text-muted-foreground">{service.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </section>
 
-        <section className="py-24 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Our Services</h2>
-          <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-16">
-            We offer comprehensive support to help entrepreneurs at every stage of their journey, from ideation to scaling their business.
-          </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
-            {services.map((service) => (
-              <Card key={service.title} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 hover:bg-card/75 transition-all">
-                <CardHeader className="flex flex-row items-center gap-4 p-4">
-                  {service.icon}
-                  <CardTitle className="text-lg">{service.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="text-muted-foreground text-sm">{service.description}</p>
-                </CardContent>
-              </Card>
+        {/* Why Choose Us Section */}
+        <section className="py-24 container mx-auto px-4">
+          <div className="text-center">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Why Choose Nexus?</h2>
+            <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-16">
+              We are founded on a clear mission, guided by a bold vision, and committed to core values that drive success.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            {whyChooseUs.map((item) => (
+              <div key={item.title} className="p-8 bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg">
+                <div className="flex justify-center mb-4">{item.icon}</div>
+                <h3 className="text-2xl font-bold mb-2 font-headline">{item.title}</h3>
+                <p className="text-muted-foreground">{item.description}</p>
+              </div>
             ))}
           </div>
         </section>
-        
-        <section className="py-24 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Choose Your Path to Success</h2>
-          <div className="flex justify-center gap-2 mt-8">
-            <Button variant={activePath === 'incubation' ? 'default' : 'outline'} onClick={() => setActivePath('incubation')}>Incubation Path</Button>
-            <Button variant={activePath === 'marketSolution' ? 'default' : 'outline'} onClick={() => setActivePath('marketSolution')}>Market Solution Path</Button>
-            <Button variant={activePath === 'partnership' ? 'default' : 'outline'} onClick={() => setActivePath('partnership')}>Partnership Path</Button>
-          </div>
-          
-          <PathTimeline steps={pathsData[activePath].steps} />
 
-          <h3 className="text-2xl font-bold mt-24 mb-8 font-headline">Additional Benefits Across All Paths</h3>
-          <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
-              {additionalBenefits.map((benefit) => (
-                  <Card key={benefit.name} className="p-3 bg-card/50 backdrop-blur-sm border-border/50 flex items-center gap-2">
-                      {React.cloneElement(benefit.icon, { className: "h-5 w-5 text-primary"})}
-                      <span className="text-sm font-medium">{benefit.name}</span>
-                  </Card>
-              ))}
+        {/* Path to Success Section */}
+        <section className="py-24 bg-background/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Choose Your Path to Success</h2>
+            <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-12">
+              Whether you need incubation, a market for your solution, or a strategic partnership, we have a tailored path for you.
+            </p>
+            <div className="flex justify-center gap-2 mt-8">
+              <Button size="lg" variant={activePath === 'incubation' ? 'default' : 'outline'} onClick={() => setActivePath('incubation')}>Incubation Path</Button>
+              <Button size="lg" variant={activePath === 'marketSolution' ? 'default' : 'outline'} onClick={() => setActivePath('marketSolution')}>Market Solution Path</Button>
+              <Button size="lg" variant={activePath === 'partnership' ? 'default' : 'outline'} onClick={() => setActivePath('partnership')}>Partnership Path</Button>
+            </div>
+            
+            <PathTimeline steps={pathsData[activePath].steps} />
+
+            <h3 className="text-2xl font-bold mt-24 mb-8 font-headline">Benefits Across All Paths</h3>
+            <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
+                {additionalBenefits.map((benefit) => (
+                    <Card key={benefit.name} className="p-3 bg-card/70 backdrop-blur-sm border-border/50 flex items-center gap-2">
+                        {React.cloneElement(benefit.icon, { className: "h-5 w-5 text-primary"})}
+                        <span className="text-sm font-medium">{benefit.name}</span>
+                    </Card>
+                ))}
+            </div>
           </div>
         </section>
         
-        <section className="py-24 text-center bg-card/50 rounded-lg mb-24">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Ready to Build the Future?</h2>
-          <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-8">
-            Join Nexus Platform today and let's turn your vision into reality. Contact us to get started.
-          </p>
-          <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setActiveView('contact')}>Contact Us</Button>
+        {/* Final CTA Section */}
+        <section className="py-24 container mx-auto px-4">
+          <div className="bg-card/50 rounded-lg p-12 text-center border border-primary/50 shadow-lg shadow-primary/10">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Ready to Build the Future?</h2>
+            <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-8">
+              Join Nexus Platform today and let's turn your vision into reality. Your journey to success starts here.
+            </p>
+            <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setActiveView('contact')}>Contact Us Today</Button>
+          </div>
         </section>
 
       </div>

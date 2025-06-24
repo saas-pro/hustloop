@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { View } from "@/app/types";
@@ -9,7 +10,7 @@ interface HeaderProps {
   activeView: View;
   setActiveView: (view: View) => void;
   isLoggedIn: boolean;
-  setLoggedIn: (isLoggedIn: boolean) => void;
+  onLogout: () => void;
 }
 
 const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
@@ -22,11 +23,7 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
   { id: "education", label: "Education" },
 ];
 
-export default function Header({ activeView, setActiveView, isLoggedIn, setLoggedIn }: HeaderProps) {
-  const handleLogout = () => {
-    setLoggedIn(false);
-    setActiveView("home");
-  };
+export default function Header({ activeView, setActiveView, isLoggedIn, onLogout }: HeaderProps) {
 
   return (
     <>
@@ -63,7 +60,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, setLogge
                 <Button variant="ghost" size="icon">
                   <UserCircle className="h-6 w-6" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <Button variant="ghost" size="icon" onClick={onLogout}>
                   <LogOut className="h-6 w-6" />
                 </Button>
               </>

@@ -11,10 +11,10 @@ const AnimatedBackground = () => {
         const style = {
           left: `${Math.random() * 100}%`,
           top: `${Math.random() * 100}%`,
-          width: `${Math.random() * 2 + 1}px`,
-          height: `${Math.random() * 2 + 1}px`,
-          animationDelay: `${Math.random() * 5}s`,
-          animationDuration: `${Math.random() * 5 + 5}s`,
+          width: `${Math.random() * 2 + 1.5}px`,
+          height: `${Math.random() * 2 + 1.5}px`,
+          animationDelay: `${Math.random() * 4}s`,
+          animationDuration: `${Math.random() * 4 + 3}s`,
         };
         return <div key={i} className="star" style={style} />;
       });

@@ -40,7 +40,7 @@ export type Incubator = {
   };
 };
 
-const incubators: Incubator[] = [
+export const incubators: Incubator[] = [
   {
     name: "TechStars Bangalore",
     image: "https://placehold.co/600x400.png",

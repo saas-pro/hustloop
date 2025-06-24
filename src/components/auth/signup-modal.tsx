@@ -1,6 +1,6 @@
-
 "use client";
 
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Linkedin } from "lucide-react";
+import { Linkedin, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface SignupModalProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
 
-// Google SVG Icon
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
         <title>Google</title>
@@ -29,11 +29,23 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
-    const handleSubmit = (e: React.FormEvent) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [role, setRole] = useState("");
+    const { toast } = useToast();
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Here you would handle form submission, including the role.
-        // For now, we just close the modal.
+        setIsLoading(true);
+
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        toast({
+            title: "Registration Successful",
+            description: "This is a demonstration. You can now use the default credentials to log in.",
+        });
         setIsOpen(false);
+        setIsLoading(false);
     };
 
   return (
@@ -47,8 +59,8 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
         </DialogHeader>
         
         <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline"><GoogleIcon className="mr-2 h-4 w-4" /> Google</Button>
-            <Button variant="outline"><Linkedin className="mr-2 h-4 w-4" /> LinkedIn</Button>
+            <Button variant="outline" disabled={isLoading}><GoogleIcon className="mr-2 h-4 w-4" /> Google</Button>
+            <Button variant="outline" disabled={isLoading}><Linkedin className="mr-2 h-4 w-4" /> LinkedIn</Button>
         </div>
 
         <div className="relative">
@@ -66,11 +78,11 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
           <div className="grid gap-4">
             <div className="grid gap-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" type="text" placeholder="Your Name" required />
+                <Input id="name" name="name" type="text" placeholder="Your Name" required disabled={isLoading} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="role">I am a</Label>
-              <Select name="role" required>
+              <Select name="role" required onValueChange={setRole} disabled={isLoading}>
                 <SelectTrigger id="role">
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
@@ -84,11 +96,11 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email-signup">Email</Label>
-              <Input id="email-signup" type="email" placeholder="you@example.com" required />
+              <Input id="email-signup" name="email-signup" type="email" placeholder="you@example.com" required disabled={isLoading} />
             </div>
             <div className="grid gap-2">
                 <Label htmlFor="password-signup">Password</Label>
-                <Input id="password-signup" type="password" placeholder="••••••••" required />
+                <Input id="password-signup" name="password-signup" type="password" placeholder="••••••••" required disabled={isLoading} />
                 <p className="text-xs text-muted-foreground">
                     Password must be at least 10 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.
                 </p>
@@ -97,12 +109,15 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
                 <Label htmlFor="captcha">Security Check</Label>
                 <div className="flex items-center gap-2">
                     <span className="text-sm p-2 bg-muted rounded-md">What is 5 + 3?</span>
-                    <Input id="captcha" type="text" placeholder="Your answer" required className="w-auto flex-grow" />
+                    <Input id="captcha" type="text" placeholder="Your answer" required className="w-auto flex-grow" disabled={isLoading} />
                 </div>
             </div>
           </div>
           <DialogFooter className="mt-6">
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">Create Account</Button>
+            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create Account
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

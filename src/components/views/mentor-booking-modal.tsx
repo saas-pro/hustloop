@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Mentor } from './mentors';
+import type { Mentor } from '@/components/views/mentors';
 import {
   Dialog,
   DialogContent,

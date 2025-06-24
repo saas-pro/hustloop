@@ -1,12 +1,13 @@
-import type {NextConfig} from 'next';
-
-const nextConfig: NextConfig = {
-  output: 'export',
-  basePath: '/fire',
-  assetPrefix: '/fire/',
-  trailingSlash: true,
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  /* config options here */
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
-    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -15,12 +16,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
 };
 

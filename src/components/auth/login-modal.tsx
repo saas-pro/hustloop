@@ -1,12 +1,15 @@
+
 "use client";
 
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Linkedin } from "lucide-react";
+import { Linkedin, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { UserRole } from "@/app/types";
 
-// Google SVG Icon
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
         <title>Google</title>
@@ -14,17 +17,53 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-
 interface LoginModalProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onLoginSuccess: () => void;
+  onLoginSuccess: (role: UserRole) => void;
 }
 
 export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginModalProps) {
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLoginSuccess();
+    setIsLoading(true);
+
+    const form = e.target as HTMLFormElement;
+    const email = (form.elements.namedItem('email-login') as HTMLInputElement).value;
+    const password = (form.elements.namedItem('password-login') as HTMLInputElement).value;
+
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    let role: UserRole | null = null;
+    if (email === 'admin@nexus.com' && password === 'admin') {
+        role = 'admin';
+    } else if (email === 'mentor@nexus.com' && password === 'mentor') {
+        role = 'mentor';
+    } else if (email === 'incubator@nexus.com' && password === 'incubator') {
+        role = 'incubator';
+    } else if (email === 'msme@nexus.com' && password === 'msme') {
+        role = 'msme';
+    }
+
+    if (role) {
+        toast({
+            title: "Login Successful",
+            description: `Welcome back, ${role}!`,
+        });
+        onLoginSuccess(role);
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Invalid credentials. Please check the hint below.",
+        });
+    }
+
+    setIsLoading(false);
   };
 
   return (
@@ -57,15 +96,21 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email-login">Email</Label>
-              <Input id="email-login" type="email" defaultValue="admin@nexus.com" required />
+              <Input id="email-login" name="email-login" type="email" defaultValue="admin@nexus.com" required disabled={isLoading} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password-login">Password</Label>
-              <Input id="password-login" type="password" defaultValue="admin" required />
+              <Input id="password-login" name="password-login" type="password" defaultValue="admin" required disabled={isLoading} />
             </div>
+            <p className="text-xs text-muted-foreground text-center px-4">
+                Use: admin@nexus.com (pw: admin), mentor@nexus.com (pw: mentor), incubator@nexus.com (pw: incubator), or msme@nexus.com (pw: msme).
+            </p>
           </div>
           <DialogFooter className="mt-6">
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">Login</Button>
+            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Login
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
