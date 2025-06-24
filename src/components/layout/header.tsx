@@ -12,7 +12,7 @@ interface HeaderProps {
   setActiveView: (view: View) => void;
   isLoggedIn: boolean;
   onLogout: () => void;
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | null;
   setTheme: (theme: 'light' | 'dark') => void;
 }
 
@@ -29,11 +29,13 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
 export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, theme, setTheme }: HeaderProps) {
   
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+    if (theme) {
+      setTheme(theme === 'light' ? 'dark' : 'light');
+    }
   };
 
   const ThemeToggleButton = ({ className }: { className?: string }) => (
-    <Button variant="ghost" size="icon" onClick={toggleTheme} className={className}>
+    <Button variant="ghost" size="icon" onClick={toggleTheme} className={className} disabled={!theme}>
       <Sun className="h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
       <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
       <span className="sr-only">Toggle theme</span>

@@ -38,7 +38,7 @@ const ContactView = dynamic(() => import('@/components/views/contact'), { loadin
 
 
 export default function Home() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
   const [activeView, setActiveView] = useState<View>("home");
   const [isLoggedIn, setLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -46,9 +46,19 @@ export default function Home() {
   const [hasUsedFreeSession, setHasUsedFreeSession] = useState(false);
   const { toast } = useToast();
   
+  // This effect runs once on mount to set the initial theme from localStorage
   useEffect(() => {
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(theme);
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    setTheme(savedTheme || 'dark');
+  }, []);
+
+  // This effect runs whenever the theme changes to update the DOM and localStorage
+  useEffect(() => {
+    if (theme) {
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(theme);
+      localStorage.setItem('theme', theme);
+    }
   }, [theme]);
 
   const handleModalOpenChange = (view: View) => (isOpen: boolean) => {

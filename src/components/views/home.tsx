@@ -117,7 +117,7 @@ const PathTimeline = ({ steps }: { steps: typeof pathsData.incubation.steps }) =
             <div className="md:w-1/2"></div>
             <div className="md:w-1/2 md:px-8 py-4">
               <Card className={cn(
-                "p-4 bg-card/70 backdrop-blur-sm border-border/50 max-w-md",
+                "p-4 bg-card/70 backdrop-blur-sm border-border/50 max-w-md w-full",
                 step.side === 'left' && "md:ml-auto",
                 step.isFinal && "bg-yellow-400/20 border-yellow-500"
               )}>
@@ -141,7 +141,7 @@ const PathTimeline = ({ steps }: { steps: typeof pathsData.incubation.steps }) =
 
 interface HomeViewProps {
   setActiveView: (view: View) => void;
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | null;
 }
 
 export default function HomeView({ setActiveView, theme }: HomeViewProps) {
