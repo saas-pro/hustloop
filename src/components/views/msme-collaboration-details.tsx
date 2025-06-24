@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -68,7 +69,7 @@ export default function MSMECollaborationDetails({
             </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-grow mt-4 pr-6">
+        <ScrollArea className="flex-grow mt-4">
           <div className="space-y-12">
             
             <div>

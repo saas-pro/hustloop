@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from 'next/dynamic';
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -38,12 +38,18 @@ const ContactView = dynamic(() => import('@/components/views/contact'), { loadin
 
 
 export default function Home() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [activeView, setActiveView] = useState<View>("home");
   const [isLoggedIn, setLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [hasSubscription, setHasSubscription] = useState(false);
   const [hasUsedFreeSession, setHasUsedFreeSession] = useState(false);
   const { toast } = useToast();
+  
+  useEffect(() => {
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
+  }, [theme]);
 
   const handleModalOpenChange = (view: View) => (isOpen: boolean) => {
     if (!isOpen) {
@@ -143,9 +149,11 @@ export default function Home() {
         setActiveView={setActiveView}
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}
+        theme={theme}
+        setTheme={setTheme}
       />
       <main className="flex-grow">
-        <HomeView setActiveView={setActiveView} />
+        <HomeView setActiveView={setActiveView} theme={theme} />
       </main>
       <Footer />
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -29,7 +30,7 @@ export default function BlogPostDetails({
             {post.title}
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="flex-grow mt-4 pr-6">
+        <ScrollArea className="flex-grow mt-4">
           <div className="space-y-6">
             <Image
               src={post.image}

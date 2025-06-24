@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -107,7 +108,7 @@ export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubsc
             <DialogDescription className="text-center">Learn from industry veterans who have been there and done that. Get guidance to transform your startup journey.</DialogDescription>
           </DialogHeader>
           <ScrollArea className="h-full mt-4">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 pr-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {mentors.map((mentor, index) => {
                 return (
                   <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50">

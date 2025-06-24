@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,7 +58,7 @@ export default function BlogView({ isOpen, onOpenChange }: BlogViewProps) {
             <DialogTitle className="text-3xl font-bold text-center mb-4 font-headline">Our Blog</DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-full">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 pr-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {blogPosts.map((post, index) => (
                   <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50">
                       <CardHeader>
@@ -73,7 +74,7 @@ export default function BlogView({ isOpen, onOpenChange }: BlogViewProps) {
                   </Card>
                   ))}
               </div>
-              <div className="mt-12 pr-6">
+              <div className="mt-12">
                 <div className="grid md:grid-cols-2 gap-8">
                   <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                     <CardHeader>

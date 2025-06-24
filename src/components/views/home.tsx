@@ -117,7 +117,8 @@ const PathTimeline = ({ steps }: { steps: typeof pathsData.incubation.steps }) =
             <div className="md:w-1/2"></div>
             <div className="md:w-1/2 md:px-8 py-4">
               <Card className={cn(
-                "p-4 bg-card/70 backdrop-blur-sm border-border/50",
+                "p-4 bg-card/70 backdrop-blur-sm border-border/50 max-w-md",
+                step.side === 'left' && "md:ml-auto",
                 step.isFinal && "bg-yellow-400/20 border-yellow-500"
               )}>
                 <div className={cn("flex items-center gap-4", step.side === 'left' ? 'md:flex-row-reverse' : 'md:flex-row')}>
@@ -140,14 +141,15 @@ const PathTimeline = ({ steps }: { steps: typeof pathsData.incubation.steps }) =
 
 interface HomeViewProps {
   setActiveView: (view: View) => void;
+  theme: 'light' | 'dark';
 }
 
-export default function HomeView({ setActiveView }: HomeViewProps) {
+export default function HomeView({ setActiveView, theme }: HomeViewProps) {
   const [activePath, setActivePath] = useState<Path>('incubation');
 
   return (
     <div className="relative w-full h-full overflow-y-auto">
-      <AnimatedBackground />
+      {theme === 'dark' && <AnimatedBackground />}
       <div className="relative z-10">
         
         {/* Hero Section */}
@@ -211,9 +213,9 @@ export default function HomeView({ setActiveView }: HomeViewProps) {
               Whether you need incubation, a market for your solution, or a strategic partnership, we have a tailored path for you.
             </p>
             <div className="flex justify-center gap-2 mt-8">
-              <Button size="lg" variant={activePath === 'incubation' ? 'default' : 'outline'} onClick={() => setActivePath('incubation')}>Incubation Path</Button>
-              <Button size="lg" variant={activePath === 'marketSolution' ? 'default' : 'outline'} onClick={() => setActivePath('marketSolution')}>Market Solution Path</Button>
-              <Button size="lg" variant={activePath === 'partnership' ? 'default' : 'outline'} onClick={() => setActivePath('partnership')}>Partnership Path</Button>
+              <Button size="lg" variant={activePath === 'incubation' ? 'default' : 'outline'} onClick={() => setActivePath('incubation')}>Incubation</Button>
+              <Button size="lg" variant={activePath === 'marketSolution' ? 'default' : 'outline'} onClick={() => setActivePath('marketSolution')}>Market Solution</Button>
+              <Button size="lg" variant={activePath === 'partnership' ? 'default' : 'outline'} onClick={() => setActivePath('partnership')}>Partnership</Button>
             </div>
             
             <PathTimeline steps={pathsData[activePath].steps} />

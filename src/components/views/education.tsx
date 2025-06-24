@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import {
     Search,
     Award
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface EducationViewProps {
   isOpen: boolean;
@@ -80,15 +82,18 @@ export default function EducationView({ isOpen, onOpenChange, onApplyClick }: Ed
             </span>
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-full mt-4 pr-6">
+        <ScrollArea className="h-full mt-4">
             <div className="space-y-12">
                 <section>
                     <h2 className="text-2xl font-bold font-headline mb-6">Featured Programs</h2>
                     <div className="space-y-8">
                         {acceleratorPrograms.map((program, index) => (
-                            <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50">
+                            <Card key={index} className="bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary transition-colors">
                                 <CardHeader>
-                                    <CardTitle>{program.title}</CardTitle>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle>{program.title}</CardTitle>
+                                        <Badge>Free</Badge>
+                                    </div>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="md:flex">

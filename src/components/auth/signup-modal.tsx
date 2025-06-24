@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -104,13 +105,6 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
                 <p className="text-xs text-muted-foreground">
                     Password must be at least 10 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.
                 </p>
-            </div>
-            <div className="grid gap-2">
-                <Label htmlFor="captcha">Security Check</Label>
-                <div className="flex items-center gap-2">
-                    <span className="text-sm p-2 bg-muted rounded-md">What is 5 + 3?</span>
-                    <Input id="captcha" type="text" placeholder="Your answer" required className="w-auto flex-grow" disabled={isLoading} />
-                </div>
             </div>
           </div>
           <DialogFooter className="mt-6">

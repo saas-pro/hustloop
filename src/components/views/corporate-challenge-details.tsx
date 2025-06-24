@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -19,6 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import Image from 'next/image';
 
 interface CorporateChallengeDetailsProps {
   challenge: CorporateChallenge | null;
@@ -58,14 +60,17 @@ export default function CorporateChallengeDetails({
   return (
     <Dialog open={!!challenge} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-3xl font-bold font-headline">{challenge.title}</DialogTitle>
-          <DialogDescription>
-            A challenge by {challenge.company}.
-          </DialogDescription>
+        <DialogHeader className="flex-row items-center gap-4">
+            <Image src={challenge.logo} alt={`${challenge.company} logo`} width={80} height={80} className="rounded-lg" data-ai-hint={challenge.hint} />
+            <div>
+                <DialogTitle className="text-3xl font-bold font-headline">{challenge.title}</DialogTitle>
+                <DialogDescription>
+                A challenge by {challenge.company}.
+                </DialogDescription>
+            </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-grow mt-4 pr-6">
+        <ScrollArea className="flex-grow mt-4">
           <div className="space-y-12">
             <div>
                 <h3 className="text-2xl font-bold mb-4 font-headline">About The Challenge</h3>

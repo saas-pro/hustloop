@@ -312,14 +312,14 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
               </span>
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-full mt-4 pr-6">
+          <ScrollArea className="h-full mt-4">
             <div className="space-y-12">
               <section>
                 <h2 className="text-2xl font-bold font-headline mb-6">Corporate Challenges</h2>
-                <div className="overflow-x-auto pb-4">
-                  <div className="flex w-max space-x-4">
+                <div className="pb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {corporateChallenges.map((challenge, index) => (
-                      <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col w-80 shrink-0">
+                      <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
                         <CardHeader>
                           <div className="flex items-center gap-4">
                               <Image src={challenge.logo} alt={`${challenge.company} logo`} width={60} height={60} className="rounded-lg" data-ai-hint={challenge.hint} />
@@ -346,10 +346,10 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
 
               <section>
                 <h2 className="text-2xl font-bold font-headline mb-6">MSME Collaboration</h2>
-                <div className="overflow-x-auto pb-4">
-                  <div className="flex w-max space-x-4">
+                <div className="pb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {msmeCollaborations.map((msme, index) => (
-                      <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col w-80 shrink-0">
+                      <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
                         <CardHeader>
                             <div className="flex items-center gap-4">
                                 <Image src={msme.logo} alt={`${msme.name} logo`} width={60} height={60} className="rounded-full" data-ai-hint={msme.hint} />
@@ -389,4 +389,3 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
     </>
   );
 }
-    

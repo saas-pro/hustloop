@@ -59,7 +59,7 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         toast({
             variant: "destructive",
             title: "Login Failed",
-            description: "Invalid credentials. Please check the hint below.",
+            description: "Invalid credentials. Please try again.",
         });
     }
 
@@ -96,15 +96,12 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email-login">Email</Label>
-              <Input id="email-login" name="email-login" type="email" defaultValue="admin@nexus.com" required disabled={isLoading} />
+              <Input id="email-login" name="email-login" type="email" placeholder="you@example.com" required disabled={isLoading} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password-login">Password</Label>
-              <Input id="password-login" name="password-login" type="password" defaultValue="admin" required disabled={isLoading} />
+              <Input id="password-login" name="password-login" type="password" placeholder="••••••••" required disabled={isLoading} />
             </div>
-            <p className="text-xs text-muted-foreground text-center px-4">
-                Use: admin@nexus.com (pw: admin), mentor@nexus.com (pw: mentor), incubator@nexus.com (pw: incubator), or msme@nexus.com (pw: msme).
-            </p>
           </div>
           <DialogFooter className="mt-6">
             <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading}>

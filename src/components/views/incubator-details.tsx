@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -93,7 +94,7 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-grow mt-4 pr-6">
+        <ScrollArea className="flex-grow mt-4">
           <div className="space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
               <Card className="bg-card/50 backdrop-blur-sm border-border/50">

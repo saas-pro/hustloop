@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -210,7 +211,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="h-full mt-4">
-            <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 pr-6">
+            <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
               {incubators.map((incubator, index) => {
                 return (
                   <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">

@@ -124,7 +124,6 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
 
     function onProfileSubmit(data: ProfileFormValues) {
         toast({ title: "Profile Updated", description: "Your public MSME profile has been saved." });
-        console.log("MSME Profile data:", data);
     }
 
     // Settings Form setup
@@ -139,7 +138,6 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
 
     function onSettingsSubmit(data: SettingsFormValues) {
         toast({ title: "Settings Saved", description: "Your account settings have been updated." });
-        console.log("Settings data:", data);
     }
 
     // Submission handling
@@ -173,13 +171,13 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
                     </DialogHeader>
                     <div className="flex-grow flex flex-col min-h-0">
                         <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as MsmeDashboardTab)} className="flex flex-col flex-grow min-h-0">
-                            <TabsList className="grid w-full grid-cols-4">
+                            <TabsList className="grid h-auto w-full grid-cols-2 md:grid-cols-4">
                                 <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
                                 <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
                                 <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
                                 <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
                             </TabsList>
-                            <ScrollArea className="flex-grow mt-4 pr-6">
+                            <ScrollArea className="flex-grow mt-4">
                                 <TabsContent value="overview" className="mt-0 space-y-6">
                                     <div className="grid gap-6 md:grid-cols-3">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
