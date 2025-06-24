@@ -2,9 +2,9 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   output: 'export',
-  assetPrefix: '/fire/',        
-  trailingSlash: true,          
-
+  basePath: '/fire',
+  assetPrefix: '/fire/',
+  trailingSlash: true,
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -16,7 +16,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-
   typescript: {
     ignoreBuildErrors: true,
   },
