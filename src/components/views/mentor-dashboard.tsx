@@ -119,9 +119,9 @@ export default function MentorDashboardView({ isOpen, onOpenChange }: MentorDash
                     <DialogTitle className="text-3xl font-bold font-headline">Mentor Dashboard</DialogTitle>
                     <DialogDescription>Manage your mentorship activities, schedule, and mentees.</DialogDescription>
                 </DialogHeader>
-                <div className="flex-grow flex flex-col min-h-0">
+                <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as MentorDashboardTab)} className="flex flex-col flex-grow min-h-0">
-                        <TabsList className="grid h-auto w-full grid-cols-2 md:grid-cols-4 mx-6">
+                        <TabsList className="grid h-auto w-full grid-cols-2 md:grid-cols-4">
                             <TabsTrigger value="overview">
                                 <LayoutDashboard className="mr-2 h-4 w-4" /> Overview
                             </TabsTrigger>
@@ -135,7 +135,7 @@ export default function MentorDashboardView({ isOpen, onOpenChange }: MentorDash
                                 <Settings className="mr-2 h-4 w-4" /> Settings
                             </TabsTrigger>
                         </TabsList>
-                        <ScrollArea className="flex-grow mt-4 px-6">
+                        <ScrollArea className="flex-grow mt-4">
                             <TabsContent value="overview" className="mt-0 space-y-6">
                                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -432,6 +432,6 @@ const chartData = [
 const chartConfig = {
     sessions: {
       label: "Sessions",
-      color: "hsl(var(--primary))",
+      color: "hsl(var(--chart-1))",
     },
 };

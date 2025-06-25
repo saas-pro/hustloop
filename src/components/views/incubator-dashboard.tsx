@@ -197,12 +197,12 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange }: Incubat
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col">
-                    <DialogHeader>
+                <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
+                    <DialogHeader className="p-6">
                         <DialogTitle className="text-3xl font-bold font-headline">Incubator Dashboard</DialogTitle>
                         <DialogDescription>Welcome, TechStars Bangalore. Manage your submissions and profile.</DialogDescription>
                     </DialogHeader>
-                    <div className="flex-grow flex flex-col min-h-0">
+                    <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                         <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as IncubatorDashboardTab)} className="flex flex-col flex-grow min-h-0">
                             <TabsList className="grid h-auto w-full grid-cols-2 md:grid-cols-4">
                                 <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
