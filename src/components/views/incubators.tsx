@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -201,7 +200,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col">
+        <DialogContent className="sm:max-w-5xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center font-headline">Startup Incubation Hub</DialogTitle>
             <DialogDescription className="text-center">
@@ -210,7 +209,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
               Connect with leading incubators that provide the resources, mentorship, and ecosystem you need to transform your innovative ideas into successful ventures.
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-full mt-4">
+          <ScrollArea className="h-[70vh]">
             <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
               {incubators.map((incubator, index) => {
                 return (
@@ -267,12 +266,14 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
           </ScrollArea>
         </DialogContent>
       </Dialog>
-      <IncubatorDetails 
-        incubator={selectedIncubator} 
-        onOpenChange={(isOpen) => !isOpen && setSelectedIncubator(null)} 
-        isLoggedIn={isLoggedIn}
-        hasSubscription={hasSubscription}
-      />
+      {selectedIncubator && (
+        <IncubatorDetails 
+          incubator={selectedIncubator} 
+          onOpenChange={(isOpen) => !isOpen && setSelectedIncubator(null)} 
+          isLoggedIn={isLoggedIn}
+          hasSubscription={hasSubscription}
+        />
+      )}
     </>
   );
 }

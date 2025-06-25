@@ -50,7 +50,7 @@ interface BlogViewProps {
 export default function BlogView({ isOpen, onOpenChange }: BlogViewProps) {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
 
-  return (
+ return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col">
@@ -58,44 +58,44 @@ export default function BlogView({ isOpen, onOpenChange }: BlogViewProps) {
             <DialogTitle className="text-3xl font-bold text-center mb-4 font-headline">Our Blog</DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-full">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {blogPosts.map((post, index) => (
+ <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 p-4">
+ {blogPosts.map((post, index) => (
                   <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50">
                       <CardHeader>
-                      <Image src={post.image} alt={post.title} width={600} height={400} className="rounded-t-lg" data-ai-hint={post.hint}/>
+ <Image src={post.image} alt={post.title} width={600} height={400} className="rounded-t-lg" data-ai-hint={post.hint}/>
                       <CardTitle className="pt-4">{post.title}</CardTitle>
                       </CardHeader>
                       <CardContent className="flex-grow">
-                      <p className="text-muted-foreground">{post.excerpt}</p>
+ <p className="text-muted-foreground">{post.excerpt}</p>
                       </CardContent>
                       <CardFooter>
-                      <Button variant="link" className="p-0" onClick={() => setSelectedPost(post)}>Read More →</Button>
+ <Button variant="link" className="p-0" onClick={() => setSelectedPost(post)}>Read More →</Button>
                       </CardFooter>
                   </Card>
                   ))}
-              </div>
-              <div className="mt-12">
-                <div className="grid md:grid-cols-2 gap-8">
+ </div>
+ <div className="mt-12 p-4">
+ <div className="grid md:grid-cols-2 gap-8">
                   <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         Event Registration
-                        <Badge variant="secondary">Coming Soon</Badge>
+ <Badge variant="secondary">Coming Soon</Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground">Register for upcoming events and webinars directly from this portal.</p>
+ <p className="text-muted-foreground">Register for upcoming events and webinars directly from this portal.</p>
                     </CardContent>
                   </Card>
                   <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         Newsletter Subscription
-                        <Badge variant="secondary">Coming Soon</Badge>
+ <Badge variant="secondary">Coming Soon</Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground">Stay updated with the latest news and insights. Subscribe to our newsletter!</p>
+ <p className="text-muted-foreground">Stay updated with the latest news and insights. Subscribe to our newsletter!</p>
                     </CardContent>
                   </Card>
                 </div>

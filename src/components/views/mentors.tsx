@@ -102,7 +102,7 @@ export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubsc
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col">
+        <DialogContent className="sm:max-w-5xl flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center font-headline">Meet Our Expert Mentors</DialogTitle>
             <DialogDescription className="text-center">Learn from industry veterans who have been there and done that. Get guidance to transform your startup journey.</DialogDescription>
