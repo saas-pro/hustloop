@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -43,8 +44,8 @@ export type Incubator = {
 export const incubators: Incubator[] = [
   {
     name: "TechStars Bangalore",
-    image: "https://placehold.co/600x400.png",
-    hint: "science lab",
+    image: "https://source.unsplash.com/featured/600x400/?tech,office",
+    hint: "tech office",
     location: "Bangalore, India",
     rating: 5,
     reviews: 128,
@@ -92,8 +93,8 @@ export const incubators: Incubator[] = [
   },
   {
     name: "EcoInnovate Hub",
-    image: "https://placehold.co/600x400.png",
-    hint: "green technology",
+    image: "https://source.unsplash.com/featured/600x400/?sustainable,energy",
+    hint: "sustainable energy",
     location: "Chennai, India",
     rating: 4,
     reviews: 98,
@@ -140,8 +141,8 @@ export const incubators: Incubator[] = [
   },
   {
     name: "Creative Spark Collective",
-    image: "https://placehold.co/600x400.png",
-    hint: "art studio",
+    image: "https://source.unsplash.com/featured/600x400/?creative,workspace",
+    hint: "creative workspace",
     location: "Mumbai, India",
     rating: 5,
     reviews: 110,
@@ -200,8 +201,8 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6">
             <DialogTitle className="text-3xl font-bold text-center font-headline">Startup Incubation Hub</DialogTitle>
             <DialogDescription className="text-center">
               <span style={{ color: '#D4AF37' }}>"You Dream It. We Help Build It."</span>
@@ -209,7 +210,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
               Connect with leading incubators that provide the resources, mentorship, and ecosystem you need to transform your innovative ideas into successful ventures.
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-[70vh]">
+          <ScrollArea className="h-full px-6">
             <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
               {incubators.map((incubator, index) => {
                 return (
@@ -266,14 +267,12 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
           </ScrollArea>
         </DialogContent>
       </Dialog>
-      {selectedIncubator && (
-        <IncubatorDetails 
-          incubator={selectedIncubator} 
-          onOpenChange={(isOpen) => !isOpen && setSelectedIncubator(null)} 
-          isLoggedIn={isLoggedIn}
-          hasSubscription={hasSubscription}
-        />
-      )}
+      <IncubatorDetails 
+        incubator={selectedIncubator} 
+        onOpenChange={(isOpen) => !isOpen && setSelectedIncubator(null)} 
+        isLoggedIn={isLoggedIn}
+        hasSubscription={hasSubscription}
+      />
     </>
   );
 }

@@ -58,8 +58,8 @@ export default function MSMECollaborationDetails({
 
   return (
     <Dialog open={!!collaboration} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col">
-        <DialogHeader className="flex-row items-center gap-4">
+      <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-row items-center gap-4 p-6">
             <Image src={collaboration.logo} alt={`${collaboration.name} logo`} width={80} height={80} className="rounded-lg" data-ai-hint={collaboration.hint} />
             <div>
                 <DialogTitle className="text-3xl font-bold font-headline">{collaboration.name}</DialogTitle>
@@ -69,7 +69,7 @@ export default function MSMECollaborationDetails({
             </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-grow mt-4">
+        <ScrollArea className="flex-grow mt-4 px-6">
           <div className="space-y-12">
             
             <div>

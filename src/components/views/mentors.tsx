@@ -30,7 +30,7 @@ export type Mentor = {
 const mentors: Mentor[] = [
   {
     name: "Dr. Evelyn Reed",
-    avatar: "https://placehold.co/100x100.png",
+    avatar: "https://source.unsplash.com/featured/100x100/?woman,portrait&sig=1",
     hint: "woman portrait",
     title: "Ph.D. in AI, Ex-Googler",
     expertise: ["AI/ML", "Product Strategy", "Growth Hacking"],
@@ -49,7 +49,7 @@ const mentors: Mentor[] = [
   },
   {
     name: "Marcus Chen",
-    avatar: "https://placehold.co/100x100.png",
+    avatar: "https://source.unsplash.com/featured/100x100/?man,portrait&sig=2",
     hint: "man portrait",
     title: "Serial Entrepreneur, Fintech Expert",
     expertise: ["Fintech", "Blockchain", "Venture Capital"],
@@ -68,7 +68,7 @@ const mentors: Mentor[] = [
   },
   {
     name: "Aisha Khan",
-    avatar: "https://placehold.co/100x100.png",
+    avatar: "https://source.unsplash.com/featured/100x100/?woman,face&sig=3",
     hint: "woman face",
     title: "Marketing Guru, Brand Specialist",
     expertise: ["Branding", "Digital Marketing", "Storytelling"],
@@ -102,12 +102,12 @@ export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubsc
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl flex flex-col">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6">
             <DialogTitle className="text-3xl font-bold text-center font-headline">Meet Our Expert Mentors</DialogTitle>
             <DialogDescription className="text-center">Learn from industry veterans who have been there and done that. Get guidance to transform your startup journey.</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-full mt-4">
+          <ScrollArea className="h-full mt-4 px-6">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {mentors.map((mentor, index) => {
                 return (

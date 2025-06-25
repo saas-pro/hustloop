@@ -64,15 +64,15 @@ export default function MentorBookingModal({ mentor, onOpenChange, isLoggedIn, h
 
   return (
     <Dialog open={!!mentor} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6">
           <DialogTitle className="text-3xl font-bold font-headline">Schedule a Meeting</DialogTitle>
           <DialogDescription>
             Book a one-on-one session with {mentor.name}.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col md:flex-row flex-grow min-h-0 gap-8 mt-4">
+        <div className="flex flex-col md:flex-row flex-grow min-h-0 gap-8 mt-4 px-6 pb-6">
           {/* Left Panel: Mentor Info & Calendar */}
           <div className="w-full md:w-1/2 flex flex-col gap-6">
             <div className="flex items-center gap-4">

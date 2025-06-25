@@ -68,7 +68,7 @@ interface PricingViewProps {
 export default function PricingView({ isOpen, onOpenChange, onGetStartedClick }: PricingViewProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-6">
+      <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col">
         <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center font-headline">Our Pricing</DialogTitle>
             <DialogDescription className="text-center max-w-xl mx-auto">Choose a plan that's right for your startup. All plans are designed to help you succeed.</DialogDescription>

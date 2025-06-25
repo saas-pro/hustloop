@@ -74,19 +74,19 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 const dashboardMentors = [
   {
     name: "Dr. Evelyn Reed",
-    avatar: "https://placehold.co/100x100.png",
+    avatar: "https://source.unsplash.com/featured/100x100/?woman,portrait",
     hint: "woman portrait",
     lastSession: "April 15, 2024 - Topic: AI Product Strategy",
   },
   {
     name: "Marcus Chen",
-    avatar: "https://placehold.co/100x100.png",
+    avatar: "https://source.unsplash.com/featured/100x100/?man,portrait",
     hint: "man portrait",
     lastSession: "May 2, 2024 - Topic: Seed Funding Pitch Deck",
   },
   {
     name: "Aisha Khan",
-    avatar: "https://placehold.co/100x100.png",
+    avatar: "https://source.unsplash.com/featured/100x100/?woman,face",
     hint: "woman face",
     lastSession: "May 21, 2024 - Topic: Building a Brand Narrative",
   },
@@ -153,14 +153,14 @@ export default function DashboardView({ isOpen, onOpenChange, isLoggedIn, hasSub
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0">
+                <DialogHeader className="p-6">
                     <DialogTitle className="text-3xl font-bold font-headline">Dashboard</DialogTitle>
                     <DialogDescription>Welcome back! Here's an overview of your startup journey.</DialogDescription>
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0">
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0">
-                        <TabsList className="grid h-auto w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                        <TabsList className="grid h-auto w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 mx-6">
                             <TabsTrigger value="overview">
                                 <LayoutDashboard className="mr-2 h-4 w-4" /> Overview
                             </TabsTrigger>
@@ -180,7 +180,7 @@ export default function DashboardView({ isOpen, onOpenChange, isLoggedIn, hasSub
                                 <Settings className="mr-2 h-4 w-4" /> Settings
                             </TabsTrigger>
                         </TabsList>
-                        <ScrollArea className="flex-grow mt-4">
+                        <ScrollArea className="flex-grow mt-4 px-6">
                             <TabsContent value="overview" className="mt-0 space-y-6">
                                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">

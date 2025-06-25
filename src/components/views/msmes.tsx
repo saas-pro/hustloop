@@ -51,8 +51,8 @@ export type MSMECollaboration = {
 const corporateChallenges: CorporateChallenge[] = [
   {
     company: "Nexus Corp",
-    logo: "https://placehold.co/100x100.png",
-    hint: "corporate logo",
+    logo: "https://source.unsplash.com/featured/100x100/?corporate,building",
+    hint: "corporate building",
     title: "AI-Powered Logistics Optimization",
     reward: "₹5,00,000",
     description: "Develop an AI model to optimize our last-mile delivery routes, reducing fuel consumption and delivery times.",
@@ -68,8 +68,8 @@ const corporateChallenges: CorporateChallenge[] = [
   },
   {
     company: "Future Retail",
-    logo: "https://placehold.co/100x100.png",
-    hint: "retail logo",
+    logo: "https://source.unsplash.com/featured/100x100/?modern,storefront",
+    hint: "modern storefront",
     title: "Gamified Customer Loyalty Platform",
     reward: "₹3,50,000",
     description: "Create an engaging, game-like loyalty program to increase customer retention and in-store traffic.",
@@ -85,8 +85,8 @@ const corporateChallenges: CorporateChallenge[] = [
   },
   {
     company: "HealthWell Pharma",
-    logo: "https://placehold.co/100x100.png",
-    hint: "pharma logo",
+    logo: "https://source.unsplash.com/featured/100x100/?science,laboratory",
+    hint: "science laboratory",
     title: "IoT Smart Packaging for Medication",
     reward: "₹7,00,000",
     description: "Design smart packaging that monitors temperature and reminds patients to take their medication.",
@@ -102,8 +102,8 @@ const corporateChallenges: CorporateChallenge[] = [
   },
   {
     company: "EcoSustain",
-    logo: "https://placehold.co/100x100.png",
-    hint: "sustainability logo",
+    logo: "https://source.unsplash.com/featured/100x100/?green,factory",
+    hint: "green factory",
     title: "Circular Economy Waste Reduction",
     reward: "Partnership",
     description: "Propose a scalable solution to upcycle industrial waste into consumer products.",
@@ -119,8 +119,8 @@ const corporateChallenges: CorporateChallenge[] = [
   },
   {
     company: "FinSecure Bank",
-    logo: "https://placehold.co/100x100.png",
-    hint: "bank logo",
+    logo: "https://source.unsplash.com/featured/100x100/?bank,building",
+    hint: "bank building",
     title: "AI for Fraud Detection",
     reward: "₹8,00,000",
     description: "Build a real-time fraud detection system for digital transactions using machine learning.",
@@ -136,8 +136,8 @@ const corporateChallenges: CorporateChallenge[] = [
   },
   {
     company: "LearnSphere",
-    logo: "https://placehold.co/100x100.png",
-    hint: "education logo",
+    logo: "https://source.unsplash.com/featured/100x100/?modern,classroom",
+    hint: "modern classroom",
     title: "Personalized Learning Paths",
     reward: "₹4,00,000",
     description: "Create an adaptive learning platform that generates personalized study paths for K-12 students.",
@@ -156,8 +156,8 @@ const corporateChallenges: CorporateChallenge[] = [
 export const msmeCollaborations: MSMECollaboration[] = [
   {
     name: "Artisan Co-op",
-    logo: "https://placehold.co/100x100.png",
-    hint: "handmade crafts",
+    logo: "https://source.unsplash.com/featured/100x100/?artisan,workshop",
+    hint: "artisan workshop",
     sector: "Handicrafts",
     description: "Seeking collaborators for digital marketing and e-commerce expansion to reach a global audience.",
     details: {
@@ -178,8 +178,8 @@ export const msmeCollaborations: MSMECollaboration[] = [
   },
   {
     name: "GreenLeaf Organics",
-    logo: "https://placehold.co/100x100.png",
-    hint: "organic farm",
+    logo: "https://source.unsplash.com/featured/100x100/?organic,farming",
+    hint: "organic farming",
     sector: "Agriculture",
     description: "Looking for partners in sustainable packaging and cold-chain logistics to reduce spoilage.",
     details: {
@@ -200,8 +200,8 @@ export const msmeCollaborations: MSMECollaboration[] = [
   },
   {
     name: "TechFix Solutions",
-    logo: "https://placehold.co/100x100.png",
-    hint: "computer repair",
+    logo: "https://source.unsplash.com/featured/100x100/?computer,hardware",
+    hint: "computer hardware",
     sector: "IT Services",
     description: "Open to collaborations with hardware suppliers and B2B clients for annual maintenance contracts.",
     details: {
@@ -222,7 +222,7 @@ export const msmeCollaborations: MSMECollaboration[] = [
   },
   {
     name: "The Book Nook",
-    logo: "https://placehold.co/100x100.png",
+    logo: "https://source.unsplash.com/featured/100x100/?cozy,bookstore",
     hint: "cozy bookstore",
     sector: "Retail",
     description: "Interested in partnering with local authors for book signing events and community workshops.",
@@ -244,7 +244,7 @@ export const msmeCollaborations: MSMECollaboration[] = [
   },
   {
     name: "Spice Route Foods",
-    logo: "https://placehold.co/100x100.png",
+    logo: "https://source.unsplash.com/featured/100x100/?spice,market",
     hint: "spice market",
     sector: "Food & Beverage",
     description: "Seeking a tech partner to create a direct-to-consumer subscription box service.",
@@ -266,8 +266,8 @@ export const msmeCollaborations: MSMECollaboration[] = [
   },
   {
     name: "Classic Weaves",
-    logo: "https://placehold.co/100x100.png",
-    hint: "textile loom",
+    logo: "https://source.unsplash.com/featured/100x100/?textile,weaving",
+    hint: "textile weaving",
     sector: "Textiles",
     description: "Looking for fashion tech startups to collaborate on a new line of smart fabrics.",
     details: {
@@ -302,8 +302,8 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6">
             <DialogTitle className="text-3xl font-bold text-center font-headline">Innovation & Growth Opportunities</DialogTitle>
             <DialogDescription className="text-center">
               <span style={{ color: '#D4AF37' }}>"Empowering MSMEs for Success"</span>
@@ -312,7 +312,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
               </span>
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-full mt-4">
+          <ScrollArea className="h-full mt-4 px-6">
             <div className="space-y-12">
               <section>
                 <h2 className="text-2xl font-bold font-headline mb-6">Corporate Challenges</h2>
