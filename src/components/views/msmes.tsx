@@ -5,11 +5,11 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CorporateChallengeDetails from "./corporate-challenge-details";
 import MSMECollaborationDetails from "./msme-collaboration-details";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 export type CorporateChallenge = {
@@ -312,66 +312,63 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
               </span>
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-full mt-4 px-6">
-            <div className="space-y-12">
-              <section>
-                <h2 className="text-2xl font-bold font-headline mb-6">Corporate Challenges</h2>
-                <div className="pb-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          
+          <Tabs defaultValue="challenges" className="flex flex-col flex-grow min-h-0 px-6 pb-6">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="challenges">Corporate Challenges</TabsTrigger>
+                <TabsTrigger value="collaborations">MSME Collaboration</TabsTrigger>
+            </TabsList>
+            <TabsContent value="challenges" className="mt-4 flex-1 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pr-3">
                     {corporateChallenges.map((challenge, index) => (
-                      <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
+                    <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
                         <CardHeader>
-                          <div className="flex items-center gap-4">
-                              <Image src={challenge.logo} alt={`${challenge.company} logo`} width={60} height={60} className="rounded-lg" data-ai-hint={challenge.hint} />
-                              <div>
-                                  <CardTitle className="text-base whitespace-normal">{challenge.title}</CardTitle>
-                                  <CardDescription>{challenge.company}</CardDescription>
-                              </div>
-                          </div>
+                        <div className="flex items-center gap-4">
+                            <Image src={challenge.logo} alt={`${challenge.company} logo`} width={60} height={60} className="rounded-lg" data-ai-hint={challenge.hint} />
+                            <div>
+                                <CardTitle className="text-base">{challenge.title}</CardTitle>
+                                <CardDescription>{challenge.company}</CardDescription>
+                            </div>
+                        </div>
                         </CardHeader>
                         <CardContent className="flex-grow">
-                          <p className="text-sm text-muted-foreground whitespace-normal">{challenge.description}</p>
+                        <p className="text-sm text-muted-foreground">{challenge.description}</p>
                         </CardContent>
                         <CardFooter className="flex-col items-start space-y-2">
-                          <Badge variant="outline">Reward: {challenge.reward}</Badge>
-                          <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setSelectedChallenge(challenge)}>
-                              View Challenge
-                          </Button>
+                        <Badge variant="outline">Reward: {challenge.reward}</Badge>
+                        <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setSelectedChallenge(challenge)}>
+                            View Challenge
+                        </Button>
                         </CardFooter>
-                      </Card>
+                    </Card>
                     ))}
-                  </div>
                 </div>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-bold font-headline mb-6">MSME Collaboration</h2>
-                <div className="pb-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            </TabsContent>
+            <TabsContent value="collaborations" className="mt-4 flex-1 overflow-y-auto">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pr-3">
                     {msmeCollaborations.map((msme, index) => (
-                      <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
+                    <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
                         <CardHeader>
                             <div className="flex items-center gap-4">
                                 <Image src={msme.logo} alt={`${msme.name} logo`} width={60} height={60} className="rounded-full" data-ai-hint={msme.hint} />
                                 <div>
-                                    <CardTitle className="text-base whitespace-normal">{msme.name}</CardTitle>
+                                    <CardTitle className="text-base">{msme.name}</CardTitle>
                                     <CardDescription>{msme.sector}</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow">
-                            <p className="text-sm text-muted-foreground whitespace-normal">{msme.description}</p>
+                            <p className="text-sm text-muted-foreground">{msme.description}</p>
                         </CardContent>
                         <CardFooter>
                             <Button variant="outline" className="w-full" onClick={() => setSelectedCollaboration(msme)}>Connect</Button>
                         </CardFooter>
-                      </Card>
+                    </Card>
                     ))}
-                  </div>
                 </div>
-              </section>
-            </div>
-          </ScrollArea>
+            </TabsContent>
+          </Tabs>
+
         </DialogContent>
       </Dialog>
       <CorporateChallengeDetails 
@@ -389,3 +386,5 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
     </>
   );
 }
+
+    
