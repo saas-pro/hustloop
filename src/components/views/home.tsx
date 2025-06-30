@@ -101,26 +101,29 @@ const additionalBenefits = [
 
 const PathTimeline = ({ steps }: { steps: typeof pathsData.incubation.steps }) => {
   return (
-    <div className="relative mt-16 px-4">
-      {/* Vertical line for desktop */}
-      <div className="absolute top-0 left-1/2 w-0.5 h-full bg-border -translate-x-1/2 hidden md:block"></div>
+    <div className="relative mt-16 md:px-4">
+      {/* Vertical line for all screens, but positioned differently */}
+      <div className="absolute top-0 left-6 md:left-1/2 w-0.5 h-full bg-border -translate-x-1/2"></div>
 
       {steps.map((step, index) => (
-        <div key={index} className="relative mb-12 md:mb-0">
-          {/* Dot */}
-          <div className="hidden md:block absolute left-1/2 top-9 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-primary ring-4 ring-background z-10"></div>
+        <div key={index} className="relative mb-8 md:mb-0">
+          {/* Dot for all screens, positioned differently */}
+          <div className="absolute left-6 md:left-1/2 top-9 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-primary ring-4 ring-background z-10"></div>
           
           <div className={cn(
-            "md:flex items-center",
+            "flex items-center",
             step.side === 'left' ? 'md:flex-row-reverse' : 'md:flex-row'
           )}>
-            <div className="md:w-1/2"></div>
-            <div className="md:w-1/2 md:px-8 py-4">
-              <Card className={cn(
-                "p-4 bg-card/70 backdrop-blur-sm border-border/50 max-w-md w-full",
-                step.side === 'left' && "md:ml-auto",
-                step.isFinal && "bg-yellow-400/20 border-yellow-500"
-              )}>
+            <div className="md:w-1/2"></div> {/* Spacer for desktop */}
+            <div className="w-full pl-12 pr-4 md:w-1/2 md:px-8 py-4">
+              <Card 
+                className={cn(
+                  "p-4 bg-card/70 backdrop-blur-sm border-border/50 max-w-md w-full scroll-anim",
+                  step.side === 'left' && "md:ml-auto",
+                  step.isFinal && "bg-yellow-400/20 border-yellow-500"
+                )} 
+                style={{ animationDelay: `${index * 0.15}s` }}
+              >
                 <div className={cn("flex items-center gap-4", step.side === 'left' ? 'md:flex-row-reverse' : 'md:flex-row')}>
                   <div className="bg-primary p-3 rounded-full text-primary-foreground shrink-0">
                     {React.cloneElement(step.icon, { className: 'h-6 w-6' })}
@@ -138,6 +141,7 @@ const PathTimeline = ({ steps }: { steps: typeof pathsData.incubation.steps }) =
     </div>
   );
 };
+
 
 interface HomeViewProps {
   setActiveView: (view: View) => void;
@@ -212,7 +216,7 @@ export default function HomeView({ setActiveView, theme }: HomeViewProps) {
             <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-12">
               Whether you need incubation, a market for your solution, or a strategic partnership, we have a tailored path for you.
             </p>
-            <div className="flex justify-center gap-2 mt-8">
+            <div className="flex flex-wrap justify-center gap-2 mt-8">
               <Button size="lg" variant={activePath === 'incubation' ? 'default' : 'outline'} onClick={() => setActivePath('incubation')}>Incubation</Button>
               <Button size="lg" variant={activePath === 'marketSolution' ? 'default' : 'outline'} onClick={() => setActivePath('marketSolution')}>Market Solution</Button>
               <Button size="lg" variant={activePath === 'partnership' ? 'default' : 'outline'} onClick={() => setActivePath('partnership')}>Partnership</Button>
