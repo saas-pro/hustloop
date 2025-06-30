@@ -46,10 +46,21 @@ export default function Home() {
   const [hasUsedFreeSession, setHasUsedFreeSession] = useState(false);
   const { toast } = useToast();
   
-  // This effect runs once on mount to set the initial theme from localStorage
+  // This effect runs once on mount to set the initial theme and login state from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     setTheme(savedTheme || 'dark');
+    
+    const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
+    const savedUserRole = localStorage.getItem('userRole') as UserRole | null;
+
+    if (savedIsLoggedIn === 'true' && savedUserRole) {
+      setLoggedIn(true);
+      setUserRole(savedUserRole);
+      // For prototype purposes, re-check subscription status if needed
+      setHasSubscription(false);
+      setHasUsedFreeSession(false);
+    }
   }, []);
 
   // This effect runs whenever the theme changes to update the DOM and localStorage
@@ -72,6 +83,9 @@ export default function Home() {
   const handleLoginSuccess = (role: UserRole) => {
     setLoggedIn(true);
     setUserRole(role);
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userRole', role);
+
     // In a real app, you would fetch subscription status here.
     // For this prototype, we'll keep it false to show the tooltip.
     setHasSubscription(false);
@@ -83,6 +97,8 @@ export default function Home() {
     setLoggedIn(false);
     setUserRole(null);
     setHasSubscription(false);
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
     setActiveView('home');
   };
 

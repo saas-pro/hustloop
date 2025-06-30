@@ -1,6 +1,10 @@
 
 "use client";
 
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -8,7 +12,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Phone, Mail, Send, Linkedin, Twitter, Github, Facebook, Instagram } from "lucide-react";
+import { MapPin, Phone, Mail, Send, Linkedin, Twitter, Github, Facebook, Instagram, Loader2 } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+
+const contactFormSchema = z.object({
+    fullName: z.string().min(2, "Full name must be at least 2 characters."),
+    email: z.string().email("Please enter a valid email address."),
+    phone: z.string().optional(),
+    subject: z.string({ required_error: "Please select a subject." }),
+    message: z.string().min(10, "Message must be at least 10 characters.").max(500, "Message must not exceed 500 characters."),
+});
+
+type ContactFormValues = z.infer<typeof contactFormSchema>;
+
 
 interface ContactViewProps {
   isOpen: boolean;
@@ -16,6 +33,24 @@ interface ContactViewProps {
 }
 
 export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) {
+  const { toast } = useToast();
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: { fullName: "", email: "", phone: "", message: "" },
+  });
+
+  const { formState: { isSubmitting } } = form;
+
+  async function onSubmit(data: ContactFormValues) {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    toast({
+        title: "Message Sent!",
+        description: "Thank you for reaching out. We'll get back to you shortly.",
+    });
+    form.reset();
+  }
+    
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
@@ -83,42 +118,84 @@ export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) 
 
                     {/* Right side: Contact Form */}
                     <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg p-8 shadow-lg">
-                        <form className="space-y-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="full-name">Full Name</Label>
-                                <Input id="full-name" placeholder="Enter your full name" />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email Address</Label>
-                                <Input id="email" type="email" placeholder="Enter your email address" />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <Input id="phone" type="tel" placeholder="Enter your phone number" />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="subject">Subject</Label>
-                                <Select>
-                                    <SelectTrigger id="subject">
-                                        <SelectValue placeholder="Select a subject" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="general">General Inquiry</SelectItem>
-                                        <SelectItem value="mentorship">Mentorship Programs</SelectItem>
-                                        <SelectItem value="incubation">Incubation Support</SelectItem>
-                                        <SelectItem value="msme">MSME Partnerships</SelectItem>
-                                        <SelectItem value="support">Support</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="message">Message</Label>
-                                <Textarea id="message" placeholder="How can we help you?" rows={4} />
-                            </div>
-                            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                                <Send className="mr-2 h-4 w-4" /> Send Message
-                            </Button>
-                        </form>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                <FormField
+                                    control={form.control}
+                                    name="fullName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Full Name</FormLabel>
+                                            <FormControl><Input placeholder="Enter your full name" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Email Address</FormLabel>
+                                            <FormControl><Input type="email" placeholder="Enter your email address" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="phone"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Phone Number (Optional)</FormLabel>
+                                            <FormControl><Input type="tel" placeholder="Enter your phone number" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="subject"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Subject</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger><SelectValue placeholder="Select a subject" /></SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="general">General Inquiry</SelectItem>
+                                                    <SelectItem value="mentorship">Mentorship Programs</SelectItem>
+                                                    <SelectItem value="incubation">Incubation Support</SelectItem>
+                                                    <SelectItem value="msme">MSME Partnerships</SelectItem>
+                                                    <SelectItem value="support">Support</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="message"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Message</FormLabel>
+                                            <FormControl><Textarea placeholder="How can we help you?" rows={4} {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>
+                                    {isSubmitting ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Send className="mr-2 h-4 w-4" />
+                                    )}
+                                    {isSubmitting ? 'Sending...' : 'Send Message'}
+                                </Button>
+                            </form>
+                        </Form>
                     </div>
                 </div>
             </div>
