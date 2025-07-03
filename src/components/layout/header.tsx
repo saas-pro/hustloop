@@ -4,7 +4,7 @@
 import type { View } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Rocket, LogOut, UserCircle, Menu, Sun, Moon } from "lucide-react";
+import { Rocket, LogOut, UserCircle, Menu, Sun, Moon, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 
 interface HeaderProps {
@@ -14,6 +14,7 @@ interface HeaderProps {
   onLogout: () => void;
   theme: 'light' | 'dark' | null;
   setTheme: (theme: 'light' | 'dark') => void;
+  isLoading: boolean;
 }
 
 const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
@@ -26,7 +27,7 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
   { id: "education", label: "Education" },
 ];
 
-export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, theme, setTheme }: HeaderProps) {
+export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, theme, setTheme, isLoading }: HeaderProps) {
   
   const toggleTheme = () => {
     if (theme) {
@@ -76,7 +77,9 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-2">
-            {isLoggedIn ? (
+            {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            ) : isLoggedIn ? (
               <>
                 <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
                   <UserCircle className="h-6 w-6" />
@@ -136,7 +139,11 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     ))}
                 </nav>
                 <div className="absolute bottom-6 left-6 right-6">
-                  {isLoggedIn ? (
+                  {isLoading ? (
+                      <div className="flex justify-center">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                  ) : isLoggedIn ? (
                     <div className="flex items-center justify-between">
                          <SheetClose asChild>
                             <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
@@ -150,7 +157,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                             </Button>
                         </SheetClose>
                     </div>
-                ) : (
+                  ) : (
                     <div className="flex flex-col gap-2">
                         <SheetClose asChild>
                             <Button className="w-full" onClick={() => setActiveView('login')}>Login</Button>
@@ -159,7 +166,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                             <Button variant="secondary" className="w-full" onClick={() => setActiveView('signup')}>Sign Up</Button>
                         </SheetClose>
                     </div>
-                )}
+                  )}
                 </div>
               </SheetContent>
             </Sheet>

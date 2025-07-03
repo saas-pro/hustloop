@@ -10,6 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import CorporateChallengeDetails from "./corporate-challenge-details";
 import MSMECollaborationDetails from "./msme-collaboration-details";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Lock } from "lucide-react";
+import type { View } from "@/app/types";
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
 
 export type CorporateChallenge = {
@@ -293,11 +297,47 @@ interface MsmesViewProps {
   onOpenChange: (isOpen: boolean) => void;
   isLoggedIn: boolean;
   hasSubscription: boolean;
+  setActiveView: (view: View) => void;
 }
 
-export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscription }: MsmesViewProps) {
+const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: View) => void, contentType: string }) => (
+    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+        <Lock className="h-16 w-16 text-primary mb-6" />
+        <h3 className="text-2xl font-bold mb-2">Content Locked</h3>
+        <p className="max-w-md mx-auto text-muted-foreground mb-6">
+            Please log in or sign up to view available {contentType}.
+        </p>
+        <div className="flex gap-4">
+            <Button onClick={() => setActiveView('login')}>Login</Button>
+            <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              Sign Up
+            </Button>
+        </div>
+    </div>
+);
+
+
+export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscription, setActiveView }: MsmesViewProps) {
   const [selectedChallenge, setSelectedChallenge] = useState<CorporateChallenge | null>(null);
   const [selectedCollaboration, setSelectedCollaboration] = useState<MSMECollaboration | null>(null);
+  const { toast } = useToast();
+
+  const handleViewDetails = (type: 'challenge' | 'collaboration', item: any) => {
+    if (hasSubscription) {
+      if (type === 'challenge') setSelectedChallenge(item);
+      if (type === 'collaboration') setSelectedCollaboration(item);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Subscription Required",
+        description: "You need an active subscription to view full details and engage with MSMEs.",
+        action: <ToastAction altText="Upgrade" onClick={() => {
+            onOpenChange(false);
+            setActiveView('pricing');
+        }}>Upgrade Plan</ToastAction>,
+      });
+    }
+  };
 
   return (
     <>
@@ -313,13 +353,18 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs defaultValue="challenges" className="flex flex-col flex-grow min-h-0 px-6 pb-6">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="challenges">Corporate Challenges</TabsTrigger>
-                <TabsTrigger value="collaborations">MSME Collaboration</TabsTrigger>
-            </TabsList>
-            <TabsContent value="challenges" className="mt-4 flex-1 overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pr-3">
+          {!isLoggedIn ? (
+             <div className="flex-grow flex items-center justify-center px-6 pb-6">
+                <LoginPrompt setActiveView={setActiveView} contentType="challenges and collaborations" />
+            </div>
+          ) : (
+            <Tabs defaultValue="challenges" className="flex flex-col flex-grow min-h-0 px-6 pb-6">
+              <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="challenges">Corporate Challenges</TabsTrigger>
+                  <TabsTrigger value="collaborations">MSME Collaboration</TabsTrigger>
+              </TabsList>
+              <TabsContent value="challenges" className="mt-4 flex-1 overflow-y-auto pr-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {corporateChallenges.map((challenge, index) => (
                     <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
                         <CardHeader>
@@ -336,16 +381,16 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                         </CardContent>
                         <CardFooter className="flex-col items-start space-y-2">
                         <Badge variant="outline">Reward: {challenge.reward}</Badge>
-                        <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setSelectedChallenge(challenge)}>
+                        <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => handleViewDetails('challenge', challenge)}>
                             View Challenge
                         </Button>
                         </CardFooter>
                     </Card>
                     ))}
                 </div>
-            </TabsContent>
-            <TabsContent value="collaborations" className="mt-4 flex-1 overflow-y-auto">
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pr-3">
+              </TabsContent>
+              <TabsContent value="collaborations" className="mt-4 flex-1 overflow-y-auto pr-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {msmeCollaborations.map((msme, index) => (
                     <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
                         <CardHeader>
@@ -361,14 +406,14 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                             <p className="text-sm text-muted-foreground">{msme.description}</p>
                         </CardContent>
                         <CardFooter>
-                            <Button variant="outline" className="w-full" onClick={() => setSelectedCollaboration(msme)}>Connect</Button>
+                            <Button variant="outline" className="w-full" onClick={() => handleViewDetails('collaboration', msme)}>Connect</Button>
                         </CardFooter>
                     </Card>
                     ))}
                 </div>
-            </TabsContent>
-          </Tabs>
-
+              </TabsContent>
+            </Tabs>
+          )}
         </DialogContent>
       </Dialog>
       <CorporateChallengeDetails 
@@ -386,5 +431,3 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
     </>
   );
 }
-
-    

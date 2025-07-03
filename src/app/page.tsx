@@ -44,7 +44,9 @@ export default function Home() {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [hasSubscription, setHasSubscription] = useState(false);
   const [hasUsedFreeSession, setHasUsedFreeSession] = useState(false);
+  const [appliedPrograms, setAppliedPrograms] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
   
   // This effect runs once on mount to set the initial theme and login state from localStorage
   useEffect(() => {
@@ -53,14 +55,19 @@ export default function Home() {
     
     const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
     const savedUserRole = localStorage.getItem('userRole') as UserRole | null;
+    const savedSubscription = localStorage.getItem('hasSubscription');
+    const savedAppliedPrograms = localStorage.getItem('appliedPrograms');
 
     if (savedIsLoggedIn === 'true' && savedUserRole) {
       setLoggedIn(true);
       setUserRole(savedUserRole);
-      // For prototype purposes, re-check subscription status if needed
-      setHasSubscription(false);
+      setHasSubscription(savedSubscription === 'true');
       setHasUsedFreeSession(false);
+      if (savedAppliedPrograms) {
+        setAppliedPrograms(JSON.parse(savedAppliedPrograms));
+      }
     }
+    setIsLoading(false);
   }, []);
 
   // This effect runs whenever the theme changes to update the DOM and localStorage
@@ -86,9 +93,9 @@ export default function Home() {
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userRole', role);
 
-    // In a real app, you would fetch subscription status here.
-    // For this prototype, we'll keep it false to show the tooltip.
-    setHasSubscription(false);
+    // For prototype purposes, we check subscription status from localStorage as well.
+    const savedSubscription = localStorage.getItem('hasSubscription');
+    setHasSubscription(savedSubscription === 'true');
     setHasUsedFreeSession(false); // Reset for prototype testing
     setActiveView('dashboard');
   };
@@ -97,8 +104,11 @@ export default function Home() {
     setLoggedIn(false);
     setUserRole(null);
     setHasSubscription(false);
+    setAppliedPrograms({});
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userRole');
+    localStorage.removeItem('hasSubscription');
+    localStorage.removeItem('appliedPrograms');
     setActiveView('home');
   };
 
@@ -113,18 +123,33 @@ export default function Home() {
   };
   
   const handleGetStartedOnPricing = () => {
-    // If user is logged in, show a "coming soon" message for the payment feature.
-    // Otherwise, direct them to log in.
+    // If user is logged in, simulate a subscription purchase.
+    // Otherwise, direct them to sign up.
     if (isLoggedIn) {
+      setHasSubscription(true);
+      localStorage.setItem('hasSubscription', 'true');
       toast({
-        title: "Coming Soon",
-        description: "Payment integration is coming soon.",
+        title: "Subscription Activated!",
+        description: "You now have full access to all premium features.",
       });
-      // Close the pricing modal after showing the message.
       setActiveView('home');
     } else {
-      setActiveView('login');
+      setActiveView('signup');
     }
+  };
+  
+  const handleEducationApplicationSuccess = (programTitle: string, session: { language: string, date: string, time: string }) => {
+    const newAppliedPrograms = {
+      ...appliedPrograms,
+      [programTitle]: `${session.date}, ${session.time}`
+    };
+    setAppliedPrograms(newAppliedPrograms);
+    localStorage.setItem('appliedPrograms', JSON.stringify(newAppliedPrograms));
+
+    toast({
+      title: "Application Successful!",
+      description: `You've applied for ${programTitle} on ${session.date} at ${session.time}. A calendar invite has been sent to your email.`,
+    });
   };
 
   const renderDashboard = () => {
@@ -177,6 +202,7 @@ export default function Home() {
         onLogout={handleLogout}
         theme={theme}
         setTheme={setTheme}
+        isLoading={isLoading}
       />
       <main className="flex-grow">
         <HomeView setActiveView={setActiveView} theme={theme} />
@@ -192,6 +218,7 @@ export default function Home() {
         hasSubscription={hasSubscription}
         hasUsedFreeSession={hasUsedFreeSession}
         onBookingSuccess={handleBookingSuccess}
+        setActiveView={setActiveView}
       />}
       
       {activeView === 'incubators' && <IncubatorsView 
@@ -199,6 +226,7 @@ export default function Home() {
         onOpenChange={handleModalOpenChange('incubators')} 
         isLoggedIn={isLoggedIn}
         hasSubscription={hasSubscription}
+        setActiveView={setActiveView}
       />}
       
       {activeView === 'pricing' && <PricingView 
@@ -212,12 +240,16 @@ export default function Home() {
         onOpenChange={handleModalOpenChange('msmes')}
         isLoggedIn={isLoggedIn}
         hasSubscription={hasSubscription}
+        setActiveView={setActiveView}
       />}
       
       {activeView === 'education' && <EducationView 
         isOpen={true} 
         onOpenChange={handleModalOpenChange('education')} 
-        onApplyClick={() => setActiveView('login')}
+        onApplicationSuccess={handleEducationApplicationSuccess}
+        isLoggedIn={isLoggedIn}
+        setActiveView={setActiveView}
+        appliedPrograms={appliedPrograms}
       />}
       
       {renderDashboard()}

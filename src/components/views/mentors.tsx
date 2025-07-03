@@ -10,6 +10,7 @@ import { Star, Linkedin, CalendarPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import MentorBookingModal from "@/components/views/mentor-booking-modal";
+import type { View } from "@/app/types";
 
 export type Mentor = {
   name: string;
@@ -94,11 +95,20 @@ interface MentorsViewProps {
   hasSubscription: boolean;
   hasUsedFreeSession: boolean;
   onBookingSuccess: (mentorName: string, date: Date, time: string) => void;
+  setActiveView: (view: View) => void;
 }
 
-export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubscription, hasUsedFreeSession, onBookingSuccess }: MentorsViewProps) {
+export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubscription, hasUsedFreeSession, onBookingSuccess, setActiveView }: MentorsViewProps) {
   const [bookingMentor, setBookingMentor] = useState<Mentor | null>(null);
   
+  const handleScheduleClick = (mentor: Mentor) => {
+    if (isLoggedIn) {
+      setBookingMentor(mentor);
+    } else {
+      setActiveView('login');
+    }
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -148,7 +158,7 @@ export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubsc
                       </p>
                     </CardContent>
                     <CardFooter>
-                      <Button variant="outline" className="w-full" onClick={() => setBookingMentor(mentor)}>
+                      <Button variant="outline" className="w-full" onClick={() => handleScheduleClick(mentor)}>
                           <CalendarPlus className="mr-2 h-4 w-4" />
                           Schedule Meeting
                       </Button>
