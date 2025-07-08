@@ -97,7 +97,7 @@ export default function MentorDashboardView({ isOpen, onOpenChange }: MentorDash
         defaultValues: {
             firstName: "Mentor",
             lastName: "User",
-            email: "mentor@nexus.com",
+            email: "mentor@hustloop.com",
             paymentMethod: "bank",
             paypalEmail: "",
             accountHolder: "Mentor User",

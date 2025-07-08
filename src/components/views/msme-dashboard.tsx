@@ -132,7 +132,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
         defaultValues: {
             firstName: "MSME",
             lastName: "User",
-            email: "msme@nexus.com",
+            email: "msme@hustloop.com",
         },
     });
 

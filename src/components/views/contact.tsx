@@ -56,7 +56,7 @@ export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) 
       <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
         <ScrollArea className="h-full">
             <div className="p-8 md:p-12">
-                <h1 className="text-4xl md:text-5xl font-bold text-center mb-12 font-headline" style={{ color: '#D4AF37' }}>
+                <h1 className="text-4xl md:text-5xl font-bold text-center mb-12 font-headline" style={{ color: '#facc15' }}>
                     WHERE VISION MEETS OPPORTUNITY
                 </h1>
 
@@ -92,7 +92,7 @@ export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) 
                                 <Mail className="h-6 w-6 text-primary mt-1" />
                                 <div>
                                     <h3 className="text-lg font-semibold">Email Us</h3>
-                                    <p className="text-muted-foreground">contact@planformoney.com</p>
+                                    <p className="text-muted-foreground">contact@hustloop.com</p>
                                 </div>
                             </div>
                         </div>

@@ -1,4 +1,5 @@
-import { Rocket, Linkedin, Github } from "lucide-react";
+import { Linkedin, Github } from "lucide-react";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -6,12 +7,23 @@ export default function Footer() {
       <div className="container mx-auto py-6 px-4">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <Rocket className="h-6 w-6 text-primary" />
-            <span className="text-lg font-bold text-primary">Nexus Platform</span>
+            <div
+              className="logo-container" 
+              style={{'--logo-size': '1.75rem'} as React.CSSProperties}
+            >
+              <Image src="/logo.png" alt="Hustloop Logo" width={32} height={32} className="h-8 w-8 logo-image" />
+            </div>
+            <span className="text-xl font-headline" style={{ color: '#D4AF37' }}>hustl<span className="text-2xl align-middle font-bold">∞</span>p</span>
           </div>
-          <p className="text-sm text-muted-foreground order-last sm:order-none">
-            &copy; {new Date().getFullYear()} Nexus Platform. All rights reserved.
-          </p>
+          <div className="text-center order-last sm:order-none">
+            <p className="text-sm text-muted-foreground">
+              &copy; {new Date().getFullYear()} hustloop. All rights reserved.
+            </p>
+            <div className="flex gap-4 justify-center mt-2">
+              <a href="#" className="text-xs text-muted-foreground hover:text-primary transition-colors">Terms of Service</a>
+              <a href="#" className="text-xs text-muted-foreground hover:text-primary transition-colors">Privacy Policy</a>
+            </div>
+          </div>
           <div className="flex items-center gap-4">
             <a href="#" aria-label="X" className="text-muted-foreground hover:text-primary transition-colors">
               <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current">

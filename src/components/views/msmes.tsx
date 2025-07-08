@@ -54,20 +54,20 @@ export type MSMECollaboration = {
 
 const corporateChallenges: CorporateChallenge[] = [
   {
-    company: "Nexus Corp",
+    company: "Miee Corp",
     logo: "https://source.unsplash.com/featured/100x100/?corporate,building",
     hint: "corporate building",
     title: "AI-Powered Logistics Optimization",
     reward: "₹5,00,000",
     description: "Develop an AI model to optimize our last-mile delivery routes, reducing fuel consumption and delivery times.",
     details: {
-      about: "The Nexus Corp Grand Challenge is a pioneering initiative to encourage Deep Tech Startups to build indigenous solutions for optimizing supply chain and logistics. We are seeking innovative AI-driven products to revolutionize national delivery networks.",
+      about: "The Miee Corp Grand Challenge is a pioneering initiative to encourage Deep Tech Startups to build indigenous solutions for optimizing supply chain and logistics. We are seeking innovative AI-driven products to revolutionize national delivery networks.",
       problemStatements: 12,
       stages: 3,
       rewardPerStatement: "Up to ₹5 Lakh",
       mission: "To nurture and develop AI solutions that address key challenges in logistics, predictive analytics, route optimization, and warehouse automation, thereby enhancing efficiency and reducing costs.",
       participation: "Indian Startups and Student Groups working in artificial intelligence, data science, and logistics technology who are capable of providing innovative, scalable solutions.",
-      rewards: "Total Prizes worth ₹1.5 Crore. Winning teams with promising solutions are eligible for a post-challenge contract and integration into Nexus Corp's logistics network."
+      rewards: "Total Prizes worth ₹1.5 Crore. Winning teams with promising solutions are eligible for a post-challenge contract and integration into Miee Corp's logistics network."
     }
   },
   {

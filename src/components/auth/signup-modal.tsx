@@ -85,7 +85,7 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
         <DialogHeader className="text-center">
           <DialogTitle>Create an Account</DialogTitle>
           <DialogDescription>
-            Join the Nexus Platform to start your journey.
+            Join hustloop to start your journey.
           </DialogDescription>
         </DialogHeader>
         

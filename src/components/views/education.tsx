@@ -11,7 +11,7 @@ import {
     BrainCircuit,
     RadioTower,
     Users,
-    Network,
+    Workflow,
     Briefcase,
     Lightbulb,
     Wrench,
@@ -52,7 +52,7 @@ const acceleratorPrograms: Program[] = [
       features: [
         { name: "Live Interactive Sessions", icon: <RadioTower className="h-5 w-5 text-primary" /> },
         { name: "1-on-1 Mentoring", icon: <Users className="h-5 w-5 text-primary" /> },
-        { name: "Networking Opportunities", icon: <Network className="h-5 w-5 text-primary" /> },
+        { name: "Networking Opportunities", icon: <Workflow className="h-5 w-5 text-primary" /> },
         { name: "Real Project Work", icon: <Briefcase className="h-5 w-5 text-primary" /> },
       ],
     },
@@ -112,7 +112,7 @@ export default function EducationView({ isOpen, onOpenChange, onApplicationSucce
         <DialogHeader>
           <DialogTitle className="text-3xl font-bold text-center font-headline">Transform Your Future Through Education</DialogTitle>
           <DialogDescription className="text-center">
-            <span style={{ color: '#D4AF37' }}>"Knowledge is the Currency of Tomorrow"</span>
+            <span style={{ color: '#facc15' }}>"Knowledge is the Currency of Tomorrow"</span>
             <span className="block mt-2">
               Join our comprehensive educational programs designed to empower entrepreneurs and business leaders with cutting-edge skills and insights.
             </span>

@@ -148,7 +148,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange }: Incubat
         defaultValues: {
             firstName: "Incubator",
             lastName: "Admin",
-            email: "incubator@nexus.com",
+            email: "incubator@hustloop.com",
         },
     });
 

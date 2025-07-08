@@ -1,11 +1,12 @@
-
 "use client";
 
 import type { View } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Rocket, LogOut, UserCircle, Menu, Sun, Moon, Loader2 } from "lucide-react";
+import { LogOut, UserCircle, Menu, Sun, Moon, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import Image from "next/image";
+import * as React from 'react';
 
 interface HeaderProps {
   activeView: View;
@@ -46,16 +47,25 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
   return (
     <>
       <header className="bg-background/80 backdrop-blur-sm sticky top-0 z-40 w-full border-b">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setActiveView("home")}
-          >
-            <Rocket className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-primary">Nexus Platform</span>
+        <div className="container mx-auto flex h-16 items-center px-4">
+          
+          {/* Left side */}
+          <div className="flex-1 flex justify-start">
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => setActiveView("home")}
+            >
+              <div
+                className="logo-container"
+                style={{'--logo-size': '2.5rem'} as React.CSSProperties}
+              >
+                <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
+              </div>
+              <span className="text-2xl font-headline" style={{ color: '#D4AF37' }}>hustl<span className="text-3xl align-middle font-bold">∞</span>p</span>
+            </div>
           </div>
           
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation (Center) */}
           <nav className="hidden md:flex items-center space-x-6">
             {navItems
               .filter((item) => !item.loggedIn || isLoggedIn)
@@ -75,102 +85,113 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
               ))}
           </nav>
 
-          {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center gap-2">
-            {isLoading ? (
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            ) : isLoggedIn ? (
-              <>
-                <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
-                  <UserCircle className="h-6 w-6" />
-                  <span className="sr-only">Dashboard</span>
-                </Button>
-                <Button variant="ghost" size="icon" onClick={onLogout}>
-                  <LogOut className="h-6 w-6" />
-                  <span className="sr-only">Logout</span>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" onClick={() => setActiveView('login')}>
-                  Login
-                </Button>
-                <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                  Sign Up
-                </Button>
-              </>
-            )}
-            <ThemeToggleButton />
-          </div>
-          
-          {/* Mobile Navigation */}
-          <div className="md:hidden">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
-                  <span className="sr-only">Open menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-2">
-                    <Rocket className="h-8 w-8 text-primary" />
-                    <span className="text-xl font-bold text-primary">Nexus Platform</span>
-                  </div>
-                  <ThemeToggleButton />
-                </div>
-                <nav className="flex flex-col space-y-2">
-                  {navItems
-                    .filter((item) => !item.loggedIn || isLoggedIn)
-                    .map((item) => (
-                      <SheetClose key={item.id} asChild>
-                        <Button
-                          variant="ghost"
-                          onClick={() => setActiveView(item.id)}
-                          className={cn(
-                            "justify-start text-lg",
-                            activeView === item.id ? "text-primary" : "text-muted-foreground"
-                          )}
-                        >
-                          {item.label}
-                        </Button>
-                      </SheetClose>
-                    ))}
-                </nav>
-                <div className="absolute bottom-6 left-6 right-6">
-                  {isLoading ? (
-                      <div className="flex justify-center">
-                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          {/* Right Side */}
+          <div className="flex-1 flex justify-end">
+            {/* Desktop Auth Buttons */}
+            <div className="hidden md:flex items-center gap-2">
+              {isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              ) : isLoggedIn ? (
+                <>
+                  <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
+                    <UserCircle className="h-6 w-6" />
+                    <span className="sr-only">Dashboard</span>
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={onLogout}>
+                    <LogOut className="h-6 w-6" />
+                    <span className="sr-only">Logout</span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" onClick={() => setActiveView('login')}>
+                    Login
+                  </Button>
+                  <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                    Sign Up
+                  </Button>
+                </>
+              )}
+              <ThemeToggleButton />
+            </div>
+            
+            {/* Mobile Navigation */}
+            <div className="md:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                  <div className="flex items-center justify-between mb-8">
+                    <div 
+                      className="flex items-center gap-2"
+                    >
+                      <div
+                        className="logo-container"
+                        style={{'--logo-size': '2.5rem'} as React.CSSProperties}
+                      >
+                        <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
                       </div>
-                  ) : isLoggedIn ? (
-                    <div className="flex items-center justify-between">
-                         <SheetClose asChild>
-                            <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
-                              <UserCircle className="h-8 w-8" />
-                              <span className="sr-only">Dashboard</span>
-                            </Button>
-                        </SheetClose>
-                        <SheetClose asChild>
-                            <Button variant="outline" onClick={onLogout}>
-                                <LogOut className="mr-2 h-5 w-5" /> Logout
-                            </Button>
-                        </SheetClose>
+                      <span className="text-2xl font-headline" style={{ color: '#D4AF37' }}>hustl<span className="text-3xl align-middle font-bold">∞</span>p</span>
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                        <SheetClose asChild>
-                            <Button className="w-full" onClick={() => setActiveView('login')}>Login</Button>
+                    <ThemeToggleButton />
+                  </div>
+                  <nav className="flex flex-col space-y-2">
+                    {navItems
+                      .filter((item) => !item.loggedIn || isLoggedIn)
+                      .map((item) => (
+                        <SheetClose key={item.id} asChild>
+                          <Button
+                            variant="ghost"
+                            onClick={() => setActiveView(item.id)}
+                            className={cn(
+                              "justify-start text-lg",
+                              activeView === item.id ? "text-primary" : "text-muted-foreground"
+                            )}
+                          >
+                            {item.label}
+                          </Button>
                         </SheetClose>
-                        <SheetClose asChild>
-                            <Button variant="secondary" className="w-full" onClick={() => setActiveView('signup')}>Sign Up</Button>
-                        </SheetClose>
-                    </div>
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
+                      ))}
+                  </nav>
+                  <div className="absolute bottom-6 left-6 right-6">
+                    {isLoading ? (
+                        <div className="flex justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    ) : isLoggedIn ? (
+                      <div className="flex items-center justify-between">
+                          <SheetClose asChild>
+                              <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
+                                <UserCircle className="h-8 w-8" />
+                                <span className="sr-only">Dashboard</span>
+                              </Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                              <Button variant="outline" onClick={onLogout}>
+                                  <LogOut className="mr-2 h-5 w-5" /> Logout
+                              </Button>
+                          </SheetClose>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                          <SheetClose asChild>
+                              <Button className="w-full" onClick={() => setActiveView('login')}>Login</Button>
+                          </SheetClose>
+                          <SheetClose asChild>
+                              <Button variant="secondary" className="w-full" onClick={() => setActiveView('signup')}>Sign Up</Button>
+                          </SheetClose>
+                      </div>
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
+
         </div>
       </header>
     </>

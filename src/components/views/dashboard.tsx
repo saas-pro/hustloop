@@ -137,7 +137,7 @@ export default function DashboardView({ isOpen, onOpenChange, isLoggedIn, hasSub
         defaultValues: {
             firstName: "Admin",
             lastName: "User",
-            email: "admin@nexus.com",
+            email: "admin@hustloop.com",
             paymentMethod: "paypal",
             paypalEmail: "admin.user@paypal.com",
             accountHolder: "",

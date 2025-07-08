@@ -50,8 +50,10 @@ export default function Home() {
   
   // This effect runs once on mount to set the initial theme and login state from localStorage
   useEffect(() => {
+    // This effect syncs the React state with the DOM state set by the inline script in layout.tsx
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    setTheme(savedTheme || 'dark');
+    const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    setTheme(initialTheme);
     
     const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
     const savedUserRole = localStorage.getItem('userRole') as UserRole | null;
@@ -73,8 +75,11 @@ export default function Home() {
   // This effect runs whenever the theme changes to update the DOM and localStorage
   useEffect(() => {
     if (theme) {
-      document.documentElement.classList.remove('light', 'dark');
-      document.documentElement.classList.add(theme);
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
       localStorage.setItem('theme', theme);
     }
   }, [theme]);
@@ -205,7 +210,7 @@ export default function Home() {
         isLoading={isLoading}
       />
       <main className="flex-grow">
-        <HomeView setActiveView={setActiveView} theme={theme} />
+        <HomeView setActiveView={setActiveView} theme={theme} isLoggedIn={isLoggedIn} />
       </main>
       <Footer />
 

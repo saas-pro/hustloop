@@ -60,13 +60,13 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
     await new Promise(resolve => setTimeout(resolve, 500));
 
     let role: UserRole | null = null;
-    if (values.email === 'admin@nexus.com' && values.password === 'admin') {
+    if (values.email === 'admin@hustloop.com' && values.password === 'admin') {
         role = 'admin';
-    } else if (values.email === 'mentor@nexus.com' && values.password === 'mentor') {
+    } else if (values.email === 'mentor@hustloop.com' && values.password === 'mentor') {
         role = 'mentor';
-    } else if (values.email === 'incubator@nexus.com' && values.password === 'incubator') {
+    } else if (values.email === 'incubator@hustloop.com' && values.password === 'incubator') {
         role = 'incubator';
-    } else if (values.email === 'msme@nexus.com' && values.password === 'msme') {
+    } else if (values.email === 'msme@hustloop.com' && values.password === 'msme') {
         role = 'msme';
     }
 
@@ -92,7 +92,7 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         <DialogHeader className="text-center">
           <DialogTitle>Login</DialogTitle>
           <DialogDescription>
-            Access your Nexus Platform account.
+            Access your hustloop account.
           </DialogDescription>
         </DialogHeader>
 
