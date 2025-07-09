@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { API_BASE_URL } from "@/lib/api";
 
 
 export type Incubator = {
@@ -128,7 +129,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
             setIsLoading(true);
             setError(null);
             try {
-                const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+                const apiBaseUrl = API_BASE_URL;
                 const response = await fetch(`${apiBaseUrl}/api/incubators`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch incubators.');

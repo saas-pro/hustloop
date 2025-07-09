@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import SubmissionDetailsModal from "./submission-details-modal";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { API_BASE_URL } from "@/lib/api";
 
 type User = {
     name: string;
@@ -159,7 +160,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user }: I
         };
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/incubator-profile`, {
+            const response = await fetch(`${API_BASE_URL}/api/incubator-profile`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -235,7 +236,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user }: I
                     </DialogHeader>
                     <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                         <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as IncubatorDashboardTab)} className="flex flex-col flex-grow min-h-0">
-                            <TabsList>
+                            <TabsList className="justify-start">
                                 <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
                                 <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
                                 <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>

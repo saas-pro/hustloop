@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { API_BASE_URL } from "@/lib/api";
 
 
 const settingsFormSchema = z.object({
@@ -120,7 +121,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
         const token = localStorage.getItem('token');
         if (!token) { toast({ variant: 'destructive', title: 'Authentication Error' }); setIsLoadingUsers(false); return; }
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const response = await fetch(`${API_BASE_URL}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (response.ok) setUsers(await response.json());
             else toast({ variant: 'destructive', title: 'Failed to fetch users' });
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingUsers(false); }
@@ -141,26 +142,26 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
             toast({ variant: 'destructive', title: errorMessage, description: data.error });
         }
     };
-    const handleApproveUser = async (userId: number) => handleApiResponse(await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${userId}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User approved successfully.', 'Approval Failed');
-    const handleDeleteUser = async (userId: number) => handleApiResponse(await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User deleted successfully.', 'Deletion Failed');
-    const handleToggleBanUser = async (userId: number) => handleApiResponse(await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${userId}/toggle-ban`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User status updated.', 'Update Failed');
+    const handleApproveUser = async (userId: number) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User approved successfully.', 'Approval Failed');
+    const handleDeleteUser = async (userId: number) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User deleted successfully.', 'Deletion Failed');
+    const handleToggleBanUser = async (userId: number) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/toggle-ban`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User status updated.', 'Update Failed');
 
     const fetchBlogPosts = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/blog-posts`);
+            const response = await fetch(`${API_BASE_URL}/api/blog-posts`);
             if (response.ok) setBlogPosts(await response.json());
         } catch (error) { console.error("Failed to fetch blog posts"); }
     };
 
     const fetchEducationPrograms = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/education-programs`);
+            const response = await fetch(`${API_BASE_URL}/api/education-programs`);
             if (response.ok) setEducationPrograms(await response.json());
         } catch (error) { console.error("Failed to fetch education programs"); }
     };
 
     const onBlogSubmit = async (data: BlogPostFormValues) => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/blog-posts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data) });
+        const response = await fetch(`${API_BASE_URL}/api/blog-posts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data) });
         if (response.ok) {
             toast({ title: 'Blog Post Created' });
             blogForm.reset();
@@ -169,7 +170,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
     };
 
     const onProgramSubmit = async (data: ProgramFormValues) => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/education-programs`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data) });
+        const response = await fetch(`${API_BASE_URL}/api/education-programs`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data) });
         if (response.ok) {
             toast({ title: 'Education Program Created' });
             programForm.reset();
@@ -193,7 +194,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0">
-                        <TabsList>
+                        <TabsList className={userRole === 'admin' ? '' : 'grid w-full grid-cols-6'}>
                             {availableTabs.map(tab => {
                                 const Icon = LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'blog' ? 'Newspaper' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle;
                                 return (

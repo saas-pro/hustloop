@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { UserRole } from "@/app/types";
+import { API_BASE_URL } from "@/lib/api";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" {...props}>
@@ -54,7 +55,7 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
   const { formState: { isSubmitting } } = form;
 
   const handleLogin = async (values: LoginSchema) => {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const apiBaseUrl = API_BASE_URL;
     try {
         const response = await fetch(`${apiBaseUrl}/api/login`, {
             method: 'POST',
@@ -96,7 +97,7 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
     }
   };
   
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const apiBaseUrl = API_BASE_URL;
   const googleLoginUrl = `${apiBaseUrl}/api/auth/google/login`;
   const linkedinLoginUrl = `${apiBaseUrl}/api/auth/linkedin/login`;
 

@@ -12,6 +12,7 @@ import EducationBookingModal from "./education-booking-modal";
 import type { View, EducationProgram, EducationSession } from "@/app/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { API_BASE_URL } from "@/lib/api";
 
 
 interface EducationViewProps {
@@ -79,7 +80,7 @@ export default function EducationView({ isOpen, onOpenChange, onApplicationSucce
             setIsLoading(true);
             setError(null);
             try {
-                const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+                const apiBaseUrl = API_BASE_URL;
                 const response = await fetch(`${apiBaseUrl}/api/education-programs`);
                 if (!response.ok) {
                     throw new Error("Failed to fetch education programs.");

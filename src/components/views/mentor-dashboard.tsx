@@ -23,6 +23,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/api";
 
 type User = {
     name: string;
@@ -145,7 +146,7 @@ export default function MentorDashboardView({ isOpen, onOpenChange, setActiveVie
         };
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/mentor-profile`, {
+            const response = await fetch(`${API_BASE_URL}/api/mentor-profile`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

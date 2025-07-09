@@ -13,6 +13,7 @@ import type { BlogPost } from "@/app/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 
 interface BlogViewProps {
   isOpen: boolean;
@@ -52,7 +53,7 @@ export default function BlogView({ isOpen, onOpenChange }: BlogViewProps) {
             setIsLoading(true);
             setError(null);
             try {
-                const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+                const apiBaseUrl = API_BASE_URL;
                 const response = await fetch(`${apiBaseUrl}/api/blog-posts`);
                 if (!response.ok) {
                     throw new Error("Failed to fetch blog posts.");

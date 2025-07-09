@@ -13,6 +13,7 @@ import MentorBookingModal from "@/components/views/mentor-booking-modal";
 import type { View } from "@/app/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { API_BASE_URL } from "@/lib/api";
 
 export type Mentor = {
   name: string;
@@ -82,7 +83,7 @@ export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubsc
             setIsLoading(true);
             setError(null);
             try {
-                const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+                const apiBaseUrl = API_BASE_URL;
                 const response = await fetch(`${apiBaseUrl}/api/mentors`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch mentors.');
