@@ -62,7 +62,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
               >
                 <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
               </div>
-              <span className="font-headline text-2xl" style={{ color: '#facc15' }}>
+              <span className="font-headline text-2xl" style={{ color: '#FFD700' }}>
                 hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
               </span>
             </div>
@@ -140,7 +140,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                         >
                           <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
                         </div>
-                        <span className="font-headline text-2xl" style={{ color: '#facc15' }}>
+                        <span className="font-headline text-2xl" style={{ color: '#FFD700' }}>
                           hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
                         </span>
                       </div>
