@@ -1,533 +1,254 @@
 
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LayoutDashboard, Briefcase, Lightbulb, Users, FileText, Settings, Star, Lock, ArrowRight } from "lucide-react";
-import type { View, DashboardTab } from "@/app/types";
+import * as LucideIcons from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+
 
 const settingsFormSchema = z.object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
+    name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email address"),
-    paymentMethod: z.enum(["paypal", "bank"], {
-        required_error: "You must select a payment method."
-    }),
-    paypalEmail: z.string().optional(),
-    accountHolder: z.string().optional(),
-    accountNumber: z.string().optional(),
-    ifscCode: z.string().optional(),
-}).superRefine((data, ctx) => {
-    if (data.paymentMethod === 'paypal') {
-        if (!data.paypalEmail || !z.string().email().safeParse(data.paypalEmail).success) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['paypalEmail'],
-                message: 'A valid PayPal email is required.',
-            });
-        }
-    } else if (data.paymentMethod === 'bank') {
-        if (!data.accountHolder) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['accountHolder'],
-                message: 'Account holder name is required.',
-            });
-        }
-        if (!data.accountNumber) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['accountNumber'],
-                message: 'Account number is required.',
-            });
-        }
-        if (!data.ifscCode) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['ifscCode'],
-                message: 'IFSC code is required.',
-            });
-        }
-    }
 });
-
-
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
-const dashboardMentors = [
-  {
-    name: "Dr. Evelyn Reed",
-    avatar: "https://source.unsplash.com/featured/100x100/?woman,portrait",
-    hint: "woman portrait",
-    lastSession: "April 15, 2024 - Topic: AI Product Strategy",
-  },
-  {
-    name: "Marcus Chen",
-    avatar: "https://source.unsplash.com/featured/100x100/?man,portrait",
-    hint: "man portrait",
-    lastSession: "May 2, 2024 - Topic: Seed Funding Pitch Deck",
-  },
-  {
-    name: "Aisha Khan",
-    avatar: "https://source.unsplash.com/featured/100x100/?woman,face",
-    hint: "woman face",
-    lastSession: "May 21, 2024 - Topic: Building a Brand Narrative",
-  },
-];
+const blogPostSchema = z.object({
+    title: z.string().min(5, "Title must be at least 5 characters"),
+    excerpt: z.string().min(10, "Excerpt must be at least 10 characters"),
+    content: z.string().min(50, "Content must be at least 50 characters"),
+    image: z.string().url("Please enter a valid image URL"),
+    hint: z.string().min(1, "Hint is required"),
+});
+type BlogPostFormValues = z.infer<typeof blogPostSchema>;
 
+const featureSchema = z.object({
+    name: z.string().min(1, "Feature name is required"),
+    icon: z.string().min(1, "Icon is required"),
+});
+const sessionSchema = z.object({
+    language: z.string().min(1, "Language is required"),
+    date: z.string().min(1, "Date is required"),
+    time: z.string().min(1, "Time is required"),
+});
+const programSchema = z.object({
+    title: z.string().min(5, "Title is required"),
+    description: z.string().min(10, "Description is required"),
+    sessions: z.array(sessionSchema).min(1, "At least one session is required"),
+    features: z.array(featureSchema).min(1, "At least one feature is required"),
+});
+type ProgramFormValues = z.infer<typeof programSchema>;
+
+
+type User = { name: string; email: string; }
 interface DashboardViewProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-    isLoggedIn: boolean;
+    user: User;
+    userRole: UserRole;
     hasSubscription: boolean;
     setActiveView: (view: View) => void;
 }
 
-const LockedContent = ({ setActiveView }: { setActiveView: (view: View) => void }) => (
+const iconNames = Object.keys(LucideIcons).filter(k => k !== 'createLucideIcon' && k !== 'icons');
+
+const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) => void, title: string }) => (
     <Card className="mt-0 bg-card/50 backdrop-blur-sm border-border/50 text-center flex flex-col items-center justify-center p-8 min-h-[400px]">
-        <Lock className="h-12 w-12 text-primary mb-4" />
-        <CardTitle>Feature Locked</CardTitle>
+        <LucideIcons.Lock className="h-12 w-12 text-primary mb-4" />
+        <CardTitle>{title} Locked</CardTitle>
         <CardDescription className="max-w-md mx-auto mt-2 mb-6">
-            This feature is available for subscribers only. Upgrade your plan to unlock full access to MSME collaborations, incubator applications, and submissions.
+            This feature is available for subscribers only. Upgrade your plan to unlock full access.
         </CardDescription>
-        <Button onClick={() => setActiveView('pricing')}>View Pricing Plans <ArrowRight className="ml-2 h-4 w-4" /></Button>
+        <Button onClick={() => setActiveView('pricing')}>View Pricing Plans <LucideIcons.ArrowRight className="ml-2 h-4 w-4" /></Button>
     </Card>
 );
 
-export default function DashboardView({ isOpen, onOpenChange, isLoggedIn, hasSubscription, setActiveView }: DashboardViewProps) {
+export default function DashboardView({ isOpen, onOpenChange, user, userRole, hasSubscription, setActiveView }: DashboardViewProps) {
+    const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
-    const [mentorReviews, setMentorReviews] = useState(
-        dashboardMentors.reduce((acc, mentor) => {
-            acc[mentor.name] = { rating: 0, hover: 0, review: "" };
-            return acc;
-        }, {} as Record<string, { rating: number; hover: number; review: string }>)
-    );
+    const [isEditingEmail, setIsEditingEmail] = useState(false);
+    const [users, setUsers] = useState<AppUser[]>([]);
+    const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
+    const [userToBan, setUserToBan] = useState<AppUser | null>(null);
 
-    const handleRatingChange = (mentorName: string, newRating: number) => {
-        setMentorReviews(prev => ({ ...prev, [mentorName]: { ...prev[mentorName], rating: newRating } }));
-    };
-    
-    const handleHoverChange = (mentorName: string, newHover: number) => {
-        setMentorReviews(prev => ({ ...prev, [mentorName]: { ...prev[mentorName], hover: newHover } }));
-    };
-    
-    const handleReviewChange = (mentorName: string, newReview: string) => {
-        setMentorReviews(prev => ({ ...prev, [mentorName]: { ...prev[mentorName], review: newReview } }));
-    }
-    
-    const form = useForm<SettingsFormValues>({
+    const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+    const [educationPrograms, setEducationPrograms] = useState<EducationProgram[]>([]);
+
+    const settingsForm = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
-        defaultValues: {
-            firstName: "Admin",
-            lastName: "User",
-            email: "admin@hustloop.com",
-            paymentMethod: "paypal",
-            paypalEmail: "admin.user@paypal.com",
-            accountHolder: "",
-            accountNumber: "",
-            ifscCode: ""
-        },
+        defaultValues: { name: user.name, email: user.email },
+        values: { name: user.name, email: user.email },
     });
+    
+    useEffect(() => {
+        settingsForm.reset({ name: user.name, email: user.email });
+    }, [user, settingsForm]);
 
-    function onSubmit(data: SettingsFormValues) {
-        // Here you would typically call an API to save the user's data
-    }
+    const blogForm = useForm<BlogPostFormValues>({
+        resolver: zodResolver(blogPostSchema),
+        defaultValues: { title: "", excerpt: "", content: "", image: "https://placehold.co/600x400.png", hint: "" },
+    });
+    const programForm = useForm<ProgramFormValues>({
+        resolver: zodResolver(programSchema),
+        defaultValues: { title: "", description: "", sessions: [], features: [] },
+    });
+    const { fields: sessionFields, append: appendSession, remove: removeSession } = useFieldArray({ control: programForm.control, name: "sessions" });
+    const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({ control: programForm.control, name: "features" });
 
+    const fetchUsers = async () => {
+        setIsLoadingUsers(true);
+        const token = localStorage.getItem('token');
+        if (!token) { toast({ variant: 'destructive', title: 'Authentication Error' }); setIsLoadingUsers(false); return; }
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (response.ok) setUsers(await response.json());
+            else toast({ variant: 'destructive', title: 'Failed to fetch users' });
+        } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingUsers(false); }
+    };
+    
+    useEffect(() => {
+        if (activeTab === 'users' && userRole === 'admin') fetchUsers();
+        if (activeTab === 'blog' && userRole === 'admin') fetchBlogPosts();
+        if (activeTab === 'sessions' && userRole === 'admin') fetchEducationPrograms();
+    }, [activeTab, userRole]);
+
+    const handleApiResponse = async (response: Response, successMessage: string, errorMessage: string) => {
+        if (response.ok) {
+            toast({ title: 'Success', description: successMessage });
+            await fetchUsers();
+        } else {
+            const data = await response.json();
+            toast({ variant: 'destructive', title: errorMessage, description: data.error });
+        }
+    };
+    const handleApproveUser = async (userId: number) => handleApiResponse(await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${userId}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User approved successfully.', 'Approval Failed');
+    const handleDeleteUser = async (userId: number) => handleApiResponse(await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User deleted successfully.', 'Deletion Failed');
+    const handleToggleBanUser = async (userId: number) => handleApiResponse(await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/${userId}/toggle-ban`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User status updated.', 'Update Failed');
+
+    const fetchBlogPosts = async () => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/blog-posts`);
+            if (response.ok) setBlogPosts(await response.json());
+        } catch (error) { console.error("Failed to fetch blog posts"); }
+    };
+
+    const fetchEducationPrograms = async () => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/education-programs`);
+            if (response.ok) setEducationPrograms(await response.json());
+        } catch (error) { console.error("Failed to fetch education programs"); }
+    };
+
+    const onBlogSubmit = async (data: BlogPostFormValues) => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/blog-posts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data) });
+        if (response.ok) {
+            toast({ title: 'Blog Post Created' });
+            blogForm.reset();
+            await fetchBlogPosts();
+        } else toast({ variant: 'destructive', title: 'Failed to create post' });
+    };
+
+    const onProgramSubmit = async (data: ProgramFormValues) => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/education-programs`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data) });
+        if (response.ok) {
+            toast({ title: 'Education Program Created' });
+            programForm.reset();
+            await fetchEducationPrograms();
+        } else toast({ variant: 'destructive', title: 'Failed to create program' });
+    };
+
+    function onSettingsSubmit(data: SettingsFormValues) { toast({ title: "Settings Saved", description: "Your profile has been updated." }); }
+
+    const adminTabs = ["overview", "users", "blog", "sessions", "settings"];
+    const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
+    const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
+    const pendingApprovalCount = users.filter(u => !u.is_confirmed).length;
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0">
+            <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6">
-                    <DialogTitle className="text-3xl font-bold font-headline">Dashboard</DialogTitle>
-                    <DialogDescription>Welcome back! Here's an overview of your startup journey.</DialogDescription>
+                    <DialogTitle className="text-3xl font-bold font-headline capitalize">{userRole} Dashboard</DialogTitle>
+                    <DialogDescription>Welcome back, {user.name}! Here's an overview of your startup journey.</DialogDescription>
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0">
-                        <TabsList className="grid h-auto w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-                            <TabsTrigger value="overview">
-                                <LayoutDashboard className="mr-2 h-4 w-4" /> Overview
-                            </TabsTrigger>
-                            <TabsTrigger value="msmes">
-                                <Briefcase className="mr-2 h-4 w-4" /> MSMEs
-                            </TabsTrigger>
-                            <TabsTrigger value="incubators">
-                                <Lightbulb className="mr-2 h-4 w-4" /> Incubators
-                            </TabsTrigger>
-                            <TabsTrigger value="mentors">
-                                <Users className="mr-2 h-4 w-4" /> My Mentors
-                            </TabsTrigger>
-                            <TabsTrigger value="submission">
-                                <FileText className="mr-2 h-4 w-4" /> Submissions
-                            </TabsTrigger>
-                            <TabsTrigger value="settings">
-                                <Settings className="mr-2 h-4 w-4" /> Settings
-                            </TabsTrigger>
+                        <TabsList>
+                            {availableTabs.map(tab => {
+                                const Icon = LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'blog' ? 'Newspaper' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle;
+                                return (
+                                <TabsTrigger value={tab} key={tab} className="capitalize">
+                                    <Icon className="mr-2 h-4 w-4" /> {tab === 'mentors' ? 'My Mentors' : tab}
+                                    {tab === 'users' && pendingApprovalCount > 0 && <Badge className="ml-2">{pendingApprovalCount}</Badge>}
+                                </TabsTrigger>
+                            )})}
                         </TabsList>
                         <ScrollArea className="flex-grow mt-4">
-                            <TabsContent value="overview" className="mt-0 space-y-6">
-                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Active Applications</CardTitle>
-                                            <Lightbulb className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">1</div>
-                                            <p className="text-xs text-muted-foreground">to TechStars Bangalore</p>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">MSME Collaborations</CardTitle>
-                                            <Briefcase className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">1</div>
-                                            <p className="text-xs text-muted-foreground">proposal with GreenLeaf Organics</p>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                            <CardTitle className="text-sm font-medium">Upcoming Sessions</CardTitle>
-                                            <Users className="h-4 w-4 text-muted-foreground" />
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-bold">2</div>
-                                            <p className="text-xs text-muted-foreground">sessions scheduled with mentors</p>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                    <CardHeader>
-                                        <CardTitle>Activity Overview</CardTitle>
-                                        <CardDescription>Your activity over the last 6 months.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                            <RechartsBarChart data={chartData}>
-                                                <CartesianGrid vertical={false} />
-                                                <XAxis
-                                                dataKey="month"
-                                                tickLine={false}
-                                                tickMargin={10}
-                                                axisLine={false}
-                                                />
-                                                <YAxis />
-                                                <ChartTooltip
-                                                cursor={false}
-                                                content={<ChartTooltipContent />}
-                                                />
-                                                <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
-                                            </RechartsBarChart>
-                                        </ChartContainer>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
+                            <TabsContent value="overview" className="mt-0 space-y-6"><Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>Activity Overview</CardTitle><CardDescription>Your activity over the last 6 months.</CardDescription></CardHeader><CardContent><ChartContainer config={chartConfig} className="h-[250px] w-full"><RechartsBarChart data={chartData}><CartesianGrid vertical={false} /><XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} /><YAxis /><ChartTooltip cursor={false} content={<ChartTooltipContent />} /><Bar dataKey="activity" fill="var(--color-activity)" radius={4} /></RechartsBarChart></ChartContainer></CardContent></Card></TabsContent>
+                            <TabsContent value="msmes" className="mt-0">{hasSubscription || userRole === 'admin' ? (<Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>MSME Collaborations</CardTitle><CardDescription>Your ongoing and potential collaborations with MSMEs.</CardDescription></CardHeader><CardContent><p>You have no active collaboration proposals.</p></CardContent></Card>) : <LockedContent setActiveView={setActiveView} title="MSMEs"/>}</TabsContent>
+                            <TabsContent value="incubators" className="mt-0">{hasSubscription || userRole === 'admin' ? (<Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>Incubator Applications</CardTitle><CardDescription>Status of your applications to incubators.</CardDescription></CardHeader><CardContent><p>You have not applied to any incubators yet.</p></CardContent></Card>) : <LockedContent setActiveView={setActiveView} title="Incubators"/>}</TabsContent>
+                            <TabsContent value="mentors" className="mt-0"><div className="text-center py-16 text-muted-foreground"><p>You have not had any mentor sessions yet.</p><Button variant="link" onClick={() => setActiveView('mentors')}>Book a session</Button></div></TabsContent>
+                            <TabsContent value="submission" className="mt-0">{hasSubscription || userRole === 'admin' ? (<Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>My Submissions</CardTitle><CardDescription>Your submissions for corporate challenges.</CardDescription></CardHeader><CardContent><p>You have no active submissions.</p></CardContent></Card>) : <LockedContent setActiveView={setActiveView} title="Submissions" />}</TabsContent>
                             
-                            <TabsContent value="msmes" className="mt-0">
-                                {hasSubscription ? (
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>MSME Collaborations</CardTitle>
-                                            <CardDescription>Your ongoing and potential collaborations with MSMEs.</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p>You have an active collaboration proposal with GreenLeaf Organics.</p>
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    <LockedContent setActiveView={setActiveView} />
-                                )}
-                            </TabsContent>
-
-                            <TabsContent value="incubators" className="mt-0">
-                                {hasSubscription ? (
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>Incubator Applications</CardTitle>
-                                            <CardDescription>Status of your applications to incubators.</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p>Your application to TechStars Bangalore is under review.</p>
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    <LockedContent setActiveView={setActiveView} />
-                                )}
-                            </TabsContent>
-
-                            <TabsContent value="mentors" className="mt-0">
-                                <div className="space-y-6">
-                                    {dashboardMentors.map((mentor) => (
-                                        <Card key={mentor.name} className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader>
-                                                <div className="flex items-center gap-4">
-                                                    <Avatar className="h-16 w-16">
-                                                        <AvatarImage src={mentor.avatar} alt={mentor.name} data-ai-hint={mentor.hint} />
-                                                        <AvatarFallback>{mentor.name.substring(0, 2)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <CardTitle>{mentor.name}</CardTitle>
-                                                        <CardDescription>Last Session: {mentor.lastSession}</CardDescription>
-                                                    </div>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor={`review-${mentor.name}`}>Write a Review</Label>
-                                                    <Textarea
-                                                        id={`review-${mentor.name}`}
-                                                        placeholder={`Share your experience with ${mentor.name}...`}
-                                                        value={mentorReviews[mentor.name]?.review || ""}
-                                                        onChange={(e) => handleReviewChange(mentor.name, e.target.value)}
-                                                    />
-                                                </div>
-                                                <div className="flex items-center gap-4 mt-4">
-                                                    <Label>Your Rating</Label>
-                                                    <div className="flex items-center gap-1">
-                                                        {[...Array(5)].map((_, index) => {
-                                                            const ratingValue = index + 1;
-                                                            return (
-                                                                <Star
-                                                                    key={index}
-                                                                    className={cn(
-                                                                        "h-6 w-6 cursor-pointer transition-colors",
-                                                                        ratingValue <= (mentorReviews[mentor.name]?.hover || mentorReviews[mentor.name]?.rating || 0)
-                                                                            ? "text-primary fill-primary"
-                                                                            : "text-muted-foreground/30"
-                                                                    )}
-                                                                    onClick={() => handleRatingChange(mentor.name, ratingValue)}
-                                                                    onMouseEnter={() => handleHoverChange(mentor.name, ratingValue)}
-                                                                    onMouseLeave={() => handleHoverChange(mentor.name, 0)}
-                                                                />
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                            <CardFooter>
-                                                <Button>Submit Review</Button>
-                                            </CardFooter>
-                                        </Card>
-                                    ))}
-                                </div>
-                            </TabsContent>
-
-                            <TabsContent value="submission" className="mt-0">
-                                {hasSubscription ? (
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>My Submissions</CardTitle>
-                                            <CardDescription>Your submissions for corporate challenges.</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p>Your solution for the 'AI-Powered Logistics Optimization' challenge is in the final round.</p>
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    <LockedContent setActiveView={setActiveView} />
-                                )}
-                            </TabsContent>
-                            
-                            <TabsContent value="settings" className="mt-0">
-                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                    <CardHeader>
-                                        <CardTitle>Account Settings</CardTitle>
-                                        <CardDescription>Manage your account and payment information.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Form {...form}>
-                                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                                                <div>
-                                                    <h3 className="text-lg font-medium mb-4">Profile</h3>
-                                                    <div className="space-y-4">
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="firstName"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel>First Name</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input placeholder="Your first name" {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="lastName"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel>Last Name</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input placeholder="Your last name" {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        </div>
-                                                        <FormField
-                                                            control={form.control}
-                                                            name="email"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Email</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input type="email" placeholder="your@email.com" {...field} />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <Separator />
-
-                                                <div>
-                                                    <h3 className="text-lg font-medium mb-4">Payment Method</h3>
-                                                    <div className="space-y-4">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name="paymentMethod"
-                                                            render={({ field }) => (
-                                                                <FormItem className="space-y-3">
-                                                                    <FormLabel>Select Method</FormLabel>
-                                                                    <FormControl>
-                                                                        <RadioGroup
-                                                                            onValueChange={field.onChange}
-                                                                            defaultValue={field.value}
-                                                                            className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4"
-                                                                        >
-                                                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                                                <FormControl>
-                                                                                    <RadioGroupItem value="paypal" />
-                                                                                </FormControl>
-                                                                                <FormLabel className="font-normal">
-                                                                                    PayPal
-                                                                                </FormLabel>
-                                                                            </FormItem>
-                                                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                                                <FormControl>
-                                                                                    <RadioGroupItem value="bank" />
-                                                                                </FormControl>
-                                                                                <FormLabel className="font-normal">
-                                                                                    Bank Account
-                                                                                </FormLabel>
-                                                                            </FormItem>
-                                                                        </RadioGroup>
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                        {form.watch("paymentMethod") === "paypal" && (
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="paypalEmail"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel>PayPal Email</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input type="email" placeholder="you@paypal.com" {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        )}
-                                                        {form.watch("paymentMethod") === "bank" && (
-                                                            <div className="space-y-4">
-                                                                <FormField
-                                                                    control={form.control}
-                                                                    name="accountHolder"
-                                                                    render={({ field }) => (
-                                                                        <FormItem>
-                                                                            <FormLabel>Account Holder Name</FormLabel>
-                                                                            <FormControl>
-                                                                                <Input placeholder="Full name on account" {...field} />
-                                                                            </FormControl>
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    )}
-                                                                />
-                                                                <FormField
-                                                                    control={form.control}
-                                                                    name="accountNumber"
-                                                                    render={({ field }) => (
-                                                                        <FormItem>
-                                                                            <FormLabel>Account Number</FormLabel>
-                                                                            <FormControl>
-                                                                                <Input placeholder="Your bank account number" {...field} />
-                                                                            </FormControl>
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    )}
-                                                                />
-                                                                <FormField
-                                                                    control={form.control}
-                                                                    name="ifscCode"
-                                                                    render={({ field }) => (
-                                                                        <FormItem>
-                                                                            <FormLabel>IFSC Code</FormLabel>
-                                                                            <FormControl>
-                                                                                <Input placeholder="Bank's IFSC code" {...field} />
-                                                                            </FormControl>
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    )}
-                                                                />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                
-                                                <Button type="submit">Save Changes</Button>
-                                            </form>
-                                        </Form>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
+                            {userRole === "admin" && (
+                                <>
+                                <TabsContent value="users" className="mt-0">
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>User Management</CardTitle><CardDescription>Approve, ban, or delete user accounts.</CardDescription></CardHeader><CardContent>
+                                        {isLoadingUsers ? <div className="flex justify-center items-center h-48"><LucideIcons.Loader2 className="h-8 w-8 animate-spin" /></div> : (<Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Role</TableHead><TableHead>Joined</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader><TableBody>
+                                            {users.map(u => (<TableRow key={u.id}><TableCell><div className="font-medium">{u.name}</div><div className="text-sm text-muted-foreground">{u.email}</div></TableCell><TableCell className="capitalize">{u.role}</TableCell><TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell><TableCell><div className="flex flex-col gap-1">{u.is_banned ? <Badge variant="destructive">Banned</Badge> : (u.is_confirmed ? <Badge variant="default">Approved</Badge> : <Badge variant="secondary">Pending</Badge>)}</div></TableCell><TableCell className="space-x-2">
+                                                {!u.is_confirmed && !u.is_banned && (<Button size="sm" onClick={() => handleApproveUser(u.id)}><LucideIcons.CheckCircle className="mr-2 h-4 w-4" />Approve</Button>)}
+                                                <Button size="sm" variant={u.is_banned ? "outline" : "secondary"} onClick={() => setUserToBan(u)}><LucideIcons.Ban className="mr-2 h-4 w-4" />{u.is_banned ? "Unban" : "Ban"}</Button>
+                                                <Button size="sm" variant="destructive" onClick={() => setUserToDelete(u)}><LucideIcons.Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+                                            </TableCell></TableRow>))}
+                                        </TableBody></Table>)}
+                                    </CardContent></Card>
+                                </TabsContent>
+                                <TabsContent value="blog" className="mt-0 space-y-6">
+                                    <Card><CardHeader><CardTitle>Create New Blog Post</CardTitle></CardHeader><CardContent><Form {...blogForm}><form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-4"><FormField control={blogForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="excerpt" render={({ field }) => (<FormItem><FormLabel>Excerpt</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>Content</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="image" render={({ field }) => (<FormItem><FormLabel>Image URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="hint" render={({ field }) => (<FormItem><FormLabel>Image Hint</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><Button type="submit">Publish Post</Button></form></Form></CardContent></Card>
+                                </TabsContent>
+                                <TabsContent value="sessions" className="mt-0 space-y-6">
+                                    <Card><CardHeader><CardTitle>Create New Education Program</CardTitle></CardHeader><CardContent><Form {...programForm}><form onSubmit={programForm.handleSubmit(onProgramSubmit)} className="space-y-6"><FormField control={programForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/><Separator/><div><h3 className="text-lg font-medium mb-2">Sessions</h3>{sessionFields.map((field, index) => (<div key={field.id} className="grid grid-cols-4 gap-2 items-end mb-2 p-2 border rounded-lg"><FormField control={programForm.control} name={`sessions.${index}.language`} render={({ field }) => (<FormItem><FormLabel>Language</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name={`sessions.${index}.date`} render={({ field }) => (<FormItem><FormLabel>Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name={`sessions.${index}.time`} render={({ field }) => (<FormItem><FormLabel>Time</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><Button type="button" variant="ghost" onClick={() => removeSession(index)}><LucideIcons.Trash2 className="h-4 w-4" /></Button></div>))}<Button type="button" variant="outline" size="sm" onClick={() => appendSession({ language: 'English', date: '', time: '' })}><LucideIcons.PlusCircle className="mr-2 h-4 w-4" />Add Session</Button></div><Separator /><div><h3 className="text-lg font-medium mb-2">Features</h3>{featureFields.map((field, index) => (<div key={field.id} className="grid grid-cols-3 gap-2 items-end mb-2 p-2 border rounded-lg"><FormField control={programForm.control} name={`features.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Feature Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name={`features.${index}.icon`} render={({ field }) => (<FormItem><FormLabel>Icon</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select icon" /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{iconNames.map(icon => <SelectItem key={icon} value={icon}>{icon}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>)}/><Button type="button" variant="ghost" onClick={() => removeFeature(index)}><LucideIcons.Trash2 className="h-4 w-4" /></Button></div>))}<Button type="button" variant="outline" size="sm" onClick={() => appendFeature({ name: '', icon: 'Check' })}><LucideIcons.PlusCircle className="mr-2 h-4 w-4" />Add Feature</Button></div><Button type="submit">Publish Program</Button></form></Form></CardContent></Card>
+                                </TabsContent>
+                                </>
+                            )}
+                            <TabsContent value="settings" className="mt-0"><Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>Account Settings</CardTitle><CardDescription>Manage your account and payment information.</CardDescription></CardHeader><CardContent><Form {...settingsForm}><form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-8"><div><h3 className="text-lg font-medium mb-4">Profile</h3><div className="space-y-4"><FormField control={settingsForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={settingsForm.control} name="email" render={({ field }) => (<FormItem><div className="flex justify-between items-center"><FormLabel>Email</FormLabel>{!isEditingEmail && (<Button type="button" variant="link" className="p-0 h-auto text-sm" onClick={() => setIsEditingEmail(true)}>Edit</Button>)}</div><FormControl><Input type="email" placeholder="your@email.com" {...field} readOnly={!isEditingEmail} /></FormControl><FormMessage /></FormItem>)}/></div></div><Button type="submit">Save Changes</Button></form></Form></CardContent></Card></TabsContent>
                         </ScrollArea>
                     </Tabs>
                 </div>
+                <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the user account and remove their data from our servers.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToDelete) { handleDeleteUser(userToDelete.id); setUserToDelete(null); } }}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+                <AlertDialog open={!!userToBan} onOpenChange={(open) => !open && setUserToBan(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will {userToBan?.is_banned ? "unban" : "ban"} the user, {userToBan?.is_banned ? "allowing" : "preventing"} them from logging in. Do you want to continue?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToBan) { handleToggleBanUser(userToBan.id); setUserToBan(null); } }}>{userToBan?.is_banned ? "Unban User" : "Ban User"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
             </DialogContent>
         </Dialog>
     );
 }
 
 const chartData = [
-    { month: "January", activity: 186 },
-    { month: "February", activity: 305 },
-    { month: "March", activity: 237 },
-    { month: "April", activity: 273 },
-    { month: "May", activity: 209 },
-    { month: "June", activity: 214 },
+    { month: "January", activity: 0 }, { month: "February", activity: 0 }, { month: "March", activity: 0 },
+    { month: "April", activity: 0 }, { month: "May", activity: 0 }, { month: "June", activity: 0 },
 ];
   
 const chartConfig = {
-    activity: {
-      label: "Activity",
-      color: "hsl(var(--chart-1))",
-    },
+    activity: { label: "Activity", color: "hsl(var(--chart-1))" },
 };
+
+    

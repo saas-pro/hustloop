@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Lock } from "lucide-react";
+import { Star, MapPin, Lock, Terminal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -14,6 +14,9 @@ import IncubatorDetails from "./incubator-details";
 import type { View } from "@/app/types";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+
 
 export type Incubator = {
   name: string;
@@ -44,152 +47,6 @@ export type Incubator = {
   };
 };
 
-export const incubators: Incubator[] = [
-  {
-    name: "TechStars Bangalore",
-    image: "https://source.unsplash.com/featured/600x400/?tech,office",
-    hint: "tech office",
-    location: "Bangalore, India",
-    rating: 5,
-    reviews: 128,
-    description: "Premier startup accelerator focused on technology innovation and entrepreneurship.",
-    metrics: {
-      startups: "150+",
-      funding: "$5M",
-      successRate: "85%",
-    },
-    focus: ["SaaS", "IoT", "Deep Tech"],
-    details: {
-      overview: "TechStars Bangalore is a world-class accelerator program that helps entrepreneurs build great companies. We provide funding, mentorship, and access to a global network of investors and corporate partners.",
-      services: [
-        { title: "Mentorship", description: "One-on-one guidance from industry experts to help navigate your startup journey." },
-        { title: "Business Development", description: "Access to a network of potential customers and partners to grow your business." },
-        { title: "Technical Support", description: "Resources and expertise to refine your products and ensure market readiness." },
-        { title: "Funding Access", description: "Opportunities for direct investment and connections to potential investors." },
-        { title: "Workspace", description: "Modern coworking space with high-speed internet, meeting rooms, and collaboration areas." },
-        { title: "VC Network", description: "Direct connections to leading venture capital firms and investment opportunities." },
-        { title: "Angel Network", description: "Access to a curated network of angel investors interested in early-stage startups." },
-        { title: "Startup School", description: "Structured learning programs and workshops to enhance entrepreneurial skills." }
-      ],
-      benefits: [
-        "$120,000 investment in exchange for 6% equity",
-        "Access to TechStars' global network of mentors and investors",
-        "Workspace in Bangalore's tech hub",
-        "Demo Day presentation to investors",
-        "Lifetime access to TechStars resources"
-      ],
-      eligibility: {
-          focusAreas: "SaaS and Enterprise Software: B2B solutions, cloud platforms, AI/ML applications. IoT and Hardware: Smart devices, industrial IoT, connected solutions. Product Innovation: Consumer tech, marketplace platforms, mobile applications. Deep Tech: Blockchain, quantum computing, robotics.",
-          requirements: [
-            "Minimum Viable Product (MVP) with early customer validation",
-            "Founding team with technical expertise and business acumen",
-            "Intellectual property or unique technological advantage"
-          ]
-      },
-      timeline: [
-        { event: "Application Period", period: "January - March" },
-        { event: "Interviews", period: "April" },
-        { event: "Program Start", period: "June" },
-        { event: "Demo Day", period: "September" }
-      ]
-    }
-  },
-  {
-    name: "EcoInnovate Hub",
-    image: "https://source.unsplash.com/featured/600x400/?sustainable,energy",
-    hint: "sustainable energy",
-    location: "Chennai, India",
-    rating: 4,
-    reviews: 98,
-    description: "Fostering startups that are building a sustainable and green future.",
-    metrics: {
-      startups: "80+",
-      funding: "$2.5M",
-      successRate: "88%",
-    },
-    focus: ["MedTech", "BioTech", "Digital Health"],
-    details: { 
-      overview: "EcoInnovate Hub is dedicated to supporting startups in the high-growth healthcare and biotech sectors. We provide the specialized resources, clinical networks, and regulatory guidance to help you navigate the complexities of medical innovation and make a global impact.",
-      services: [
-        { title: "Clinical Mentorship", description: "Guidance from experienced healthcare professionals and medical experts." },
-        { title: "Lab Access", description: "State-of-the-art laboratory facilities for medical research and testing." },
-        { title: "Regulatory Support", description: "Expert guidance on FDA approvals, CE marking, and healthcare compliance." },
-        { title: "Hospital Network", description: "Direct access to leading hospitals for pilots and clinical trials." },
-        { title: "Bio Workspace", description: "Specialized facilities with wet labs and research equipment." },
-        { title: "Healthcare VC Network", description: "Connections to venture funds specializing in healthcare investments." },
-        { title: "MedTech Angels", description: "Network of angel investors with healthcare industry expertise." },
-        { title: "BioTech Academy", description: "Specialized training in healthcare innovation and entrepreneurship." }
-      ],
-      benefits: [ 
-        "Seed funding up to $150,000.",
-        "Access to certified wet labs and advanced research equipment.",
-        "Fast-track pilot programs within our partner hospital network.",
-        "Comprehensive support for navigating medical device and drug regulations."
-      ],
-      eligibility: {
-          focusAreas: "MedTech, BioTech, Digital Health, and other healthcare-related fields.",
-          requirements: [ 
-            "A strong scientific foundation with preliminary research data or a working prototype.",
-            "A clear understanding of the clinical need and market potential.",
-            "A founding team with relevant scientific, medical, or technical expertise."
-          ]
-      },
-      timeline: [
-        { event: "Rolling Applications Open", period: "All year round" },
-        { event: "Quarterly Review Cycles", period: "March, June, September, December" },
-        { event: "Program Duration", period: "12-18 months" },
-        { event: "Clinical Trial Support Phase", period: "Post-program" }
-      ]
-    }
-  },
-  {
-    name: "Creative Spark Collective",
-    image: "https://source.unsplash.com/featured/600x400/?creative,workspace",
-    hint: "creative workspace",
-    location: "Mumbai, India",
-    rating: 5,
-    reviews: 110,
-    description: "An incubator for the next generation of storytellers and digital artists.",
-    metrics: {
-      startups: "120+",
-      funding: "$1.8M",
-      successRate: "90%",
-    },
-    focus: ["Creative Tech", "Media", "Digital Arts"],
-    details: { 
-      overview: "Creative Spark Collective is where art meets technology. We are an incubator dedicated to empowering the next generation of digital artists, filmmakers, and creative technologists. We help you launch and scale your ventures in the dynamic media landscape.",
-      services: [
-        { title: "Production Support", description: "Access to professional-grade studios, cameras, and editing equipment." },
-        { title: "Distribution Network", description: "Partnerships with leading media platforms and streaming services for content distribution." },
-        { title: "Creative Mentorship", description: "Guidance from award-winning artists, directors, and media executives." },
-        { title: "Legal & IP Guidance", description: "Specialized legal support for intellectual property, copyrights, and licensing." },
-        { title: "Co-working & Studio Space", description: "Collaborative workspaces and dedicated studio facilities for creative projects." },
-        { title: "Investor Connections", description: "Access to investors and funds that specialize in the creative and media industries." }
-      ],
-      benefits: [ 
-        "Seed funding for creative and media-tech projects.",
-        "Opportunities to showcase work at major international film and art festivals.",
-        "Collaboration opportunities with established artists and production houses.",
-        "Distribution deals for promising projects."
-      ],
-      eligibility: {
-          focusAreas: "Digital Media, Interactive Art, VR/AR Experiences, Filmmaking, Animation, and Gaming.",
-          requirements: [
-            "A compelling portfolio, script, or a proof-of-concept for your creative project.",
-            "A passionate team with a blend of creative vision and technical execution skills.",
-            "A unique artistic voice or innovative use of technology in storytelling."
-          ]
-      },
-      timeline: [
-        { event: "Spring & Fall Applications", period: "Feb-Apr & Aug-Oct" },
-        { event: "Residency Program", period: "6-month cohorts" },
-        { event: "Final Showcase Event", period: "End of each residency" },
-        { event: "Alumni Network Access", period: "Ongoing" }
-      ]
-    }
-  },
-];
-
 interface IncubatorsViewProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -214,10 +71,79 @@ const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: Vie
     </div>
 );
 
+const LoadingSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {[...Array(6)].map((_, index) => (
+            <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
+                <CardHeader className="p-0">
+                    <Skeleton className="w-full h-48" />
+                </CardHeader>
+                <CardContent className="flex-grow p-4 space-y-3">
+                    <Skeleton className="h-6 w-3/4" />
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-1/3" />
+                    </div>
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="h-5 w-20" />
+                    </div>
+                    <Separator className="my-4 bg-border/50" />
+                    <div className="grid grid-cols-3 text-center">
+                        <div>
+                            <Skeleton className="h-5 w-1/2 mx-auto" />
+                            <Skeleton className="h-3 w-3/4 mx-auto mt-1" />
+                        </div>
+                        <div>
+                            <Skeleton className="h-5 w-1/2 mx-auto" />
+                            <Skeleton className="h-3 w-3/4 mx-auto mt-1" />
+                        </div>
+                        <div>
+                            <Skeleton className="h-5 w-1/2 mx-auto" />
+                            <Skeleton className="h-3 w-3/4 mx-auto mt-1" />
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter className="p-4">
+                    <Skeleton className="h-10 w-full" />
+                </CardFooter>
+            </Card>
+        ))}
+    </div>
+);
+
 
 export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSubscription, setActiveView }: IncubatorsViewProps) {
   const [selectedIncubator, setSelectedIncubator] = useState<Incubator | null>(null);
   const { toast } = useToast();
+  const [incubators, setIncubators] = useState<Incubator[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+        const fetchIncubators = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+                const response = await fetch(`${apiBaseUrl}/api/incubators`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch incubators.');
+                }
+                const data = await response.json();
+                setIncubators(data);
+            } catch (err: any) {
+                setError(err.message || 'An unexpected error occurred.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchIncubators();
+    }
+}, [isOpen]);
 
   const handleViewDetails = (incubator: Incubator) => {
     if (hasSubscription) {
@@ -242,7 +168,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
           <DialogHeader className="p-6">
             <DialogTitle className="text-3xl font-bold text-center font-headline">Startup Incubation Hub</DialogTitle>
             <DialogDescription className="text-center">
-              <span style={{ color: '#D4AF37' }}>"You Dream It. We Help Build It."</span>
+              <span className="text-primary">"You Dream It. We Help Build It."</span>
               <br />
               Connect with leading incubators that provide the resources, mentorship, and ecosystem you need to transform your innovative ideas into successful ventures.
             </DialogDescription>
@@ -250,6 +176,14 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
           <div className="flex-grow overflow-y-auto px-6">
             {!isLoggedIn ? (
                 <LoginPrompt setActiveView={setActiveView} contentType="incubators" />
+            ) : isLoading ? (
+                <LoadingSkeleton />
+            ) : error ? (
+                <Alert variant="destructive">
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle>Error Fetching Incubators</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {incubators.map((incubator, index) => {
@@ -263,7 +197,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               {Array.from({ length: 5 }).map((_, i) => (
-                                <Star key={i} className={`h-4 w-4 ${i < incubator.rating ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
+                                <Star key={i} className={`h-4 w-4 ${i < incubator.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/30'}`} />
                               ))}
                               <span className="ml-1">({incubator.reviews})</span>
                             </div>

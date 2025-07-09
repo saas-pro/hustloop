@@ -56,7 +56,7 @@ export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) 
       <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
         <ScrollArea className="h-full">
             <div className="p-8 md:p-12">
-                <h1 className="text-4xl md:text-5xl font-bold text-center mb-12 font-headline" style={{ color: '#facc15' }}>
+                <h1 className="text-4xl md:text-5xl font-bold text-center mb-12 font-headline text-primary">
                     WHERE VISION MEETS OPPORTUNITY
                 </h1>
 

@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { View } from "@/app/types";
@@ -61,7 +62,9 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
               >
                 <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
               </div>
-              <span className="text-2xl font-headline" style={{ color: '#D4AF37' }}>hustl<span className="text-3xl align-middle font-bold">∞</span>p</span>
+              <span className="font-headline text-2xl" style={{ color: '#facc15' }}>
+                hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
+              </span>
             </div>
           </div>
           
@@ -126,17 +129,22 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                   <div className="flex items-center justify-between mb-8">
-                    <div 
-                      className="flex items-center gap-2"
-                    >
-                      <div
-                        className="logo-container"
-                        style={{'--logo-size': '2.5rem'} as React.CSSProperties}
+                    <SheetClose asChild>
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => setActiveView("home")}
                       >
-                        <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
+                        <div
+                          className="logo-container"
+                          style={{'--logo-size': '2.5rem'} as React.CSSProperties}
+                        >
+                          <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
+                        </div>
+                        <span className="font-headline text-2xl" style={{ color: '#facc15' }}>
+                          hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
+                        </span>
                       </div>
-                      <span className="text-2xl font-headline" style={{ color: '#D4AF37' }}>hustl<span className="text-3xl align-middle font-bold">∞</span>p</span>
-                    </div>
+                    </SheetClose>
                     <ThemeToggleButton />
                   </div>
                   <nav className="flex flex-col space-y-2">

@@ -8,7 +8,9 @@ import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle } from "lucide-react";
+import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2 } from "lucide-react";
 import type { MsmeDashboardTab, Submission, Comment } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -16,11 +18,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { msmeCollaborations } from "./msmes";
 import { useToast } from "@/hooks/use-toast";
 import SubmissionDetailsModal from "./submission-details-modal";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
+type User = {
+    name: string;
+    email: string;
+}
 
 // Profile form schema
 const profileFormSchema = z.object({
@@ -29,9 +35,9 @@ const profileFormSchema = z.object({
   description: z.string().min(1, "A short description is required"),
   details: z.object({
     about: z.string().min(1, "About section is required"),
-    scope: z.array(z.string().min(1, "Scope item cannot be empty")),
+    scope: z.array(z.string().min(1, "Scope item cannot be empty")).min(1, "At least one scope item is required"),
     lookingFor: z.string().min(1, "This field is required"),
-    benefits: z.array(z.string().min(1, "Benefit cannot be empty")),
+    benefits: z.array(z.string().min(1, "Benefit cannot be empty")).min(1, "At least one benefit is required"),
     contact: z.object({
       name: z.string().min(1, "Contact name is required"),
       title: z.string().min(1, "Contact title is required"),
@@ -42,49 +48,14 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 // Settings form schema
 const settingsFormSchema = z.object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
+    name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email address"),
 });
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 
 // Sample Data for Submissions
-const initialSubmissionsData: Submission[] = [
-  { 
-    id: 1, 
-    founder: "Innovate AI", 
-    idea: "Route Optimization Engine for Logistics", 
-    status: "Under Review",
-    submittedDate: 'August 2, 2024',
-    description: "Our engine uses real-time traffic and delivery data to optimize last-mile routes, promising a 15% reduction in fuel consumption. It integrates with existing fleet management systems via API.",
-    comments: [
-      { author: 'Triage Team', text: 'This looks promising. Can you share the results of your backtesting or any pilot programs?', timestamp: '2 days ago' },
-      { author: 'Founder', text: 'We have backtested with public datasets showing a 12-18% efficiency gain. A pilot program is our next step.', timestamp: '1 day ago' },
-    ]
-  },
-  { 
-    id: 2, 
-    founder: "Retail Gamify", 
-    idea: "Mobile-First Gamified Loyalty App", 
-    status: "New",
-    submittedDate: 'August 4, 2024',
-    description: "A white-label mobile app that allows retailers to create a gamified loyalty program with quests, badges, and leaderboards. We focus on increasing daily user engagement and foot traffic.",
-    comments: []
-  },
-  {
-    id: 3,
-    founder: "Patient-First Tech",
-    idea: "NFC-enabled Smart Pill Bottle",
-    status: "Valid",
-    submittedDate: 'July 30, 2024',
-    description: "A smart pill bottle cap with an NFC chip and a small e-ink display. Patients can tap their phone to log a dose, and the cap displays the last taken time. It also sends reminders via a connected app.",
-    comments: [
-      { author: 'Triage Team', text: 'Interesting use of NFC. Low power and effective. Marked as valid.', timestamp: '5 days ago'},
-      { author: 'Incubator', text: 'We agree. The simplicity is a key advantage. Let\'s schedule a follow-up call to discuss manufacturing costs.', timestamp: '4 days ago'}
-    ]
-  }
-];
+const initialSubmissionsData: Submission[] = [];
 
 // Status Icons
 const statusIcons: { [key: string]: React.ReactNode } = {
@@ -95,23 +66,46 @@ const statusIcons: { [key: string]: React.ReactNode } = {
   'Rejected': <XCircle className="h-4 w-4 text-red-500" />,
 };
 
+const emptyProfile: ProfileFormValues = {
+  name: "",
+  sector: "",
+  description: "",
+  details: {
+    about: "",
+    scope: [],
+    lookingFor: "",
+    benefits: [],
+    contact: {
+      name: "",
+      title: "",
+    },
+  },
+};
 
 interface MsmeDashboardViewProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    user: User;
 }
 
-export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboardViewProps) {
+export default function MsmeDashboardView({ isOpen, onOpenChange, user }: MsmeDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<MsmeDashboardTab>("overview");
     const [submissions, setSubmissions] = useState(initialSubmissionsData);
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+    const [isEditingEmail, setIsEditingEmail] = useState(false);
 
     // Profile Form setup
     const profileForm = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema),
+        defaultValues: emptyProfile,
+    });
+
+     const settingsForm = useForm<SettingsFormValues>({
+        resolver: zodResolver(settingsFormSchema),
         defaultValues: {
-            ...msmeCollaborations.find(m => m.name === "Artisan Co-op")
+            name: user.name,
+            email: user.email,
         },
     });
 
@@ -122,19 +116,45 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
         control: profileForm.control, name: "details.benefits"
     });
 
-    function onProfileSubmit(data: ProfileFormValues) {
-        toast({ title: "Profile Updated", description: "Your public MSME profile has been saved." });
-    }
+    async function onProfileSubmit(data: ProfileFormValues) {
+        const token = localStorage.getItem('token');
+        const profileData = {
+            ...data,
+            logo: 'https://placehold.co/100x100.png',
+            hint: 'company building',
+        };
+        
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/msme-profile`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(profileData)
+            });
 
-    // Settings Form setup
-    const settingsForm = useForm<SettingsFormValues>({
-        resolver: zodResolver(settingsFormSchema),
-        defaultValues: {
-            firstName: "MSME",
-            lastName: "User",
-            email: "msme@hustloop.com",
-        },
-    });
+            if (response.ok) {
+                toast({
+                    title: "Profile Created",
+                    description: "Your public MSME profile has been saved and is now visible.",
+                });
+            } else {
+                const errorData = await response.json();
+                toast({
+                    variant: "destructive",
+                    title: "Failed to save profile",
+                    description: errorData.error || "An unknown error occurred.",
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Network Error",
+                description: "Could not save profile. Please try again later.",
+            });
+        }
+    }
 
     function onSettingsSubmit(data: SettingsFormValues) {
         toast({ title: "Settings Saved", description: "Your account settings have been updated." });
@@ -167,11 +187,11 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
                 <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
                     <DialogHeader className="p-6">
                         <DialogTitle className="text-3xl font-bold font-headline">MSME Dashboard</DialogTitle>
-                        <DialogDescription>Welcome, Artisan Co-op. Manage your challenges, submissions, and profile.</DialogDescription>
+                        <DialogDescription>Welcome, {user.name}. Manage your challenges, submissions, and profile.</DialogDescription>
                     </DialogHeader>
                     <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                         <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as MsmeDashboardTab)} className="flex flex-col flex-grow min-h-0">
-                            <TabsList className="grid h-auto w-full grid-cols-2 md:grid-cols-4">
+                            <TabsList>
                                 <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
                                 <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
                                 <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
@@ -193,9 +213,26 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
                                             <CardContent><div className="text-2xl font-bold">{overviewStats.valid}</div><p className="text-xs text-muted-foreground">Marked as valid for collaboration</p></CardContent>
                                         </Card>
                                     </div>
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader>
+                                            <CardTitle>Solutions Overview</CardTitle>
+                                            <CardDescription>Accepted solutions over the last 6 months.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <ChartContainer config={msmeChartConfig} className="h-[250px] w-full">
+                                                <RechartsBarChart data={msmeChartData}>
+                                                    <CartesianGrid vertical={false} />
+                                                    <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
+                                                    <YAxis />
+                                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                                    <Bar dataKey="solutions" fill="var(--color-solutions)" radius={4} />
+                                                </RechartsBarChart>
+                                            </ChartContainer>
+                                        </CardContent>
+                                    </Card>
                                 </TabsContent>
                                 <TabsContent value="submissions" className="mt-0 space-y-4">
-                                     {submissions.map((sub) => (
+                                     {submissions.length > 0 ? submissions.map((sub) => (
                                         <Card key={sub.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 cursor-pointer transition-colors" onClick={() => setSelectedSubmission(sub)}>
                                             <CardHeader>
                                                 <div className="flex justify-between items-start">
@@ -213,28 +250,32 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
                                                 <p className="text-sm text-muted-foreground">Submitted on {sub.submittedDate}</p>
                                             </CardFooter>
                                         </Card>
-                                    ))}
+                                    )) : (
+                                        <Card className="text-center text-muted-foreground py-16">
+                                            <CardContent>You have not received any submissions yet.</CardContent>
+                                        </Card>
+                                    )}
                                 </TabsContent>
                                 <TabsContent value="profile" className="mt-0">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader><CardTitle>Edit MSME Profile</CardTitle><CardDescription>Update the public-facing details for your company.</CardDescription></CardHeader>
+                                        <CardHeader><CardTitle>Create/Edit MSME Profile</CardTitle><CardDescription>This information will be publicly visible to potential collaborators.</CardDescription></CardHeader>
                                         <CardContent>
                                             <Form {...profileForm}>
                                                 <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8">
                                                     <FormField control={profileForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
                                                     <FormField control={profileForm.control} name="sector" render={({ field }) => (<FormItem><FormLabel>Sector</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                    <FormField control={profileForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>Short Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                                    <FormField control={profileForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>Short Description</FormLabel><FormControl><Textarea placeholder="A brief one-sentence pitch for your company." {...field} /></FormControl><FormMessage /></FormItem>)}/>
                                                     
                                                     <Separator/>
                                                     <h3 className="text-lg font-medium">Collaboration Details</h3>
-                                                    <FormField control={profileForm.control} name="details.about" render={({ field }) => (<FormItem><FormLabel>About Your Company</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                    <FormField control={profileForm.control} name="details.lookingFor" render={({ field }) => (<FormItem><FormLabel>What you're looking for</FormLabel><FormControl><Textarea rows={3} {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                                    <FormField control={profileForm.control} name="details.about" render={({ field }) => (<FormItem><FormLabel>About Your Company</FormLabel><FormControl><Textarea rows={5} placeholder="Describe your company, its mission, and what it does." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                                    <FormField control={profileForm.control} name="details.lookingFor" render={({ field }) => (<FormItem><FormLabel>What you're looking for</FormLabel><FormControl><Textarea rows={3} placeholder="Describe the ideal partner or solution you are seeking." {...field} /></FormControl><FormMessage /></FormItem>)}/>
 
                                                     <div>
                                                         <h4 className="text-md font-medium mb-2">Scope of Collaboration</h4>
                                                         {scopeFields.map((field, index) => (
                                                             <div key={field.id} className="flex items-center gap-2 mb-2">
-                                                                <FormField control={profileForm.control} name={`details.scope.${index}`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                                                <FormField control={profileForm.control} name={`details.scope.${index}`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder="e.g., E-commerce Strategy" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                                                 <Button type="button" variant="ghost" size="icon" onClick={() => removeScope(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                                             </div>
                                                         ))}
@@ -245,7 +286,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
                                                         <h4 className="text-md font-medium mb-2">Benefits of Partnership</h4>
                                                         {benefitFields.map((field, index) => (
                                                             <div key={field.id} className="flex items-center gap-2 mb-2">
-                                                                <FormField control={profileForm.control} name={`details.benefits.${index}`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                                                <FormField control={profileForm.control} name={`details.benefits.${index}`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder="e.g., Access to our distribution network" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                                                 <Button type="button" variant="ghost" size="icon" onClick={() => removeBenefit(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                                             </div>
                                                         ))}
@@ -259,7 +300,10 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
                                                         <FormField control={profileForm.control} name="details.contact.title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                                                     </div>
 
-                                                    <Button type="submit">Save Profile</Button>
+                                                    <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+                                                        {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                        Save Profile
+                                                    </Button>
                                                 </form>
                                             </Form>
                                         </CardContent>
@@ -271,11 +315,31 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
                                         <CardContent>
                                             <Form {...settingsForm}>
                                                 <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-8">
-                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <FormField control={settingsForm.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="Your first name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                                        <FormField control={settingsForm.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input placeholder="Your last name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                                     <div>
+                                                        <h3 className="text-lg font-medium mb-4">Profile</h3>
+                                                        <div className="space-y-4">
+                                                            <FormField control={settingsForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                                            <FormField
+                                                                control={settingsForm.control}
+                                                                name="email"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <div className="flex justify-between items-center">
+                                                                            <FormLabel>Email</FormLabel>
+                                                                            {!isEditingEmail && (
+                                                                                <Button type="button" variant="link" className="p-0 h-auto text-sm" onClick={() => setIsEditingEmail(true)}>
+                                                                                    Edit
+                                                                                </Button>
+                                                                            )}
+                                                                        </div>
+                                                                        <FormControl><Input type="email" placeholder="your@email.com" {...field} readOnly={!isEditingEmail} /></FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                        </div>
                                                     </div>
-                                                    <FormField control={settingsForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="your@email.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                                    
                                                     <Button type="submit">Save Changes</Button>
                                                 </form>
                                             </Form>
@@ -295,3 +359,21 @@ export default function MsmeDashboardView({ isOpen, onOpenChange }: MsmeDashboar
         </>
     );
 }
+
+const msmeChartData = [
+    { month: "January", solutions: 0 },
+    { month: "February", solutions: 0 },
+    { month: "March", solutions: 0 },
+    { month: "April", solutions: 0 },
+    { month: "May", solutions: 0 },
+    { month: "June", solutions: 0 },
+];
+  
+const msmeChartConfig = {
+    solutions: {
+      label: "Solutions",
+      color: "hsl(var(--chart-3))",
+    },
+};
+
+    

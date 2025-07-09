@@ -8,7 +8,9 @@ import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, PlusCircle, Trash2 } from "lucide-react";
+import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, PlusCircle, Trash2, Loader2 } from "lucide-react";
 import type { IncubatorDashboardTab, Submission, Comment } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -17,15 +19,20 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { incubators } from "./incubators";
 import { useToast } from "@/hooks/use-toast";
 import SubmissionDetailsModal from "./submission-details-modal";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
+type User = {
+    name: string;
+    email: string;
+}
 
 const profileFormSchema = z.object({
   name: z.string().min(1, "Incubator name is required"),
   location: z.string().min(1, "Location is required"),
   description: z.string().min(1, "Description is required"),
+  focus: z.array(z.object({ value: z.string().min(1, "Focus area cannot be empty.") })).min(1, "At least one focus area is required."),
   metrics: z.object({
     startups: z.string().min(1, "Required"),
     funding: z.string().min(1, "Required"),
@@ -37,74 +44,27 @@ const profileFormSchema = z.object({
         title: z.string().min(1, "Service title is required"),
         description: z.string().min(1, "Service description is required"),
     })),
-    benefits: z.array(z.string().min(1, "Benefit cannot be empty")),
+    benefits: z.array(z.object({ value: z.string().min(1, "Benefit cannot be empty") })),
+     eligibility: z.object({
+      focusAreas: z.string().min(1, "Required"),
+      requirements: z.array(z.object({ value: z.string().min(1, "Requirement cannot be empty") })),
+    }),
+    timeline: z.array(z.object({
+      event: z.string().min(1, "Event name is required"),
+      period: z.string().min(1, "Period is required"),
+    })),
   }),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const settingsFormSchema = z.object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
+    name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email address"),
 });
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
-const initialSubmissionsData: Submission[] = [
-  { 
-    id: 1, 
-    founder: "Alex Grant", 
-    idea: "AI-Powered Personalized Learning Platform", 
-    status: "Under Review",
-    submittedDate: 'August 1, 2024',
-    description: "Our platform uses machine learning to create adaptive learning paths for students, focusing on individual strengths and weaknesses. We aim to make education more engaging and effective by providing personalized content, real-time feedback, and dynamic difficulty adjustments. The initial target market is K-12 students preparing for competitive exams.",
-    comments: [
-      { author: 'Triage Team', text: 'Thank you for your submission. The concept is interesting. Could you provide more details on the data sources for your AI model and your monetization strategy?', timestamp: '2 days ago' },
-      { author: 'Founder', text: 'Thank you! We plan to use a combination of open-source educational datasets and proprietary data from partner schools. Monetization will be a B2B2C model, selling to schools who then offer it to students. We\'re also exploring a direct-to-consumer premium subscription.', timestamp: '1 day ago' },
-    ]
-  },
-  { 
-    id: 2, 
-    founder: "Brenda Smith", 
-    idea: "Sustainable Packaging from Seaweed", 
-    status: "New",
-    submittedDate: 'August 3, 2024',
-    description: "A biodegradable and compostable alternative to single-use plastics, derived from seaweed polymers. Our packaging is durable, water-resistant, and breaks down naturally in weeks, not centuries. We have a working prototype and are ready to scale production.",
-    comments: []
-  },
-  { 
-    id: 3, 
-    founder: "Carl Davis", 
-    idea: "Decentralized Social Media Network", 
-    status: "New",
-    submittedDate: 'August 4, 2024',
-    description: "A social media platform built on blockchain technology, giving users full control over their data and content. Our model eliminates centralized censorship and creates a more transparent and equitable digital community. We're focusing on data privacy and user empowerment.",
-    comments: []
-  },
-  { 
-    id: 4, 
-    founder: "Diana Prince", 
-    idea: "Marketplace for Local Artisans", 
-    status: "Valid",
-    submittedDate: 'July 28, 2024',
-    description: "An e-commerce platform that connects local artisans and craftsmen directly with consumers, cutting out the middlemen. We provide tools for inventory management, marketing, and logistics to help small creators build a sustainable business.",
-    comments: [
-      { author: 'Triage Team', text: 'Great concept. We see a lot of potential here. We\'ve marked this as valid and are passing it to the incubator for a direct look.', timestamp: '4 days ago' },
-      { author: 'Incubator', text: 'Thanks for flagging this. We agree, this is a strong candidate. We\'d like to schedule a follow-up call with the founder.', timestamp: '3 days ago' },
-    ]
-  },
-  { 
-    id: 5, 
-    founder: "Ethan Hunt", 
-    idea: "Another AI Learning Platform", 
-    status: "Duplicate",
-    submittedDate: 'July 25, 2024',
-    description: "A platform for learning, powered by AI.",
-    comments: [
-      { author: 'Triage Team', text: 'Thank you for your submission. While interesting, the core concept is very similar to another submission we are currently evaluating. We are marking this as a duplicate for now.', timestamp: '5 days ago' }
-    ]
-  },
-];
+const initialSubmissionsData: Submission[] = [];
 
 const statusIcons: { [key: string]: React.ReactNode } = {
   'New': <Clock className="h-4 w-4 text-blue-500" />,
@@ -117,46 +77,117 @@ const statusIcons: { [key: string]: React.ReactNode } = {
 interface IncubatorDashboardViewProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    user: User;
 }
 
-export default function IncubatorDashboardView({ isOpen, onOpenChange }: IncubatorDashboardViewProps) {
+const emptyProfile: ProfileFormValues = {
+  name: "",
+  location: "",
+  description: "",
+  focus: [],
+  metrics: {
+    startups: "",
+    funding: "",
+    successRate: "",
+  },
+  details: {
+    overview: "",
+    services: [],
+    benefits: [],
+    eligibility: {
+      focusAreas: "",
+      requirements: [],
+    },
+    timeline: [],
+  },
+};
+
+export default function IncubatorDashboardView({ isOpen, onOpenChange, user }: IncubatorDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<IncubatorDashboardTab>("overview");
     const [submissions, setSubmissions] = useState(initialSubmissionsData);
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+    const [isEditingEmail, setIsEditingEmail] = useState(false);
 
     const profileForm = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema),
-        defaultValues: {
-            ...incubators.find(inc => inc.name === "TechStars Bangalore")
-        },
+        defaultValues: emptyProfile,
     });
-
-    const { fields: services, append: appendService, remove: removeService } = useFieldArray({
-        control: profileForm.control,
-        name: "details.services"
-    });
-    
-    const { fields: benefits, append: appendBenefit, remove: removeBenefit } = useFieldArray({
-        control: profileForm.control,
-        name: "details.benefits"
-    });
-
 
     const settingsForm = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
         defaultValues: {
-            firstName: "Incubator",
-            lastName: "Admin",
-            email: "incubator@hustloop.com",
+            name: user.name,
+            email: user.email,
         },
     });
 
-    function onProfileSubmit(data: ProfileFormValues) {
-        toast({
-            title: "Profile Updated",
-            description: "Your public incubator profile has been saved.",
-        });
+    const { fields: services, append: appendService, remove: removeService } = useFieldArray({
+        control: profileForm.control, name: "details.services"
+    });
+    const { fields: benefits, append: appendBenefit, remove: removeBenefit } = useFieldArray({
+        control: profileForm.control, name: "details.benefits"
+    });
+    const { fields: focusFields, append: appendFocus, remove: removeFocus } = useFieldArray({
+        control: profileForm.control, name: "focus"
+    });
+     const { fields: requirementFields, append: appendRequirement, remove: removeRequirement } = useFieldArray({
+        control: profileForm.control, name: "details.eligibility.requirements"
+    });
+    const { fields: timelineFields, append: appendTimeline, remove: removeTimeline } = useFieldArray({
+        control: profileForm.control, name: "details.timeline"
+    });
+
+
+    async function onProfileSubmit(data: ProfileFormValues) {
+        const token = localStorage.getItem('token');
+        const profileData = {
+            ...data,
+            focus: data.focus.map((item) => item.value),
+            details: {
+                ...data.details,
+                benefits: data.details.benefits.map((item) => item.value),
+                eligibility: {
+                    ...data.details.eligibility,
+                    requirements: data.details.eligibility.requirements.map((item) => item.value),
+                },
+            },
+            image: 'https://placehold.co/600x400.png',
+            hint: 'office building',
+            rating: 0,
+            reviews: 0,
+        };
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/incubator-profile`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(profileData)
+            });
+
+            if (response.ok) {
+                toast({
+                    title: "Profile Created",
+                    description: "Your public incubator profile has been saved. It will now be visible to founders.",
+                });
+            } else {
+                const errorData = await response.json();
+                toast({
+                    variant: "destructive",
+                    title: "Failed to save profile",
+                    description: errorData.error || "An unknown error occurred.",
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Network Error",
+                description: "Could not save profile. Please try again later.",
+            });
+        }
     }
     
     function onSettingsSubmit(data: SettingsFormValues) {
@@ -200,11 +231,11 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange }: Incubat
                 <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
                     <DialogHeader className="p-6">
                         <DialogTitle className="text-3xl font-bold font-headline">Incubator Dashboard</DialogTitle>
-                        <DialogDescription>Welcome, TechStars Bangalore. Manage your submissions and profile.</DialogDescription>
+                        <DialogDescription>Welcome, {user.name}. Manage your submissions and profile.</DialogDescription>
                     </DialogHeader>
                     <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                         <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as IncubatorDashboardTab)} className="flex flex-col flex-grow min-h-0">
-                            <TabsList className="grid h-auto w-full grid-cols-2 md:grid-cols-4">
+                            <TabsList>
                                 <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
                                 <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
                                 <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
@@ -244,9 +275,26 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange }: Incubat
                                             </CardContent>
                                         </Card>
                                     </div>
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader>
+                                            <CardTitle>Submissions Overview</CardTitle>
+                                            <CardDescription>Incoming submissions over the last 6 months.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <ChartContainer config={incubatorChartConfig} className="h-[250px] w-full">
+                                                <RechartsBarChart data={incubatorChartData}>
+                                                    <CartesianGrid vertical={false} />
+                                                    <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
+                                                    <YAxis />
+                                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                                    <Bar dataKey="submissions" fill="var(--color-submissions)" radius={4} />
+                                                </RechartsBarChart>
+                                            </ChartContainer>
+                                        </CardContent>
+                                    </Card>
                                 </TabsContent>
                                 <TabsContent value="submissions" className="mt-0 space-y-4">
-                                    {submissions.map((sub) => (
+                                    {submissions.length > 0 ? submissions.map((sub) => (
                                         <Card key={sub.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 cursor-pointer transition-colors" onClick={() => setSelectedSubmission(sub)}>
                                             <CardHeader>
                                                 <div className="flex justify-between items-start">
@@ -278,13 +326,17 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange }: Incubat
                                                 <p className="text-sm text-muted-foreground">Submitted on {sub.submittedDate}</p>
                                             </CardFooter>
                                         </Card>
-                                    ))}
+                                    )) : (
+                                        <Card className="text-center text-muted-foreground py-16">
+                                            <CardContent>You have not received any submissions yet.</CardContent>
+                                        </Card>
+                                    )}
                                 </TabsContent>
                                 <TabsContent value="profile" className="mt-0">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                     <CardHeader>
-                                        <CardTitle>Edit Incubator Profile</CardTitle>
-                                        <CardDescription>Update the public-facing details for your incubation center.</CardDescription>
+                                        <CardTitle>Create/Edit Incubator Profile</CardTitle>
+                                        <CardDescription>This information will be publicly visible. Fill it out to attract founders.</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <Form {...profileForm}>
@@ -293,30 +345,43 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange }: Incubat
                                                     <FormItem><FormLabel>Incubator Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                                 )}/>
                                                 <FormField control={profileForm.control} name="location" render={({ field }) => (
-                                                    <FormItem><FormLabel>Location</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                                    <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Bangalore, India" {...field} /></FormControl><FormMessage /></FormItem>
                                                 )}/>
                                                 <FormField control={profileForm.control} name="description" render={({ field }) => (
-                                                    <FormItem><FormLabel>Short Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                                                    <FormItem><FormLabel>Short Description</FormLabel><FormControl><Textarea placeholder="A brief, one-sentence pitch for your incubator." {...field} /></FormControl><FormMessage /></FormItem>
                                                 )}/>
+
+                                                <div>
+                                                    <h3 className="text-lg font-medium mb-2">Focus Areas</h3>
+                                                    {focusFields.map((field, index) => (
+                                                        <div key={field.id} className="flex items-center gap-2 mb-2">
+                                                            <FormField control={profileForm.control} name={`focus.${index}.value`} render={({ field }) => (
+                                                                <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., SaaS" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )}/>
+                                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFocus(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                                        </div>
+                                                    ))}
+                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendFocus({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Focus Area</Button>
+                                                </div>
 
                                                 <Separator />
                                                 <h3 className="text-lg font-medium">Metrics</h3>
                                                 <div className="grid grid-cols-3 gap-4">
                                                     <FormField control={profileForm.control} name="metrics.startups" render={({ field }) => (
-                                                        <FormItem><FormLabel>Startups Supported</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                                        <FormItem><FormLabel>Startups Supported</FormLabel><FormControl><Input placeholder="e.g., 150+" {...field} /></FormControl><FormMessage /></FormItem>
                                                     )}/>
                                                     <FormField control={profileForm.control} name="metrics.funding" render={({ field }) => (
-                                                        <FormItem><FormLabel>Average Funding</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                                        <FormItem><FormLabel>Average Funding</FormLabel><FormControl><Input placeholder="e.g., $5M" {...field} /></FormControl><FormMessage /></FormItem>
                                                     )}/>
                                                     <FormField control={profileForm.control} name="metrics.successRate" render={({ field }) => (
-                                                        <FormItem><FormLabel>Success Rate</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                                        <FormItem><FormLabel>Success Rate</FormLabel><FormControl><Input placeholder="e.g., 85%" {...field} /></FormControl><FormMessage /></FormItem>
                                                     )}/>
                                                 </div>
                                                 
                                                 <Separator />
                                                 <h3 className="text-lg font-medium">Program Details</h3>
                                                 <FormField control={profileForm.control} name="details.overview" render={({ field }) => (
-                                                    <FormItem><FormLabel>Program Overview</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem>
+                                                    <FormItem><FormLabel>Program Overview</FormLabel><FormControl><Textarea rows={5} placeholder="Describe your program in detail." {...field} /></FormControl><FormMessage /></FormItem>
                                                 )}/>
                                                 
                                                 <div>
@@ -325,7 +390,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange }: Incubat
                                                         <Card key={service.id} className="mb-4 p-4 space-y-2">
                                                             <div className="flex justify-end"><Button type="button" variant="ghost" size="icon" onClick={() => removeService(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button></div>
                                                             <FormField control={profileForm.control} name={`details.services.${index}.title`} render={({ field }) => (
-                                                                <FormItem><FormLabel>Service Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                                                <FormItem><FormLabel>Service Title</FormLabel><FormControl><Input placeholder="e.g., Mentorship" {...field} /></FormControl><FormMessage /></FormItem>
                                                             )}/>
                                                             <FormField control={profileForm.control} name={`details.services.${index}.description`} render={({ field }) => (
                                                                 <FormItem><FormLabel>Service Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
@@ -339,16 +404,53 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange }: Incubat
                                                     <h3 className="text-lg font-medium mb-2">Benefits</h3>
                                                     {benefits.map((benefit, index) => (
                                                         <div key={benefit.id} className="flex items-center gap-2 mb-2">
-                                                            <FormField control={profileForm.control} name={`details.benefits.${index}`} render={({ field }) => (
-                                                                <FormItem className="flex-grow"><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                                            <FormField control={profileForm.control} name={`details.benefits.${index}.value`} render={({ field }) => (
+                                                                <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., $120,000 investment" {...field} /></FormControl><FormMessage /></FormItem>
                                                             )}/>
                                                             <Button type="button" variant="ghost" size="icon" onClick={() => removeBenefit(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                                         </div>
                                                     ))}
-                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendBenefit('')}><PlusCircle className="mr-2 h-4 w-4" /> Add Benefit</Button>
+                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendBenefit({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Benefit</Button>
                                                 </div>
 
-                                                <Button type="submit">Save Profile</Button>
+                                                <Separator />
+                                                <h3 className="text-lg font-medium mb-2">Eligibility</h3>
+                                                 <FormField control={profileForm.control} name="details.eligibility.focusAreas" render={({ field }) => (
+                                                    <FormItem><FormLabel>Focus Areas (Detailed)</FormLabel><FormControl><Textarea placeholder="Describe your focus areas in detail." {...field} /></FormControl><FormMessage /></FormItem>
+                                                )}/>
+                                                <div>
+                                                    <h4 className="text-md font-medium my-2">Key Requirements</h4>
+                                                    {requirementFields.map((field, index) => (
+                                                        <div key={field.id} className="flex items-center gap-2 mb-2">
+                                                            <FormField control={profileForm.control} name={`details.eligibility.requirements.${index}.value`} render={({ field }) => (
+                                                                <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., MVP required" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )}/>
+                                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeRequirement(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                                        </div>
+                                                    ))}
+                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendRequirement({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Requirement</Button>
+                                                </div>
+
+
+                                                <Separator />
+                                                <h3 className="text-lg font-medium mb-2">Timeline</h3>
+                                                 {timelineFields.map((field, index) => (
+                                                        <Card key={field.id} className="mb-4 p-4 space-y-2">
+                                                            <div className="flex justify-end"><Button type="button" variant="ghost" size="icon" onClick={() => removeTimeline(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button></div>
+                                                            <FormField control={profileForm.control} name={`details.timeline.${index}.event`} render={({ field }) => (
+                                                                <FormItem><FormLabel>Event</FormLabel><FormControl><Input placeholder="e.g., Application Period" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )}/>
+                                                            <FormField control={profileForm.control} name={`details.timeline.${index}.period`} render={({ field }) => (
+                                                                <FormItem><FormLabel>Period</FormLabel><FormControl><Input placeholder="e.g., Jan - Mar" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )}/>
+                                                        </Card>
+                                                    ))}
+                                                <Button type="button" variant="outline" size="sm" onClick={() => appendTimeline({ event: '', period: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Timeline Event</Button>
+
+                                                <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+                                                     {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                     Save Profile
+                                                </Button>
                                             </form>
                                         </Form>
                                     </CardContent>
@@ -363,17 +465,33 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange }: Incubat
                                         <CardContent>
                                             <Form {...settingsForm}>
                                                 <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-8">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <FormField control={settingsForm.control} name="firstName" render={({ field }) => (
-                                                            <FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="Your first name" {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )}/>
-                                                        <FormField control={settingsForm.control} name="lastName" render={({ field }) => (
-                                                            <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input placeholder="Your last name" {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )}/>
+                                                    <div>
+                                                        <h3 className="text-lg font-medium mb-4">Profile</h3>
+                                                        <div className="space-y-4">
+                                                            <FormField control={settingsForm.control} name="name" render={({ field }) => (
+                                                                <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )}/>
+                                                            <FormField
+                                                                control={settingsForm.control}
+                                                                name="email"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <div className="flex justify-between items-center">
+                                                                            <FormLabel>Email</FormLabel>
+                                                                            {!isEditingEmail && (
+                                                                                <Button type="button" variant="link" className="p-0 h-auto text-sm" onClick={() => setIsEditingEmail(true)}>
+                                                                                    Edit
+                                                                                </Button>
+                                                                            )}
+                                                                        </div>
+                                                                        <FormControl><Input type="email" placeholder="your@email.com" {...field} readOnly={!isEditingEmail} /></FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                        </div>
                                                     </div>
-                                                    <FormField control={settingsForm.control} name="email" render={({ field }) => (
-                                                        <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="your@email.com" {...field} /></FormControl><FormMessage /></FormItem>
-                                                    )}/>
+                                                    
                                                     <Button type="submit">Save Changes</Button>
                                                 </form>
                                             </Form>
@@ -393,3 +511,21 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange }: Incubat
         </>
     );
 }
+
+const incubatorChartData = [
+    { month: "January", submissions: 0 },
+    { month: "February", submissions: 0 },
+    { month: "March", submissions: 0 },
+    { month: "April", submissions: 0 },
+    { month: "May", submissions: 0 },
+    { month: "June", submissions: 0 },
+];
+  
+const incubatorChartConfig = {
+    submissions: {
+      label: "Submissions",
+      color: "hsl(var(--chart-2))",
+    },
+};
+
+    

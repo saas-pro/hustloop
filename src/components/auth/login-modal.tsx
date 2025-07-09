@@ -1,14 +1,12 @@
 
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +38,7 @@ type LoginSchema = z.infer<typeof loginSchema>;
 interface LoginModalProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onLoginSuccess: (role: UserRole) => void;
+  onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string }) => void;
 }
 
 export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginModalProps) {
@@ -56,35 +54,51 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
   const { formState: { isSubmitting } } = form;
 
   const handleLogin = async (values: LoginSchema) => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    let role: UserRole | null = null;
-    if (values.email === 'admin@hustloop.com' && values.password === 'admin') {
-        role = 'admin';
-    } else if (values.email === 'mentor@hustloop.com' && values.password === 'mentor') {
-        role = 'mentor';
-    } else if (values.email === 'incubator@hustloop.com' && values.password === 'incubator') {
-        role = 'incubator';
-    } else if (values.email === 'msme@hustloop.com' && values.password === 'msme') {
-        role = 'msme';
-    }
-
-    if (role) {
-        toast({
-            title: "Login Successful",
-            description: `Welcome back, ${role}!`,
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    try {
+        const response = await fetch(`${apiBaseUrl}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(values),
         });
-        onLoginSuccess(role);
-    } else {
+
+        const data = await response.json();
+
+        if (response.ok) {
+            toast({
+                title: "Login Successful",
+                description: `Welcome back, ${data.name}!`,
+            });
+            onLoginSuccess(data);
+        } else {
+            let title = "Login Failed";
+            if (data.error === 'Your account is pending admin approval.') {
+                 title = "Approval Pending";
+            } else if (data.error === 'This account has been suspended.') {
+                 title = "Account Suspended";
+            }
+            toast({
+                variant: "destructive",
+                title: title,
+                description: data.error || "An unknown error occurred.",
+            });
+            form.setError("password", {
+                type: "custom",
+                message: data.error || "Invalid credentials.",
+            });
+        }
+    } catch (error) {
         toast({
             variant: "destructive",
             title: "Login Failed",
-            description: "Invalid credentials. Please try again.",
+            description: "Could not connect to the server. Please try again.",
         });
-        form.setError("password", { type: "custom", message: "Invalid credentials." });
     }
   };
+  
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const googleLoginUrl = `${apiBaseUrl}/api/auth/google/login`;
+  const linkedinLoginUrl = `${apiBaseUrl}/api/auth/linkedin/login`;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -97,8 +111,12 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline"><GoogleIcon className="mr-2 h-4 w-4" /> Google</Button>
-            <Button variant="outline"><LinkedinIcon className="mr-2 h-4 w-4" /> LinkedIn</Button>
+            <Button variant="outline" asChild>
+                <a href={googleLoginUrl}><GoogleIcon className="mr-2 h-4 w-4" /> Google</a>
+            </Button>
+            <Button variant="outline" asChild>
+                <a href={linkedinLoginUrl}><LinkedinIcon className="mr-2 h-4 w-4" /> LinkedIn</a>
+            </Button>
         </div>
 
         <div className="relative">

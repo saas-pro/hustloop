@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -69,15 +68,43 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     const { formState: { isSubmitting } } = form;
 
     const handleSignup = async (values: SignupSchema) => {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        toast({
-            title: "Registration Successful",
-            description: "This is a demonstration. You can now use the default credentials to log in.",
-        });
-        setIsOpen(false);
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(values),
+            });
+    
+            const data = await response.json();
+    
+            if (response.ok) {
+                toast({
+                    title: "Registration Successful",
+                    description: data.message || "Your account is now pending admin approval.",
+                });
+                setIsOpen(false);
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Registration Failed",
+                    description: data.error || "An unknown error occurred.",
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Registration Failed",
+                description: "Could not connect to the server. Please try again later.",
+            });
+        }
     };
+
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const googleLoginUrl = `${apiBaseUrl}/api/auth/google/login`;
+    const linkedinLoginUrl = `${apiBaseUrl}/api/auth/linkedin/login`;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -90,8 +117,12 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
         </DialogHeader>
         
         <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" disabled={isSubmitting}><GoogleIcon className="mr-2 h-4 w-4" /> Google</Button>
-            <Button variant="outline" disabled={isSubmitting}><LinkedinIcon className="mr-2 h-4 w-4" /> LinkedIn</Button>
+            <Button variant="outline" asChild>
+                <a href={googleLoginUrl}><GoogleIcon className="mr-2 h-4 w-4" /> Google</a>
+            </Button>
+            <Button variant="outline" asChild>
+                <a href={linkedinLoginUrl}><LinkedinIcon className="mr-2 h-4 w-4" /> LinkedIn</a>
+            </Button>
         </div>
 
         <div className="relative">

@@ -1,8 +1,9 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import HomeView from "@/components/views/home";
@@ -36,33 +37,100 @@ const SignupModal = dynamic(() => import('@/components/auth/signup-modal'), { lo
 const EducationView = dynamic(() => import('@/components/views/education'), { loading: () => <ModalSkeleton /> });
 const ContactView = dynamic(() => import('@/components/views/contact'), { loading: () => <ModalSkeleton /> });
 
+type User = {
+    name: string;
+    email: string;
+}
 
 export default function Home() {
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
   const [activeView, setActiveView] = useState<View>("home");
   const [isLoggedIn, setLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [hasSubscription, setHasSubscription] = useState(false);
   const [hasUsedFreeSession, setHasUsedFreeSession] = useState(false);
   const [appliedPrograms, setAppliedPrograms] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
   
-  // This effect runs once on mount to set the initial theme and login state from localStorage
+  // This effect runs once on mount to set initial state from localStorage or OAuth redirect
   useEffect(() => {
-    // This effect syncs the React state with the DOM state set by the inline script in layout.tsx
+    // Check for OAuth redirect first
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const role = urlParams.get('role') as UserRole | null;
+    const name = urlParams.get('name');
+    const email = urlParams.get('email');
+    const hasSub = urlParams.get('hasSubscription') === 'true';
+    const error = urlParams.get('error');
+    const status = urlParams.get('status');
+
+    // Clean the URL immediately
+    if (token || error || status) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    if (status === 'pending_approval') {
+        toast({
+            title: "Registration Submitted",
+            description: "Your account is pending admin approval. You'll be notified via email once it's active.",
+        });
+        setIsLoading(false);
+        return; // Exit early
+    }
+
+    if (error) {
+        let title = "Sign-in Failed";
+        let description = "Could not sign in with provider. Please try again or use email.";
+
+        if (error === 'account_suspended') {
+            title = "Account Suspended";
+            description = "This account has been suspended.";
+        } else if (error === 'email_not_provided') {
+            title = "Email Missing";
+            description = "Your provider did not share your email. Please try another method.";
+        }
+
+        toast({
+            variant: "destructive",
+            title: title,
+            description: description,
+        });
+    } else if (token && role && name && email) {
+        const userData = { name, email };
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('hasSubscription', String(hasSub));
+        localStorage.setItem('token', token); // Store token for future API calls
+
+        setLoggedIn(true);
+        setUserRole(role);
+        setUser(userData);
+        setHasSubscription(hasSub);
+        toast({ title: "Login Successful", description: `Welcome back, ${name}!` });
+        setActiveView('dashboard');
+        setIsLoading(false);
+        return; // Exit early to prevent localStorage logic below from running
+    }
+
+    // Fallback to localStorage if no OAuth redirect
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     setTheme(initialTheme);
     
     const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
     const savedUserRole = localStorage.getItem('userRole') as UserRole | null;
+    const savedUser = localStorage.getItem('user');
     const savedSubscription = localStorage.getItem('hasSubscription');
     const savedAppliedPrograms = localStorage.getItem('appliedPrograms');
 
-    if (savedIsLoggedIn === 'true' && savedUserRole) {
+    if (savedIsLoggedIn === 'true' && savedUserRole && savedUser) {
       setLoggedIn(true);
       setUserRole(savedUserRole);
+      setUser(JSON.parse(savedUser));
       setHasSubscription(savedSubscription === 'true');
       setHasUsedFreeSession(false);
       if (savedAppliedPrograms) {
@@ -70,6 +138,7 @@ export default function Home() {
       }
     }
     setIsLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // This effect runs whenever the theme changes to update the DOM and localStorage
@@ -92,15 +161,20 @@ export default function Home() {
     }
   };
 
-  const handleLoginSuccess = (role: UserRole) => {
+  const handleLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string }) => {
+    const { role, token, hasSubscription, name, email } = data;
+    const userData = { name, email };
     setLoggedIn(true);
     setUserRole(role);
+    setUser(userData);
+    setHasSubscription(hasSubscription);
+
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userRole', role);
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('hasSubscription', String(hasSubscription));
+    localStorage.setItem('token', token);
 
-    // For prototype purposes, we check subscription status from localStorage as well.
-    const savedSubscription = localStorage.getItem('hasSubscription');
-    setHasSubscription(savedSubscription === 'true');
     setHasUsedFreeSession(false); // Reset for prototype testing
     setActiveView('dashboard');
   };
@@ -108,13 +182,18 @@ export default function Home() {
   const handleLogout = () => {
     setLoggedIn(false);
     setUserRole(null);
+    setUser(null);
     setHasSubscription(false);
     setAppliedPrograms({});
+    // Clear all auth-related items
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userRole');
+    localStorage.removeItem('user');
     localStorage.removeItem('hasSubscription');
     localStorage.removeItem('appliedPrograms');
+    localStorage.removeItem('token');
     setActiveView('home');
+    router.push('/');
   };
 
   const handleBookingSuccess = (mentorName: string, date: Date, time: string) => {
@@ -158,7 +237,7 @@ export default function Home() {
   };
 
   const renderDashboard = () => {
-    if (!isLoggedIn || activeView !== 'dashboard') {
+    if (!isLoggedIn || activeView !== 'dashboard' || !userRole || !user) {
       return null;
     }
 
@@ -169,6 +248,7 @@ export default function Home() {
             isOpen={true}
             onOpenChange={handleModalOpenChange('dashboard')}
             setActiveView={setActiveView}
+            user={user}
           />
         );
       case 'incubator':
@@ -176,6 +256,7 @@ export default function Home() {
           <IncubatorDashboardView
             isOpen={true}
             onOpenChange={handleModalOpenChange('dashboard')}
+            user={user}
           />
         );
       case 'msme':
@@ -183,18 +264,23 @@ export default function Home() {
             <MsmeDashboardView
                 isOpen={true}
                 onOpenChange={handleModalOpenChange('dashboard')}
+                user={user}
             />
         );
-      default:
+      case 'founder':
+      case 'admin':
         return (
           <DashboardView
             isOpen={true}
             onOpenChange={handleModalOpenChange('dashboard')} 
-            isLoggedIn={isLoggedIn}
+            user={user}
+            userRole={userRole}
             hasSubscription={hasSubscription}
             setActiveView={setActiveView}
           />
         );
+      default:
+        return null;
     }
   }
 
