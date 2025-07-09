@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import * as React from 'react';
+import { Suspense } from 'react';
 import { API_BASE_URL } from "@/lib/api";
 
 const profileSchema = z.object({
@@ -34,7 +35,7 @@ const profileSchema = z.object({
 
 type ProfileSchema = z.infer<typeof profileSchema>;
 
-export default function CompleteProfilePage() {
+function CompleteProfileForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
@@ -158,5 +159,18 @@ export default function CompleteProfilePage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+
+export default function CompleteProfilePage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        }>
+            <CompleteProfileForm />
+        </Suspense>
     );
 }
