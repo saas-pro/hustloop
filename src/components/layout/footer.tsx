@@ -1,6 +1,5 @@
 
 import { Linkedin, Github } from "lucide-react";
-import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -8,12 +7,6 @@ export default function Footer() {
       <div className="container mx-auto py-6 px-4">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <div
-              className="logo-container" 
-              style={{'--logo-size': '2.5rem'} as React.CSSProperties}
-            >
-              <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
-            </div>
             <span className="font-headline text-2xl" style={{ color: '#FFD700' }}>
               hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
             </span>
