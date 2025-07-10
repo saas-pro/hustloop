@@ -4,6 +4,7 @@ import { Inter, Righteous } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import TwinklingStars from '@/components/layout/twinkling-stars';
+import Script from 'next/script';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -58,6 +59,15 @@ export default function RootLayout({
           {children}
         </div>
         <Toaster />
+        <Script id="zoho-salesiq-inline" strategy="lazyOnload">
+          {`window.$zoho=window.$zoho || {};$zoho.salesiq=$zoho.salesiq||{ready:function(){}}`}
+        </Script>
+        <Script 
+          id="zsiqscript" 
+          src="https://salesiq.zohopublic.in/widget?wc=siq770fac757336897d739f9273d8f8f7b3aec5f63c512be52582e5f9e3440d863b" 
+          strategy="lazyOnload"
+          defer 
+        />
       </body>
     </html>
   );
