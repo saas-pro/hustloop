@@ -55,7 +55,7 @@ export default function RootLayout({
         <div className="hidden dark:block">
           <TwinklingStars />
         </div>
-        <div className="flex flex-col min-h-screen relative z-10">
+        <div className="flex flex-col min-h-screen">
           {children}
         </div>
         <Toaster />
