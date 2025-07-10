@@ -52,10 +52,10 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-background font-sans">
-        <div className="hidden dark:block">
-          <TwinklingStars />
-        </div>
         <div className="flex flex-col min-h-screen">
+          <div className="hidden dark:block">
+            <TwinklingStars />
+          </div>
           {children}
         </div>
         <Toaster />
