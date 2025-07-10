@@ -178,7 +178,37 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
         } else toast({ variant: 'destructive', title: 'Failed to create program' });
     };
 
-    function onSettingsSubmit(data: SettingsFormValues) { toast({ title: "Settings Saved", description: "Your profile has been updated." }); }
+    async function onSettingsSubmit(data: SettingsFormValues) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/update-profile`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                toast({ title: "Settings Saved", description: result.message });
+                // Update user data in localStorage to reflect changes immediately
+                localStorage.setItem('user', JSON.stringify(result.user));
+                // Optionally, trigger a re-render or state update in the parent component
+            } else {
+                toast({ variant: 'destructive', title: 'Update Failed', description: result.error || 'An unknown error occurred.' });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
+        }
+    }
 
     const adminTabs = ["overview", "users", "blog", "sessions", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
@@ -194,7 +224,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0">
-                        <TabsList className={userRole === 'admin' ? '' : 'grid w-full grid-cols-6'}>
+                        <TabsList className={userRole === 'admin' ? 'grid w-full grid-cols-5' : 'grid w-full grid-cols-6'}>
                             {availableTabs.map(tab => {
                                 const Icon = LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'blog' ? 'Newspaper' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle;
                                 return (
@@ -251,5 +281,3 @@ const chartData = [
 const chartConfig = {
     activity: { label: "Activity", color: "hsl(var(--chart-1))" },
 };
-
-    

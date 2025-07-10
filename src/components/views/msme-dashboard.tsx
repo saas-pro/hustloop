@@ -157,8 +157,34 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user }: MsmeDa
         }
     }
 
-    function onSettingsSubmit(data: SettingsFormValues) {
-        toast({ title: "Settings Saved", description: "Your account settings have been updated." });
+    async function onSettingsSubmit(data: SettingsFormValues) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/update-profile`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                toast({ title: "Settings Saved", description: result.message });
+                localStorage.setItem('user', JSON.stringify(result.user));
+            } else {
+                toast({ variant: 'destructive', title: 'Update Failed', description: result.error || 'An unknown error occurred.' });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
+        }
     }
 
     // Submission handling
@@ -376,5 +402,3 @@ const msmeChartConfig = {
       color: "hsl(var(--chart-3))",
     },
 };
-
-    
