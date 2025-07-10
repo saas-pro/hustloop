@@ -15,7 +15,27 @@ export default function TermsOfServicePage() {
   // This prevents hydration mismatch by rendering the date only on the client.
   useEffect(() => {
     setLastUpdated(new Date().toLocaleDateString());
+    
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    setTheme(initialTheme);
+    if (initialTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, []);
+
+  useEffect(() => {
+    if (theme) {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('theme', theme);
+    }
+  }, [theme]);
 
 
   // Dummy props for the Header, as it's used statically here and doesn't need to change views.
@@ -27,6 +47,7 @@ export default function TermsOfServicePage() {
     theme: theme,
     setTheme: (t: 'light' | 'dark') => setTheme(t),
     isLoading: false, // Set to false as we are not checking auth status on this page
+    isStaticPage: true,
   };
 
   return (
