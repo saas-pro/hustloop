@@ -1,18 +1,43 @@
 
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Footer from '@/components/layout/footer';
 import Header from '@/components/layout/header';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useEffect } from 'react';
 
 export default function TermsOfServicePage() {
+  // Since this is now a client component, we manage state here.
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  // This prevents hydration mismatch by rendering the date only on the client.
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleDateString());
+  }, []);
+
+
+  // Dummy props for the Header, as it's used statically here and doesn't need to change views.
+  const headerProps = {
+    activeView: "home" as const,
+    setActiveView: () => {},
+    isLoggedIn: false,
+    onLogout: () => {},
+    theme: theme,
+    setTheme: (t: 'light' | 'dark') => setTheme(t),
+    isLoading: false, // Set to false as we are not checking auth status on this page
+  };
+
   return (
     <>
       <div className="flex flex-col min-h-screen">
+        <Header {...headerProps} />
         <main className="flex-grow container mx-auto px-4 py-12 md:py-16">
           <Card>
             <CardHeader>
               <CardTitle className="text-3xl md:text-4xl font-headline">Terms of Service</CardTitle>
-              <p className="text-muted-foreground">Last Updated: {new Date().toLocaleDateString()}</p>
+              <p className="text-muted-foreground">Last Updated: {lastUpdated}</p>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[60vh] pr-6">
