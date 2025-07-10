@@ -1,226 +1,53 @@
 
-"use client";
+import { Linkedin, Github } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
-import type { View } from "@/app/types";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { LogOut, UserCircle, Menu, Sun, Moon, Loader2 } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import * as React from 'react';
-import { Separator } from "../ui/separator";
-import { useRouter, usePathname } from "next/navigation";
-
-interface HeaderProps {
-  activeView: View;
-  setActiveView: (view: View) => void;
-  isLoggedIn: boolean;
-  onLogout: () => void;
-  theme: 'light' | 'dark' | null;
-  setTheme: (theme: 'light' | 'dark') => void;
-  isLoading: boolean;
-}
-
-const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
-  { id: "dashboard", label: "Dashboard", loggedIn: true },
-  { id: "blog", label: "Blog" },
-  { id: "mentors", label: "Mentors" },
-  { id: "incubators", label: "Incubators" },
-  { id: "pricing", label: "Pricing" },
-  { id: "msmes", label: "MSMEs" },
-  { id: "education", label: "Education" },
-];
-
-export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, theme, setTheme, isLoading }: HeaderProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [isNavigating, setIsNavigating] = React.useState(false);
-
-  const handleLogoClick = () => {
-    // If on a static page, navigate to home and show loading state.
-    if (pathname === '/terms-of-service' || pathname === '/privacy-policy') {
-      setIsNavigating(true);
-      router.push('/');
-    } else {
-      // Otherwise, just set the view to home for the SPA.
-      setActiveView("home");
-    }
-  };
-  
-  const toggleTheme = () => {
-    if (theme) {
-      setTheme(theme === 'light' ? 'dark' : 'light');
-    }
-  };
-
-  const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
-    if (isNavigating) {
-      return (
-        <div className="flex items-center gap-3 h-[40px]">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <span className="text-muted-foreground">Loading...</span>
-        </div>
-      );
-    }
-
-    return (
-      <div
-        className="flex items-center gap-3 cursor-pointer"
-        onClick={handleLogoClick}
-      >
-        <div className="font-headline text-2xl" style={{ color: '#facc15' }}>
-          hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
-        </div>
-        {!inSheet && (
-          <>
-              <Separator orientation="vertical" className="h-6 bg-border" />
-              <p className="text-xs text-muted-foreground">
-                  Smart hustle. <br /> Infinite growth..
-              </p>
-          </>
-        )}
-      </div>
-    );
-  };
-
-  const ThemeToggleButton = ({ className }: { className?: string }) => (
-    <Button variant="ghost" size="icon" onClick={toggleTheme} className={className} disabled={!theme}>
-      <Sun className="h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-      <span className="sr-only">Toggle theme</span>
-    </Button>
-  );
-
+export default function Footer() {
   return (
-    <>
-      <header className="bg-background/80 backdrop-blur-sm sticky top-0 z-40 w-full border-b">
-        <div className="container mx-auto flex h-20 items-center px-4">
-          
-          {/* Left side */}
+    <footer className="border-t">
+      <div className="container mx-auto py-6 px-4">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-sm">
+          {/* Left: Logo and Tagline */}
           <div className="flex-1 flex justify-start">
-            <BrandLogo />
+            <div className="flex items-center gap-3 text-center md:text-left">
+              <div className="font-headline text-2xl" style={{ color: '#facc15' }}>
+                hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
+              </div>
+              <Separator orientation="vertical" className="h-8 bg-border hidden md:block" />
+              <p className="text-muted-foreground hidden md:block">
+                Smart hustle. <br /> Infinite growth..
+              </p>
+            </div>
+          </div>
+
+          {/* Center: Copyright and Legal */}
+          <div className="text-center text-muted-foreground order-last md:order-none">
+            <p>&copy; {new Date().getFullYear()} hustloop. All rights reserved.</p>
+            <div className="flex gap-4 justify-center mt-1">
+              <a href="/terms-of-service" className="text-xs hover:text-primary transition-colors">Terms of Service</a>
+              <a href="/privacy-policy" className="text-xs hover:text-primary transition-colors">Privacy Policy</a>
+            </div>
           </div>
           
-          {/* Desktop Navigation (Center) */}
-          <nav className="hidden md:flex items-center space-x-6">
-            {navItems
-              .filter((item) => !item.loggedIn || isLoggedIn)
-              .map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveView(item.id)}
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary",
-                    activeView === item.id
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  {item.label}
-                </button>
-              ))}
-          </nav>
-
-          {/* Right Side */}
+          {/* Right: Social Icons */}
           <div className="flex-1 flex justify-end">
-            {/* Desktop Auth Buttons */}
-            <div className="hidden md:flex items-center gap-2">
-              {isLoading ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              ) : isLoggedIn ? (
-                <>
-                  <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
-                    <UserCircle className="h-6 w-6" />
-                    <span className="sr-only">Dashboard</span>
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={onLogout}>
-                    <LogOut className="h-6 w-6" />
-                    <span className="sr-only">Logout</span>
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="ghost" onClick={() => setActiveView('login')}>
-                    Login
-                  </Button>
-                  <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                    Sign Up
-                  </Button>
-                </>
-              )}
-              <ThemeToggleButton />
-            </div>
-            
-            {/* Mobile Navigation */}
-            <div className="md:hidden">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-6 w-6" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                  <div className="flex items-center justify-between mb-8">
-                    <SheetClose asChild>
-                        <BrandLogo inSheet={true} />
-                    </SheetClose>
-                    <ThemeToggleButton />
-                  </div>
-                  <nav className="flex flex-col space-y-2">
-                    {navItems
-                      .filter((item) => !item.loggedIn || isLoggedIn)
-                      .map((item) => (
-                        <SheetClose key={item.id} asChild>
-                          <Button
-                            variant="ghost"
-                            onClick={() => setActiveView(item.id)}
-                            className={cn(
-                              "justify-start text-lg",
-                              activeView === item.id ? "text-primary" : "text-muted-foreground"
-                            )}
-                          >
-                            {item.label}
-                          </Button>
-                        </SheetClose>
-                      ))}
-                  </nav>
-                  <div className="absolute bottom-6 left-6 right-6">
-                    {isLoading ? (
-                        <div className="flex justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : isLoggedIn ? (
-                      <div className="flex items-center justify-between">
-                          <SheetClose asChild>
-                              <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
-                                <UserCircle className="h-8 w-8" />
-                                <span className="sr-only">Dashboard</span>
-                              </Button>
-                          </SheetClose>
-                          <SheetClose asChild>
-                              <Button variant="outline" onClick={onLogout}>
-                                  <LogOut className="mr-2 h-5 w-5" /> Logout
-                              </Button>
-                          </SheetClose>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                          <SheetClose asChild>
-                              <Button className="w-full" onClick={() => setActiveView('login')}>Login</Button>
-                          </SheetClose>
-                          <SheetClose asChild>
-                              <Button variant="secondary" className="w-full" onClick={() => setActiveView('signup')}>Sign Up</Button>
-                          </SheetClose>
-                      </div>
-                    )}
-                  </div>
-                </SheetContent>
-              </Sheet>
+            <div className="flex items-center gap-4">
+              <a href="#" aria-label="X" className="text-muted-foreground hover:text-primary transition-colors">
+                <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current">
+                  <title>X</title>
+                  <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.931L18.901 1.153Zm-1.653 19.57h2.608L6.856 2.597H4.062l13.185 18.126Z"/>
+                </svg>
+              </a>
+              <a href="#" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors">
+                <Linkedin className="h-5 w-5" />
+              </a>
+              <a href="#" aria-label="GitHub" className="text-muted-foreground hover:text-primary transition-colors">
+                <Github className="h-5 w-5" />
+              </a>
             </div>
           </div>
-
         </div>
-      </header>
-    </>
+      </div>
+    </footer>
   );
 }
