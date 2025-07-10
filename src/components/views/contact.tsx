@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Phone, Mail, Send, Linkedin, Twitter, Github, Facebook, Instagram, Loader2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { API_BASE_URL } from "@/lib/api";
 
 
 const contactFormSchema = z.object({
@@ -42,13 +43,37 @@ export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) 
   const { formState: { isSubmitting } } = form;
 
   async function onSubmit(data: ContactFormValues) {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast({
-        title: "Message Sent!",
-        description: "Thank you for reaching out. We'll get back to you shortly.",
-    });
-    form.reset();
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/contact`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            toast({
+                title: "Message Sent!",
+                description: "Thank you for reaching out. We'll get back to you shortly.",
+            });
+            form.reset();
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Submission Failed",
+                description: result.error || "An unknown error occurred.",
+            });
+        }
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: "Could not connect to the server. Please try again later.",
+        });
+    }
   }
     
   return (
@@ -92,7 +117,7 @@ export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) 
                                 <Mail className="h-6 w-6 text-primary mt-1" />
                                 <div>
                                     <h3 className="text-lg font-semibold">Email Us</h3>
-                                    <p className="text-muted-foreground">contact@hustloop.com</p>
+                                    <p className="text-muted-foreground">support@hustloop.com</p>
                                 </div>
                             </div>
                         </div>

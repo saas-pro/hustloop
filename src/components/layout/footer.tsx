@@ -1,15 +1,20 @@
 
 import { Linkedin, Github } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function Footer() {
   return (
     <footer className="border-t">
       <div className="container mx-auto py-6 px-4">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-headline text-2xl" style={{ color: '#FFD700' }}>
+          <div className="flex items-center gap-3">
+            <div className="font-headline text-2xl" style={{ color: '#facc15' }}>
               hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
-            </span>
+            </div>
+            <Separator orientation="vertical" className="h-6 bg-border" />
+            <p className="text-xs text-muted-foreground">
+              Smart hustle. <br /> Infinite growth..
+            </p>
           </div>
           <div className="text-center order-last sm:order-none">
             <p className="text-sm text-muted-foreground">

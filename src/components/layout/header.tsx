@@ -37,6 +37,23 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
     }
   };
 
+  const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => (
+    <div
+      className="flex items-center gap-2 cursor-pointer"
+      onClick={() => setActiveView("home")}
+    >
+      <div
+        className="logo-container"
+        style={{'--logo-size': '2.5rem'} as React.CSSProperties}
+      >
+        <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
+      </div>
+      <span className="font-headline text-2xl" style={{ color: '#facc15' }}>
+        hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
+      </span>
+    </div>
+  );
+
   const ThemeToggleButton = ({ className }: { className?: string }) => (
     <Button variant="ghost" size="icon" onClick={toggleTheme} className={className} disabled={!theme}>
       <Sun className="h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -48,24 +65,11 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
   return (
     <>
       <header className="bg-background/80 backdrop-blur-sm sticky top-0 z-40 w-full border-b">
-        <div className="container mx-auto flex h-16 items-center px-4">
+        <div className="container mx-auto flex h-20 items-center px-4">
           
           {/* Left side */}
           <div className="flex-1 flex justify-start">
-            <div
-              className="flex items-center gap-2 cursor-pointer"
-              onClick={() => setActiveView("home")}
-            >
-              <div
-                className="logo-container"
-                style={{'--logo-size': '2.5rem'} as React.CSSProperties}
-              >
-                <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
-              </div>
-              <span className="font-headline text-2xl" style={{ color: '#FFD700' }}>
-                hustl<strong className="text-3xl align-middle font-black">∞</strong>p
-              </span>
-            </div>
+            <BrandLogo />
           </div>
           
           {/* Desktop Navigation (Center) */}
@@ -130,20 +134,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                 <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                   <div className="flex items-center justify-between mb-8">
                     <SheetClose asChild>
-                      <div 
-                        className="flex items-center gap-2 cursor-pointer"
-                        onClick={() => setActiveView("home")}
-                      >
-                        <div
-                          className="logo-container"
-                          style={{'--logo-size': '2.5rem'} as React.CSSProperties}
-                        >
-                          <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
-                        </div>
-                        <span className="font-headline text-2xl" style={{ color: '#FFD700' }}>
-                          hustl<strong className="text-3xl align-middle font-black">∞</strong>p
-                        </span>
-                      </div>
+                        <BrandLogo inSheet={true} />
                     </SheetClose>
                     <ThemeToggleButton />
                   </div>
