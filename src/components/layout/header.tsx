@@ -8,6 +8,7 @@ import { LogOut, UserCircle, Menu, Sun, Moon, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import Image from "next/image";
 import * as React from 'react';
+import { Separator } from "../ui/separator";
 
 interface HeaderProps {
   activeView: View;
@@ -39,18 +40,20 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
 
   const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => (
     <div
-      className="flex items-center gap-2 cursor-pointer"
+      className="flex items-center gap-3 cursor-pointer"
       onClick={() => setActiveView("home")}
     >
-      <div
-        className="logo-container"
-        style={{'--logo-size': '2.5rem'} as React.CSSProperties}
-      >
-        <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
-      </div>
-      <span className="font-headline text-2xl" style={{ color: '#facc15' }}>
+      <div className="font-headline text-2xl" style={{ color: '#facc15' }}>
         hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
-      </span>
+      </div>
+      {!inSheet && (
+        <>
+            <Separator orientation="vertical" className="h-6 bg-border" />
+            <p className="text-xs text-muted-foreground">
+                Smart hustle. <br /> Infinite growth..
+            </p>
+        </>
+      )}
     </div>
   );
 

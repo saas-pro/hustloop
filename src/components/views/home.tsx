@@ -281,7 +281,7 @@ export default function HomeView({ setActiveView, theme, isLoggedIn }: HomeViewP
         </section>
         
         {/* Final CTA Section */}
-        <section className="pt-24 md:pt-32 container mx-auto px-4">
+        <section className="py-24 md:py-32 container mx-auto px-4">
           <div className="bg-card/50 rounded-lg p-12 text-center border border-primary/50 shadow-lg shadow-primary/10">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Ready to Build the Future?</h2>
             <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-8">
@@ -289,15 +289,6 @@ export default function HomeView({ setActiveView, theme, isLoggedIn }: HomeViewP
             </p>
             <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setActiveView('contact')}>Contact Us Today</Button>
           </div>
-          <div className="my-16 flex justify-center py-8">
-              <Image 
-                src="/logo.png"
-                width={120}
-                height={120}
-                alt="Hustloop Logo"
-                data-ai-hint="logo"
-              />
-            </div>
         </section>
 
       </div>
