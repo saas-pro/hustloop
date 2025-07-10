@@ -21,8 +21,8 @@ export default function Footer() {
               &copy; {new Date().getFullYear()} hustloop. All rights reserved.
             </p>
             <div className="flex gap-4 justify-center mt-2">
-              <a href="#" className="text-xs text-muted-foreground hover:text-primary transition-colors">Terms of Service</a>
-              <a href="#" className="text-xs text-muted-foreground hover:text-primary transition-colors">Privacy Policy</a>
+              <a href="/terms-of-service" className="text-xs text-muted-foreground hover:text-primary transition-colors">Terms of Service</a>
+              <a href="/privacy-policy" className="text-xs text-muted-foreground hover:text-primary transition-colors">Privacy Policy</a>
             </div>
           </div>
           <div className="flex items-center gap-4">
