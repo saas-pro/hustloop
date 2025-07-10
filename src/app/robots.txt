@@ -1,0 +1,7 @@
+# See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+#
+# This file is used by search engine crawlers to determine which parts of your website they are allowed to access.
+# By default, we are allowing all crawlers to access all parts of the site.
+
+User-agent: *
+Allow: /
