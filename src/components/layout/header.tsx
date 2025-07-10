@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LogOut, UserCircle, Menu, Sun, Moon, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import Image from "next/image";
 import * as React from 'react';
 import { Separator } from "../ui/separator";
+import { useRouter, usePathname } from "next/navigation";
 
 interface HeaderProps {
   activeView: View;
@@ -31,6 +31,20 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
 ];
 
 export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, theme, setTheme, isLoading }: HeaderProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isNavigating, setIsNavigating] = React.useState(false);
+
+  const handleLogoClick = () => {
+    // If on a static page, navigate to home and show loading state.
+    if (pathname === '/terms-of-service' || pathname === '/privacy-policy') {
+      setIsNavigating(true);
+      router.push('/');
+    } else {
+      // Otherwise, just set the view to home for the SPA.
+      setActiveView("home");
+    }
+  };
   
   const toggleTheme = () => {
     if (theme) {
@@ -38,24 +52,35 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
     }
   };
 
-  const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => (
-    <div
-      className="flex items-center gap-3 cursor-pointer"
-      onClick={() => setActiveView("home")}
-    >
-      <div className="font-headline text-2xl" style={{ color: '#facc15' }}>
-        hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
+  const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
+    if (isNavigating) {
+      return (
+        <div className="flex items-center gap-3 h-[40px]">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <span className="text-muted-foreground">Loading...</span>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="flex items-center gap-3 cursor-pointer"
+        onClick={handleLogoClick}
+      >
+        <div className="font-headline text-2xl" style={{ color: '#facc15' }}>
+          hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
+        </div>
+        {!inSheet && (
+          <>
+              <Separator orientation="vertical" className="h-6 bg-border" />
+              <p className="text-xs text-muted-foreground">
+                  Smart hustle. <br /> Infinite growth..
+              </p>
+          </>
+        )}
       </div>
-      {!inSheet && (
-        <>
-            <Separator orientation="vertical" className="h-6 bg-border" />
-            <p className="text-xs text-muted-foreground">
-                Smart hustle. <br /> Infinite growth..
-            </p>
-        </>
-      )}
-    </div>
-  );
+    );
+  };
 
   const ThemeToggleButton = ({ className }: { className?: string }) => (
     <Button variant="ghost" size="icon" onClick={toggleTheme} className={className} disabled={!theme}>
