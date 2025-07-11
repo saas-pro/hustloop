@@ -5,7 +5,7 @@ export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile"
 export type IncubatorDashboardTab = "overview" | "submissions" | "profile" | "settings";
 export type MsmeDashboardTab = "overview" | "submissions" | "profile" | "settings";
 export type UserRole = "admin" | "mentor" | "incubator" | "msme" | "founder" | null;
-export type UserStatus = "active" | "banned";
+export type UserStatus = "active" | "banned" | "pending";
 
 export type Comment = {
   author: 'Founder' | 'Incubator' | 'Triage Team' | 'MSME';

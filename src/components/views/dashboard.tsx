@@ -204,9 +204,9 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
             toast({ variant: 'destructive', title: errorMessage, description: data.error });
         }
     };
-    const handleApproveUser = async (userId: number) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User approved successfully.', 'Approval Failed');
-    const handleDeleteUser = async (userId: number) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User deleted successfully.', 'Deletion Failed');
-    const handleToggleBanUser = async (userId: number) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/toggle-ban`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User status updated.', 'Update Failed');
+    const handleApproveUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User approved successfully.', 'Approval Failed');
+    const handleDeleteUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User deleted successfully.', 'Deletion Failed');
+    const handleToggleBanUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/toggle-ban`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User status updated.', 'Update Failed');
 
     const fetchBlogPosts = async () => {
         try {
@@ -293,7 +293,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
     const adminTabs = ["overview", "users", "subscribers", "blog", "sessions", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
-    const pendingApprovalCount = users.filter(u => !u.is_confirmed).length;
+    const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -326,9 +326,9 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                                 <TabsContent value="users" className="mt-0">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>User Management</CardTitle><CardDescription>Approve, ban, or delete user accounts.</CardDescription></CardHeader><CardContent>
                                         {isLoadingUsers ? <div className="flex justify-center items-center h-48"><LucideIcons.Loader2 className="h-8 w-8 animate-spin" /></div> : (<Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Role</TableHead><TableHead>Joined</TableHead><TableHead>Status</TableHead><TableHead>Auth</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader><TableBody>
-                                            {users.map(u => (<TableRow key={u.id}><TableCell><div className="font-medium">{u.name}</div><div className="text-sm text-muted-foreground">{u.email}</div></TableCell><TableCell className="capitalize">{u.role}</TableCell><TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell><TableCell><div className="flex flex-col gap-1">{u.is_banned ? <Badge variant="destructive">Banned</Badge> : (u.is_confirmed ? <Badge variant="default">Approved</Badge> : <Badge variant="secondary">Pending</Badge>)}</div></TableCell><TableCell className="capitalize">{u.auth_provider}</TableCell><TableCell className="space-x-2">
-                                                {!u.is_confirmed && !u.is_banned && (<Button size="sm" onClick={() => handleApproveUser(u.id)}><LucideIcons.CheckCircle className="mr-2 h-4 w-4" />Approve</Button>)}
-                                                <Button size="sm" variant={u.is_banned ? "outline" : "secondary"} onClick={() => setUserToBan(u)}><LucideIcons.Ban className="mr-2 h-4 w-4" />{u.is_banned ? "Unban" : "Ban"}</Button>
+                                            {users.map(u => (<TableRow key={u.uid}><TableCell><div className="font-medium">{u.name}</div><div className="text-sm text-muted-foreground">{u.email}</div></TableCell><TableCell className="capitalize">{u.role}</TableCell><TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell><TableCell><div className="flex flex-col gap-1">{u.status === 'banned' ? <Badge variant="destructive">Banned</Badge> : (u.status === 'active' ? <Badge variant="default">Active</Badge> : <Badge variant="secondary">Pending</Badge>)}</div></TableCell><TableCell className="capitalize">{u.auth_provider}</TableCell><TableCell className="space-x-2">
+                                                {u.status === 'pending' && (<Button size="sm" onClick={() => handleApproveUser(u.uid)}><LucideIcons.CheckCircle className="mr-2 h-4 w-4" />Approve</Button>)}
+                                                <Button size="sm" variant={u.status === 'banned' ? "outline" : "secondary"} onClick={() => setUserToBan(u)}><LucideIcons.Ban className="mr-2 h-4 w-4" />{u.status === 'banned' ? "Unban" : "Ban"}</Button>
                                                 <Button size="sm" variant="destructive" onClick={() => setUserToDelete(u)}><LucideIcons.Trash2 className="mr-2 h-4 w-4" />Delete</Button>
                                             </TableCell></TableRow>))}
                                         </TableBody></Table>)}
@@ -457,8 +457,8 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                         </ScrollArea>
                     </Tabs>
                 </div>
-                <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the user account and remove their data from our servers.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToDelete) { handleDeleteUser(userToDelete.id); setUserToDelete(null); } }}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-                <AlertDialog open={!!userToBan} onOpenChange={(open) => !open && setUserToBan(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will {userToBan?.is_banned ? "unban" : "ban"} the user, {userToBan?.is_banned ? "allowing" : "preventing"} them from logging in. Do you want to continue?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToBan) { handleToggleBanUser(userToBan.id); setUserToBan(null); } }}>{userToBan?.is_banned ? "Unban User" : "Ban User"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+                <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the user account and remove their data from our servers.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToDelete) { handleDeleteUser(userToDelete.uid); setUserToDelete(null); } }}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+                <AlertDialog open={!!userToBan} onOpenChange={(open) => !open && setUserToBan(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will {userToBan?.status === 'banned' ? "unban" : "ban"} the user, {userToBan?.status === 'banned' ? "allowing" : "preventing"} them from logging in. Do you want to continue?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToBan) { handleToggleBanUser(userToBan.uid); setUserToBan(null); } }}>{userToBan?.status === 'banned' ? "Unban User" : "Ban User"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                 <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
