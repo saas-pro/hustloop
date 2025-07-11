@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import * as LucideIcons from "lucide-react";
+import type { LucideProps } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import EducationBookingModal from "./education-booking-modal";
 import type { View, EducationProgram, EducationSession } from "@/app/types";
@@ -63,7 +64,10 @@ const LoadingSkeleton = () => (
 );
 
 const getIconForFeature = (iconName: string): React.ReactNode => {
-    const Icon = LucideIcons[iconName as keyof typeof LucideIcons] || LucideIcons.Check;
+    const Icon = (LucideIcons as any)[iconName] as React.ComponentType<LucideProps> | undefined;
+    if (!Icon) {
+        return <LucideIcons.Check className="h-5 w-5 text-primary" />;
+    }
     return <Icon className="h-5 w-5 text-primary" />;
 };
 
