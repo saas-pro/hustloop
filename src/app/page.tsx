@@ -165,14 +165,11 @@ export default function Home() {
 
   // Re-run Zoho SalesIQ trigger on SPA navigation
   useEffect(() => {
-    if (typeof window !== 'undefined' && 
-        (window as any).$zoho && 
-        (window as any).$zoho.salesiq && 
-        (window as any).$zoho.salesiq.page &&
-        (window as any).$zoho.salesiq.page.popup
-      ) {
-      (window as any).$zoho.salesiq.page.popup.close('all');
-      (window as any).$zoho.salesiq.page.popup.show();
+    if (typeof window !== 'undefined' && (window as any).$zoho) {
+      (window as any).$zoho.salesiq.ready = function() {
+        (window as any).$zoho.salesiq.page.popup.close('all');
+        (window as any).$zoho.salesiq.page.popup.show();
+      }
     }
   }, [activeView]);
 
@@ -395,5 +392,3 @@ export default function Home() {
     </>
   );
 }
-
-    

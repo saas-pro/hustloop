@@ -60,14 +60,14 @@ export default function CorporateChallengeDetails({
   return (
     <Dialog open={!!challenge} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
-        <DialogHeader className="flex-row items-center gap-4 p-6">
+        <DialogHeader className="p-6">
+          <div className='flex items-center gap-4'>
             <Image src={challenge.logo} alt={`${challenge.company} logo`} width={80} height={80} className="rounded-lg" data-ai-hint={challenge.hint} />
             <div>
-                <DialogTitle className="text-3xl font-bold font-headline">{challenge.title}</DialogTitle>
-                <DialogDescription>
-                A challenge by {challenge.company}.
-                </DialogDescription>
+              <DialogTitle className="text-3xl font-bold font-headline">{challenge.title}</DialogTitle>
+              <DialogDescription>A challenge by {challenge.company}.</DialogDescription>
             </div>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="flex-grow mt-4 px-6">

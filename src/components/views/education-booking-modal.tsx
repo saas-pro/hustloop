@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Program, Session } from '@/components/views/education';
+import type { EducationProgram as Program, EducationSession as Session } from '@/app/types';
 import {
   Dialog,
   DialogContent,
