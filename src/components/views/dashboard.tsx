@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import * as LucideIcons from "lucide-react";
+import type { LucideProps } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber } from "@/app/types";
@@ -23,7 +24,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
 import Image from "next/image";
@@ -75,7 +75,8 @@ interface DashboardViewProps {
     setActiveView: (view: View) => void;
 }
 
-const iconNames = Object.keys(LucideIcons).filter(k => k !== 'createLucideIcon' && k !== 'icons');
+const iconNames = Object.keys(LucideIcons).filter(k => k !== 'createLucideIcon' && k !== 'icons'  && k !== 'default');
+
 
 const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) => void, title: string }) => (
     <Card className="mt-0 bg-card/50 backdrop-blur-sm border-border/50 text-center flex flex-col items-center justify-center p-8 min-h-[400px]">
@@ -204,7 +205,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
             toast({ variant: 'destructive', title: errorMessage, description: data.error });
         }
     };
-    const handleApproveUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User approved successfully.', 'Approval Failed');
+
     const handleDeleteUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User deleted successfully.', 'Deletion Failed');
     const handleToggleBanUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/toggle-ban`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User status updated.', 'Update Failed');
 
@@ -306,7 +307,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0">
                         <TabsList className="grid w-full grid-cols-6">
                             {availableTabs.map(tab => {
-                                const Icon = LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'subscribers' ? 'Mail' : tab === 'blog' ? 'Newspaper' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle;
+                                const Icon = (LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'subscribers' ? 'Mail' : tab === 'blog' ? 'Newspaper' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle) as React.ComponentType<LucideProps>;
                                 return (
                                 <TabsTrigger value={tab} key={tab} className="capitalize">
                                     <Icon className="mr-2 h-4 w-4" /> {tab === 'mentors' ? 'My Mentors' : tab}
@@ -327,7 +328,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>User Management</CardTitle><CardDescription>Approve, ban, or delete user accounts.</CardDescription></CardHeader><CardContent>
                                         {isLoadingUsers ? <div className="flex justify-center items-center h-48"><LucideIcons.Loader2 className="h-8 w-8 animate-spin" /></div> : (<Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Role</TableHead><TableHead>Joined</TableHead><TableHead>Status</TableHead><TableHead>Auth</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader><TableBody>
                                             {users.map(u => (<TableRow key={u.uid}><TableCell><div className="font-medium">{u.name}</div><div className="text-sm text-muted-foreground">{u.email}</div></TableCell><TableCell className="capitalize">{u.role}</TableCell><TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell><TableCell><div className="flex flex-col gap-1">{u.status === 'banned' ? <Badge variant="destructive">Banned</Badge> : (u.status === 'active' ? <Badge variant="default">Active</Badge> : <Badge variant="secondary">Pending</Badge>)}</div></TableCell><TableCell className="capitalize">{u.auth_provider}</TableCell><TableCell className="space-x-2">
-                                                {u.status === 'pending' && (<Button size="sm" onClick={() => handleApproveUser(u.uid)}><LucideIcons.CheckCircle className="mr-2 h-4 w-4" />Approve</Button>)}
+                                                {u.status === 'pending' && (<Button size="sm" onClick={() => {}}><LucideIcons.CheckCircle className="mr-2 h-4 w-4" />Approve</Button>)}
                                                 <Button size="sm" variant={u.status === 'banned' ? "outline" : "secondary"} onClick={() => setUserToBan(u)}><LucideIcons.Ban className="mr-2 h-4 w-4" />{u.status === 'banned' ? "Unban" : "Ban"}</Button>
                                                 <Button size="sm" variant="destructive" onClick={() => setUserToDelete(u)}><LucideIcons.Trash2 className="mr-2 h-4 w-4" />Delete</Button>
                                             </TableCell></TableRow>))}
@@ -484,3 +485,5 @@ const chartData = [
 const chartConfig = {
     activity: { label: "Activity", color: "hsl(var(--chart-1))" },
 };
+
+    
