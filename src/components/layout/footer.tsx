@@ -1,14 +1,16 @@
-
 import { Linkedin, Github } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import NewsletterForm from "./newsletter-form";
 
 export default function Footer() {
   return (
     <footer className="border-t">
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto py-12 px-4 space-y-12">
+        <NewsletterForm />
+        <Separator />
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-sm">
           {/* Left: Logo and Tagline */}
-          <div className="flex-1 flex justify-start">
+          <div className="flex-1 flex justify-center md:justify-start">
             <div className="flex items-center gap-3 text-center md:text-left">
               <div className="font-headline text-2xl" style={{ color: '#facc15' }}>
                 hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
@@ -30,7 +32,7 @@ export default function Footer() {
           </div>
           
           {/* Right: Social Icons */}
-          <div className="flex-1 flex justify-end">
+          <div className="flex-1 flex justify-center md:justify-end">
             <div className="flex items-center gap-4">
               <a href="#" aria-label="X" className="text-muted-foreground hover:text-primary transition-colors">
                 <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current">

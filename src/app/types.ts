@@ -1,6 +1,5 @@
-
 export type View = "home" | "blog" | "mentors" | "incubators" | "pricing" | "msmes" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile";
-export type DashboardTab = "overview" | "msmes" | "incubators" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions";
+export type DashboardTab = "overview" | "msmes" | "incubators" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers";
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
 export type IncubatorDashboardTab = "overview" | "submissions" | "profile" | "settings";
 export type MsmeDashboardTab = "overview" | "submissions" | "profile" | "settings";
@@ -30,6 +29,12 @@ export type AppUser = {
   is_confirmed: boolean;
   is_banned: boolean;
   created_at: string;
+};
+
+export type NewsletterSubscriber = {
+  id: number;
+  email: string;
+  subscribed_at: string;
 };
 
 export type BlogPost = {

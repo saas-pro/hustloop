@@ -15,7 +15,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import * as LucideIcons from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram } from "@/app/types";
+import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -92,6 +92,9 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
     const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
     const [userToBan, setUserToBan] = useState<AppUser | null>(null);
 
+    const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
+    const [isLoadingSubscribers, setIsLoadingSubscribers] = useState(false);
+
     const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
     const [educationPrograms, setEducationPrograms] = useState<EducationProgram[]>([]);
 
@@ -126,11 +129,25 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
             else toast({ variant: 'destructive', title: 'Failed to fetch users' });
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingUsers(false); }
     };
+
+    const fetchSubscribers = async () => {
+        setIsLoadingSubscribers(true);
+        const token = localStorage.getItem('token');
+        if (!token) { toast({ variant: 'destructive', title: 'Authentication Error' }); setIsLoadingSubscribers(false); return; }
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/subscribers`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (response.ok) setSubscribers(await response.json());
+            else toast({ variant: 'destructive', title: 'Failed to fetch subscribers' });
+        } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingSubscribers(false); }
+    };
     
     useEffect(() => {
-        if (activeTab === 'users' && userRole === 'admin') fetchUsers();
-        if (activeTab === 'blog' && userRole === 'admin') fetchBlogPosts();
-        if (activeTab === 'sessions' && userRole === 'admin') fetchEducationPrograms();
+        if (userRole === 'admin') {
+            if (activeTab === 'users') fetchUsers();
+            if (activeTab === 'blog') fetchBlogPosts();
+            if (activeTab === 'sessions') fetchEducationPrograms();
+            if (activeTab === 'subscribers') fetchSubscribers();
+        }
     }, [activeTab, userRole]);
 
     const handleApiResponse = async (response: Response, successMessage: string, errorMessage: string) => {
@@ -210,7 +227,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
         }
     }
 
-    const adminTabs = ["overview", "users", "blog", "sessions", "settings"];
+    const adminTabs = ["overview", "users", "subscribers", "blog", "sessions", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
     const pendingApprovalCount = users.filter(u => !u.is_confirmed).length;
@@ -224,9 +241,9 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0">
-                        <TabsList className={userRole === 'admin' ? 'grid w-full grid-cols-5' : 'grid w-full grid-cols-6'}>
+                        <TabsList className={userRole === 'admin' ? 'grid w-full grid-cols-6' : 'grid w-full grid-cols-6'}>
                             {availableTabs.map(tab => {
-                                const Icon = LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'blog' ? 'Newspaper' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle;
+                                const Icon = LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'subscribers' ? 'Mail' : tab === 'blog' ? 'Newspaper' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle;
                                 return (
                                 <TabsTrigger value={tab} key={tab} className="capitalize">
                                     <Icon className="mr-2 h-4 w-4" /> {tab === 'mentors' ? 'My Mentors' : tab}
@@ -253,6 +270,26 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
                                             </TableCell></TableRow>))}
                                         </TableBody></Table>)}
                                     </CardContent></Card>
+                                </TabsContent>
+                                <TabsContent value="subscribers" className="mt-0">
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader><CardTitle>Newsletter Subscribers</CardTitle><CardDescription>List of all users subscribed to the newsletter.</CardDescription></CardHeader>
+                                        <CardContent>
+                                            {isLoadingSubscribers ? <div className="flex justify-center items-center h-48"><LucideIcons.Loader2 className="h-8 w-8 animate-spin" /></div> : (
+                                                <Table><TableHeader><TableRow><TableHead>Email</TableHead><TableHead>Subscribed Date</TableHead></TableRow></TableHeader><TableBody>
+                                                    {subscribers.map(sub => (
+                                                        <TableRow key={sub.id}>
+                                                            <TableCell className="font-medium">{sub.email}</TableCell>
+                                                            <TableCell>{new Date(sub.subscribed_at).toLocaleDateString()}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody></Table>
+                                            )}
+                                            {subscribers.length === 0 && !isLoadingSubscribers && (
+                                                 <p className="text-center text-muted-foreground py-8">There are no newsletter subscribers yet.</p>
+                                            )}
+                                        </CardContent>
+                                    </Card>
                                 </TabsContent>
                                 <TabsContent value="blog" className="mt-0 space-y-6">
                                     <Card><CardHeader><CardTitle>Create New Blog Post</CardTitle></CardHeader><CardContent><Form {...blogForm}><form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-4"><FormField control={blogForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="excerpt" render={({ field }) => (<FormItem><FormLabel>Excerpt</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>Content</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="image" render={({ field }) => (<FormItem><FormLabel>Image URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="hint" render={({ field }) => (<FormItem><FormLabel>Image Hint</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><Button type="submit">Publish Post</Button></form></Form></CardContent></Card>
