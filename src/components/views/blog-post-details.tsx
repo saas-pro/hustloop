@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
-import type { BlogPost } from './blog';
+import type { BlogPost } from '@/app/types';
 
 interface BlogPostDetailsProps {
   post: BlogPost | null;
