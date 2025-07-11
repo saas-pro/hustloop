@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/hooks/use-firebase-auth";
 import { 
   GoogleAuthProvider,
   signInWithPopup

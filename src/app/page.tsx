@@ -12,8 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged, signOut, User as FirebaseUser } from "firebase/auth";
+import { signOut } from "firebase/auth";
+import { auth } from "@/hooks/use-firebase-auth";
 import { API_BASE_URL } from "@/lib/api";
 
 // A more obvious loading animation to show while dynamic components are being downloaded.

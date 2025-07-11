@@ -1,6 +1,5 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,8 +11,11 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase for SSR and client-side
-const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth: Auth = getAuth(app);
-
-export { app, auth };
+// A function to initialize Firebase App, ensuring it's a singleton.
+// This can be called safely from the client-side.
+export function getFirebaseApp(): FirebaseApp {
+    if (getApps().length) {
+        return getApp();
+    }
+    return initializeApp(firebaseConfig);
+}
