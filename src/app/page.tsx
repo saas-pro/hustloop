@@ -149,7 +149,7 @@ export default function Home() {
     setAuthProvider(authProvider);
 
     localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userRole', role);
+    localStorage.setItem('userRole', role || '');
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('hasSubscription', String(hasSubscription));
     localStorage.setItem('token', token);
