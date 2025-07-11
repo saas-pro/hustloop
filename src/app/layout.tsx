@@ -19,7 +19,7 @@ const fontHeadline = Righteous({
 });
 
 export const metadata: Metadata = {
-  title: 'hustloop',
+  title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
   description: 'A prototype startup platform that includes modules such as Blog, Mentors, Incubators, Pricing, and MSMEs.',
 };
 
