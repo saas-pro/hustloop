@@ -23,11 +23,14 @@ import SubmissionDetailsModal from "./submission-details-modal";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { API_BASE_URL } from "@/lib/api";
+import PasswordChangeForm from './password-change-form';
+
 
 type User = {
     name: string;
     email: string;
 }
+type AuthProvider = 'local' | 'google' | 'linkedin';
 
 // Profile form schema
 const profileFormSchema = z.object({
@@ -87,9 +90,10 @@ interface MsmeDashboardViewProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     user: User;
+    authProvider: AuthProvider;
 }
 
-export default function MsmeDashboardView({ isOpen, onOpenChange, user }: MsmeDashboardViewProps) {
+export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProvider }: MsmeDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<MsmeDashboardTab>("overview");
     const [submissions, setSubmissions] = useState(initialSubmissionsData);
@@ -339,9 +343,9 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user }: MsmeDa
                                 <TabsContent value="settings" className="mt-0">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                         <CardHeader><CardTitle>Account Settings</CardTitle><CardDescription>Manage your account settings.</CardDescription></CardHeader>
-                                        <CardContent>
+                                        <CardContent className="space-y-8">
                                             <Form {...settingsForm}>
-                                                <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-8">
+                                                <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-4">
                                                      <div>
                                                         <h3 className="text-lg font-medium mb-4">Profile</h3>
                                                         <div className="space-y-4">
@@ -370,6 +374,12 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user }: MsmeDa
                                                     <Button type="submit">Save Changes</Button>
                                                 </form>
                                             </Form>
+                                            {authProvider === 'local' && (
+                                                <>
+                                                    <Separator />
+                                                    <PasswordChangeForm />
+                                                </>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </TabsContent>
@@ -402,3 +412,5 @@ const msmeChartConfig = {
       color: "hsl(var(--chart-3))",
     },
 };
+
+    

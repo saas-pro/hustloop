@@ -26,6 +26,7 @@ export type AppUser = {
   name: string;
   email: string;
   role: UserRole;
+  auth_provider: 'local' | 'google' | 'linkedin';
   is_confirmed: boolean;
   is_banned: boolean;
   created_at: string;
@@ -62,3 +63,5 @@ export type EducationProgram = {
     description: string;
     features: EducationFeature[];
 };
+
+    

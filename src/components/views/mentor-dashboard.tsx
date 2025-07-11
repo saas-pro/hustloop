@@ -24,11 +24,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
+import PasswordChangeForm from './password-change-form';
+
 
 type User = {
     name: string;
     email: string;
 }
+type AuthProvider = 'local' | 'google' | 'linkedin';
 
 const profileFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -98,6 +101,7 @@ interface MentorDashboardViewProps {
     onOpenChange: (isOpen: boolean) => void;
     setActiveView: (view: View) => void;
     user: User;
+    authProvider: AuthProvider;
 }
 
 const emptyProfile: ProfileFormValues = {
@@ -112,7 +116,7 @@ const emptyProfile: ProfileFormValues = {
 };
 
 
-export default function MentorDashboardView({ isOpen, onOpenChange, setActiveView, user }: MentorDashboardViewProps) {
+export default function MentorDashboardView({ isOpen, onOpenChange, setActiveView, user, authProvider }: MentorDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<MentorDashboardTab>("overview");
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -406,9 +410,9 @@ export default function MentorDashboardView({ isOpen, onOpenChange, setActiveVie
                                         <CardTitle>Account Settings</CardTitle>
                                         <CardDescription>Manage your account and payment information.</CardDescription>
                                     </CardHeader>
-                                    <CardContent>
+                                    <CardContent className="space-y-8">
                                         <Form {...settingsForm}>
-                                            <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-8">
+                                            <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-4">
                                                 <div>
                                                     <h3 className="text-lg font-medium mb-4">Profile</h3>
                                                     <div className="space-y-4">
@@ -447,7 +451,7 @@ export default function MentorDashboardView({ isOpen, onOpenChange, setActiveVie
                                                         />
                                                     </div>
                                                 </div>
-
+                                                
                                                 <Separator />
 
                                                 <div>
@@ -520,6 +524,13 @@ export default function MentorDashboardView({ isOpen, onOpenChange, setActiveVie
                                                 <Button type="submit">Save Changes</Button>
                                             </form>
                                         </Form>
+                                        
+                                        {authProvider === 'local' && (
+                                            <>
+                                                <Separator />
+                                                <PasswordChangeForm />
+                                            </>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </TabsContent>
@@ -546,3 +557,5 @@ const chartConfig = {
       color: "hsl(var(--chart-1))",
     },
 };
+
+    

@@ -41,6 +41,7 @@ type User = {
     name: string;
     email: string;
 }
+type AuthProvider = 'local' | 'google' | 'linkedin';
 
 export default function Home() {
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
@@ -48,6 +49,7 @@ export default function Home() {
   const [isLoggedIn, setLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [authProvider, setAuthProvider] = useState<AuthProvider | null>(null);
   const [hasSubscription, setHasSubscription] = useState(false);
   const [hasUsedFreeSession, setHasUsedFreeSession] = useState(false);
   const [appliedPrograms, setAppliedPrograms] = useState<Record<string, string>>({});
@@ -100,16 +102,20 @@ export default function Home() {
         });
     } else if (token && role && name && email) {
         const userData = { name, email };
+        const authProvider = urlParams.get('authProvider') as AuthProvider || 'local';
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userRole', role);
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('hasSubscription', String(hasSub));
-        localStorage.setItem('token', token); // Store token for future API calls
+        localStorage.setItem('token', token);
+        localStorage.setItem('authProvider', authProvider);
+
 
         setLoggedIn(true);
         setUserRole(role);
         setUser(userData);
         setHasSubscription(hasSub);
+        setAuthProvider(authProvider);
         toast({ title: "Login Successful", description: `Welcome back, ${name}!` });
         setActiveView('dashboard');
         setIsLoading(false);
@@ -126,6 +132,7 @@ export default function Home() {
     const savedUser = localStorage.getItem('user');
     const savedSubscription = localStorage.getItem('hasSubscription');
     const savedAppliedPrograms = localStorage.getItem('appliedPrograms');
+    const savedAuthProvider = localStorage.getItem('authProvider') as AuthProvider | null;
 
     if (savedIsLoggedIn === 'true' && savedUserRole && savedUser) {
       setLoggedIn(true);
@@ -135,6 +142,9 @@ export default function Home() {
       setHasUsedFreeSession(false);
       if (savedAppliedPrograms) {
         setAppliedPrograms(JSON.parse(savedAppliedPrograms));
+      }
+      if (savedAuthProvider) {
+        setAuthProvider(savedAuthProvider);
       }
     }
     setIsLoading(false);
@@ -161,19 +171,22 @@ export default function Home() {
     }
   };
 
-  const handleLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string }) => {
-    const { role, token, hasSubscription, name, email } = data;
+  const handleLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
+    const { role, token, hasSubscription, name, email, authProvider } = data;
     const userData = { name, email };
     setLoggedIn(true);
     setUserRole(role);
     setUser(userData);
     setHasSubscription(hasSubscription);
+    setAuthProvider(authProvider);
 
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userRole', role);
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('hasSubscription', String(hasSubscription));
     localStorage.setItem('token', token);
+    localStorage.setItem('authProvider', authProvider);
+
 
     setHasUsedFreeSession(false); // Reset for prototype testing
     setActiveView('dashboard');
@@ -185,6 +198,7 @@ export default function Home() {
     setUser(null);
     setHasSubscription(false);
     setAppliedPrograms({});
+    setAuthProvider(null);
     // Clear all auth-related items
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userRole');
@@ -192,6 +206,7 @@ export default function Home() {
     localStorage.removeItem('hasSubscription');
     localStorage.removeItem('appliedPrograms');
     localStorage.removeItem('token');
+    localStorage.removeItem('authProvider');
     setActiveView('home');
     router.push('/');
   };
@@ -237,7 +252,7 @@ export default function Home() {
   };
 
   const renderDashboard = () => {
-    if (!isLoggedIn || activeView !== 'dashboard' || !userRole || !user) {
+    if (!isLoggedIn || activeView !== 'dashboard' || !userRole || !user || !authProvider) {
       return null;
     }
 
@@ -249,6 +264,7 @@ export default function Home() {
             onOpenChange={handleModalOpenChange('dashboard')}
             setActiveView={setActiveView}
             user={user}
+            authProvider={authProvider}
           />
         );
       case 'incubator':
@@ -257,6 +273,7 @@ export default function Home() {
             isOpen={true}
             onOpenChange={handleModalOpenChange('dashboard')}
             user={user}
+            authProvider={authProvider}
           />
         );
       case 'msme':
@@ -265,6 +282,7 @@ export default function Home() {
                 isOpen={true}
                 onOpenChange={handleModalOpenChange('dashboard')}
                 user={user}
+                authProvider={authProvider}
             />
         );
       case 'founder':
@@ -275,6 +293,7 @@ export default function Home() {
             onOpenChange={handleModalOpenChange('dashboard')} 
             user={user}
             userRole={userRole}
+            authProvider={authProvider}
             hasSubscription={hasSubscription}
             setActiveView={setActiveView}
           />
@@ -363,3 +382,5 @@ export default function Home() {
     </>
   );
 }
+
+    

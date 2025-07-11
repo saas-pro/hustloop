@@ -23,11 +23,15 @@ import { useToast } from "@/hooks/use-toast";
 import SubmissionDetailsModal from "./submission-details-modal";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { API_BASE_URL } from "@/lib/api";
+import PasswordChangeForm from './password-change-form';
+
 
 type User = {
     name: string;
     email: string;
 }
+type AuthProvider = 'local' | 'google' | 'linkedin';
+
 
 const profileFormSchema = z.object({
   name: z.string().min(1, "Incubator name is required"),
@@ -79,6 +83,7 @@ interface IncubatorDashboardViewProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     user: User;
+    authProvider: AuthProvider;
 }
 
 const emptyProfile: ProfileFormValues = {
@@ -103,7 +108,7 @@ const emptyProfile: ProfileFormValues = {
   },
 };
 
-export default function IncubatorDashboardView({ isOpen, onOpenChange, user }: IncubatorDashboardViewProps) {
+export default function IncubatorDashboardView({ isOpen, onOpenChange, user, authProvider }: IncubatorDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<IncubatorDashboardTab>("overview");
     const [submissions, setSubmissions] = useState(initialSubmissionsData);
@@ -481,14 +486,14 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user }: I
                                     </Card>
                                 </TabsContent>
                                 <TabsContent value="settings" className="mt-0">
-                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                         <CardHeader>
                                             <CardTitle>Account Settings</CardTitle>
                                             <CardDescription>Manage your account settings.</CardDescription>
                                         </CardHeader>
-                                        <CardContent>
+                                        <CardContent className="space-y-8">
                                             <Form {...settingsForm}>
-                                                <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-8">
+                                                <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-4">
                                                     <div>
                                                         <h3 className="text-lg font-medium mb-4">Profile</h3>
                                                         <div className="space-y-4">
@@ -515,10 +520,15 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user }: I
                                                             />
                                                         </div>
                                                     </div>
-                                                    
                                                     <Button type="submit">Save Changes</Button>
                                                 </form>
                                             </Form>
+                                            {authProvider === 'local' && (
+                                                <>
+                                                    <Separator />
+                                                    <PasswordChangeForm />
+                                                </>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </TabsContent>
@@ -551,3 +561,5 @@ const incubatorChartConfig = {
       color: "hsl(var(--chart-2))",
     },
 };
+
+    

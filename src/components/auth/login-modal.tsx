@@ -36,10 +36,12 @@ const loginSchema = z.object({
 
 type LoginSchema = z.infer<typeof loginSchema>;
 
+type AuthProvider = 'local' | 'google' | 'linkedin';
+
 interface LoginModalProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string }) => void;
+  onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => void;
 }
 
 export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginModalProps) {
@@ -171,3 +173,5 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
     </Dialog>
   );
 }
+
+    

@@ -25,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { API_BASE_URL } from "@/lib/api";
+import PasswordChangeForm from './password-change-form';
 
 
 const settingsFormSchema = z.object({
@@ -61,11 +62,14 @@ type ProgramFormValues = z.infer<typeof programSchema>;
 
 
 type User = { name: string; email: string; }
+type AuthProvider = 'local' | 'google' | 'linkedin';
+
 interface DashboardViewProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     user: User;
     userRole: UserRole;
+    authProvider: AuthProvider;
     hasSubscription: boolean;
     setActiveView: (view: View) => void;
 }
@@ -83,7 +87,7 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
     </Card>
 );
 
-export default function DashboardView({ isOpen, onOpenChange, user, userRole, hasSubscription, setActiveView }: DashboardViewProps) {
+export default function DashboardView({ isOpen, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView }: DashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
     const [isEditingEmail, setIsEditingEmail] = useState(false);
@@ -262,8 +266,8 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
                                 <>
                                 <TabsContent value="users" className="mt-0">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>User Management</CardTitle><CardDescription>Approve, ban, or delete user accounts.</CardDescription></CardHeader><CardContent>
-                                        {isLoadingUsers ? <div className="flex justify-center items-center h-48"><LucideIcons.Loader2 className="h-8 w-8 animate-spin" /></div> : (<Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Role</TableHead><TableHead>Joined</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader><TableBody>
-                                            {users.map(u => (<TableRow key={u.id}><TableCell><div className="font-medium">{u.name}</div><div className="text-sm text-muted-foreground">{u.email}</div></TableCell><TableCell className="capitalize">{u.role}</TableCell><TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell><TableCell><div className="flex flex-col gap-1">{u.is_banned ? <Badge variant="destructive">Banned</Badge> : (u.is_confirmed ? <Badge variant="default">Approved</Badge> : <Badge variant="secondary">Pending</Badge>)}</div></TableCell><TableCell className="space-x-2">
+                                        {isLoadingUsers ? <div className="flex justify-center items-center h-48"><LucideIcons.Loader2 className="h-8 w-8 animate-spin" /></div> : (<Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Role</TableHead><TableHead>Joined</TableHead><TableHead>Status</TableHead><TableHead>Auth</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader><TableBody>
+                                            {users.map(u => (<TableRow key={u.id}><TableCell><div className="font-medium">{u.name}</div><div className="text-sm text-muted-foreground">{u.email}</div></TableCell><TableCell className="capitalize">{u.role}</TableCell><TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell><TableCell><div className="flex flex-col gap-1">{u.is_banned ? <Badge variant="destructive">Banned</Badge> : (u.is_confirmed ? <Badge variant="default">Approved</Badge> : <Badge variant="secondary">Pending</Badge>)}</div></TableCell><TableCell className="capitalize">{u.auth_provider}</TableCell><TableCell className="space-x-2">
                                                 {!u.is_confirmed && !u.is_banned && (<Button size="sm" onClick={() => handleApproveUser(u.id)}><LucideIcons.CheckCircle className="mr-2 h-4 w-4" />Approve</Button>)}
                                                 <Button size="sm" variant={u.is_banned ? "outline" : "secondary"} onClick={() => setUserToBan(u)}><LucideIcons.Ban className="mr-2 h-4 w-4" />{u.is_banned ? "Unban" : "Ban"}</Button>
                                                 <Button size="sm" variant="destructive" onClick={() => setUserToDelete(u)}><LucideIcons.Trash2 className="mr-2 h-4 w-4" />Delete</Button>
@@ -299,7 +303,34 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, ha
                                 </TabsContent>
                                 </>
                             )}
-                            <TabsContent value="settings" className="mt-0"><Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>Account Settings</CardTitle><CardDescription>Manage your account and payment information.</CardDescription></CardHeader><CardContent><Form {...settingsForm}><form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-8"><div><h3 className="text-lg font-medium mb-4">Profile</h3><div className="space-y-4"><FormField control={settingsForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={settingsForm.control} name="email" render={({ field }) => (<FormItem><div className="flex justify-between items-center"><FormLabel>Email</FormLabel>{!isEditingEmail && (<Button type="button" variant="link" className="p-0 h-auto text-sm" onClick={() => setIsEditingEmail(true)}>Edit</Button>)}</div><FormControl><Input type="email" placeholder="your@email.com" {...field} readOnly={!isEditingEmail} /></FormControl><FormMessage /></FormItem>)}/></div></div><Button type="submit">Save Changes</Button></form></Form></CardContent></Card></TabsContent>
+                            <TabsContent value="settings" className="mt-0">
+                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                    <CardHeader>
+                                        <CardTitle>Account Settings</CardTitle>
+                                        <CardDescription>Manage your account and payment information.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-8">
+                                        <Form {...settingsForm}>
+                                            <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-4">
+                                                <div>
+                                                    <h3 className="text-lg font-medium mb-4">Profile</h3>
+                                                    <div className="space-y-4">
+                                                        <FormField control={settingsForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                                        <FormField control={settingsForm.control} name="email" render={({ field }) => (<FormItem><div className="flex justify-between items-center"><FormLabel>Email</FormLabel>{!isEditingEmail && (<Button type="button" variant="link" className="p-0 h-auto text-sm" onClick={() => setIsEditingEmail(true)}>Edit</Button>)}</div><FormControl><Input type="email" placeholder="your@email.com" {...field} readOnly={!isEditingEmail} /></FormControl><FormMessage /></FormItem>)} />
+                                                    </div>
+                                                </div>
+                                                <Button type="submit">Save Changes</Button>
+                                            </form>
+                                        </Form>
+                                        {authProvider === 'local' && (
+                                            <>
+                                                <Separator />
+                                                <PasswordChangeForm />
+                                            </>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
                         </ScrollArea>
                     </Tabs>
                 </div>
@@ -318,3 +349,5 @@ const chartData = [
 const chartConfig = {
     activity: { label: "Activity", color: "hsl(var(--chart-1))" },
 };
+
+    
