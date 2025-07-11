@@ -28,12 +28,14 @@ import Image from "next/image";
 import * as React from 'react';
 import { Suspense } from 'react';
 import { API_BASE_URL } from "@/lib/api";
+import { UserRole } from "@/app/types";
 
 const profileSchema = z.object({
   role: z.string({ required_error: "Please select a role." }),
 });
 
 type ProfileSchema = z.infer<typeof profileSchema>;
+type AuthProvider = 'local' | 'google' | 'linkedin';
 
 function CompleteProfileForm() {
     const router = useRouter();
@@ -46,6 +48,22 @@ function CompleteProfileForm() {
     });
 
     const { formState: { isSubmitting } } = form;
+
+    const onLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
+        const { role, token: loginToken, hasSubscription, name, email, authProvider } = data;
+        const userData = { name, email };
+        
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userRole', role!);
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('hasSubscription', String(hasSubscription));
+        localStorage.setItem('token', loginToken);
+        localStorage.setItem('authProvider', authProvider);
+
+        toast({ title: "Profile Complete!", description: `Welcome to Hustloop, ${name}!` });
+        router.push('/');
+        setTimeout(() => window.location.reload(), 500); // Reload to ensure correct state on main page
+    };
 
     const onSubmit = async (values: ProfileSchema) => {
         if (!token) {
@@ -68,12 +86,7 @@ function CompleteProfileForm() {
             const data = await response.json();
 
             if (response.ok) {
-                toast({
-                    title: "Profile Complete!",
-                    description: "Your role has been set. Your account is now pending admin approval.",
-                });
-                // Redirect to home page, which will show a toast based on the status param
-                router.push('/?status=pending_approval');
+                onLoginSuccess(data);
             } else {
                 toast({
                     variant: "destructive",

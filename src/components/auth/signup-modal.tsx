@@ -8,16 +8,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
+import { auth } from "@/lib/firebase";
+import { 
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
+import { useRouter } from "next/navigation";
+
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" {...props}>
@@ -29,15 +29,8 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" {...props}>
-        <path fill="#0A66C2" d="M22.23 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.46c.98 0 1.77-.77 1.77-1.73V1.73C24 .77 23.21 0 22.23 0zM7.12 20.45H3.54V9h3.58v11.45zM5.33 7.42c-1.15 0-2.08-.93-2.08-2.08 0-1.15.93-2.08 2.08-2.08s2.08.93 2.08 2.08c0 1.15-.93 2.08-2.08 2.08zm13.12 13.03h-3.58V14.7c0-1.37-.03-3.13-1.9-3.13-1.9 0-2.2 1.48-2.2 3.03v5.85H7.18V9h3.44v1.57h.05c.48-.9 1.65-1.85 3.39-1.85 3.63 0 4.3 2.39 4.3 5.49v6.24z"/>
-    </svg>
-);
-
 const signupSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-    role: z.string({ required_error: "Please select a role." }),
     email: z.string().email({ message: "Please enter a valid email address." }),
     password: z.string()
         .min(10, { message: "Password must be at least 10 characters long." })
@@ -57,6 +50,7 @@ interface SignupModalProps {
 
 export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     const { toast } = useToast();
+    const router = useRouter();
     const form = useForm<SignupSchema>({
         resolver: zodResolver(signupSchema),
         defaultValues: {
@@ -69,13 +63,10 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     const { formState: { isSubmitting } } = form;
 
     const handleSignup = async (values: SignupSchema) => {
-        const apiBaseUrl = API_BASE_URL;
         try {
-            const response = await fetch(`${apiBaseUrl}/api/register`, {
+            const response = await fetch(`${API_BASE_URL}/api/register`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(values),
             });
     
@@ -84,7 +75,7 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
             if (response.ok) {
                 toast({
                     title: "Registration Successful",
-                    description: data.message || "Your account is now pending admin approval.",
+                    description: data.message || "Please check your email to verify your account.",
                 });
                 setIsOpen(false);
             } else {
@@ -103,9 +94,41 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
         }
     };
 
-    const apiBaseUrl = API_BASE_URL;
-    const googleLoginUrl = `${apiBaseUrl}/api/auth/google/login`;
-    const linkedinLoginUrl = `${apiBaseUrl}/api/auth/linkedin/login`;
+    const handleSocialLogin = async (provider: 'google') => {
+        const authProvider = new GoogleAuthProvider();
+        
+        try {
+            const result = await signInWithPopup(auth, authProvider);
+            const idToken = await result.user.getIdToken();
+            const response = await fetch(`${API_BASE_URL}/api/login`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}` },
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Backend login failed");
+
+            if (data.action === 'complete-profile') {
+                setIsOpen(false);
+                router.push(`/complete-profile?token=${data.token}`);
+            } else {
+                // This case should ideally not happen for a new user, but as a fallback:
+                toast({ title: "Login Successful", description: `Welcome back, ${data.name}!` });
+                window.location.reload(); // Reload to update parent state
+            }
+        } catch (error: any) {
+            let description = error.message || 'An error occurred while signing in.';
+            if (error.code === 'auth/invalid-api-key' || error.message.includes('api-key-not-valid')) {
+                description = "The provided API key is not valid. Please check your Firebase project configuration."
+            } else if (error.code === 'auth/popup-closed-by-user') {
+                description = "Sign-in was cancelled. Please try again."
+            }
+            toast({
+                variant: 'destructive',
+                title: 'Social Login Failed',
+                description: description,
+            });
+        }
+    };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -117,13 +140,8 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" asChild>
-                <a href={googleLoginUrl}><GoogleIcon className="mr-2 h-4 w-4" /> Google</a>
-            </Button>
-            <Button variant="outline" asChild>
-                <a href={linkedinLoginUrl}><LinkedinIcon className="mr-2 h-4 w-4" /> LinkedIn</a>
-            </Button>
+        <div className="grid grid-cols-1 gap-4">
+             <Button variant="outline" onClick={() => handleSocialLogin('google')}><GoogleIcon className="mr-2 h-4 w-4" /> Sign up with Google</Button>
         </div>
 
         <div className="relative">
@@ -148,29 +166,6 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
                             <FormControl>
                                 <Input placeholder="Your Name" {...field} disabled={isSubmitting} />
                             </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>I am a</FormLabel>
-                             <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select your role" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="founder">Founder</SelectItem>
-                                  <SelectItem value="mentor">Mentor</SelectItem>
-                                  <SelectItem value="incubator">Incubator</SelectItem>
-                                  <SelectItem value="msme">MSME</SelectItem>
-                                </SelectContent>
-                              </Select>
                             <FormMessage />
                         </FormItem>
                     )}

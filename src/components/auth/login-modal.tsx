@@ -12,6 +12,14 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { UserRole } from "@/app/types";
 import { API_BASE_URL } from "@/lib/api";
+import { auth } from "@/lib/firebase";
+import { 
+  signInWithEmailAndPassword, 
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" {...props}>
@@ -23,12 +31,6 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" {...props}>
-        <path fill="#0A66C2" d="M22.23 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.46c.98 0 1.77-.77 1.77-1.73V1.73C24 .77 23.21 0 22.23 0zM7.12 20.45H3.54V9h3.58v11.45zM5.33 7.42c-1.15 0-2.08-.93-2.08-2.08 0-1.15.93-2.08 2.08-2.08s2.08.93 2.08 2.08c0 1.15-.93 2.08-2.08 2.08zm13.12 13.03h-3.58V14.7c0-1.37-.03-3.13-1.9-3.13-1.9 0-2.2 1.48-2.2 3.03v5.85H7.18V9h3.44v1.57h.05c.48-.9 1.65-1.85 3.39-1.85 3.63 0 4.3 2.39 4.3 5.49v6.24z"/>
-    </svg>
-);
-
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z.string().min(1, { message: "Password is required." }),
@@ -36,7 +38,7 @@ const loginSchema = z.object({
 
 type LoginSchema = z.infer<typeof loginSchema>;
 
-type AuthProvider = 'local' | 'google' | 'linkedin';
+type AuthProvider = 'local' | 'google';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -46,6 +48,7 @@ interface LoginModalProps {
 
 export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginModalProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -54,55 +57,127 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
     },
   });
 
-  const { formState: { isSubmitting } } = form;
+  const { formState: { isSubmitting }, getValues } = form;
+
+  const handleBackendLogin = async (idToken: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}` },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "An unknown error occurred.");
+      }
+      
+      if (data.action === 'complete-profile') {
+        setIsOpen(false);
+        router.push(`/complete-profile?token=${data.token}`);
+      } else {
+        toast({ title: "Login Successful", description: `Welcome back, ${data.name}!` });
+        onLoginSuccess(data);
+      }
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Login Failed", description: error.message });
+    }
+  }
 
   const handleLogin = async (values: LoginSchema) => {
-    const apiBaseUrl = API_BASE_URL;
-    try {
-        const response = await fetch(`${apiBaseUrl}/api/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(values),
+    // Special case for admin login to bypass Firebase for the prototype
+    if (values.email === 'admin@hustloop.com') {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values),
         });
-
         const data = await response.json();
-
         if (response.ok) {
-            toast({
-                title: "Login Successful",
-                description: `Welcome back, ${data.name}!`,
-            });
-            onLoginSuccess(data);
+          toast({ title: "Login Successful", description: `Welcome back, Admin!` });
+          onLoginSuccess(data);
         } else {
-            let title = "Login Failed";
-            if (data.error === 'Your account is pending admin approval.') {
-                 title = "Approval Pending";
-            } else if (data.error === 'This account has been suspended.') {
-                 title = "Account Suspended";
-            }
+          toast({ variant: "destructive", title: "Admin Login Failed", description: data.error || "An unknown error occurred." });
+        }
+      } catch (error) {
+        toast({ variant: "destructive", title: "Admin Login Failed", description: "Could not connect to server." });
+      }
+      return;
+    }
+
+    // Standard Firebase login for all other users
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+        const firebaseUser = userCredential.user;
+        if (!firebaseUser.emailVerified) {
             toast({
                 variant: "destructive",
-                title: title,
-                description: data.error || "An unknown error occurred.",
+                title: "Email Not Verified",
+                description: "Please check your inbox to verify your email address before logging in.",
             });
-            form.setError("password", {
-                type: "custom",
-                message: data.error || "Invalid credentials.",
-            });
+            return;
         }
-    } catch (error) {
+        const idToken = await firebaseUser.getIdToken();
+        await handleBackendLogin(idToken);
+    } catch (error: any) {
+        let title = "Login Failed";
+        let description = "An unexpected error occurred. Please try again.";
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            description = "Invalid email or password.";
+        } else if (error.code === 'auth/invalid-api-key') {
+            description = "API key is not valid. Please check your configuration."
+        }
+        toast({ variant: "destructive", title, description });
+    }
+  };
+
+  const handleSocialLogin = async (provider: 'google') => {
+    const authProvider = new GoogleAuthProvider();
+    
+    try {
+      const result = await signInWithPopup(auth, authProvider);
+      const idToken = await result.user.getIdToken();
+      await handleBackendLogin(idToken);
+    } catch (error: any) {
+      let description = error.message || 'An error occurred while signing in.';
+      if (error.code === 'auth/invalid-api-key' || error.message.includes('api-key-not-valid')) {
+        description = "The provided API key is not valid. Please check your Firebase project configuration."
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        description = "Sign-in was cancelled. Please try again."
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Social Login Failed',
+        description: description,
+      });
+    }
+  };
+  
+  const handlePasswordReset = async () => {
+    const email = getValues("email");
+    if (!email) {
         toast({
             variant: "destructive",
-            title: "Login Failed",
-            description: "Could not connect to the server. Please try again.",
+            title: "Email Required",
+            description: "Please enter your email address to reset your password.",
+        });
+        return;
+    }
+
+    try {
+        await sendPasswordResetEmail(auth, email);
+        toast({
+            title: "Password Reset Email Sent",
+            description: "Please check your inbox for instructions to reset your password.",
+        });
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Failed to Send Email",
+            description: "Could not send password reset email. Please check the address and try again.",
         });
     }
   };
   
-  const apiBaseUrl = API_BASE_URL;
-  const googleLoginUrl = `${apiBaseUrl}/api/auth/google/login`;
-  const linkedinLoginUrl = `${apiBaseUrl}/api/auth/linkedin/login`;
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-lg">
@@ -113,13 +188,8 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" asChild>
-                <a href={googleLoginUrl}><GoogleIcon className="mr-2 h-4 w-4" /> Google</a>
-            </Button>
-            <Button variant="outline" asChild>
-                <a href={linkedinLoginUrl}><LinkedinIcon className="mr-2 h-4 w-4" /> LinkedIn</a>
-            </Button>
+        <div className="grid grid-cols-1 gap-4">
+            <Button variant="outline" onClick={() => handleSocialLogin('google')}><GoogleIcon className="mr-2 h-4 w-4" /> Sign in with Google</Button>
         </div>
 
         <div className="relative">
@@ -153,7 +223,10 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <div className="flex justify-between">
+                        <FormLabel>Password</FormLabel>
+                        <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset}>Forgot password?</Button>
+                    </div>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} />
                     </FormControl>
@@ -173,5 +246,3 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
     </Dialog>
   );
 }
-
-    

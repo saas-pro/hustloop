@@ -121,7 +121,7 @@ export default function PasswordChangeForm() {
                             </FormItem>
                         )}
                     />
-                    <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
+                    <Button type="submit" disabled={isSubmitting || !form.formState.isDirty}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Update Password
                     </Button>
@@ -130,5 +130,3 @@ export default function PasswordChangeForm() {
         </div>
     );
 }
-
-    

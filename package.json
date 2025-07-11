@@ -34,6 +34,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "firebase": "^11.10.0",
     "genkit": "^1.1.0",
     "lucide-react": "^0.411.0",
     "next": "^14.2.30",
@@ -44,6 +45,7 @@
     "recharts": "^2.12.7",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
+    "undici": "^7.11.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

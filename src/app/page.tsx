@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import HomeView from "@/components/views/home";
@@ -12,6 +12,9 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, signOut, User as FirebaseUser } from "firebase/auth";
+import { API_BASE_URL } from "@/lib/api";
 
 // A more obvious loading animation to show while dynamic components are being downloaded.
 const ModalSkeleton = () => (
@@ -56,73 +59,10 @@ export default function Home() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
   
-  // This effect runs once on mount to set initial state from localStorage or OAuth redirect
+  // This effect runs once on mount to set initial state from localStorage
   useEffect(() => {
-    // Check for OAuth redirect first
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const role = urlParams.get('role') as UserRole | null;
-    const name = urlParams.get('name');
-    const email = urlParams.get('email');
-    const hasSub = urlParams.get('hasSubscription') === 'true';
-    const error = urlParams.get('error');
-    const status = urlParams.get('status');
-
-    // Clean the URL immediately
-    if (token || error || status) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    
-    if (status === 'pending_approval') {
-        toast({
-            title: "Registration Submitted",
-            description: "Your account is pending admin approval. You'll be notified via email once it's active.",
-        });
-        setIsLoading(false);
-        return; // Exit early
-    }
-
-    if (error) {
-        let title = "Sign-in Failed";
-        let description = "Could not sign in with provider. Please try again or use email.";
-
-        if (error === 'account_suspended') {
-            title = "Account Suspended";
-            description = "This account has been suspended.";
-        } else if (error === 'email_not_provided') {
-            title = "Email Missing";
-            description = "Your provider did not share your email. Please try another method.";
-        }
-
-        toast({
-            variant: "destructive",
-            title: title,
-            description: description,
-        });
-    } else if (token && role && name && email) {
-        const userData = { name, email };
-        const authProvider = urlParams.get('authProvider') as AuthProvider || 'local';
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('hasSubscription', String(hasSub));
-        localStorage.setItem('token', token);
-        localStorage.setItem('authProvider', authProvider);
-
-
-        setLoggedIn(true);
-        setUserRole(role);
-        setUser(userData);
-        setHasSubscription(hasSub);
-        setAuthProvider(authProvider);
-        toast({ title: "Login Successful", description: `Welcome back, ${name}!` });
-        setActiveView('dashboard');
-        setIsLoading(false);
-        return; // Exit early to prevent localStorage logic below from running
-    }
-
-    // Fallback to localStorage if no OAuth redirect
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     setTheme(initialTheme);
@@ -148,8 +88,36 @@ export default function Home() {
       }
     }
     setIsLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // This effect handles URL-based actions like post-OAuth flow or errors
+  useEffect(() => {
+    const error = searchParams.get('error');
+    const status = searchParams.get('status');
+
+    if (status === 'pending_approval') {
+        toast({
+            title: "Registration Submitted",
+            description: "Your account is pending admin approval. You'll be notified via email once it's active.",
+        });
+        router.replace('/');
+    }
+
+    if (error) {
+        let title = "Sign-in Failed";
+        let description = "Could not sign in with provider. Please try again or use email.";
+
+        if (error === 'account_suspended') {
+            title = "Account Suspended";
+            description = "This account has been suspended.";
+        } else if (error === 'email_not_provided') {
+            title = "Email Missing";
+            description = "Your provider did not share your email. Please try another method.";
+        }
+        toast({ variant: "destructive", title, description });
+        router.replace('/');
+    }
+  }, [searchParams, router, toast]);
 
   // This effect runs whenever the theme changes to update the DOM and localStorage
   useEffect(() => {
@@ -163,12 +131,6 @@ export default function Home() {
     }
   }, [theme]);
   
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        document.dispatchEvent(new CustomEvent('router:end'));
-    }
-  }, [activeView]);
-
   const handleModalOpenChange = (view: View) => (isOpen: boolean) => {
     if (!isOpen) {
       setActiveView("home");
@@ -193,28 +155,34 @@ export default function Home() {
     localStorage.setItem('token', token);
     localStorage.setItem('authProvider', authProvider);
 
-
     setHasUsedFreeSession(false); // Reset for prototype testing
     setActiveView('dashboard');
   };
 
-  const handleLogout = () => {
-    setLoggedIn(false);
-    setUserRole(null);
-    setUser(null);
-    setHasSubscription(false);
-    setAppliedPrograms({});
-    setAuthProvider(null);
-    // Clear all auth-related items
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('user');
-    localStorage.removeItem('hasSubscription');
-    localStorage.removeItem('appliedPrograms');
-    localStorage.removeItem('token');
-    localStorage.removeItem('authProvider');
-    setActiveView('home');
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+        await signOut(auth);
+        setLoggedIn(false);
+        setUserRole(null);
+        setUser(null);
+        setHasSubscription(false);
+        setAppliedPrograms({});
+        setAuthProvider(null);
+        // Clear all auth-related items
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('user');
+        localStorage.removeItem('hasSubscription');
+        localStorage.removeItem('appliedPrograms');
+        localStorage.removeItem('token');
+        localStorage.removeItem('authProvider');
+        setActiveView('home');
+        router.push('/');
+        toast({ title: "Logged Out", description: "You have been successfully logged out." });
+    } catch (error) {
+        console.error("Logout failed:", error);
+        toast({ variant: "destructive", title: "Logout Failed", description: "Could not log out. Please try again." });
+    }
   };
 
   const handleBookingSuccess = (mentorName: string, date: Date, time: string) => {
@@ -228,8 +196,6 @@ export default function Home() {
   };
   
   const handleGetStartedOnPricing = () => {
-    // If user is logged in, simulate a subscription purchase.
-    // Otherwise, direct them to sign up.
     if (isLoggedIn) {
       setHasSubscription(true);
       localStorage.setItem('hasSubscription', 'true');
