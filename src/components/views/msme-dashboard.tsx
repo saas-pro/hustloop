@@ -39,9 +39,9 @@ const profileFormSchema = z.object({
   description: z.string().min(1, "A short description is required"),
   details: z.object({
     about: z.string().min(1, "About section is required"),
-    scope: z.array(z.string().min(1, "Scope item cannot be empty")).min(1, "At least one scope item is required"),
+    scope: z.array(z.object({ value: z.string().min(1, "Scope item cannot be empty")})).min(1, "At least one scope item is required"),
     lookingFor: z.string().min(1, "This field is required"),
-    benefits: z.array(z.string().min(1, "Benefit cannot be empty")).min(1, "At least one benefit is required"),
+    benefits: z.array(z.object({ value: z.string().min(1, "Benefit cannot be empty")})).min(1, "At least one benefit is required"),
     contact: z.object({
       name: z.string().min(1, "Contact name is required"),
       title: z.string().min(1, "Contact title is required"),
@@ -125,6 +125,11 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
         const token = localStorage.getItem('token');
         const profileData = {
             ...data,
+            details: {
+              ...data.details,
+              scope: data.details.scope.map(item => item.value),
+              benefits: data.details.benefits.map(item => item.value),
+            },
             logo: 'https://placehold.co/100x100.png',
             hint: 'company building',
         };
@@ -306,22 +311,22 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                         <h4 className="text-md font-medium mb-2">Scope of Collaboration</h4>
                                                         {scopeFields.map((field, index) => (
                                                             <div key={field.id} className="flex items-center gap-2 mb-2">
-                                                                <FormField control={profileForm.control} name={`details.scope.${index}`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder="e.g., E-commerce Strategy" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                                                <FormField control={profileForm.control} name={`details.scope.${index}.value`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder="e.g., E-commerce Strategy" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                                                 <Button type="button" variant="ghost" size="icon" onClick={() => removeScope(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                                             </div>
                                                         ))}
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => appendScope('')}><PlusCircle className="mr-2 h-4 w-4" />Add Scope Item</Button>
+                                                        <Button type="button" variant="outline" size="sm" onClick={() => appendScope({value: ''})}><PlusCircle className="mr-2 h-4 w-4" />Add Scope Item</Button>
                                                     </div>
 
                                                     <div>
                                                         <h4 className="text-md font-medium mb-2">Benefits of Partnership</h4>
                                                         {benefitFields.map((field, index) => (
                                                             <div key={field.id} className="flex items-center gap-2 mb-2">
-                                                                <FormField control={profileForm.control} name={`details.benefits.${index}`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder="e.g., Access to our distribution network" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                                                <FormField control={profileForm.control} name={`details.benefits.${index}.value`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder="e.g., Access to our distribution network" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                                                 <Button type="button" variant="ghost" size="icon" onClick={() => removeBenefit(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                                             </div>
                                                         ))}
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => appendBenefit('')}><PlusCircle className="mr-2 h-4 w-4" />Add Benefit</Button>
+                                                        <Button type="button" variant="outline" size="sm" onClick={() => appendBenefit({value: ''})}><PlusCircle className="mr-2 h-4 w-4" />Add Benefit</Button>
                                                     </div>
 
                                                     <Separator />
