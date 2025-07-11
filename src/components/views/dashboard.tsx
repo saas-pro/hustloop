@@ -145,6 +145,42 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingSubscribers(false); }
     };
     
+    const handleResetSubscribers = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/subscribers/reset`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                toast({ title: 'Success', description: 'Subscriber list has been reset.' });
+                setSubscribers([]);
+            } else {
+                toast({ variant: 'destructive', title: 'Failed to reset subscribers' });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error' });
+        }
+    };
+    
+    const handleExportCSV = () => {
+        if (subscribers.length === 0) {
+            toast({ title: 'No Subscribers', description: 'There is no data to export.' });
+            return;
+        }
+        const headers = ['id', 'email', 'subscribed_at'];
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + headers.join(",") + "\n" 
+            + subscribers.map(s => headers.map(h => (s as any)[h]).join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "subscribers.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     useEffect(() => {
         if (userRole === 'admin') {
             if (activeTab === 'users') fetchUsers();
@@ -277,7 +313,30 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                                 </TabsContent>
                                 <TabsContent value="subscribers" className="mt-0">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader><CardTitle>Newsletter Subscribers</CardTitle><CardDescription>List of all users subscribed to the newsletter.</CardDescription></CardHeader>
+                                        <CardHeader>
+                                            <CardTitle>Newsletter Subscribers</CardTitle>
+                                            <CardDescription>List of all users subscribed to the newsletter.</CardDescription>
+                                            <div className="flex justify-end gap-2 pt-2">
+                                                <Button variant="outline" onClick={handleExportCSV}><LucideIcons.Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="destructive"><LucideIcons.Trash className="mr-2 h-4 w-4" /> Reset List</Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete all newsletter subscribers.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={handleResetSubscribers}>Reset</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
+                                        </CardHeader>
                                         <CardContent>
                                             {isLoadingSubscribers ? <div className="flex justify-center items-center h-48"><LucideIcons.Loader2 className="h-8 w-8 animate-spin" /></div> : (
                                                 <Table><TableHeader><TableRow><TableHead>Email</TableHead><TableHead>Subscribed Date</TableHead></TableRow></TableHeader><TableBody>
@@ -349,5 +408,3 @@ const chartData = [
 const chartConfig = {
     activity: { label: "Activity", color: "hsl(var(--chart-1))" },
 };
-
-    
