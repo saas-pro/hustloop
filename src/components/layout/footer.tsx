@@ -1,3 +1,4 @@
+
 import { Linkedin, Github } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import NewsletterForm from "./newsletter-form";
@@ -40,7 +41,7 @@ export default function Footer() {
                   <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.931L18.901 1.153Zm-1.653 19.57h2.608L6.856 2.597H4.062l13.185 18.126Z"/>
                 </svg>
               </a>
-              <a href="#" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://www.linkedin.com/company/hustloop/" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors">
                 <Linkedin className="h-5 w-5" />
               </a>
               <a href="#" aria-label="GitHub" className="text-muted-foreground hover:text-primary transition-colors">

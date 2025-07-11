@@ -123,7 +123,7 @@ export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) 
                         </div>
 
                         <div className="flex items-center gap-4 mt-auto pt-8">
-                            <a href="#" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors p-2 bg-muted rounded-full">
+                            <a href="https://www.linkedin.com/company/hustloop/" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors p-2 bg-muted rounded-full">
                                 <Linkedin className="h-5 w-5" />
                             </a>
                             <a href="#" aria-label="Twitter" className="text-muted-foreground hover:text-primary transition-colors p-2 bg-muted rounded-full">

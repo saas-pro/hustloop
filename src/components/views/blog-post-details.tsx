@@ -4,6 +4,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -29,6 +30,9 @@ export default function BlogPostDetails({
           <DialogTitle className="text-3xl font-bold font-headline">
             {post.title}
           </DialogTitle>
+          <DialogDescription className="text-muted-foreground line-clamp-2">
+            {post.excerpt}
+          </DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-grow mt-4">
           <div className="space-y-6">
