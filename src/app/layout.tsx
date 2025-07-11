@@ -65,17 +65,27 @@ export default function RootLayout({
             window.$zoho.salesiq = window.$zoho.salesiq || {
               widgetcode: "siq770fac757336897d739f9273d8f8f7b3aec5f63c512be52582e5f9e3440d863b",
               values: {},
-              ready: function () {}
+              ready: function () {
+                var salesiqDoc = document.getElementById("zsiq_float");
+                if (salesiqDoc) {
+                    document.addEventListener('router:end', (event) => {
+                        if (window.\$zoho && window.\$zoho.salesiq && window.\$zoho.salesiq.page) {
+                            window.\$zoho.salesiq.page.popup.close('all');
+                            window.\$zoho.salesiq.page.popup.show();
+                        }
+                    });
+                }
+              }
             };
             
             var d = document;
             var s = d.createElement("script");
-            s.type = "text/javascript";
-            s.id = "zsiqscript";
-            s.defer = true;
-            s.src = "https://salesiq.zohopublic.in/widget";
+s.type = "text/javascript";
+s.id = "zsiqscript";
+s.defer = true;
+s.src = "https://salesiq.zohopublic.in/widget";
             var t = d.getElementsByTagName("script")[0];
-            t.parentNode.insertBefore(s, t);
+t.parentNode.insertBefore(s, t);
           `}
         </Script>
       </body>
