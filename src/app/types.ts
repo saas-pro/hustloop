@@ -61,10 +61,12 @@ export type EducationFeature = {
 };
 
 export type EducationProgram = {
+    id: number;
     title: string;
     sessions: EducationSession[];
     description: string;
     features: EducationFeature[];
+    created_at: string;
 };
 
     

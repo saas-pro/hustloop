@@ -70,7 +70,7 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         title: "Admin Login Successful",
         description: "Welcome, Admin!",
       });
-      setIsOpen(false);
+        setIsOpen(false);
       onLoginSuccess({
         role: "admin",
         token: "dev-admin-token",

@@ -78,11 +78,11 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
             await updateProfile(userCredential.user, { displayName: values.name });
             // Send email verification
             await sendEmailVerification(userCredential.user);
-            toast({
-                title: "Registration Successful",
+                toast({
+                    title: "Registration Successful",
                 description: "Your account has been created. Please check your email to verify your account.",
-            });
-            setIsOpen(false);
+                });
+                setIsOpen(false);
         } catch (error: any) {
             let description = error.message || 'An error occurred while creating your account.';
             if (error.code === 'auth/email-already-in-use') {
@@ -109,7 +109,7 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
         try {
             const result = await signInWithPopup(auth, authProvider);
             toast({ title: "Login Successful", description: `Welcome, ${result.user.displayName || result.user.email}!` });
-            setIsOpen(false);
+                setIsOpen(false);
             // Optionally update UI or redirect
         } catch (error: any) {
             let description = error.message || 'An error occurred while signing in.';

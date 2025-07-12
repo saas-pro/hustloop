@@ -92,6 +92,7 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
 export default function DashboardView({ isOpen, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView }: DashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+    const [adminContentTab, setAdminContentTab] = useState('blog');
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     
     // Admin state
@@ -104,7 +105,11 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
     const [isLoadingSubscribers, setIsLoadingSubscribers] = useState(false);
 
     const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+    const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+    
     const [educationPrograms, setEducationPrograms] = useState<EducationProgram[]>([]);
+    const [editingProgram, setEditingProgram] = useState<EducationProgram | null>(null);
+
     const [itemToDelete, setItemToDelete] = useState<{ type: 'blog' | 'program'; id: number } | null>(null);
 
 
@@ -223,23 +228,70 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
         } catch (error) { console.error("Failed to fetch education programs"); }
     };
 
+    const handleEditPost = (post: BlogPost) => {
+        setEditingPost(post);
+        blogForm.reset(post);
+        setAdminContentTab('blogCreate');
+    };
+
+    const handleEditProgram = (program: EducationProgram) => {
+        setEditingProgram(program);
+        programForm.reset(program);
+        setAdminContentTab('sessionCreate');
+    };
+
+    const cancelEdit = () => {
+        setEditingPost(null);
+        setEditingProgram(null);
+        blogForm.reset({ title: "", excerpt: "", content: "", image: "https://placehold.co/600x400.png", hint: "" });
+        programForm.reset({ title: "", description: "", sessions: [], features: [] });
+    }
+
     const onBlogSubmit = async (data: BlogPostFormValues) => {
-        const response = await fetch(`${API_BASE_URL}/api/blog-posts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data) });
+        const url = editingPost 
+            ? `${API_BASE_URL}/api/blog-posts/${editingPost.id}`
+            : `${API_BASE_URL}/api/blog-posts`;
+        const method = editingPost ? 'PUT' : 'POST';
+
+        const response = await fetch(url, { 
+            method: method, 
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, 
+            body: JSON.stringify(data) 
+        });
+
         if (response.ok) {
-            toast({ title: 'Blog Post Created' });
+            toast({ title: `Blog Post ${editingPost ? 'Updated' : 'Created'}` });
             blogForm.reset();
+            setEditingPost(null);
             await fetchBlogPosts();
             localStorage.setItem('blogs-updated', Date.now().toString());
-        } else toast({ variant: 'destructive', title: 'Failed to create post' });
+            setAdminContentTab('blogView');
+        } else {
+            toast({ variant: 'destructive', title: `Failed to ${editingPost ? 'update' : 'create'} post` });
+        }
     };
 
     const onProgramSubmit = async (data: ProgramFormValues) => {
-        const response = await fetch(`${API_BASE_URL}/api/education-programs`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: JSON.stringify(data) });
+        const url = editingProgram 
+            ? `${API_BASE_URL}/api/education-programs/${editingProgram.id}`
+            : `${API_BASE_URL}/api/education-programs`;
+        const method = editingProgram ? 'PUT' : 'POST';
+
+        const response = await fetch(url, { 
+            method: method, 
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }, 
+            body: JSON.stringify(data) 
+        });
+
         if (response.ok) {
-            toast({ title: 'Education Program Created' });
+            toast({ title: `Education Program ${editingProgram ? 'Updated' : 'Created'}` });
             programForm.reset();
+            setEditingProgram(null);
             await fetchEducationPrograms();
-        } else toast({ variant: 'destructive', title: 'Failed to create program' });
+            setAdminContentTab('sessionView');
+        } else {
+            toast({ variant: 'destructive', title: `Failed to ${editingProgram ? 'update' : 'create'} program` });
+        }
     };
 
     const handleDeleteItem = async () => {
@@ -380,15 +432,15 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                                     </Card>
                                 </TabsContent>
                                 <TabsContent value="blog" className="mt-0 space-y-6">
-                                     <Tabs defaultValue="create" className="w-full">
+                                    <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">
                                         <TabsList className="grid w-full grid-cols-2">
-                                            <TabsTrigger value="create">Create New</TabsTrigger>
-                                            <TabsTrigger value="view">View All</TabsTrigger>
+                                            <TabsTrigger value="blogCreate" onClick={cancelEdit}>{editingPost ? 'Edit Post' : 'Create New'}</TabsTrigger>
+                                            <TabsTrigger value="blogView">View All</TabsTrigger>
                                         </TabsList>
-                                        <TabsContent value="create" className="mt-4">
-                                            <Card><CardHeader><CardTitle>Create New Blog Post</CardTitle></CardHeader><CardContent><Form {...blogForm}><form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-4"><FormField control={blogForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="excerpt" render={({ field }) => (<FormItem><FormLabel>Excerpt</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>Content</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="image" render={({ field }) => (<FormItem><FormLabel>Image URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="hint" render={({ field }) => (<FormItem><FormLabel>Image Hint</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><Button type="submit">Publish Post</Button></form></Form></CardContent></Card>
+                                        <TabsContent value="blogCreate" className="mt-4">
+                                            <Card><CardHeader><CardTitle>{editingPost ? 'Edit Blog Post' : 'Create New Blog Post'}</CardTitle></CardHeader><CardContent><Form {...blogForm}><form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-4"><FormField control={blogForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="excerpt" render={({ field }) => (<FormItem><FormLabel>Excerpt</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>Content</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="image" render={({ field }) => (<FormItem><FormLabel>Image URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={blogForm.control} name="hint" render={({ field }) => (<FormItem><FormLabel>Image Hint</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><div className="flex gap-2"><Button type="submit">{editingPost ? 'Update Post' : 'Publish Post'}</Button>{editingPost && <Button variant="ghost" onClick={cancelEdit}>Cancel</Button>}</div></form></Form></CardContent></Card>
                                         </TabsContent>
-                                        <TabsContent value="view" className="mt-4">
+                                        <TabsContent value="blogView" className="mt-4">
                                             <Card><CardHeader><CardTitle>Existing Blog Posts</CardTitle></CardHeader><CardContent className="space-y-4">
                                                 {blogPosts.map((post) => (
                                                     <div key={post.id} className="flex items-center justify-between p-2 border rounded-md">
@@ -396,7 +448,10 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                                                             <Image src={post.image} alt={post.title} width={60} height={40} className="rounded-md object-cover" data-ai-hint={post.hint}/>
                                                             <p className="font-medium">{post.title}</p>
                                                         </div>
-                                                        <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'blog', id: post.id })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                        <div className="flex gap-2">
+                                                            <Button variant="outline" size="sm" onClick={() => handleEditPost(post)}><LucideIcons.Edit className="mr-2 h-4 w-4"/>Edit</Button>
+                                                            <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'blog', id: post.id })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                                 {blogPosts.length === 0 && <p className="text-center text-muted-foreground py-4">No blog posts found.</p>}
@@ -405,20 +460,23 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                                     </Tabs>
                                 </TabsContent>
                                 <TabsContent value="sessions" className="mt-0 space-y-6">
-                                     <Tabs defaultValue="create" className="w-full">
+                                     <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">
                                         <TabsList className="grid w-full grid-cols-2">
-                                            <TabsTrigger value="create">Create New</TabsTrigger>
-                                            <TabsTrigger value="view">View All</TabsTrigger>
+                                            <TabsTrigger value="sessionCreate" onClick={cancelEdit}>{editingProgram ? 'Edit Program' : 'Create New'}</TabsTrigger>
+                                            <TabsTrigger value="sessionView">View All</TabsTrigger>
                                         </TabsList>
-                                        <TabsContent value="create" className="mt-4">
-                                            <Card><CardHeader><CardTitle>Create New Education Program</CardTitle></CardHeader><CardContent><Form {...programForm}><form onSubmit={programForm.handleSubmit(onProgramSubmit)} className="space-y-6"><FormField control={programForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/><Separator/><div><h3 className="text-lg font-medium mb-2">Sessions</h3>{sessionFields.map((field, index) => (<div key={field.id} className="grid grid-cols-4 gap-2 items-end mb-2 p-2 border rounded-lg"><FormField control={programForm.control} name={`sessions.${index}.language`} render={({ field }) => (<FormItem><FormLabel>Language</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name={`sessions.${index}.date`} render={({ field }) => (<FormItem><FormLabel>Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name={`sessions.${index}.time`} render={({ field }) => (<FormItem><FormLabel>Time</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><Button type="button" variant="ghost" onClick={() => removeSession(index)}><LucideIcons.Trash2 className="h-4 w-4" /></Button></div>))}<Button type="button" variant="outline" size="sm" onClick={() => appendSession({ language: 'English', date: '', time: '' })}><LucideIcons.PlusCircle className="mr-2 h-4 w-4" />Add Session</Button></div><Separator /><div><h3 className="text-lg font-medium mb-2">Features</h3>{featureFields.map((field, index) => (<div key={field.id} className="grid grid-cols-3 gap-2 items-end mb-2 p-2 border rounded-lg"><FormField control={programForm.control} name={`features.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Feature Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name={`features.${index}.icon`} render={({ field }) => (<FormItem><FormLabel>Icon</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select icon" /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{iconNames.map(icon => <SelectItem key={icon} value={icon}>{icon}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>)}/><Button type="button" variant="ghost" onClick={() => removeFeature(index)}><LucideIcons.Trash2 className="h-4 w-4" /></Button></div>))}<Button type="button" variant="outline" size="sm" onClick={() => appendFeature({ name: '', icon: 'Check' })}><LucideIcons.PlusCircle className="mr-2 h-4 w-4" />Add Feature</Button></div><Button type="submit">Publish Program</Button></form></Form></CardContent></Card>
+                                        <TabsContent value="sessionCreate" className="mt-4">
+                                            <Card><CardHeader><CardTitle>{editingProgram ? 'Edit Education Program' : 'Create New Education Program'}</CardTitle></CardHeader><CardContent><Form {...programForm}><form onSubmit={programForm.handleSubmit(onProgramSubmit)} className="space-y-6"><FormField control={programForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)}/><Separator/><div><h3 className="text-lg font-medium mb-2">Sessions</h3>{sessionFields.map((field, index) => (<div key={field.id} className="grid grid-cols-4 gap-2 items-end mb-2 p-2 border rounded-lg"><FormField control={programForm.control} name={`sessions.${index}.language`} render={({ field }) => (<FormItem><FormLabel>Language</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name={`sessions.${index}.date`} render={({ field }) => (<FormItem><FormLabel>Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name={`sessions.${index}.time`} render={({ field }) => (<FormItem><FormLabel>Time</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><Button type="button" variant="ghost" onClick={() => removeSession(index)}><LucideIcons.Trash2 className="h-4 w-4" /></Button></div>))}<Button type="button" variant="outline" size="sm" onClick={() => appendSession({ language: 'English', date: '', time: '' })}><LucideIcons.PlusCircle className="mr-2 h-4 w-4" />Add Session</Button></div><Separator /><div><h3 className="text-lg font-medium mb-2">Features</h3>{featureFields.map((field, index) => (<div key={field.id} className="grid grid-cols-3 gap-2 items-end mb-2 p-2 border rounded-lg"><FormField control={programForm.control} name={`features.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Feature Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/><FormField control={programForm.control} name={`features.${index}.icon`} render={({ field }) => (<FormItem><FormLabel>Icon</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select icon" /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{iconNames.map(icon => <SelectItem key={icon} value={icon}>{icon}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>)}/><Button type="button" variant="ghost" onClick={() => removeFeature(index)}><LucideIcons.Trash2 className="h-4 w-4" /></Button></div>))}<Button type="button" variant="outline" size="sm" onClick={() => appendFeature({ name: '', icon: 'Check' })}><LucideIcons.PlusCircle className="mr-2 h-4 w-4" />Add Feature</Button></div><div className="flex gap-2"><Button type="submit">{editingProgram ? 'Update Program' : 'Publish Program'}</Button>{editingProgram && <Button variant="ghost" onClick={cancelEdit}>Cancel</Button>}</div></form></Form></CardContent></Card>
                                         </TabsContent>
-                                        <TabsContent value="view" className="mt-4">
+                                        <TabsContent value="sessionView" className="mt-4">
                                             <Card><CardHeader><CardTitle>Existing Education Programs</CardTitle></CardHeader><CardContent className="space-y-4">
-                                                {educationPrograms.map((program, index) => (
-                                                    <div key={index} className="flex items-center justify-between p-2 border rounded-md">
+                                                {educationPrograms.map((program) => (
+                                                    <div key={program.id} className="flex items-center justify-between p-2 border rounded-md">
                                                         <p className="font-medium">{program.title}</p>
-                                                        <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'program', id: index })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                        <div className="flex gap-2">
+                                                            <Button variant="outline" size="sm" onClick={() => handleEditProgram(program)}><LucideIcons.Edit className="mr-2 h-4 w-4"/>Edit</Button>
+                                                            <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'program', id: program.id })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                                 {educationPrograms.length === 0 && <p className="text-center text-muted-foreground py-4">No education programs found.</p>}
