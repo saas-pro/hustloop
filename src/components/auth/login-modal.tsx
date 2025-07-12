@@ -20,6 +20,7 @@ import {
   signInWithPopup
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" {...props}>
@@ -46,6 +47,12 @@ interface LoginModalProps {
   onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => void;
 }
 
+declare global {
+    interface Window {
+        grecaptcha: any;
+    }
+}
+
 export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginModalProps) {
   const { toast } = useToast();
   const router = useRouter();
@@ -60,84 +67,71 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
 
   const { formState: { isSubmitting }, getValues } = form;
 
-  const handleLogin = async (values: LoginSchema) => {
-    // Special admin bypass for development
-    if (
-      values.email === "admin@hustloop.com" &&
-      values.password === "Hustloop@Admin"
-    ) {
-      toast({
-        title: "Admin Login Successful",
-        description: "Welcome, Admin!",
-      });
-      setIsOpen(false);
-      onLoginSuccess({
-        role: "admin",
-        token: "dev-admin-token",
-        hasSubscription: true,
-        name: "Admin",
-        email: "admin@hustloop.com",
-        authProvider: "local",
-      });
-      return;
-    }
-    if (!auth) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
+  const executeRecaptcha = (callback: (token: string) => void) => {
+    if (!window.grecaptcha) {
+        toast({ variant: 'destructive', title: 'reCAPTCHA Error', description: 'reCAPTCHA not loaded. Please try again.' });
         return;
     }
+    window.grecaptcha.enterprise.ready(() => {
+        window.grecaptcha.enterprise.execute('6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI', { action: 'login' }).then(callback);
+    });
+  };
+
+  const handlePasswordLogin = async (values: LoginSchema, recaptchaToken: string) => {
+    if (!auth) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
+        return;
+    }
+
     try {
         const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
+
         if (!firebaseUser.emailVerified) {
-            toast({
-                variant: "destructive",
-                title: "Email Not Verified",
-                description: "Please check your inbox to verify your email address before logging in.",
-            });
+            toast({ variant: "destructive", title: "Email Not Verified", description: "Please check your inbox to verify your email." });
             return;
         }
-        // Always call backend /api/login with Firebase ID token
+
         const idToken = await firebaseUser.getIdToken();
         const response = await fetch(`${API_BASE_URL}/api/login`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${idToken}` },
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recaptchaToken })
         });
         const data = await response.json();
+
         setIsOpen(false);
         if (data.action === 'complete-profile' && data.token) {
-          router.push(`/complete-profile?token=${data.token}`);
-          return;
+            router.push(`/complete-profile?token=${data.token}`);
+            return;
         }
+
         if (response.ok) {
-          const normalizedAuthProvider = data.authProvider === 'password' ? 'local' : data.authProvider || 'local';
-          onLoginSuccess({
-            role: data.role || 'founder',
-            token: data.token || idToken,
-            hasSubscription: data.hasSubscription || false,
-            name: data.name || firebaseUser.displayName || '',
-            email: data.email || firebaseUser.email || '',
-            authProvider: normalizedAuthProvider,
-          });
-          return;
+            onLoginSuccess({
+                role: data.role, token: data.token, hasSubscription: data.hasSubscription,
+                name: data.name, email: data.email, authProvider: 'local'
+            });
         } else {
-          toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
-          return;
+            toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
         }
     } catch (error: any) {
-        let title = "Login Failed";
-        let description = "An unexpected error occurred. Please try again.";
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            description = "Invalid email or password.";
-        } else if (error.code === 'auth/invalid-api-key') {
+        let description = "Invalid email or password.";
+        if (error.code === 'auth/invalid-api-key') {
             description = "API key is not valid. Please check your configuration."
         }
-        toast({ variant: "destructive", title, description });
+        toast({ variant: "destructive", title: "Login Failed", description });
     }
+  };
+
+  const handleLoginSubmit = (values: LoginSchema) => {
+    executeRecaptcha((token) => {
+        handlePasswordLogin(values, token);
+    });
   };
 
   const handleSocialLogin = async (provider: 'google') => {
     if (!auth) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
         return;
     }
     const authProvider = new GoogleAuthProvider();
@@ -149,85 +143,60 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         headers: { 'Authorization': `Bearer ${idToken}` },
       });
       const data = await response.json();
+
       setIsOpen(false);
       if (data.action === 'complete-profile' && data.token) {
         router.push(`/complete-profile?token=${data.token}`);
         return;
       }
+
       if (response.ok) {
         onLoginSuccess({
-          role: data.role || 'founder',
-          token: data.token || idToken,
-          hasSubscription: data.hasSubscription || false,
-          name: data.name || result.user.displayName || '',
-          email: data.email || result.user.email || '',
-          authProvider: 'google',
+          role: data.role, token: data.token, hasSubscription: data.hasSubscription,
+          name: data.name, email: data.email, authProvider: 'google'
         });
       } else {
         toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
       }
     } catch (error: any) {
       let description = error.message || 'An error occurred while signing in.';
-      if (error.code === 'auth/invalid-api-key' || error.message.includes('api-key-not-valid')) {
-        description = "The provided API key is not valid. Please check your Firebase project configuration."
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        description = "Sign-in was cancelled. Please try again."
-      }
-      toast({
-        variant: 'destructive',
-        title: 'Social Login Failed',
-        description: description,
-      });
+      toast({ variant: 'destructive', title: 'Social Login Failed', description });
     }
   };
   
   const handlePasswordReset = async () => {
     if (!auth) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
         return;
     }
     const email = getValues("email");
     if (!email) {
-        toast({
-            variant: "destructive",
-            title: "Email Required",
-            description: "Please enter your email address to reset your password.",
-        });
+        toast({ variant: "destructive", title: "Email Required", description: "Please enter your email address." });
         return;
     }
-
     const actionCodeSettings = {
         url: `${window.location.origin}/?action=login&from=reset`,
         handleCodeInApp: true,
     };
-
     try {
         await sendPasswordResetEmail(auth, email, actionCodeSettings);
-        toast({
-            title: "Password Reset Email Sent",
-            description: "Please check your inbox for instructions to reset your password. You will be redirected back here.",
-        });
+        toast({ title: "Password Reset Email Sent", description: "Please check your inbox." });
     } catch (error: any) {
-        let description = "Could not send password reset email. Please check the address and try again.";
-        if (error.code === 'auth/user-not-found') {
-            description = "No user found with this email address."
-        }
-        toast({
-            variant: "destructive",
-            title: "Failed to Send Email",
-            description: description,
-        });
+        toast({ variant: "destructive", title: "Failed to Send Email", description: "Could not send password reset email." });
     }
   };
   
   return (
+    <>
+    <Script
+        src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
+        strategy="lazyOnload"
+    />
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-lg auth-modal-glow overflow-hidden">
         <DialogHeader className="text-center">
           <DialogTitle>Login</DialogTitle>
-          <DialogDescription>
-            Access your hustloop account.
-          </DialogDescription>
+          <DialogDescription>Access your hustloop account.</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4">
@@ -235,27 +204,21 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         </div>
 
         <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-            </div>
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
             <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background/80 px-2 text-muted-foreground backdrop-blur-sm">
-                    Or continue with email
-                </span>
+                <span className="bg-background/80 px-2 text-muted-foreground backdrop-blur-sm">Or continue with email</span>
             </div>
         </div>
 
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleLoginSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="you@example.com" {...field} disabled={isSubmitting} />
-                    </FormControl>
+                    <FormControl><Input type="email" placeholder="you@example.com" {...field} disabled={isSubmitting} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -269,9 +232,7 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
                         <FormLabel>Password</FormLabel>
                         <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset}>Forgot password?</Button>
                     </div>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} />
-                    </FormControl>
+                    <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -286,5 +247,8 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         </Form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
+
+    
