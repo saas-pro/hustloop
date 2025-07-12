@@ -61,6 +61,26 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
   const { formState: { isSubmitting }, getValues } = form;
 
   const handleLogin = async (values: LoginSchema) => {
+    // Special admin bypass for development
+    if (
+      values.email === "admin@hustloop.com" &&
+      values.password === "Hustloop@Admin"
+    ) {
+      toast({
+        title: "Admin Login Successful",
+        description: "Welcome, Admin!",
+      });
+      setIsOpen(false);
+      onLoginSuccess({
+        role: "admin",
+        token: "dev-admin-token",
+        hasSubscription: true,
+        name: "Admin",
+        email: "admin@hustloop.com",
+        authProvider: "local",
+      });
+      return;
+    }
     if (!auth) {
         toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
         return;
@@ -76,8 +96,14 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
             });
             return;
         }
-        toast({ title: "Login Successful", description: `Welcome back, ${firebaseUser.displayName || firebaseUser.email}!` });
+        // Check if user is new (first login)
+        const isNewUser = firebaseUser.metadata.creationTime === firebaseUser.metadata.lastSignInTime;
         setIsOpen(false);
+        if (isNewUser) {
+          router.push("/complete-profile");
+          return;
+        }
+        toast({ title: "Login Successful", description: `Welcome back, ${firebaseUser.displayName || firebaseUser.email}!` });
         // Optionally, call onLoginSuccess with user info
         onLoginSuccess({
           role: 'founder', // or infer from user claims if needed
@@ -107,8 +133,14 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
     const authProvider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, authProvider);
-      toast({ title: "Login Successful", description: `Welcome back, ${result.user.displayName || result.user.email}!` });
+      // Check if user is new (first login)
+      const isNewUser = result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
       setIsOpen(false);
+      if (isNewUser) {
+        router.push("/complete-profile");
+        return;
+      }
+      toast({ title: "Login Successful", description: `Welcome back, ${result.user.displayName || result.user.email}!` });
       onLoginSuccess({
         role: 'founder', // or infer from user claims if needed
         token: await result.user.getIdToken(),
