@@ -30,7 +30,7 @@ type User = {
     name: string;
     email: string;
 }
-type AuthProvider = 'local' | 'google' | 'linkedin';
+type AuthProvider = 'local' | 'google';
 
 // Profile form schema
 const profileFormSchema = z.object({

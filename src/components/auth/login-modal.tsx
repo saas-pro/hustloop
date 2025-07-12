@@ -109,14 +109,14 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
           return;
         }
         if (response.ok) {
-          toast({ title: "Login Successful", description: `Welcome back, ${data.name || firebaseUser.displayName || firebaseUser.email}!` });
+          const normalizedAuthProvider = data.authProvider === 'password' ? 'local' : data.authProvider || 'local';
           onLoginSuccess({
             role: data.role || 'founder',
             token: data.token || idToken,
             hasSubscription: data.hasSubscription || false,
             name: data.name || firebaseUser.displayName || '',
             email: data.email || firebaseUser.email || '',
-            authProvider: data.authProvider || 'local',
+            authProvider: normalizedAuthProvider,
           });
           return;
         } else {
@@ -155,14 +155,13 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         return;
       }
       if (response.ok) {
-        toast({ title: "Login Successful", description: `Welcome back, ${data.name || result.user.displayName || result.user.email}!` });
         onLoginSuccess({
           role: data.role || 'founder',
           token: data.token || idToken,
           hasSubscription: data.hasSubscription || false,
           name: data.name || result.user.displayName || '',
           email: data.email || result.user.email || '',
-          authProvider: data.authProvider || 'google',
+          authProvider: 'google',
         });
       } else {
         toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });

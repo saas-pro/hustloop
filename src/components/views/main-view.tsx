@@ -40,7 +40,7 @@ type User = {
     name: string;
     email: string;
 }
-type AuthProvider = 'local' | 'google' | 'linkedin';
+type AuthProvider = 'local' | 'google';
 
 export default function MainView() {
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null);

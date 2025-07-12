@@ -63,7 +63,7 @@ type ProgramFormValues = z.infer<typeof programSchema>;
 
 
 type User = { name: string; email: string; }
-type AuthProvider = 'local' | 'google' | 'linkedin';
+type AuthProvider = 'local' | 'google';
 
 interface DashboardViewProps {
     isOpen: boolean;
