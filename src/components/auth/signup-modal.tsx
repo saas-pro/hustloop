@@ -16,7 +16,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   createUserWithEmailAndPassword,
-  updateProfile
+  updateProfile,
+  sendEmailVerification
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
@@ -75,6 +76,8 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
             const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
             // Optionally update display name
             await updateProfile(userCredential.user, { displayName: values.name });
+            // Send email verification
+            await sendEmailVerification(userCredential.user);
             toast({
                 title: "Registration Successful",
                 description: "Your account has been created. Please check your email to verify your account.",
@@ -103,24 +106,11 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
             return;
         }
         const authProvider = new GoogleAuthProvider();
-        
         try {
             const result = await signInWithPopup(auth, authProvider);
-            const idToken = await result.user.getIdToken();
-            const response = await fetch(`${API_BASE_URL}/api/login`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${idToken}` },
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || "Backend login failed");
-
-            if (data.action === 'complete-profile') {
-                setIsOpen(false);
-                router.push(`/complete-profile?token=${data.token}`);
-            } else {
-                toast({ title: "Login Successful", description: `Welcome back, ${data.name}!` });
-                window.location.reload();
-            }
+            toast({ title: "Login Successful", description: `Welcome, ${result.user.displayName || result.user.email}!` });
+            setIsOpen(false);
+            // Optionally update UI or redirect
         } catch (error: any) {
             let description = error.message || 'An error occurred while signing in.';
             if (error.code === 'auth/invalid-api-key' || error.message.includes('api-key-not-valid')) {
