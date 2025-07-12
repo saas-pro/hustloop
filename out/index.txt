@@ -1,23 +1,37 @@
-1:"$Sreact.fragment"
-2:I[87555,[],""]
-3:I[31295,[],""]
-4:I[9156,["774","static/chunks/774-12239cd229788672.js","177","static/chunks/app/layout-c6b9dfd4e846565e.js"],"Toaster"]
-5:I[90894,[],"ClientPageRoot"]
-6:I[68805,["774","static/chunks/774-12239cd229788672.js","319","static/chunks/319-b0ca228acbd58e72.js","974","static/chunks/app/page-adbbcc699bbceb6c.js"],"default"]
-9:I[59665,[],"MetadataBoundary"]
-b:I[59665,[],"OutletBoundary"]
-e:I[74911,[],"AsyncMetadataOutlet"]
-10:I[59665,[],"ViewportBoundary"]
-12:I[26614,[],""]
-:HL["/fire/_next/static/css/106dbd2dda87b2fc.css","style"]
-0:{"P":null,"b":"480_BcsjUi1CQBoPnVxvu","p":"/fire","c":["",""],"i":false,"f":[[["",{"children":["__PAGE__",{}]},"$undefined","$undefined",true],["",["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/fire/_next/static/css/106dbd2dda87b2fc.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"dark","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}],["$","link",null,{"href":"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap","rel":"stylesheet"}]]}],["$","body",null,{"className":"font-body antialiased bg-background","children":[["$","div",null,{"className":"flex flex-col min-h-screen","children":["$","$L2",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L3",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","$L4",null,{}]]}]]}]]}],{"children":["__PAGE__",["$","$1","c",{"children":[["$","$L5",null,{"Component":"$6","searchParams":{},"params":{},"promises":["$@7","$@8"]}],["$","$L9",null,{"children":"$La"}],null,["$","$Lb",null,{"children":["$Lc","$Ld",["$","$Le",null,{"promise":"$@f"}]]}]]}],{},null,false]},null,false],["$","$1","h",{"children":[null,["$","$1","RYkQ0IlWeqZh78twDDtvN",{"children":[["$","$L10",null,{"children":"$L11"}],null]}],null]}],false]],"m":"$undefined","G":["$12","$undefined"],"s":false,"S":true}
-13:"$Sreact.suspense"
-14:I[74911,[],"AsyncMetadata"]
-7:{}
-8:{}
-a:["$","$13",null,{"fallback":null,"children":["$","$L14",null,{"promise":"$@15"}]}]
-d:null
-11:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
-c:null
-15:{"metadata":[["$","title","0",{"children":"Nexus Platform"}],["$","meta","1",{"name":"description","content":"A prototype startup platform that includes modules such as Blog, Mentors, Incubators, Pricing, and MSMEs."}],["$","link","2",{"rel":"icon","href":"/fire/favicon.ico","type":"image/x-icon","sizes":"16x16"}]],"error":null,"digest":"$undefined"}
-f:{"metadata":"$15:metadata","error":null,"digest":"$undefined"}
+2:"$Sreact.suspense"
+3:I[74344,["9990","static/chunks/7c86ec74-5d3e2c324eba8f04.js","8415","static/chunks/8415-3647249926a008b4.js","5844","static/chunks/5844-71d41ecabde65adb.js","9635","static/chunks/9635-1974f6391a1f5d48.js","8437","static/chunks/8437-9cca2dc77cd479a5.js","3145","static/chunks/3145-96a9e135101030c6.js","5935","static/chunks/5935-e7af8502207931af.js","7094","static/chunks/7094-2b10a40822cc84b1.js","1931","static/chunks/app/page-494065582c63a170.js"],"default"]
+4:I[11225,["8068","static/chunks/8068-111f0b00c8797a1e.js","8415","static/chunks/8415-3647249926a008b4.js","5844","static/chunks/5844-71d41ecabde65adb.js","1915","static/chunks/1915-bfb0f97fd1af2908.js","3185","static/chunks/app/layout-a21bbe360d2476df.js"],"default"]
+5:I[4707,[],""]
+6:I[36423,[],""]
+7:I[75292,["8415","static/chunks/8415-3647249926a008b4.js","5896","static/chunks/5896-dd3fa908e6e2380d.js","9160","static/chunks/app/not-found-4ad8109c7ea602ca.js"],"default"]
+8:I[94886,["8068","static/chunks/8068-111f0b00c8797a1e.js","8415","static/chunks/8415-3647249926a008b4.js","5844","static/chunks/5844-71d41ecabde65adb.js","1915","static/chunks/1915-bfb0f97fd1af2908.js","3185","static/chunks/app/layout-a21bbe360d2476df.js"],"Toaster"]
+9:I[88003,["8068","static/chunks/8068-111f0b00c8797a1e.js","8415","static/chunks/8415-3647249926a008b4.js","5844","static/chunks/5844-71d41ecabde65adb.js","1915","static/chunks/1915-bfb0f97fd1af2908.js","3185","static/chunks/app/layout-a21bbe360d2476df.js"],""]
+a:T43f,
+            window.$zoho = window.$zoho || {};
+            window.$zoho.salesiq = window.$zoho.salesiq || {
+              widgetcode: "siq770fac757336897d739f9273d8f8f7b3aec5f63c512be52582e5f9e3440d863b",
+              values: {},
+              ready: function () {
+                var salesiqDoc = document.getElementById("zsiq_float");
+                if (salesiqDoc) {
+                    document.addEventListener('router:end', (event) => {
+                        if (window.$zoho && window.$zoho.salesiq && window.$zoho.salesiq.page) {
+                            window.$zoho.salesiq.page.popup.close('all');
+                            window.$zoho.salesiq.page.popup.show();
+                        }
+                    });
+                }
+              }
+            };
+            
+            var d = document;
+            var s = d.createElement("script");
+s.type = "text/javascript";
+s.id = "zsiqscript";
+s.defer = true;
+s.src = "https://salesiq.zohopublic.in/widget";
+            var t = d.getElementsByTagName("script")[0];
+t.parentNode.insertBefore(s, t);
+          0:["xBVLHRuPXvc75ypy5n1nF",[[["",{"children":["__PAGE__",{}]},"$undefined","$undefined",true],["",{"children":["__PAGE__",{},[["$L1",["$","$2",null,{"fallback":["$","div",null,{"children":"Loading..."}],"children":["$","$L3",null,{}]}],null],null],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/02b2aee02a368ff7.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","className":"__variable_19640c __variable_9f6af0","suppressHydrationWarning":true,"children":[["$","head",null,{"children":["$","script",null,{"dangerouslySetInnerHTML":{"__html":"\n              (function() {\n                try {\n                  let theme = localStorage.getItem('theme');\n                  if (!theme) {\n                    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';\n                  }\n                  if (theme === 'dark') {\n                    document.documentElement.classList.add('dark');\n                  } else {\n                    document.documentElement.classList.remove('dark');\n                  }\n                } catch (e) {}\n              })();\n            "}}]}],["$","body",null,{"className":"antialiased bg-background font-sans","children":[["$","div",null,{"className":"flex flex-col min-h-screen","children":[["$","div",null,{"className":"hidden dark:block","children":["$","$L4",null,{}]}],["$","$L5",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L6",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":["$","$L7",null,{}],"notFoundStyles":[]}]]}],["$","$L8",null,{}],["$","$L9",null,{"id":"zoho-salesiq-script","strategy":"lazyOnload","children":"$a"}]]}]]}]],null],null],["$Lb",null]]]]
+b:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","1",{"charSet":"utf-8"}],["$","title","2",{"children":"Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet"}],["$","meta","3",{"name":"description","content":"A prototype startup platform that includes modules such as Blog, Mentors, Incubators, Pricing, and MSMEs."}],["$","link","4",{"rel":"icon","href":"/favicon.ico","type":"image/x-icon","sizes":"48x48"}],["$","meta","5",{"name":"next-size-adjust"}]]
+1:null
