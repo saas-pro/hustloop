@@ -60,54 +60,11 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
 
   const { formState: { isSubmitting }, getValues } = form;
 
-  const handleBackendLogin = async (idToken: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/login`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}` },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "An unknown error occurred.");
-      }
-      
-      if (data.action === 'complete-profile') {
-        setIsOpen(false);
-        router.push(`/complete-profile?token=${data.token}`);
-      } else {
-        toast({ title: "Login Successful", description: `Welcome back, ${data.name}!` });
-        onLoginSuccess(data);
-      }
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Login Failed", description: error.message });
-    }
-  }
-
   const handleLogin = async (values: LoginSchema) => {
     if (!auth) {
         toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
         return;
     }
-    if (values.email === 'admin@hustloop.com') {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
-        });
-        const data = await response.json();
-        if (response.ok) {
-          toast({ title: "Login Successful", description: `Welcome back, Admin!` });
-          onLoginSuccess(data);
-        } else {
-          toast({ variant: "destructive", title: "Admin Login Failed", description: data.error || "An unknown error occurred." });
-        }
-      } catch (error) {
-        toast({ variant: "destructive", title: "Admin Login Failed", description: "Could not connect to server." });
-      }
-      return;
-    }
-
     try {
         const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
@@ -119,8 +76,17 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
             });
             return;
         }
-        const idToken = await firebaseUser.getIdToken();
-        await handleBackendLogin(idToken);
+        toast({ title: "Login Successful", description: `Welcome back, ${firebaseUser.displayName || firebaseUser.email}!` });
+        setIsOpen(false);
+        // Optionally, call onLoginSuccess with user info
+        onLoginSuccess({
+          role: 'founder', // or infer from user claims if needed
+          token: await firebaseUser.getIdToken(),
+          hasSubscription: false, // set as needed
+          name: firebaseUser.displayName || '',
+          email: firebaseUser.email || '',
+          authProvider: 'local',
+        });
     } catch (error: any) {
         let title = "Login Failed";
         let description = "An unexpected error occurred. Please try again.";
@@ -139,11 +105,18 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         return;
     }
     const authProvider = new GoogleAuthProvider();
-    
     try {
       const result = await signInWithPopup(auth, authProvider);
-      const idToken = await result.user.getIdToken();
-      await handleBackendLogin(idToken);
+      toast({ title: "Login Successful", description: `Welcome back, ${result.user.displayName || result.user.email}!` });
+      setIsOpen(false);
+      onLoginSuccess({
+        role: 'founder', // or infer from user claims if needed
+        token: await result.user.getIdToken(),
+        hasSubscription: false, // set as needed
+        name: result.user.displayName || '',
+        email: result.user.email || '',
+        authProvider: 'google',
+      });
     } catch (error: any) {
       let description = error.message || 'An error occurred while signing in.';
       if (error.code === 'auth/invalid-api-key' || error.message.includes('api-key-not-valid')) {

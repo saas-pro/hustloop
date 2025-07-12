@@ -14,7 +14,9 @@ import { API_BASE_URL } from "@/lib/api";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { 
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  createUserWithEmailAndPassword,
+  updateProfile
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
@@ -64,33 +66,33 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     const { formState: { isSubmitting } } = form;
 
     const handleSignup = async (values: SignupSchema) => {
+        if (!auth) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
+            return;
+        }
         try {
-            const response = await fetch(`${API_BASE_URL}/api/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(values),
+            // Register user with Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            // Optionally update display name
+            await updateProfile(userCredential.user, { displayName: values.name });
+            toast({
+                title: "Registration Successful",
+                description: "Your account has been created. Please check your email to verify your account.",
             });
-    
-            const data = await response.json();
-    
-            if (response.ok) {
-                toast({
-                    title: "Registration Successful",
-                    description: data.message || "Please check your email to verify your account.",
-                });
-                setIsOpen(false);
-            } else {
-                toast({
-                    variant: "destructive",
-                    title: "Registration Failed",
-                    description: data.error || "An unknown error occurred.",
-                });
+            setIsOpen(false);
+        } catch (error: any) {
+            let description = error.message || 'An error occurred while creating your account.';
+            if (error.code === 'auth/email-already-in-use') {
+                description = 'This email is already in use.';
+            } else if (error.code === 'auth/invalid-email') {
+                description = 'The email address is invalid.';
+            } else if (error.code === 'auth/weak-password') {
+                description = 'The password is too weak.';
             }
-        } catch (error) {
             toast({
                 variant: "destructive",
                 title: "Registration Failed",
-                description: "Could not connect to the server. Please try again later.",
+                description,
             });
         }
     };
