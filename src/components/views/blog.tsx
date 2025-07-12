@@ -64,25 +64,31 @@ export default function BlogView({ isOpen, onOpenChange }: BlogViewProps) {
                 // Fallback static data
                 setBlogPosts([
                   {
+                    id: 1,
                     title: "Fallback Blog Post 1",
                     image: "https://placehold.co/600x400",
                     excerpt: "This is a fallback blog post shown when the API is unavailable.",
                     hint: "fallback",
-                    content: "This is the full content of Fallback Blog Post 1."
+                    content: "This is the full content of Fallback Blog Post 1.",
+                    created_at: new Date().toISOString()
                   },
                   {
+                    id: 2,
                     title: "Fallback Blog Post 2",
                     image: "https://placehold.co/600x400",
                     excerpt: "Another example fallback post.",
                     hint: "fallback",
-                    content: "This is the full content of Fallback Blog Post 2."
+                    content: "This is the full content of Fallback Blog Post 2.",
+                    created_at: new Date().toISOString()
                   },
                   {
+                    id: 3,
                     title: "Fallback Blog Post 3",
                     image: "https://placehold.co/600x400",
                     excerpt: "Fallback content keeps your UI looking good!",
                     hint: "fallback",
-                    content: "This is the full content of Fallback Blog Post 3."
+                    content: "This is the full content of Fallback Blog Post 3.",
+                    created_at: new Date().toISOString()
                   },
                 ]);
                 setError(null); // Hide error, show fallback
