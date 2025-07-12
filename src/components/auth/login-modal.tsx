@@ -118,8 +118,10 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
             email: data.email || firebaseUser.email || '',
             authProvider: data.authProvider || 'local',
           });
+          return;
         } else {
           toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
+          return;
         }
     } catch (error: any) {
         let title = "Login Failed";
