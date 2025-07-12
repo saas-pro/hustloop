@@ -70,7 +70,7 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         title: "Admin Login Successful",
         description: "Welcome, Admin!",
       });
-        setIsOpen(false);
+      setIsOpen(false);
       onLoginSuccess({
         role: "admin",
         token: "dev-admin-token",
@@ -196,24 +196,33 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         return;
     }
 
+    const actionCodeSettings = {
+        url: `${window.location.origin}/?action=login&from=reset`,
+        handleCodeInApp: true,
+    };
+
     try {
-        await sendPasswordResetEmail(auth, email);
+        await sendPasswordResetEmail(auth, email, actionCodeSettings);
         toast({
             title: "Password Reset Email Sent",
-            description: "Please check your inbox for instructions to reset your password.",
+            description: "Please check your inbox for instructions to reset your password. You will be redirected back here.",
         });
     } catch (error: any) {
+        let description = "Could not send password reset email. Please check the address and try again.";
+        if (error.code === 'auth/user-not-found') {
+            description = "No user found with this email address."
+        }
         toast({
             variant: "destructive",
             title: "Failed to Send Email",
-            description: "Could not send password reset email. Please check the address and try again.",
+            description: description,
         });
     }
   };
   
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg auth-modal-glow overflow-hidden">
         <DialogHeader className="text-center">
           <DialogTitle>Login</DialogTitle>
           <DialogDescription>

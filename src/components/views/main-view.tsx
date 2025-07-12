@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -88,7 +89,24 @@ export default function MainView() {
 
   useEffect(() => {
     const error = searchParams.get('error');
-    const status = searchParams.get('status');
+    const from = searchParams.get('from');
+    const action = searchParams.get('action');
+
+    if (action === 'login' && from === 'verification') {
+        toast({
+            title: "Verification Successful!",
+            description: "Your email has been verified. Please log in to continue.",
+        });
+        setActiveView('login');
+        router.replace('/');
+    } else if (action === 'login' && from === 'reset') {
+        toast({
+            title: "Password Reset Successful",
+            description: "Please log in with your new password.",
+        });
+        setActiveView('login');
+        router.replace('/');
+    }
 
     if (status === 'pending_approval') {
         toast({
