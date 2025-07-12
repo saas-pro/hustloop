@@ -105,7 +105,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
 
     const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
     const [educationPrograms, setEducationPrograms] = useState<EducationProgram[]>([]);
-    const [itemToDelete, setItemToDelete] = useState<{ type: 'blog' | 'program'; index: number } | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<{ type: 'blog' | 'program'; id: number } | null>(null);
 
 
     const settingsForm = useForm<SettingsFormValues>({
@@ -229,6 +229,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
             toast({ title: 'Blog Post Created' });
             blogForm.reset();
             await fetchBlogPosts();
+            localStorage.setItem('blogs-updated', Date.now().toString());
         } else toast({ variant: 'destructive', title: 'Failed to create post' });
     };
 
@@ -244,8 +245,8 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
     const handleDeleteItem = async () => {
         if (!itemToDelete) return;
 
-        const { type, index } = itemToDelete;
-        const url = type === 'blog' ? `${API_BASE_URL}/api/blog-posts/${index}` : `${API_BASE_URL}/api/education-programs/${index}`;
+        const { type, id } = itemToDelete;
+        const url = type === 'blog' ? `${API_BASE_URL}/api/blog-posts/${id}` : `${API_BASE_URL}/api/education-programs/${id}`;
         
         const response = await fetch(url, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
         if (response.ok) {
@@ -389,13 +390,13 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                                         </TabsContent>
                                         <TabsContent value="view" className="mt-4">
                                             <Card><CardHeader><CardTitle>Existing Blog Posts</CardTitle></CardHeader><CardContent className="space-y-4">
-                                                {blogPosts.map((post, index) => (
-                                                    <div key={index} className="flex items-center justify-between p-2 border rounded-md">
+                                                {blogPosts.map((post) => (
+                                                    <div key={post.id} className="flex items-center justify-between p-2 border rounded-md">
                                                         <div className="flex items-center gap-4">
                                                             <Image src={post.image} alt={post.title} width={60} height={40} className="rounded-md object-cover" data-ai-hint={post.hint}/>
                                                             <p className="font-medium">{post.title}</p>
                                                         </div>
-                                                        <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'blog', index })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                        <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'blog', id: post.id })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
                                                     </div>
                                                 ))}
                                                 {blogPosts.length === 0 && <p className="text-center text-muted-foreground py-4">No blog posts found.</p>}
@@ -417,7 +418,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                                                 {educationPrograms.map((program, index) => (
                                                     <div key={index} className="flex items-center justify-between p-2 border rounded-md">
                                                         <p className="font-medium">{program.title}</p>
-                                                        <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'program', index })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                        <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'program', id: index })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
                                                     </div>
                                                 ))}
                                                 {educationPrograms.length === 0 && <p className="text-center text-muted-foreground py-4">No education programs found.</p>}

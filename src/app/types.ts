@@ -40,11 +40,13 @@ export type NewsletterSubscriber = {
 };
 
 export type BlogPost = {
+  id: number;
   title: string;
   image: string;
   hint: string;
   excerpt: string;
   content: string;
+  created_at: string;
 };
 
 export type EducationSession = {

@@ -24,6 +24,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
+import { Script } from "next/script";
 
 
 type User = {
@@ -398,6 +399,10 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                 onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
                 onAddComment={handleAddComment}
             />
+            <Script
+  src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
+  strategy="afterInteractive"
+/>
         </>
     );
 }
