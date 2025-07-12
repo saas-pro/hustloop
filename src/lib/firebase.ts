@@ -14,6 +14,9 @@ const firebaseConfig = {
 // A function to initialize Firebase App, ensuring it's a singleton.
 // This can be called safely from the client-side.
 export function getFirebaseApp(): FirebaseApp {
+    if (typeof window === 'undefined') {
+        throw new Error('getFirebaseApp() must only be called on the client side');
+    }
     if (getApps().length) {
         return getApp();
     }
