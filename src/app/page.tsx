@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { signOut } from "firebase/auth";
-import { auth } from "@/hooks/use-firebase-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { API_BASE_URL } from "@/lib/api";
 
 // A more obvious loading animation to show while dynamic components are being downloaded.
@@ -60,6 +60,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { auth } = useFirebaseAuth();
   
   // This effect runs once on mount to set initial state from localStorage
   useEffect(() => {

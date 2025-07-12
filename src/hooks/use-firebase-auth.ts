@@ -21,5 +21,5 @@ export function useFirebaseAuth() {
     return () => unsubscribe();
   }, []);
 
-  return { user, loading };
+  return { user, loading, auth };
 }
