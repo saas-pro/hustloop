@@ -61,7 +61,31 @@ export default function BlogView({ isOpen, onOpenChange }: BlogViewProps) {
                 const data = await response.json();
                 setBlogPosts(data);
             } catch (err: any) {
-                setError(err.message || "An unexpected error occurred.");
+                // Fallback static data
+                setBlogPosts([
+                  {
+                    title: "Fallback Blog Post 1",
+                    image: "https://placehold.co/600x400",
+                    excerpt: "This is a fallback blog post shown when the API is unavailable.",
+                    hint: "fallback",
+                    content: "This is the full content of Fallback Blog Post 1."
+                  },
+                  {
+                    title: "Fallback Blog Post 2",
+                    image: "https://placehold.co/600x400",
+                    excerpt: "Another example fallback post.",
+                    hint: "fallback",
+                    content: "This is the full content of Fallback Blog Post 2."
+                  },
+                  {
+                    title: "Fallback Blog Post 3",
+                    image: "https://placehold.co/600x400",
+                    excerpt: "Fallback content keeps your UI looking good!",
+                    hint: "fallback",
+                    content: "This is the full content of Fallback Blog Post 3."
+                  },
+                ]);
+                setError(null); // Hide error, show fallback
             } finally {
                 setIsLoading(false);
             }
