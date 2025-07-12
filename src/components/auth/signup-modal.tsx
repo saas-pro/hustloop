@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
-import { auth } from "@/hooks/use-firebase-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { 
   GoogleAuthProvider,
   signInWithPopup
@@ -51,6 +51,7 @@ interface SignupModalProps {
 export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     const { toast } = useToast();
     const router = useRouter();
+    const { auth } = useFirebaseAuth();
     const form = useForm<SignupSchema>({
         resolver: zodResolver(signupSchema),
         defaultValues: {
@@ -95,6 +96,10 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     };
 
     const handleSocialLogin = async (provider: 'google') => {
+        if (!auth) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
+            return;
+        }
         const authProvider = new GoogleAuthProvider();
         
         try {
@@ -111,9 +116,8 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
                 setIsOpen(false);
                 router.push(`/complete-profile?token=${data.token}`);
             } else {
-                // This case should ideally not happen for a new user, but as a fallback:
                 toast({ title: "Login Successful", description: `Welcome back, ${data.name}!` });
-                window.location.reload(); // Reload to update parent state
+                window.location.reload();
             }
         } catch (error: any) {
             let description = error.message || 'An error occurred while signing in.';

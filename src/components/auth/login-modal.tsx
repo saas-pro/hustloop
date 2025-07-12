@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { UserRole } from "@/app/types";
 import { API_BASE_URL } from "@/lib/api";
-import { auth } from "@/hooks/use-firebase-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { 
   signInWithEmailAndPassword, 
   sendPasswordResetEmail,
@@ -49,6 +49,7 @@ interface LoginModalProps {
 export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginModalProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const { auth } = useFirebaseAuth();
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -83,7 +84,10 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
   }
 
   const handleLogin = async (values: LoginSchema) => {
-    // Special case for admin login to bypass Firebase for the prototype
+    if (!auth) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
+        return;
+    }
     if (values.email === 'admin@hustloop.com') {
       try {
         const response = await fetch(`${API_BASE_URL}/api/login`, {
@@ -104,7 +108,6 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
       return;
     }
 
-    // Standard Firebase login for all other users
     try {
         const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
@@ -131,6 +134,10 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
   };
 
   const handleSocialLogin = async (provider: 'google') => {
+    if (!auth) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
+        return;
+    }
     const authProvider = new GoogleAuthProvider();
     
     try {
@@ -153,6 +160,10 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
   };
   
   const handlePasswordReset = async () => {
+    if (!auth) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
+        return;
+    }
     const email = getValues("email");
     if (!email) {
         toast({
