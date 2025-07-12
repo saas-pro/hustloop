@@ -14,12 +14,10 @@ import { API_BASE_URL } from "@/lib/api";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { 
   GoogleAuthProvider,
-  signInWithPopup,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  sendEmailVerification
+  signInWithPopup
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import Script from 'next/script';
 
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -51,6 +49,12 @@ interface SignupModalProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 
+declare global {
+    interface Window {
+        grecaptcha: any;
+    }
+}
+
 export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     const { toast } = useToast();
     const router = useRouter();
@@ -66,38 +70,48 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     
     const { formState: { isSubmitting } } = form;
 
-    const handleSignup = async (values: SignupSchema) => {
-        if (!auth) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
+    const executeRecaptcha = (callback: (token: string) => void) => {
+        if (!window.grecaptcha) {
+            toast({ variant: 'destructive', title: 'reCAPTCHA Error', description: 'reCAPTCHA not loaded. Please try again.' });
             return;
         }
-        try {
-            // Register user with Firebase Auth
-            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-            // Optionally update display name
-            await updateProfile(userCredential.user, { displayName: values.name });
-            // Send email verification
-            await sendEmailVerification(userCredential.user);
-                toast({
-                    title: "Registration Successful",
-                description: "Your account has been created. Please check your email to verify your account.",
+        window.grecaptcha.enterprise.ready(() => {
+            window.grecaptcha.enterprise.execute('6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI', { action: 'register' }).then(callback);
+        });
+    };
+
+    const handleSignup = (values: SignupSchema) => {
+        executeRecaptcha(async (recaptchaToken: string) => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...values, recaptchaToken }),
                 });
-                setIsOpen(false);
-        } catch (error: any) {
-            let description = error.message || 'An error occurred while creating your account.';
-            if (error.code === 'auth/email-already-in-use') {
-                description = 'This email is already in use.';
-            } else if (error.code === 'auth/invalid-email') {
-                description = 'The email address is invalid.';
-            } else if (error.code === 'auth/weak-password') {
-                description = 'The password is too weak.';
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    toast({
+                        title: "Registration Successful",
+                        description: "Your account has been created. Please check your email to verify your account.",
+                    });
+                    setIsOpen(false);
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Registration Failed",
+                        description: data.error || 'An unexpected error occurred.',
+                    });
+                }
+            } catch (error) {
+                toast({
+                    variant: "destructive",
+                    title: "Registration Failed",
+                    description: "Could not connect to the server. Please try again later.",
+                });
             }
-            toast({
-                variant: "destructive",
-                title: "Registration Failed",
-                description,
-            });
-        }
+        });
     };
 
     const handleSocialLogin = async (provider: 'google') => {
@@ -109,7 +123,7 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
         try {
             const result = await signInWithPopup(auth, authProvider);
             toast({ title: "Login Successful", description: `Welcome, ${result.user.displayName || result.user.email}!` });
-                setIsOpen(false);
+            setIsOpen(false);
             // Optionally update UI or redirect
         } catch (error: any) {
             let description = error.message || 'An error occurred while signing in.';
@@ -127,8 +141,13 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     };
 
   return (
+    <>
+    <Script
+        src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
+        strategy="lazyOnload"
+    />
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg auth-modal-glow overflow-hidden">
         <DialogHeader className="text-center">
           <DialogTitle>Create an Account</DialogTitle>
           <DialogDescription>
@@ -205,5 +224,6 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
         </Form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
