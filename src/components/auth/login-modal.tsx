@@ -96,23 +96,31 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
             });
             return;
         }
-        // Check if user is new (first login)
-        const isNewUser = firebaseUser.metadata.creationTime === firebaseUser.metadata.lastSignInTime;
+        // Always call backend /api/login with Firebase ID token
+        const idToken = await firebaseUser.getIdToken();
+        const response = await fetch(`${API_BASE_URL}/api/login`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${idToken}` },
+        });
+        const data = await response.json();
         setIsOpen(false);
-        if (isNewUser) {
-          router.push("/complete-profile");
+        if (data.action === 'complete-profile' && data.token) {
+          router.push(`/complete-profile?token=${data.token}`);
           return;
         }
-        toast({ title: "Login Successful", description: `Welcome back, ${firebaseUser.displayName || firebaseUser.email}!` });
-        // Optionally, call onLoginSuccess with user info
-        onLoginSuccess({
-          role: 'founder', // or infer from user claims if needed
-          token: await firebaseUser.getIdToken(),
-          hasSubscription: false, // set as needed
-          name: firebaseUser.displayName || '',
-          email: firebaseUser.email || '',
-          authProvider: 'local',
-        });
+        if (response.ok) {
+          toast({ title: "Login Successful", description: `Welcome back, ${data.name || firebaseUser.displayName || firebaseUser.email}!` });
+          onLoginSuccess({
+            role: data.role || 'founder',
+            token: data.token || idToken,
+            hasSubscription: data.hasSubscription || false,
+            name: data.name || firebaseUser.displayName || '',
+            email: data.email || firebaseUser.email || '',
+            authProvider: data.authProvider || 'local',
+          });
+        } else {
+          toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
+        }
     } catch (error: any) {
         let title = "Login Failed";
         let description = "An unexpected error occurred. Please try again.";
@@ -133,22 +141,30 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
     const authProvider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, authProvider);
-      // Check if user is new (first login)
-      const isNewUser = result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
+      const idToken = await result.user.getIdToken();
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}` },
+      });
+      const data = await response.json();
       setIsOpen(false);
-      if (isNewUser) {
-        router.push("/complete-profile");
+      if (data.action === 'complete-profile' && data.token) {
+        router.push(`/complete-profile?token=${data.token}`);
         return;
       }
-      toast({ title: "Login Successful", description: `Welcome back, ${result.user.displayName || result.user.email}!` });
-      onLoginSuccess({
-        role: 'founder', // or infer from user claims if needed
-        token: await result.user.getIdToken(),
-        hasSubscription: false, // set as needed
-        name: result.user.displayName || '',
-        email: result.user.email || '',
-        authProvider: 'google',
-      });
+      if (response.ok) {
+        toast({ title: "Login Successful", description: `Welcome back, ${data.name || result.user.displayName || result.user.email}!` });
+        onLoginSuccess({
+          role: data.role || 'founder',
+          token: data.token || idToken,
+          hasSubscription: data.hasSubscription || false,
+          name: data.name || result.user.displayName || '',
+          email: data.email || result.user.email || '',
+          authProvider: data.authProvider || 'google',
+        });
+      } else {
+        toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
+      }
     } catch (error: any) {
       let description = error.message || 'An error occurred while signing in.';
       if (error.code === 'auth/invalid-api-key' || error.message.includes('api-key-not-valid')) {
