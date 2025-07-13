@@ -100,10 +100,6 @@ s.src = "https://salesiq.zohopublic.in/widget";
 t.parentNode.insertBefore(s, t);
           `}
         </Script>
-         <Script
-            src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
-            strategy="lazyOnload"
-        />
       </body>
     </html>
   );

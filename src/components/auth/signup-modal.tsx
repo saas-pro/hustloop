@@ -48,12 +48,6 @@ interface SignupModalProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 
-declare global {
-    interface Window {
-        grecaptcha: any;
-    }
-}
-
 export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     const { toast } = useToast();
     const router = useRouter();
@@ -69,25 +63,12 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     
     const { formState: { isSubmitting } } = form;
 
-    const executeRecaptcha = (action: 'login' | 'register'): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            if (!window.grecaptcha || !window.grecaptcha.enterprise) {
-                toast({ variant: 'destructive', title: 'reCAPTCHA Error', description: 'reCAPTCHA not loaded. Please try again.' });
-                return reject('reCAPTCHA not loaded');
-            }
-            window.grecaptcha.enterprise.ready(() => {
-                window.grecaptcha.enterprise.execute('6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI', { action }).then(resolve).catch(reject);
-            });
-        });
-    };
-
     const handleSignup = async (values: SignupSchema) => {
         try {
-            const recaptchaToken = await executeRecaptcha('register');
             const response = await fetch(`${API_BASE_URL}/api/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...values, recaptchaToken }),
+                body: JSON.stringify({ ...values }),
             });
 
             const data = await response.json();

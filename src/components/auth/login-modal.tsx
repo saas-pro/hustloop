@@ -46,12 +46,6 @@ interface LoginModalProps {
   onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => void;
 }
 
-declare global {
-    interface Window {
-        grecaptcha: any;
-    }
-}
-
 export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginModalProps) {
   const { toast } = useToast();
   const router = useRouter();
@@ -66,18 +60,6 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
 
   const { formState: { isSubmitting }, getValues } = form;
 
-  const executeRecaptcha = (action: 'login' | 'register'): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        if (!window.grecaptcha || !window.grecaptcha.enterprise) {
-            toast({ variant: 'destructive', title: 'reCAPTCHA Error', description: 'reCAPTCHA not loaded. Please try again.' });
-            return reject('reCAPTCHA not loaded');
-        }
-        window.grecaptcha.enterprise.ready(() => {
-            window.grecaptcha.enterprise.execute('6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI', { action }).then(resolve).catch(reject);
-        });
-    });
-  };
-
   const handlePasswordLogin = async (values: LoginSchema) => {
     if (!auth) {
         toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
@@ -85,7 +67,6 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
     }
     
     try {
-        const recaptchaToken = await executeRecaptcha('login');
         const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
 
@@ -98,7 +79,6 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ recaptchaToken })
         });
         const data = await response.json();
 
