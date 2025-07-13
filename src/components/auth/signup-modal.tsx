@@ -61,7 +61,27 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
         },
     });
     
-    const { formState: { isSubmitting } } = form;
+    const { formState: { isSubmitting }, getValues } = form;
+
+    const handleResendVerification = async () => {
+        const email = getValues("email");
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            const result = await response.json();
+            if (response.ok) {
+                toast({ title: "Email Sent", description: result.message });
+                setIsOpen(false);
+            } else {
+                toast({ variant: "destructive", title: "Failed to resend", description: result.error });
+            }
+        } catch (error) {
+            toast({ variant: "destructive", title: "Network Error", description: "Could not connect to server." });
+        }
+    };
 
     const handleSignup = async (values: SignupSchema) => {
         try {
@@ -80,11 +100,20 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
                 });
                 setIsOpen(false);
             } else {
-                toast({
-                    variant: "destructive",
-                    title: "Registration Failed",
-                    description: data.error || 'An unexpected error occurred.',
-                });
+                 if (data.action === 'resend_verification') {
+                    toast({
+                        variant: "destructive",
+                        title: "Registration Failed",
+                        description: data.error,
+                        action: <Button onClick={handleResendVerification}>Resend Link</Button>,
+                    });
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Registration Failed",
+                        description: data.error || 'An unexpected error occurred.',
+                    });
+                }
             }
         } catch (error) {
             toast({
@@ -202,3 +231,5 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     </Dialog>
   );
 }
+
+    

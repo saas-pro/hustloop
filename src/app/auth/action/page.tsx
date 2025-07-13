@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { API_BASE_URL } from '@/lib/api';
 
 type Action = 'resetPassword' | 'verifyEmail' | null;
 
@@ -33,6 +34,70 @@ const passwordResetSchema = z.object({
 
 type PasswordResetValues = z.infer<typeof passwordResetSchema>;
 
+const resendSchema = z.object({
+    email: z.string().email({ message: "Please enter a valid email address." }),
+});
+type ResendValues = z.infer<typeof resendSchema>;
+
+
+const ResendVerificationForm = () => {
+    const { toast } = useToast();
+    const router = useRouter();
+    const form = useForm<ResendValues>({
+        resolver: zodResolver(resendSchema),
+    });
+
+    const onSubmit = async (data: ResendValues) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            const result = await response.json();
+            if (response.ok) {
+                toast({ title: "Email Sent", description: result.message });
+                router.push('/');
+            } else {
+                toast({ variant: "destructive", title: "Failed to send", description: result.error });
+            }
+        } catch (error) {
+            toast({ variant: "destructive", title: "Network Error", description: "Could not connect to the server." });
+        }
+    };
+
+    return (
+        <div>
+            <CardHeader className="text-center">
+                <CardTitle>Link Expired or Invalid</CardTitle>
+                <CardDescription>This verification link has expired. Please enter your email to receive a new one.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl><Input type="email" placeholder="you@example.com" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Resend Verification Link
+                        </Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </div>
+    );
+};
+
+
 const ActionHandlerContent: React.FC = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -43,6 +108,7 @@ const ActionHandlerContent: React.FC = () => {
     const [actionCode, setActionCode] = React.useState<string | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
+    const [showResendForm, setShowResendForm] = React.useState(false);
     const [info, setInfo] = React.useState<{ email: string; from: 'verifyEmail' | 'resetPassword' } | null>(null);
     const [success, setSuccess] = React.useState(false);
     
@@ -69,28 +135,28 @@ const ActionHandlerContent: React.FC = () => {
         const handleAction = async () => {
             try {
                 const actionInfo = await checkActionCode(auth, codeParam);
-                const { email } = actionInfo.data;
+                const { email, operation } = actionInfo.data;
 
                 if (!email) {
                     throw new Error("Invalid action code: email is missing.");
                 }
 
-                if (mode === 'verifyEmail') {
+                if (operation === 'VERIFY_EMAIL') {
                     await applyActionCode(auth, codeParam);
                     setSuccess(true);
                     setInfo({ email, from: 'verifyEmail' });
-                } else if (mode === 'resetPassword') {
+                } else if (operation === 'PASSWORD_RESET') {
                     await verifyPasswordResetCode(auth, codeParam); // Verify code is valid
                     setInfo({ email, from: 'resetPassword' });
                 } else {
                     throw new Error("Unsupported action.");
                 }
             } catch (err: any) {
-                let message = "Invalid or expired action link. Please try again.";
                 if (err.code === 'auth/invalid-action-code') {
-                    message = "The link is invalid or has expired. Please request a new one.";
+                    setShowResendForm(true);
+                } else {
+                    setError("An unexpected error occurred. Please try again.");
                 }
-                setError(message);
             } finally {
                 setLoading(false);
             }
@@ -118,6 +184,10 @@ const ActionHandlerContent: React.FC = () => {
                 <p className="text-muted-foreground">Verifying link...</p>
             </div>
         );
+    }
+
+    if (showResendForm) {
+        return <ResendVerificationForm />;
     }
     
     if (error) {
@@ -232,4 +302,3 @@ export default function AuthActionPage() {
         </div>
     );
 }
-
