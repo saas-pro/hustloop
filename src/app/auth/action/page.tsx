@@ -114,6 +114,7 @@ const ActionHandlerContent: React.FC = () => {
     const [showResendForm, setShowResendForm] = React.useState(false);
     const [info, setInfo] = React.useState<{ email: string; from: 'verifyEmail' | 'resetPassword' } | null>(null);
     const [success, setSuccess] = React.useState(false);
+    const [redirecting, setRedirecting] = React.useState(false);
     
     const form = useForm<PasswordResetValues>({
         resolver: zodResolver(passwordResetSchema),
@@ -211,6 +212,7 @@ const ActionHandlerContent: React.FC = () => {
 
     if (success) {
          if (info?.from === 'verifyEmail') {
+             setRedirecting(true);
              // After verification, check if profile is complete
              (async () => {
                  try {
@@ -245,6 +247,8 @@ const ActionHandlerContent: React.FC = () => {
                          description: "Please log in.",
                      });
                      router.push('/?action=login&from=verification_success');
+                 } finally {
+                     setRedirecting(false);
                  }
              })();
              return null;
@@ -257,6 +261,15 @@ const ActionHandlerContent: React.FC = () => {
             router.push('/?action=login&from=reset_success');
             return null;
         }
+    }
+
+    if (redirecting) {
+        return (
+            <div className="text-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+                <p className="text-muted-foreground">Redirecting...</p>
+            </div>
+        );
     }
 
     if (mode === 'resetPassword' && info) {
