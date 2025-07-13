@@ -120,7 +120,7 @@ const ActionHandlerContent: React.FC = () => {
     });
 
     React.useEffect(() => {
-        const modeParam = searchParams.get('mode') as Action;
+        const modeParam = searchParams.getAll('mode')[0] as Action; // Always get the first mode param
         const codeParam = searchParams.get('oobCode');
         
         setMode(modeParam);
@@ -129,7 +129,7 @@ const ActionHandlerContent: React.FC = () => {
         if (!auth || !modeParam || !codeParam) {
             if(!auth) setLoading(false);
             if (!modeParam || !codeParam) {
-                 setError("Invalid action link. Please try again.");
+                 setError("This link is invalid, expired, or has already been used. Please log in or request a new verification email.");
                  setLoading(false);
             }
             return;
@@ -200,7 +200,11 @@ const ActionHandlerContent: React.FC = () => {
                 <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
                 <h2 className="text-2xl font-bold mb-2">Action Failed</h2>
                 <p className="text-muted-foreground mb-6">{error}</p>
-                <Button onClick={() => router.push('/')}>Go to Homepage</Button>
+                <div className="flex flex-col gap-2 items-center">
+                  <Button onClick={() => router.push('/')} variant="secondary">Go to Homepage</Button>
+                  <Button onClick={() => router.push('/?action=login')} variant="default">Go to Login</Button>
+                  <Button onClick={() => setShowResendForm(true)} variant="outline">Resend Verification Email</Button>
+                </div>
             </div>
         );
     }
