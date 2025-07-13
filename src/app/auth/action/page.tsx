@@ -58,7 +58,11 @@ const ResendVerificationForm = () => {
                 toast({ title: "Email Sent", description: result.message });
                 router.push('/');
             } else {
-                toast({ variant: "destructive", title: "Failed to send", description: result.error });
+                let errorMsg = result.error;
+                if (errorMsg && errorMsg.toLowerCase().includes('already verified')) {
+                    errorMsg = "This email is already verified. Please log in.";
+                }
+                toast({ variant: "destructive", title: "Failed to send", description: errorMsg });
             }
         } catch (error) {
             toast({ variant: "destructive", title: "Network Error", description: "Could not connect to the server." });
@@ -203,11 +207,42 @@ const ActionHandlerContent: React.FC = () => {
 
     if (success) {
          if (info?.from === 'verifyEmail') {
-             toast({
-                title: "Email Verified!",
-                description: "Your account is now active. You can log in.",
-             });
-             router.push('/?action=login&from=verification_success');
+             // After verification, check if profile is complete
+             (async () => {
+                 try {
+                     const response = await fetch(`${API_BASE_URL}/api/check-profile`, {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         body: JSON.stringify({ email: info.email })
+                     });
+                     const data = await response.json();
+                     if (response.ok && data.profileComplete) {
+                         toast({
+                             title: "Email Verified!",
+                             description: "Your account is now active. You can log in.",
+                         });
+                         router.push('/?action=login&from=verification_success');
+                     } else if (data.token) {
+                         toast({
+                             title: "Email Verified!",
+                             description: "Please complete your profile to continue.",
+                         });
+                         router.push(`/complete-profile?token=${data.token}`);
+                     } else {
+                         toast({
+                             title: "Email Verified!",
+                             description: "Please complete your profile to continue.",
+                         });
+                         router.push('/');
+                     }
+                 } catch (e) {
+                     toast({
+                         title: "Email Verified!",
+                         description: "Please log in.",
+                     });
+                     router.push('/?action=login&from=verification_success');
+                 }
+             })();
              return null;
          }
         if (info?.from === 'resetPassword') {
