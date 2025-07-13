@@ -135,7 +135,8 @@ const ActionHandlerContent: React.FC = () => {
         const handleAction = async () => {
             try {
                 const actionInfo = await checkActionCode(auth, codeParam);
-                const { email, operation } = actionInfo.data;
+                const { operation } = actionInfo;
+                const { email } = actionInfo.data;
 
                 if (!email) {
                     throw new Error("Invalid action code: email is missing.");
