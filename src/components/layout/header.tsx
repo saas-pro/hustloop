@@ -37,12 +37,10 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
   const [isNavigating, setIsNavigating] = React.useState(false);
 
   const handleLogoClick = () => {
-    // If on a static page, navigate to home and show loading state.
     if (pathname === '/terms-of-service' || pathname === '/privacy-policy') {
       setIsNavigating(true);
       router.push('/');
     } else {
-      // Otherwise, just set the view to home for the SPA.
       setActiveView("home");
     }
   };
@@ -52,6 +50,24 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
       setTheme(theme === 'light' ? 'dark' : 'light');
     }
   };
+
+  const preloadRecaptcha = () => {
+    const scriptId = 'recaptcha-preload-link';
+    if (!document.getElementById(scriptId)) {
+        const link = document.createElement('link');
+        link.id = scriptId;
+        link.rel = 'preload';
+        link.as = 'script';
+        link.href = 'https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI';
+        document.head.appendChild(link);
+    }
+  };
+
+  const handleAuthClick = (view: 'login' | 'signup') => {
+    preloadRecaptcha();
+    setActiveView(view);
+  };
+
 
   const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
     if (isNavigating) {
@@ -96,12 +112,10 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
       <header className="bg-background/80 backdrop-blur-sm sticky top-0 z-40 w-full border-b">
         <div className="container mx-auto flex h-20 items-center px-4">
           
-          {/* Left side */}
           <div className="flex-1 flex justify-start">
             <BrandLogo />
           </div>
           
-          {/* Desktop Navigation (Center) */}
           {!isStaticPage && (
             <nav className="hidden md:flex items-center space-x-6">
               {navItems
@@ -123,9 +137,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
             </nav>
           )}
 
-          {/* Right Side */}
           <div className="flex-1 flex justify-end">
-            {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center gap-2">
               {!isStaticPage && (
                 <>
@@ -144,10 +156,10 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     </>
                   ) : (
                     <>
-                      <Button variant="ghost" onClick={() => setActiveView('login')}>
+                      <Button variant="ghost" onClick={() => handleAuthClick('login')}>
                         Login
                       </Button>
-                      <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                      <Button onClick={() => handleAuthClick('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
                         Sign Up
                       </Button>
                     </>
@@ -157,7 +169,6 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
               <ThemeToggleButton />
             </div>
             
-            {/* Mobile Navigation */}
             <div className="md:hidden">
               {!isStaticPage ? (
                 <Sheet>
@@ -214,10 +225,10 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                       ) : (
                         <div className="flex flex-col gap-2">
                             <SheetClose asChild>
-                                <Button className="w-full" onClick={() => setActiveView('login')}>Login</Button>
+                                <Button className="w-full" onClick={() => handleAuthClick('login')}>Login</Button>
                             </SheetClose>
                             <SheetClose asChild>
-                                <Button variant="secondary" className="w-full" onClick={() => setActiveView('signup')}>Sign Up</Button>
+                                <Button variant="secondary" className="w-full" onClick={() => handleAuthClick('signup')}>Sign Up</Button>
                             </SheetClose>
                         </div>
                       )}

@@ -60,10 +60,12 @@ export default function MainView() {
   const { auth } = useFirebaseAuth();
   
   useEffect(() => {
+    // Safely set theme only on the client after initial render
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     setTheme(initialTheme);
     
+    // Auth and other state from localStorage
     const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
     const savedUserRole = localStorage.getItem('userRole') as UserRole | null;
     const savedUser = localStorage.getItem('user');
@@ -88,46 +90,15 @@ export default function MainView() {
   }, []);
 
   useEffect(() => {
-    const error = searchParams.get('error');
     const from = searchParams.get('from');
     const action = searchParams.get('action');
 
-    if (action === 'login' && from === 'verification') {
-        toast({
-            title: "Verification Successful!",
-            description: "Your email has been verified. Please log in to continue.",
-        });
+    if (action === 'login' && (from === 'verification_success' || from === 'reset_success')) {
+        const title = from === 'verification_success' ? "Verification Successful!" : "Password Reset Successful";
+        const description = from === 'verification_success' ? "Your email has been verified. Please log in to continue." : "Please log in with your new password.";
+        
+        toast({ title, description });
         setActiveView('login');
-        router.replace('/');
-    } else if (action === 'login' && from === 'reset') {
-        toast({
-            title: "Password Reset Successful",
-            description: "Please log in with your new password.",
-        });
-        setActiveView('login');
-        router.replace('/');
-    }
-
-    if (status === 'pending_approval') {
-        toast({
-            title: "Registration Submitted",
-            description: "Your account is pending admin approval. You'll be notified via email once it's active.",
-        });
-        router.replace('/');
-    }
-
-    if (error) {
-        let title = "Sign-in Failed";
-        let description = "Could not sign in with provider. Please try again or use email.";
-
-        if (error === 'account_suspended') {
-            title = "Account Suspended";
-            description = "This account has been suspended.";
-        } else if (error === 'email_not_provided') {
-            title = "Email Missing";
-            description = "Your provider did not share your email. Please try another method.";
-        }
-        toast({ variant: "destructive", title, description });
         router.replace('/');
     }
   }, [searchParams, router, toast]);

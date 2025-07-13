@@ -20,7 +20,6 @@ import {
   signInWithPopup
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import Script from "next/script";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" {...props}>
@@ -67,23 +66,26 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
 
   const { formState: { isSubmitting }, getValues } = form;
 
-  const executeRecaptcha = (callback: (token: string) => void) => {
-    if (!window.grecaptcha) {
-        toast({ variant: 'destructive', title: 'reCAPTCHA Error', description: 'reCAPTCHA not loaded. Please try again.' });
-        return;
-    }
-    window.grecaptcha.enterprise.ready(() => {
-        window.grecaptcha.enterprise.execute('6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI', { action: 'login' }).then(callback);
+  const executeRecaptcha = (action: 'login' | 'register'): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        if (!window.grecaptcha || !window.grecaptcha.enterprise) {
+            toast({ variant: 'destructive', title: 'reCAPTCHA Error', description: 'reCAPTCHA not loaded. Please try again.' });
+            return reject('reCAPTCHA not loaded');
+        }
+        window.grecaptcha.enterprise.ready(() => {
+            window.grecaptcha.enterprise.execute('6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI', { action }).then(resolve).catch(reject);
+        });
     });
   };
 
-  const handlePasswordLogin = async (values: LoginSchema, recaptchaToken: string) => {
+  const handlePasswordLogin = async (values: LoginSchema) => {
     if (!auth) {
         toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
         return;
     }
-
+    
     try {
+        const recaptchaToken = await executeRecaptcha('login');
         const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
 
@@ -121,12 +123,6 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         }
         toast({ variant: "destructive", title: "Login Failed", description });
     }
-  };
-
-  const handleLoginSubmit = (values: LoginSchema) => {
-    executeRecaptcha((token) => {
-        handlePasswordLogin(values, token);
-    });
   };
 
   const handleSocialLogin = async (provider: 'google') => {
@@ -171,27 +167,22 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
     }
     const email = getValues("email");
     if (!email) {
-        toast({ variant: "destructive", title: "Email Required", description: "Please enter your email address." });
+        toast({ variant: "destructive", title: "Email Required", description: "Please enter your email address to reset your password." });
         return;
     }
     const actionCodeSettings = {
-        url: `${window.location.origin}/?action=login&from=reset`,
+        url: `${window.location.origin}/auth/action`,
         handleCodeInApp: true,
     };
     try {
         await sendPasswordResetEmail(auth, email, actionCodeSettings);
-        toast({ title: "Password Reset Email Sent", description: "Please check your inbox." });
+        toast({ title: "Password Reset Email Sent", description: "Please check your inbox for a link to reset your password." });
     } catch (error: any) {
-        toast({ variant: "destructive", title: "Failed to Send Email", description: "Could not send password reset email." });
+        toast({ variant: "destructive", title: "Failed to Send Email", description: "Could not send password reset email. Please ensure the email address is correct." });
     }
   };
   
   return (
-    <>
-    <Script
-        src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
-        strategy="lazyOnload"
-    />
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-lg auth-modal-glow overflow-hidden">
         <DialogHeader className="text-center">
@@ -211,7 +202,7 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         </div>
 
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleLoginSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handlePasswordLogin)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
@@ -247,8 +238,5 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
         </Form>
       </DialogContent>
     </Dialog>
-    </>
   );
 }
-
-    
