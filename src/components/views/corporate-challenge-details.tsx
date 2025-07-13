@@ -40,7 +40,7 @@ export default function CorporateChallengeDetails({
   const isDisabled = !isLoggedIn || !hasSubscription;
   let tooltipContent = null;
   if (!isLoggedIn) {
-    tooltipContent = <p>Please login to view the problem statement's</p>;
+    tooltipContent = <p>Please login to view the problem statement&apos;s</p>;
   } else if (!hasSubscription) {
     tooltipContent = (
       <p>subscribe to a plan to view and submit the solution</p>

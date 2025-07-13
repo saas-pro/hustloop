@@ -64,7 +64,7 @@ export default function PrivacyPolicyPage() {
               <ScrollArea className="h-[60vh] pr-6">
                 <div className="space-y-6 prose dark:prose-invert max-w-none">
                   <p>
-                    Hustloop ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how your personal information is collected, used, and disclosed by Hustloop.
+                    Hustloop (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how your personal information is collected, used, and disclosed by Hustloop.
                   </p>
 
                   <h3 className="font-bold text-xl">1. Information We Collect</h3>

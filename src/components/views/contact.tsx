@@ -91,7 +91,7 @@ export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) 
                         <div>
                             <h2 className="text-3xl font-bold font-headline mb-4">Get in Touch</h2>
                             <p className="text-muted-foreground">
-                                Have questions about our services? We're here to help! Fill out the form and we'll get back to you as soon as possible.
+                                Have questions about our services? We&apos;re here to help! Fill out the form and we&apos;ll get back to you as soon as possible.
                             </p>
                         </div>
                         

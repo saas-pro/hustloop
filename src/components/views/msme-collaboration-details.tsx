@@ -83,7 +83,7 @@ export default function MSMECollaborationDetails({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-2xl font-bold mb-4 font-headline flex items-center gap-2"><Target className="h-6 w-6 text-primary" /> What We're Looking For</h3>
+                <h3 className="text-2xl font-bold mb-4 font-headline flex items-center gap-2"><Target className="h-6 w-6 text-primary" /> What We&apos;re Looking For</h3>
                 <p className="text-muted-foreground">{collaboration.details.lookingFor}</p>
               </div>
 

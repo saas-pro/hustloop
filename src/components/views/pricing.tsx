@@ -71,7 +71,7 @@ export default function PricingView({ isOpen, onOpenChange, onGetStartedClick }:
       <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col">
         <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center font-headline">Our Pricing</DialogTitle>
-            <DialogDescription className="text-center max-w-xl mx-auto">Choose a plan that's right for your startup. All plans are designed to help you succeed.</DialogDescription>
+            <DialogDescription className="text-center max-w-xl mx-auto">Choose a plan that&apos;s right for your startup. All plans are designed to help you succeed.</DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-full mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto pt-4">

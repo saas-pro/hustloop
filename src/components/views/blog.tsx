@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import BlogPostDetails from "./blog-post-details";
 import type { BlogPost } from "@/app/types";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,58 +47,71 @@ export default function BlogView({ isOpen, onOpenChange }: BlogViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchBlogPosts = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+        const apiBaseUrl = API_BASE_URL;
+        const response = await fetch(`${apiBaseUrl}/api/blog-posts`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch blog posts.");
+        }
+        const data = await response.json();
+        setBlogPosts(data);
+    } catch (err: any) {
+        // Fallback static data
+        setBlogPosts([
+          {
+            id: 1,
+            title: "Fallback Blog Post 1",
+            image: "https://placehold.co/600x400",
+            excerpt: "This is a fallback blog post shown when the API is unavailable.",
+            hint: "fallback",
+            content: "This is the full content of Fallback Blog Post 1.",
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: 2,
+            title: "Fallback Blog Post 2",
+            image: "https://placehold.co/600x400",
+            excerpt: "Another example fallback post.",
+            hint: "fallback",
+            content: "This is the full content of Fallback Blog Post 2.",
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: 3,
+            title: "Fallback Blog Post 3",
+            image: "https://placehold.co/600x400",
+            excerpt: "Fallback content keeps your UI looking good!",
+            hint: "fallback",
+            content: "This is the full content of Fallback Blog Post 3.",
+            created_at: new Date().toISOString(),
+          },
+        ]);
+        setError(null); // Hide error, show fallback
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
-        const fetchBlogPosts = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const apiBaseUrl = API_BASE_URL;
-                const response = await fetch(`${apiBaseUrl}/api/blog-posts`);
-                if (!response.ok) {
-                    throw new Error("Failed to fetch blog posts.");
-                }
-                const data = await response.json();
-                setBlogPosts(data);
-            } catch (err: any) {
-                // Fallback static data
-                setBlogPosts([
-                  {
-                    id: 1,
-                    title: "Fallback Blog Post 1",
-                    image: "https://placehold.co/600x400",
-                    excerpt: "This is a fallback blog post shown when the API is unavailable.",
-                    hint: "fallback",
-                    content: "This is the full content of Fallback Blog Post 1.",
-                    created_at: new Date().toISOString()
-                  },
-                  {
-                    id: 2,
-                    title: "Fallback Blog Post 2",
-                    image: "https://placehold.co/600x400",
-                    excerpt: "Another example fallback post.",
-                    hint: "fallback",
-                    content: "This is the full content of Fallback Blog Post 2.",
-                    created_at: new Date().toISOString()
-                  },
-                  {
-                    id: 3,
-                    title: "Fallback Blog Post 3",
-                    image: "https://placehold.co/600x400",
-                    excerpt: "Fallback content keeps your UI looking good!",
-                    hint: "fallback",
-                    content: "This is the full content of Fallback Blog Post 3.",
-                    created_at: new Date().toISOString()
-                  },
-                ]);
-                setError(null); // Hide error, show fallback
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchBlogPosts();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchBlogPosts]);
+
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'blogs-updated') {
+        fetchBlogPosts();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [fetchBlogPosts]);
 
   return (
     <>
@@ -120,7 +133,7 @@ export default function BlogView({ isOpen, onOpenChange }: BlogViewProps) {
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {blogPosts.map((post, index) => (
-                    <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50">
+                    <Card key={post.id || index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50">
                         <CardHeader>
                         <Image src={post.image} alt={post.title} width={600} height={400} className="rounded-t-lg" data-ai-hint={post.hint}/>
                         <CardTitle className="pt-4">{post.title}</CardTitle>

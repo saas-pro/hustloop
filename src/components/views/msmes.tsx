@@ -296,11 +296,11 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6">
-            <DialogTitle className="text-3xl font-bold text-center font-headline">Innovation & Growth Opportunities</DialogTitle>
+            <DialogTitle className="text-3xl font-bold text-center font-headline">Innovation &amp; Growth Opportunities</DialogTitle>
             <DialogDescription className="text-center">
-              <span className="text-primary">"Empowering MSMEs for Success"</span>
+              <span className="text-primary">&quot;Empowering MSMEs for Success&quot;</span>
               <span className="block mt-2">
-                Join our platform to solve corporate challenges for rewards or collaborate with MSMEs for growth opportunities. Whether you're an innovator, entrepreneur, or business expert, find your perfect match here.
+                Join our platform to solve corporate challenges for rewards or collaborate with MSMEs for growth opportunities. Whether you&apos;re an innovator, entrepreneur, or business expert, find your perfect match here.
               </span>
             </DialogDescription>
           </DialogHeader>

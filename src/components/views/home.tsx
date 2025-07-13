@@ -176,7 +176,7 @@ export default function HomeView({ setActiveView, theme, isLoggedIn }: HomeViewP
             <div className="grid md:grid-cols-2 gap-12 items-center">
                 <div className="text-center md:text-left">
                     <h1 className="text-5xl md:text-7xl font-headline tracking-tight">
-                        Empowering Tomorrow's Innovators
+                        Empowering Tomorrow&apos;s Innovators
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground mt-6 mb-12">
                         <strong style={{ color: '#facc15' }}>Hustloop</strong> is your launchpad for success. We connect visionary entrepreneurs with elite mentors, top-tier incubators, and strategic MSME partners to fuel innovation and accelerate growth.
@@ -285,7 +285,7 @@ export default function HomeView({ setActiveView, theme, isLoggedIn }: HomeViewP
           <div className="bg-card/50 rounded-lg p-12 text-center border border-primary/50 shadow-lg shadow-primary/10">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Ready to Build the Future?</h2>
             <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-8">
-              Join Hustloop today and let's turn your vision into reality. Your journey to success starts here.
+              Join Hustloop today and let&apos;s turn your vision into reality. Your journey to success starts here.
             </p>
             <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setActiveView('contact')}>Contact Us Today</Button>
           </div>

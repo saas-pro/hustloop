@@ -24,6 +24,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
+import Script from "next/script";
 
 
 type User = {
@@ -305,7 +306,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                     <Separator/>
                                                     <h3 className="text-lg font-medium">Collaboration Details</h3>
                                                     <FormField control={profileForm.control} name="details.about" render={({ field }) => (<FormItem><FormLabel>About Your Company</FormLabel><FormControl><Textarea rows={5} placeholder="Describe your company, its mission, and what it does." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                    <FormField control={profileForm.control} name="details.lookingFor" render={({ field }) => (<FormItem><FormLabel>What you're looking for</FormLabel><FormControl><Textarea rows={3} placeholder="Describe the ideal partner or solution you are seeking." {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                                                    <FormField control={profileForm.control} name="details.lookingFor" render={({ field }) => (<FormItem><FormLabel>What you&apos;re looking for</FormLabel><FormControl><Textarea rows={3} placeholder="Describe the ideal partner or solution you are seeking." {...field} /></FormControl><FormMessage /></FormItem>)}/>
 
                                                     <div>
                                                         <h4 className="text-md font-medium mb-2">Scope of Collaboration</h4>
@@ -398,6 +399,10 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                 onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
                 onAddComment={handleAddComment}
             />
+            <Script
+  src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
+  strategy="afterInteractive"
+/>
         </>
     );
 }
@@ -417,5 +422,3 @@ const msmeChartConfig = {
       color: "hsl(var(--chart-3))",
     },
 };
-
-    

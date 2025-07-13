@@ -30,27 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${fontSans.variable} ${fontHeadline.variable}`} suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  let theme = localStorage.getItem('theme');
-                  if (!theme) {
-                    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  }
-                  if (theme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
-      </head>
+      <head />
       <body className="antialiased bg-background font-sans">
         <div className="flex flex-col min-h-screen">
           <div className="hidden dark:block">
@@ -88,6 +68,10 @@ s.src = "https://salesiq.zohopublic.in/widget";
 t.parentNode.insertBefore(s, t);
           `}
         </Script>
+         <Script
+            src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
+            strategy="lazyOnload"
+        />
       </body>
     </html>
   );

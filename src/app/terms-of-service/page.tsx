@@ -64,7 +64,7 @@ export default function TermsOfServicePage() {
               <ScrollArea className="h-[60vh] pr-6">
                 <div className="space-y-6 prose dark:prose-invert max-w-none">
                   <p>
-                    Please read these Terms of Service ("Terms", "Terms of Service") carefully before using the Hustloop website (the "Service") operated by Hustloop ("us", "we", or "our").
+                    Please read these Terms of Service (&quot;Terms&quot;, &quot;Terms of Service&quot;) carefully before using the Hustloop website (the &quot;Service&quot;) operated by Hustloop (&quot;us&quot;, &quot;we&quot;, or &quot;our&quot;).
                   </p>
 
                   <h3 className="font-bold text-xl">1. Agreement to Terms</h3>
@@ -79,7 +79,7 @@ export default function TermsOfServicePage() {
 
                   <h3 className="font-bold text-xl">3. Subscriptions</h3>
                   <p>
-                    Some parts of the Service are billed on a subscription basis ("Subscription(s)"). You will be billed in advance on a recurring and periodic basis ("Billing Cycle"). Billing cycles are set either on a monthly or annual basis, depending on the type of subscription plan you select when purchasing a Subscription.
+                    Some parts of the Service are billed on a subscription basis (&quot;Subscription(s)&quot;). You will be billed in advance on a recurring and periodic basis (&quot;Billing Cycle&quot;). Billing cycles are set either on a monthly or annual basis, depending on the type of subscription plan you select when purchasing a Subscription.
                   </p>
                   <p>
                     At the end of each Billing Cycle, your Subscription will automatically renew under the exact same conditions unless you cancel it or Hustloop cancels it. You may cancel your Subscription renewal either through your online account management page or by contacting customer support.
@@ -87,7 +87,7 @@ export default function TermsOfServicePage() {
 
                   <h3 className="font-bold text-xl">4. Content</h3>
                   <p>
-                    Our Service allows you to post, link, store, share and otherwise make available certain information, text, graphics, videos, or other material ("Content"). You are responsible for the Content that you post to the Service, including its legality, reliability, and appropriateness.
+                    Our Service allows you to post, link, store, share and otherwise make available certain information, text, graphics, videos, or other material (&quot;Content&quot;). You are responsible for the Content that you post to the Service, including its legality, reliability, and appropriateness.
                   </p>
 
                   <h3 className="font-bold text-xl">5. Limitation Of Liability</h3>
@@ -102,7 +102,7 @@ export default function TermsOfServicePage() {
 
                   <h3 className="font-bold text-xl">7. Changes</h3>
                   <p>
-                    We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
+                    We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will provide at least 30 days&apos; notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
                   </p>
 
                   <h3 className="font-bold text-xl">Contact Us</h3>

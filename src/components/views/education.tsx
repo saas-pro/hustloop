@@ -116,7 +116,7 @@ export default function EducationView({ isOpen, onOpenChange, onApplicationSucce
         <DialogHeader>
           <DialogTitle className="text-3xl font-bold text-center font-headline">Transform Your Future Through Education</DialogTitle>
           <DialogDescription className="text-center">
-            <span className="text-primary">"Knowledge is the Currency of Tomorrow"</span>
+            <span className="text-primary">&quot;Knowledge is the Currency of Tomorrow&quot;</span>
             <span className="block mt-2">
               Join our comprehensive educational programs designed to empower entrepreneurs and business leaders with cutting-edge skills and insights.
             </span>

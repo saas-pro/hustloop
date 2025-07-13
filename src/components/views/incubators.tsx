@@ -190,7 +190,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
           <DialogHeader className="p-6">
             <DialogTitle className="text-3xl font-bold text-center font-headline">Startup Incubation Hub</DialogTitle>
             <DialogDescription className="text-center">
-              <span className="text-primary">"You Dream It. We Help Build It."</span>
+              <span className="text-primary">&quot;You Dream It. We Help Build It.&quot;</span>
               <br />
               Connect with leading incubators that provide the resources, mentorship, and ecosystem you need to transform your innovative ideas into successful ventures.
             </DialogDescription>

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -134,7 +134,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
     const { fields: sessionFields, append: appendSession, remove: removeSession } = useFieldArray({ control: programForm.control, name: "sessions" });
     const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({ control: programForm.control, name: "features" });
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         setIsLoadingUsers(true);
         const token = localStorage.getItem('token');
         if (!token) { toast({ variant: 'destructive', title: 'Authentication Error' }); setIsLoadingUsers(false); return; }
@@ -143,9 +143,9 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
             if (response.ok) setUsers(await response.json());
             else toast({ variant: 'destructive', title: 'Failed to fetch users' });
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingUsers(false); }
-    };
+    }, [toast]);
 
-    const fetchSubscribers = async () => {
+    const fetchSubscribers = useCallback(async () => {
         setIsLoadingSubscribers(true);
         const token = localStorage.getItem('token');
         if (!token) { toast({ variant: 'destructive', title: 'Authentication Error' }); setIsLoadingSubscribers(false); return; }
@@ -154,7 +154,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
             if (response.ok) setSubscribers(await response.json());
             else toast({ variant: 'destructive', title: 'Failed to fetch subscribers' });
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingSubscribers(false); }
-    };
+    }, [toast]);
     
     const handleResetSubscribers = async () => {
         const token = localStorage.getItem('token');
@@ -192,6 +192,20 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
         document.body.removeChild(link);
     };
 
+    const fetchBlogPosts = useCallback(async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/blog-posts`);
+            if (response.ok) setBlogPosts(await response.json());
+        } catch (error) { console.error("Failed to fetch blog posts"); }
+    }, []);
+
+    const fetchEducationPrograms = useCallback(async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/education-programs`);
+            if (response.ok) setEducationPrograms(await response.json());
+        } catch (error) { console.error("Failed to fetch education programs"); }
+    }, []);
+
     useEffect(() => {
         if (userRole === 'admin') {
             if (activeTab === 'users') fetchUsers();
@@ -199,7 +213,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
             if (activeTab === 'sessions') fetchEducationPrograms();
             if (activeTab === 'subscribers') fetchSubscribers();
         }
-    }, [activeTab, userRole]);
+    }, [activeTab, userRole, fetchUsers, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers]);
 
     const handleApiResponse = async (response: Response, successMessage: string, errorMessage: string) => {
         if (response.ok) {
@@ -213,20 +227,6 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
 
     const handleDeleteUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User deleted successfully.', 'Deletion Failed');
     const handleToggleBanUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/toggle-ban`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User status updated.', 'Update Failed');
-
-    const fetchBlogPosts = async () => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/blog-posts`);
-            if (response.ok) setBlogPosts(await response.json());
-        } catch (error) { console.error("Failed to fetch blog posts"); }
-    };
-
-    const fetchEducationPrograms = async () => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/education-programs`);
-            if (response.ok) setEducationPrograms(await response.json());
-        } catch (error) { console.error("Failed to fetch education programs"); }
-    };
 
     const handleEditPost = (post: BlogPost) => {
         setEditingPost(post);
@@ -354,13 +354,13 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
             <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6">
                     <DialogTitle className="text-3xl font-bold font-headline capitalize">{userRole} Dashboard</DialogTitle>
-                    <DialogDescription>Welcome back, {user.name}! Here's an overview of your startup journey.</DialogDescription>
+                    <DialogDescription>Welcome back, {user.name}! Here&apos;s an overview of your startup journey.</DialogDescription>
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0">
                         <TabsList className="grid w-full grid-cols-6">
                             {availableTabs.map(tab => {
-                                const Icon = (LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'subscribers' ? 'Mail' : tab === 'blog' ? 'Newspaper' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle) as React.ComponentType<LucideProps>;
+                                const Icon = (LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'subscribers' ? 'Mail' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle) as React.ComponentType<LucideProps>;
                                 return (
                                 <TabsTrigger value={tab} key={tab} className="capitalize">
                                     <Icon className="mr-2 h-4 w-4" /> {tab === 'mentors' ? 'My Mentors' : tab}
@@ -380,7 +380,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                                 <TabsContent value="users" className="mt-0">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>User Management</CardTitle><CardDescription>Approve, ban, or delete user accounts.</CardDescription></CardHeader><CardContent>
                                         {isLoadingUsers ? <div className="flex justify-center items-center h-48"><LucideIcons.Loader2 className="h-8 w-8 animate-spin" /></div> : (<Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader><TableBody>
-                                            {users.map(u => (<TableRow key={u.uid}><TableCell><div className="font-medium">{u.name}</div><div className="text-sm text-muted-foreground">{u.uid}</div></TableCell><TableCell className="capitalize">{u.role}</TableCell><TableCell><div className="flex flex-col gap-1">{u.status === 'banned' ? <Badge variant="destructive">Banned</Badge> : (u.status === 'active' ? <Badge variant="default">Active</Badge> : <Badge variant="secondary">Pending</Badge>)}</div></TableCell><TableCell className="space-x-2">
+                                            {users.map(u => (<TableRow key={u.uid}><TableCell><div className="font-medium">{u.name}</div><div className="text-sm text-muted-foreground">{u.email}</div></TableCell><TableCell className="capitalize">{u.role}</TableCell><TableCell><div className="flex flex-col gap-1">{u.status === 'banned' ? <Badge variant="destructive">Banned</Badge> : (u.status === 'active' ? <Badge variant="default">Active</Badge> : <Badge variant="secondary">Pending</Badge>)}</div></TableCell><TableCell className="space-x-2">
                                                 {u.status === 'pending' && (<Button size="sm" onClick={() => {}}><LucideIcons.CheckCircle className="mr-2 h-4 w-4" />Approve</Button>)}
                                                 <Button size="sm" variant={u.status === 'banned' ? "outline" : "secondary"} onClick={() => setUserToBan(u)}><LucideIcons.Ban className="mr-2 h-4 w-4" />{u.status === 'banned' ? "Unban" : "Ban"}</Button>
                                                 <Button size="sm" variant="destructive" onClick={() => setUserToDelete(u)}><LucideIcons.Trash2 className="mr-2 h-4 w-4" />Delete</Button>
@@ -544,5 +544,3 @@ const chartData = [
 const chartConfig = {
     activity: { label: "Activity", color: "hsl(var(--chart-1))" },
 };
-
-    
