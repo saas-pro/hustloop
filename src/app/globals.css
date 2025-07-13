@@ -213,3 +213,10 @@
     transform: translate(30%, 40%);
     background: radial-gradient(circle, hsl(var(--accent) / 0.5) 0%, transparent 70%);
 }
+
+/* Move reCAPTCHA badge to the bottom left */
+.grecaptcha-badge {
+  left: 20px !important;
+  right: auto !important;
+  bottom: 20px !important;
+}
