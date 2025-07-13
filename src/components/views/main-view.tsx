@@ -65,6 +65,17 @@ export default function MainView() {
     const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     setTheme(initialTheme);
     
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem('theme')) {
+        // Only update if user hasn't manually set a theme
+        setTheme(e.matches ? 'dark' : 'light');
+      }
+    };
+    
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
+    
     // Auth and other state from localStorage
     const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
     const savedUserRole = localStorage.getItem('userRole') as UserRole | null;
@@ -87,6 +98,9 @@ export default function MainView() {
       }
     }
     setIsLoading(false);
+    
+    // Cleanup listener
+    return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
   }, []);
 
   useEffect(() => {
@@ -105,12 +119,23 @@ export default function MainView() {
 
   useEffect(() => {
     if (theme) {
+      // Add transition class for smooth theme switching
+      document.documentElement.style.transition = 'color-scheme 0.3s ease, background-color 0.3s ease';
+      
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
       } else {
         document.documentElement.classList.remove('dark');
+        document.documentElement.style.colorScheme = 'light';
       }
+      
       localStorage.setItem('theme', theme);
+      
+      // Remove transition after animation completes
+      setTimeout(() => {
+        document.documentElement.style.transition = '';
+      }, 300);
     }
   }, [theme]);
   

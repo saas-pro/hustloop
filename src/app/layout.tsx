@@ -30,7 +30,39 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${fontSans.variable} ${fontHeadline.variable}`} suppressHydrationWarning>
-      <head />
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                // Add no-transition class to prevent flash during initial load
+                document.documentElement.classList.add('no-transition');
+                
+                try {
+                  var theme = localStorage.getItem('theme');
+                  var systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  
+                  if (theme === 'dark' || (!theme && systemPrefersDark)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {
+                  // Fallback to system preference if localStorage fails
+                  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                  }
+                }
+                
+                // Remove no-transition class after a short delay to enable smooth transitions
+                setTimeout(function() {
+                  document.documentElement.classList.remove('no-transition');
+                }, 100);
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="antialiased bg-background font-sans">
         <div className="flex flex-col min-h-screen">
           <div className="hidden dark:block">
