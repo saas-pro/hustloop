@@ -363,13 +363,6 @@ const AuthActionPage = () => {
         className="flex items-center gap-2 cursor-pointer mb-8"
         onClick={() => router.push("/")}
       >
-        <Image
-          src="/logo.png"
-          alt="Hustloop Logo"
-          width={40}
-          height={40}
-          className="h-10 w-10"
-        />
         <span className="font-headline text-2xl" style={{ color: "#facc15" }}>
           hustl<strong className="text-3xl align-middle font-bold">&#8734;</strong>p
         </span>

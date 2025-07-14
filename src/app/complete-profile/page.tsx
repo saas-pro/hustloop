@@ -125,9 +125,7 @@ function CompleteProfileForm() {
               className="flex items-center gap-2 cursor-pointer mb-8"
               onClick={() => router.push('/')}
             >
-              <div className="logo-container" style={{'--logo-size': '2.5rem'} as React.CSSProperties}>
-                <Image src="/logo.png" alt="Hustloop Logo" width={40} height={40} className="h-10 w-10 logo-image" />
-              </div>
+              {/* Logo image removed */}
               <span className="font-headline text-2xl" style={{ color: '#facc15' }}>
                 hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
               </span>
