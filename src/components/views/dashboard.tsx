@@ -140,8 +140,10 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
         if (!token) { toast({ variant: 'destructive', title: 'Authentication Error' }); setIsLoadingUsers(false); return; }
         try {
             const response = await fetch(`${API_BASE_URL}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (response.ok) setUsers(await response.json());
-            else toast({ variant: 'destructive', title: 'Failed to fetch users' });
+            if (response.ok) {
+                const data = await response.json();
+                setUsers(Array.isArray(data) ? data : data.users || []);
+            } else toast({ variant: 'destructive', title: 'Failed to fetch users' });
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingUsers(false); }
     }, [toast]);
 
@@ -151,8 +153,10 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
         if (!token) { toast({ variant: 'destructive', title: 'Authentication Error' }); setIsLoadingSubscribers(false); return; }
         try {
             const response = await fetch(`${API_BASE_URL}/api/subscribers`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (response.ok) setSubscribers(await response.json());
-            else toast({ variant: 'destructive', title: 'Failed to fetch subscribers' });
+            if (response.ok) {
+                const data = await response.json();
+                setSubscribers(Array.isArray(data) ? data : data.subscribers || []);
+            } else toast({ variant: 'destructive', title: 'Failed to fetch subscribers' });
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingSubscribers(false); }
     }, [toast]);
     
