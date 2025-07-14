@@ -322,72 +322,62 @@ const ActionHandlerContent: React.FC = () => {
     }
 
     // Fallback for any other state
-    if (showCheckVerification) {
-        return (
-            <div className="text-center">
-                <CardHeader className="text-center">
-                    <CardTitle>Check Email Verification</CardTitle>
-                    <CardDescription>Enter your email to check if it has been verified.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={async (e) => {
-                        e.preventDefault();
-                        setChecking(true);
-                        setCheckResult(null);
-                        setCheckError("");
-                        try {
-                            const response = await fetch(`${API_BASE_URL}/api/check-verification-status`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email: checkEmail })
-                            });
-                            const data = await response.json();
-                            if (response.ok && data.email_verified) {
-                                setCheckResult("verified");
-                            } else if (response.ok && !data.email_verified) {
-                                setCheckResult("not_verified");
-                            } else {
-                                setCheckResult("error");
-                                setCheckError(data.error || "Unknown error");
-                            }
-                        } catch (err) {
-                            setCheckResult("error");
-                            setCheckError("Network error");
-                        } finally {
-                            setChecking(false);
-                        }
-                    }} className="space-y-4">
-                        <Input type="email" placeholder="you@example.com" value={checkEmail} onChange={e => setCheckEmail(e.target.value)} required />
-                        <Button type="submit" className="w-full" disabled={checking}>{checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Check Verification Status"}</Button>
-                    </form>
-                    {checkResult === "verified" && (
-                        <div className="mt-4">
-                            <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                            <p className="font-semibold">Your email is verified! Please log in.</p>
-                            <Button className="mt-2" onClick={() => router.push('/?action=login')}>Go to Login</Button>
-                        </div>
-                    )}
-                    {checkResult === "not_verified" && (
-                        <div className="mt-4">
-                            <XCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-                            <p className="font-semibold">Your email is not verified yet.</p>
-                            <Button className="mt-2" onClick={() => setShowResendForm(true)}>Resend Verification Email</Button>
-                        </div>
-                    )}
-                    {checkResult === "error" && (
-                        <div className="mt-4 text-destructive">{checkError}</div>
-                    )}
-                </CardContent>
-            </div>
-        );
-    }
-
     return (
         <div className="text-center">
-            <h2 className="text-2xl font-bold">Invalid State</h2>
-            <p className="text-muted-foreground">Something went wrong. Please return to the homepage or check your email verification status.</p>
-            <Button onClick={() => router.push('/')} className="mt-4">Go to Homepage</Button>
-            <Button onClick={() => setShowCheckVerification(true)} className="mt-4 ml-2" variant="outline">Check Email Verification</Button>
+            <CardHeader className="text-center">
+                <CardTitle>Check Email Verification</CardTitle>
+                <CardDescription>Enter your email to check if it has been verified.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    setChecking(true);
+                    setCheckResult(null);
+                    setCheckError("");
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/check-verification-status`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: checkEmail })
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.email_verified) {
+                            setCheckResult("verified");
+                        } else if (response.ok && !data.email_verified) {
+                            setCheckResult("not_verified");
+                        } else {
+                            setCheckResult("error");
+                            setCheckError(data.error || "Unknown error");
+                        }
+                    } catch (err) {
+                        setCheckResult("error");
+                        setCheckError("Network error");
+                    } finally {
+                        setChecking(false);
+                    }
+                }} className="space-y-4">
+                    <Input type="email" placeholder="you@example.com" value={checkEmail} onChange={e => setCheckEmail(e.target.value)} required />
+                    <Button type="submit" className="w-full" disabled={checking}>{checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Check Verification Status"}</Button>
+                </form>
+                {checkResult === "verified" && (
+                    <div className="mt-4">
+                        <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                        <p className="font-semibold">Your email is verified! Please log in.</p>
+                        <Button className="mt-2" onClick={() => router.push('/?action=login')}>Go to Login</Button>
+                    </div>
+                )}
+                {checkResult === "not_verified" && (
+                    <div className="mt-4">
+                        <XCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
+                        <p className="font-semibold">Your email is not verified yet.</p>
+                        <Button className="mt-2" onClick={() => setShowResendForm(true)}>Resend Verification Email</Button>
+                    </div>
+                )}
+                {checkResult === "error" && (
+                    <div className="mt-4 text-destructive">{checkError}</div>
+                )}
+                <Button onClick={() => router.push('/')} className="mt-4" variant="secondary">Go to Homepage</Button>
+            </CardContent>
         </div>
     );
 };
