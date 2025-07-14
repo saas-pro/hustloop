@@ -217,48 +217,56 @@ const ActionHandlerContent: React.FC = () => {
     }
 
     if (success) {
-         if (info?.from === 'verifyEmail') {
-             setRedirecting(true);
-             // After verification, check if profile is complete
-             (async () => {
-                 try {
-                     const response = await fetch(`${API_BASE_URL}/api/check-profile`, {
-                         method: 'POST',
-                         headers: { 'Content-Type': 'application/json' },
-                         body: JSON.stringify({ email: info.email })
-                     });
-                     const data = await response.json();
-                     if (response.ok && data.profileComplete) {
-             toast({
-                title: "Email Verified!",
-                description: "Your account is now active. You can log in.",
-             });
-             router.push('/?action=login&from=verification_success');
-                     } else if (data.token) {
-                         toast({
-                             title: "Email Verified!",
-                             description: "Please complete your profile to continue.",
-                         });
-                         router.push(`/complete-profile?token=${data.token}`);
-                     } else {
-                         toast({
-                             title: "Email Verified!",
-                             description: "Please complete your profile to continue.",
-                         });
-                         router.push('/');
-                     }
-                 } catch (e) {
-                     toast({
-                         title: "Email Verified!",
-                         description: "Please log in.",
-                     });
-                     router.push('/?action=login&from=verification_success');
-                 } finally {
-                     setRedirecting(false);
-                 }
-             })();
-             return null;
-         }
+        if (info?.from === 'verifyEmail') {
+            setRedirecting(true);
+            (async () => {
+                try {
+                    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                    if (token) {
+                        const response = await fetch(`${API_BASE_URL}/api/check-profile`, {
+                            method: 'GET',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.profile_complete) {
+                            toast({
+                                title: "Email Verified!",
+                                description: "Your account is now active. You can log in.",
+                            });
+                            router.push('/?action=login&from=verification_success');
+                        } else if (data.token) {
+                            toast({
+                                title: "Email Verified!",
+                                description: "Please complete your profile to continue.",
+                            });
+                            router.push(`/complete-profile?token=${data.token}`);
+                        } else {
+                            toast({
+                                title: "Email Verified!",
+                                description: "Please complete your profile to continue.",
+                            });
+                            router.push('/');
+                        }
+                    } else {
+                        // No token, just show success and prompt login
+                        toast({
+                            title: "Email Verified!",
+                            description: "Your email is verified. Please log in.",
+                        });
+                        router.push('/?action=login&from=verification_success');
+                    }
+                } catch (e) {
+                    toast({
+                        title: "Email Verified!",
+                        description: "Please log in.",
+                    });
+                    router.push('/?action=login&from=verification_success');
+                } finally {
+                    setRedirecting(false);
+                }
+            })();
+            return null;
+        }
         if (info?.from === 'resetPassword') {
             toast({
                 title: "Password Changed!",
