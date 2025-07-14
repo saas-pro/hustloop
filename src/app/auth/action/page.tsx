@@ -115,6 +115,12 @@ const ActionHandlerContent: React.FC = () => {
     const [info, setInfo] = React.useState<{ email: string; from: 'verifyEmail' | 'resetPassword' } | null>(null);
     const [success, setSuccess] = React.useState(false);
     const [redirecting, setRedirecting] = React.useState(false);
+    // Moved up: fallback email verification check states
+    const [showCheckVerification, setShowCheckVerification] = React.useState(false);
+    const [checkEmail, setCheckEmail] = React.useState("");
+    const [checking, setChecking] = React.useState(false);
+    const [checkResult, setCheckResult] = React.useState<null | "verified" | "not_verified" | "error">(null);
+    const [checkError, setCheckError] = React.useState("");
     
     const form = useForm<PasswordResetValues>({
         resolver: zodResolver(passwordResetSchema),
@@ -316,12 +322,6 @@ const ActionHandlerContent: React.FC = () => {
     }
 
     // Fallback for any other state
-    const [showCheckVerification, setShowCheckVerification] = React.useState(false);
-    const [checkEmail, setCheckEmail] = React.useState("");
-    const [checking, setChecking] = React.useState(false);
-    const [checkResult, setCheckResult] = React.useState<null | "verified" | "not_verified" | "error">(null);
-    const [checkError, setCheckError] = React.useState("");
-
     if (showCheckVerification) {
         return (
             <div className="text-center">
