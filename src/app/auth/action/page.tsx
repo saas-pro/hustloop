@@ -118,7 +118,7 @@ const ActionHandlerContent: React.FC = () => {
     const [showVerifiedSuccess, setShowVerifiedSuccess] = React.useState(false);
     const [checkEmail, setCheckEmail] = React.useState("");
     const [checking, setChecking] = React.useState(false);
-    const [checkResult, setCheckResult] = React.useState<null | "verified" | "not_verified" | "error">(null);
+    const [checkResult, setCheckResult] = React.useState<null | "verified" | "not_verified" | "error" | "resent">(null);
     const [checkError, setCheckError] = React.useState("");
     const form = useForm<PasswordResetValues>({
         resolver: zodResolver(passwordResetSchema),
@@ -300,65 +300,95 @@ const ActionHandlerContent: React.FC = () => {
             </div>
         );
     }
-    // Fallback for any other state
-    return (
-        <div className="text-center">
-            <CardHeader className="text-center">
-                <CardTitle>Check Email Verification</CardTitle>
-                <CardDescription>Enter your email to check if it has been verified.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    setChecking(true);
-                    setCheckResult(null);
-                    setCheckError("");
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/api/check-verification-status`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: checkEmail })
-                        });
-                        const data = await response.json();
-                        if (response.ok && data.email_verified) {
-                            setCheckResult("verified");
-                        } else if (response.ok && !data.email_verified) {
-                            setCheckResult("not_verified");
-                        } else {
-                            setCheckResult("error");
-                            setCheckError(data.error || "Unknown error");
-                        }
-                    } catch (err) {
-                        setCheckResult("error");
-                        setCheckError("Network error");
-                    } finally {
-                        setChecking(false);
-                    }
-                }} className="space-y-4">
-                    <Input type="email" placeholder="you@example.com" value={checkEmail} onChange={e => setCheckEmail(e.target.value)} required />
-                    <Button type="submit" className="w-full" disabled={checking}>{checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Check Verification Status"}</Button>
-                </form>
-                {checkResult === "verified" && (
-                    <div className="mt-4">
-                        <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                        <p className="font-semibold">Your email is verified! Please log in.</p>
-                        <Button className="mt-2" onClick={() => router.push('/?action=login')}>Go to Login</Button>
-                    </div>
-                )}
-                {checkResult === "not_verified" && (
-                    <div className="mt-4">
-                        <XCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-                        <p className="font-semibold">Your email is not verified yet.</p>
-                        <Button className="mt-2" onClick={() => setShowResendForm(true)}>Resend Verification Email</Button>
-                    </div>
-                )}
-                {checkResult === "error" && (
-                    <div className="mt-4 text-destructive">{checkError}</div>
-                )}
-                <Button onClick={() => router.push('/')} className="mt-4" variant="secondary">Go to Homepage</Button>
-            </CardContent>
-        </div>
-    );
+    // Replace fallback UI with merged check+resend flow
+    if (!success && !showVerifiedSuccess && !loading && !showResendForm && !error && !(mode === 'resetPassword' && info)) {
+        return (
+            <div className="text-center flex flex-col items-center justify-center min-h-[60vh]">
+                <Card className="w-full max-w-md p-6">
+                    <CardHeader className="text-center">
+                        <CardTitle>Check or Resend Email Verification</CardTitle>
+                        <CardDescription>Enter your email to check if it has been verified. If not, you can resend the verification link.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={async (e) => {
+                            e.preventDefault();
+                            setChecking(true);
+                            setCheckResult(null);
+                            setCheckError("");
+                            try {
+                                const response = await fetch(`${API_BASE_URL}/api/check-verification-status`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ email: checkEmail })
+                                });
+                                const data = await response.json();
+                                if (response.ok && data.email_verified) {
+                                    setCheckResult("verified");
+                                } else if (response.ok && !data.email_verified) {
+                                    setCheckResult("not_verified");
+                                } else {
+                                    setCheckResult("error");
+                                    setCheckError(data.error || "Unknown error");
+                                }
+                            } catch (err) {
+                                setCheckResult("error");
+                                setCheckError("Network error");
+                            } finally {
+                                setChecking(false);
+                            }
+                        }} className="space-y-4">
+                            <Input type="email" placeholder="you@example.com" value={checkEmail} onChange={e => setCheckEmail(e.target.value)} required />
+                            <Button type="submit" className="w-full" disabled={checking}>{checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Check Verification Status"}</Button>
+                        </form>
+                        {checkResult === "verified" && (
+                            <div className="mt-4">
+                                <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2 animate-pop" />
+                                <p className="font-semibold text-green-700">Your email is verified! Please log in.</p>
+                                <Button className="mt-2 w-full" size="lg" onClick={() => router.push('/?action=login')}>Go to Login</Button>
+                            </div>
+                        )}
+                        {checkResult === "not_verified" && (
+                            <div className="mt-4">
+                                <XCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
+                                <p className="font-semibold">Your email is not verified yet.</p>
+                                <Button className="mt-2 w-full" variant="outline" onClick={async () => {
+                                    setChecking(true);
+                                    setCheckError("");
+                                    try {
+                                        const response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ email: checkEmail })
+                                        });
+                                        const data = await response.json();
+                                        if (response.ok) {
+                                            setCheckResult("resent");
+                                        } else {
+                                            setCheckError(data.error || "Failed to resend verification email.");
+                                        }
+                                    } catch (err) {
+                                        setCheckError("Network error");
+                                    } finally {
+                                        setChecking(false);
+                                    }
+                                }}>Resend Verification Email</Button>
+                            </div>
+                        )}
+                        {checkResult === "resent" && (
+                            <div className="mt-4 text-green-700">
+                                <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2 animate-pop" />
+                                <p className="font-semibold">Verification email resent! Please check your inbox.</p>
+                            </div>
+                        )}
+                        {checkResult === "error" && (
+                            <div className="mt-4 text-destructive">{checkError}</div>
+                        )}
+                        <Button onClick={() => router.push('/')} className="mt-4 w-full" variant="secondary">Go to Homepage</Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 };
 
 
