@@ -102,11 +102,11 @@ const ResendVerificationForm = () => {
 
 
 const ActionHandlerContent: React.FC = () => {
+    // All hooks at the very top
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const { auth } = useFirebaseAuth();
-
     const [mode, setMode] = React.useState<Action>(null);
     const [actionCode, setActionCode] = React.useState<string | null>(null);
     const [loading, setLoading] = React.useState(true);
@@ -115,24 +115,29 @@ const ActionHandlerContent: React.FC = () => {
     const [info, setInfo] = React.useState<{ email: string; from: 'verifyEmail' | 'resetPassword' } | null>(null);
     const [success, setSuccess] = React.useState(false);
     const [redirecting, setRedirecting] = React.useState(false);
-    // Moved up: fallback email verification check states
-    const [showCheckVerification, setShowCheckVerification] = React.useState(false);
+    const [showVerifiedSuccess, setShowVerifiedSuccess] = React.useState(false);
     const [checkEmail, setCheckEmail] = React.useState("");
     const [checking, setChecking] = React.useState(false);
     const [checkResult, setCheckResult] = React.useState<null | "verified" | "not_verified" | "error">(null);
     const [checkError, setCheckError] = React.useState("");
-    
     const form = useForm<PasswordResetValues>({
         resolver: zodResolver(passwordResetSchema),
     });
-
+    // Move handlePasswordResetSubmit to the top level
+    const handlePasswordResetSubmit = async (data: PasswordResetValues) => {
+        if (!auth || !actionCode) return;
+        try {
+            await confirmPasswordReset(auth, actionCode, data.password);
+            setSuccess(true);
+        } catch (err) {
+            setError("Failed to reset password. The link may have expired. Please try again.");
+        }
+    };
     React.useEffect(() => {
         const modeParam = searchParams.getAll('mode')[0] as Action; // Always get the first mode param
         const codeParam = searchParams.get('oobCode');
-        
         setMode(modeParam);
         setActionCode(codeParam);
-        
         if (!auth || !modeParam || !codeParam) {
             if(!auth) setLoading(false);
             if (!modeParam || !codeParam) {
@@ -141,17 +146,14 @@ const ActionHandlerContent: React.FC = () => {
             }
             return;
         }
-
         const handleAction = async () => {
             try {
                 const actionInfo = await checkActionCode(auth, codeParam);
                 const { operation } = actionInfo;
                 const { email } = actionInfo.data;
-
                 if (!email) {
                     throw new Error("Invalid action code: email is missing.");
                 }
-
                 if (operation === 'VERIFY_EMAIL') {
                     await applyActionCode(auth, codeParam);
                     setSuccess(true);
@@ -172,54 +174,8 @@ const ActionHandlerContent: React.FC = () => {
                 setLoading(false);
             }
         };
-        
         handleAction();
-
     }, [searchParams, auth]);
-
-    const handlePasswordResetSubmit = async (data: PasswordResetValues) => {
-        if (!auth || !actionCode) return;
-        
-        try {
-            await confirmPasswordReset(auth, actionCode, data.password);
-            setSuccess(true);
-        } catch (err) {
-            setError("Failed to reset password. The link may have expired. Please try again.");
-        }
-    }
-
-    if (loading) {
-        return (
-            <div className="text-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-                <p className="text-muted-foreground">Verifying link...</p>
-            </div>
-        );
-    }
-
-    if (showResendForm) {
-        return <ResendVerificationForm />;
-    }
-    
-    if (error) {
-        return (
-            <div className="text-center">
-                <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Action Failed</h2>
-                <p className="text-muted-foreground mb-6">{error}</p>
-                <div className="flex flex-col gap-2 items-center">
-                  <Button onClick={() => router.push('/')} variant="secondary">Go to Homepage</Button>
-                  <Button onClick={() => router.push('/?action=login')} variant="default">Go to Login</Button>
-                  <Button onClick={() => setShowResendForm(true)} variant="outline">Resend Verification Email</Button>
-                </div>
-            </div>
-        );
-    }
-
-    // Add a new state to track if we should show the verified success UI
-    const [showVerifiedSuccess, setShowVerifiedSuccess] = React.useState(false);
-
-    // Move the async redirect logic into useEffect
     React.useEffect(() => {
         if (success && info?.from === 'verifyEmail') {
             const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -262,13 +218,36 @@ const ActionHandlerContent: React.FC = () => {
                     }
                 })();
             } else {
-                // No token, just show the verified success UI
                 setShowVerifiedSuccess(true);
             }
         }
     }, [success, info, router, toast]);
-
-    // In render, show the verified success UI if set
+    // All hooks above, now logic and returns below
+    if (loading) {
+        return (
+            <div className="text-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+                <p className="text-muted-foreground">Verifying link...</p>
+            </div>
+        );
+    }
+    if (showResendForm) {
+        return <ResendVerificationForm />;
+    }
+    if (error) {
+        return (
+            <div className="text-center">
+                <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                <h2 className="text-2xl font-bold mb-2">Action Failed</h2>
+                <p className="text-muted-foreground mb-6">{error}</p>
+                <div className="flex flex-col gap-2 items-center">
+                  <Button onClick={() => router.push('/')} variant="secondary">Go to Homepage</Button>
+                  <Button onClick={() => router.push('/?action=login')} variant="default">Go to Login</Button>
+                  <Button onClick={() => setShowResendForm(true)} variant="outline">Resend Verification Email</Button>
+                </div>
+            </div>
+        );
+    }
     if (showVerifiedSuccess) {
         return (
             <div className="text-center">
@@ -279,7 +258,6 @@ const ActionHandlerContent: React.FC = () => {
             </div>
         );
     }
-
     if (mode === 'resetPassword' && info) {
         return (
             <div>
@@ -322,7 +300,6 @@ const ActionHandlerContent: React.FC = () => {
             </div>
         );
     }
-
     // Fallback for any other state
     return (
         <div className="text-center">
