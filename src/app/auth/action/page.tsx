@@ -338,7 +338,6 @@ export default function AuthActionPage() {
         className="flex items-center gap-2 cursor-pointer mb-8"
         onClick={() => router.push("/")}
       >
-        <Image src="/logo.png" alt="Logo" width={40} height={40} />
         <span className="font-headline text-2xl text-yellow-400">hustl∞p</span>
       </div>
       <Card className="w-full max-w-md">
