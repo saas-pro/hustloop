@@ -242,7 +242,7 @@ const AuthActionPage = () => {
           }
         } else if (operation === "PASSWORD_RESET") {
           await verifyPasswordResetCode(auth, codeParam);
-          setResetEmail(email);
+          setResetEmail(email ?? null);
           setShowResetForm(true);
         }
       } catch (err: any) {
@@ -481,4 +481,10 @@ const AuthActionPage = () => {
   );
 };
 
-export default AuthActionPage;
+export default function Page() {
+  return (
+    <React.Suspense fallback={<div className="flex items-center justify-center p-12"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+      <AuthActionPage />
+    </React.Suspense>
+  );
+}
