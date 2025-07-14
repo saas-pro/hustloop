@@ -216,13 +216,17 @@ const ActionHandlerContent: React.FC = () => {
         );
     }
 
-    if (success) {
-        if (info?.from === 'verifyEmail') {
-            setRedirecting(true);
-            (async () => {
-                try {
-                    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-                    if (token) {
+    // Add a new state to track if we should show the verified success UI
+    const [showVerifiedSuccess, setShowVerifiedSuccess] = React.useState(false);
+
+    // Move the async redirect logic into useEffect
+    React.useEffect(() => {
+        if (success && info?.from === 'verifyEmail') {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            if (token) {
+                setRedirecting(true);
+                (async () => {
+                    try {
                         const response = await fetch(`${API_BASE_URL}/api/check-profile`, {
                             method: 'GET',
                             headers: { 'Authorization': `Bearer ${token}` }
@@ -247,41 +251,31 @@ const ActionHandlerContent: React.FC = () => {
                             });
                             router.push('/');
                         }
-                    } else {
-                        // No token, just show success and prompt login
+                    } catch (e) {
                         toast({
                             title: "Email Verified!",
-                            description: "Your email is verified. Please log in.",
+                            description: "Please log in.",
                         });
                         router.push('/?action=login&from=verification_success');
+                    } finally {
+                        setRedirecting(false);
                     }
-                } catch (e) {
-                    toast({
-                        title: "Email Verified!",
-                        description: "Please log in.",
-                    });
-                    router.push('/?action=login&from=verification_success');
-                } finally {
-                    setRedirecting(false);
-                }
-            })();
-            return null;
+                })();
+            } else {
+                // No token, just show the verified success UI
+                setShowVerifiedSuccess(true);
+            }
         }
-        if (info?.from === 'resetPassword') {
-            toast({
-                title: "Password Changed!",
-                description: "Your password has been reset successfully. Please log in.",
-            });
-            router.push('/?action=login&from=reset_success');
-            return null;
-        }
-    }
+    }, [success, info, router, toast]);
 
-    if (redirecting) {
+    // In render, show the verified success UI if set
+    if (showVerifiedSuccess) {
         return (
             <div className="text-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-                <p className="text-muted-foreground">Redirecting...</p>
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold mb-2">Email Verified!</h2>
+                <p className="mb-6">Your email has been verified successfully. You can now log in.</p>
+                <Button onClick={() => router.push('/?action=login')}>Go to Login</Button>
             </div>
         );
     }
