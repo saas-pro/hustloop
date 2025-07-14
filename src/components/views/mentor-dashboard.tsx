@@ -223,7 +223,7 @@ export default function MentorDashboardView({ isOpen, onOpenChange, setActiveVie
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as MentorDashboardTab)} className="flex flex-col flex-grow min-h-0">
-                        <TabsList className="justify-start">
+                        <TabsList className="grid w-full grid-cols-5">
                             <TabsTrigger value="overview">
                                 <LayoutDashboard className="mr-2 h-4 w-4" /> Overview
                             </TabsTrigger>

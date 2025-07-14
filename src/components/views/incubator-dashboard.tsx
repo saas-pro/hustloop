@@ -264,7 +264,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
                     </DialogHeader>
                     <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                         <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as IncubatorDashboardTab)} className="flex flex-col flex-grow min-h-0">
-                            <TabsList className="justify-start">
+                            <TabsList className="grid w-full grid-cols-4">
                                 <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
                                 <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
                                 <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
