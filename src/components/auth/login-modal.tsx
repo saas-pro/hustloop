@@ -63,9 +63,9 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
   const handlePasswordLogin = async (values: LoginSchema) => {
     if (!auth) {
         toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
-        return;
+      return;
     }
-    
+
     try {
         const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
         const firebaseUser = userCredential.user;
@@ -214,6 +214,11 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess }: LoginM
                   Login
                 </Button>
               </DialogFooter>
+              <div className="text-center mt-2">
+                <Button variant="link" className="text-xs p-0 h-auto" onClick={() => { router.push('/auth/action'); setIsOpen(false); }}>
+                  Didn’t get the verification email?
+                </Button>
+              </div>
             </form>
         </Form>
       </DialogContent>

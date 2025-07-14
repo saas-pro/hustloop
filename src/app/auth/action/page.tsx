@@ -16,6 +16,26 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { API_BASE_URL } from '@/lib/api';
 
+// Add error code mapping utility at the top
+function getFriendlyError(code: string, fallback: string) {
+    switch (code) {
+        case 'auth/invalid-action-code':
+        case 'invalid-action-code':
+            return 'This verification link is invalid or has already been used.';
+        case 'auth/expired-action-code':
+        case 'expired-action-code':
+            return 'This verification link has expired. Please request a new one.';
+        case 'auth/user-not-found':
+        case 'user-not-found':
+            return 'No account found with this email.';
+        case 'auth/too-many-requests':
+        case 'too-many-requests':
+            return 'Too many attempts. Please try again later.';
+        default:
+            return fallback;
+    }
+}
+
 type Action = 'resetPassword' | 'verifyEmail' | null;
 
 const passwordResetSchema = z.object({
@@ -328,7 +348,7 @@ const ActionHandlerContent: React.FC = () => {
                                     setCheckResult("not_verified");
                                 } else {
                                     setCheckResult("error");
-                                    setCheckError(data.error || "Unknown error");
+                                    setCheckError(getFriendlyError(data.code, data.error || "Unknown error"));
                                 }
                             } catch (err) {
                                 setCheckResult("error");
@@ -364,7 +384,7 @@ const ActionHandlerContent: React.FC = () => {
                                         if (response.ok) {
                                             setCheckResult("resent");
                                         } else {
-                                            setCheckError(data.error || "Failed to resend verification email.");
+                                            setCheckError(getFriendlyError(data.code, data.error || "Failed to resend verification email."));
                                         }
                                     } catch (err) {
                                         setCheckError("Network error");
