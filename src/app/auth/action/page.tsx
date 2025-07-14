@@ -267,6 +267,16 @@ const ActionHandlerContent = () => {
         <Button className="mt-4" onClick={() => router.push("/?action=login")}>Go to Login</Button>
       </div>
     );
+  if (success && info?.from === 'resetPassword') {
+    return (
+      <div className="text-center">
+        <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Password Updated!</h2>
+        <p className="mb-6">Your password has been reset successfully. You can now log in with your new password.</p>
+        <Button onClick={() => router.push('/?action=login')}>Go to Login</Button>
+      </div>
+    );
+  }
   if (mode === "resetPassword" && info)
     return (
       <>
