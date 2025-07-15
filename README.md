@@ -2,6 +2,8 @@
 
 This repository contains a high-fidelity, interactive frontend prototype for the Nexus Platform, built with Next.js, React, and ShadCN UI. It's designed to showcase the user experience, core features, and visual design of the application, serving as a comprehensive blueprint for backend development.
 
+<!-- Deployment ready with Firebase environment variables -->
+
 ## Core Features
 
 -   **Modern Tech Stack**: Built with Next.js 14 (App Router), React, and TypeScript for a robust and type-safe codebase.
