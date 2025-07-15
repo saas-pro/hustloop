@@ -4,19 +4,19 @@
 import type { View } from "@/app/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LogOut, UserCircle, Menu, Sun, Moon, Loader2 } from "lucide-react";
+import { LogOut, UserCircle, Menu, Sun, Moon, Palette, Check, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import * as React from 'react';
 import { Separator } from "../ui/separator";
 import { useRouter, usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   activeView: View;
   setActiveView: (view: View) => void;
   isLoggedIn: boolean;
   onLogout: () => void;
-  theme: 'light' | 'dark' | null;
-  setTheme: (theme: 'light' | 'dark') => void;
   isLoading: boolean;
   isStaticPage?: boolean;
 }
@@ -31,7 +31,42 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
   { id: "education", label: "Education" },
 ];
 
-export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, theme, setTheme, isLoading, isStaticPage = false }: HeaderProps) {
+const themeOptions = [
+    { value: 'light', label: 'Light', icon: Palette },
+    { value: 'dark', label: 'Dark', icon: Palette },
+    { value: 'purple', label: 'Purple', icon: Palette },
+    { value: 'blue', label: 'Blue', icon: Palette },
+    { value: 'green', label: 'Green', icon: Palette },
+    { value: 'orange', label: 'Orange', icon: Palette },
+    { value: 'blue-gray', label: 'Blue Gray', icon: Palette },
+];
+
+export function ThemeToggleDropdown() {
+    const { theme, setTheme } = useTheme();
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <Sun className="h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <span className="sr-only">Toggle theme</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                {themeOptions.map((option) => (
+                    <DropdownMenuItem key={option.value} onClick={() => setTheme(option.value)}>
+                        <option.icon className="mr-2 h-4 w-4" />
+                        <span>{option.label}</span>
+                        {theme === option.value && <Check className="ml-auto h-4 w-4" />}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
+
+export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isNavigating, setIsNavigating] = React.useState(false);
@@ -45,12 +80,6 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
     }
   };
   
-  const toggleTheme = () => {
-    if (theme) {
-      setTheme(theme === 'light' ? 'dark' : 'light');
-    }
-  };
-
   const preloadRecaptcha = () => {
     const scriptId = 'recaptcha-preload-link';
     if (!document.getElementById(scriptId)) {
@@ -99,14 +128,6 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
     );
   };
 
-  const ThemeToggleButton = ({ className }: { className?: string }) => (
-    <Button variant="ghost" size="icon" onClick={toggleTheme} className={className} disabled={!theme}>
-      <Sun className="h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-      <span className="sr-only">Toggle theme</span>
-    </Button>
-  );
-
   return (
     <>
       <header className="bg-background/80 backdrop-blur-sm sticky top-0 z-40 w-full border-b">
@@ -125,9 +146,9 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     key={item.id}
                     onClick={() => setActiveView(item.id)}
                     className={cn(
-                      "text-sm font-medium transition-colors hover:text-primary",
+                      "text-sm font-medium transition-colors hover:text-foreground",
                       activeView === item.id
-                        ? "text-primary"
+                        ? "text-foreground"
                         : "text-muted-foreground"
                     )}
                   >
@@ -166,7 +187,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                   )}
                 </>
               )}
-              <ThemeToggleButton />
+              <ThemeToggleDropdown />
             </div>
             
             <div className="md:hidden">
@@ -183,7 +204,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                       <SheetClose asChild>
                           <BrandLogo inSheet={true} />
                       </SheetClose>
-                      <ThemeToggleButton />
+                      <ThemeToggleDropdown />
                     </div>
                     <nav className="flex flex-col space-y-2">
                       {navItems
@@ -236,7 +257,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                   </SheetContent>
                 </Sheet>
               ) : (
-                <ThemeToggleButton />
+                <ThemeToggleDropdown />
               )}
             </div>
           </div>

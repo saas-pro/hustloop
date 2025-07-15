@@ -9,37 +9,38 @@ import { cn } from "@/lib/utils";
 import * as React from "react";
 import type { View } from "@/app/types";
 import Image from "next/image";
+import { useTheme } from "next-themes";
 
 const services = [
   {
     title: "Mentorship Programs",
     description: "Connect with experienced industry leaders who provide personalized guidance and insights to help you navigate challenges and accelerate growth.",
-    icon: <Users className="h-10 w-10 text-primary" />,
+    icon: <Users className="h-10 w-10 text-accent" />,
   },
   {
     title: "Incubation Support",
     description: "Access state-of-the-art facilities, technical resources, and expert guidance through our network of leading incubators.",
-    icon: <Lightbulb className="h-10 w-10 text-primary" />,
+    icon: <Lightbulb className="h-10 w-10 text-accent" />,
   },
   {
     title: "Business Development",
     description: "Get comprehensive support in strategy, market research, financial planning, and operational excellence.",
-    icon: <Briefcase className="h-10 w-10 text-primary" />,
+    icon: <Briefcase className="h-10 w-10 text-accent" />,
   },
   {
     title: "MSME Partnerships",
     description: "Collaborate with established MSMEs for market access, technology transfer, and scaling opportunities.",
-    icon: <Building2 className="h-10 w-10 text-primary" />,
+    icon: <Building2 className="h-10 w-10 text-accent" />,
   },
   {
     title: "Educational Resources",
     description: "Access workshops, webinars, and learning materials designed to enhance your entrepreneurial skills.",
-    icon: <BookOpen className="h-10 w-10 text-primary" />,
+    icon: <BookOpen className="h-10 w-10 text-accent" />,
   },
   {
     title: "Networking Events",
     description: "Join exclusive events and connect with fellow entrepreneurs, investors, and industry experts.",
-    icon: <Handshake className="h-10 w-10 text-primary" />,
+    icon: <Handshake className="h-10 w-10 text-accent" />,
   },
 ];
 
@@ -47,17 +48,17 @@ const whyChooseUs = [
   {
     title: "Our Mission",
     description: "To empower entrepreneurs by providing the resources, guidance, and connections they need to transform innovative ideas into successful ventures.",
-    icon: <Target className="h-10 w-10 text-primary" />,
+    icon: <Target className="h-10 w-10 text-accent" />,
   },
   {
     title: "Our Vision",
     description: "To create a thriving ecosystem where startups, MSMEs, and incubators collaborate seamlessly to drive innovation and economic growth.",
-    icon: <Eye className="h-10 w-10 text-primary" />,
+    icon: <Eye className="h-10 w-10 text-accent" />,
   },
   {
     title: "Our Values",
     description: "Innovation, collaboration, integrity, and excellence guide everything we do as we help shape the future of entrepreneurship.",
-    icon: <ShieldCheck className="h-10 w-10 text-primary" />,
+    icon: <ShieldCheck className="h-10 w-10 text-accent" />,
   },
 ];
 
@@ -122,7 +123,7 @@ const PathTimeline = ({ steps }: { steps: typeof pathsData.incubation.steps }) =
       {steps.map((step, index) => (
         <div key={index} className="relative mb-8 md:mb-0">
           {/* Dot for all screens, positioned differently */}
-          <div className="absolute left-6 md:left-1/2 top-9 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-primary ring-4 ring-background z-10"></div>
+          <div className="absolute left-6 md:left-1/2 top-9 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-accent ring-4 ring-background z-10"></div>
           
           <div className={cn(
             "flex items-center",
@@ -139,7 +140,7 @@ const PathTimeline = ({ steps }: { steps: typeof pathsData.incubation.steps }) =
                 style={{ animationDelay: `${index * 0.15}s` }}
               >
                 <div className={cn("flex items-center gap-4", step.side === 'left' ? 'md:flex-row-reverse' : 'md:flex-row')}>
-                  <div className="bg-primary p-3 rounded-full text-primary-foreground shrink-0">
+                  <div className="bg-accent p-3 rounded-full text-accent-foreground shrink-0">
                     {React.cloneElement(step.icon, { className: 'h-6 w-6' })}
                   </div>
                   <div className={cn("flex-grow", step.side === 'left' ? 'text-left md:text-right' : 'text-left')}>
@@ -159,12 +160,12 @@ const PathTimeline = ({ steps }: { steps: typeof pathsData.incubation.steps }) =
 
 interface HomeViewProps {
   setActiveView: (view: View) => void;
-  theme: 'light' | 'dark' | null;
   isLoggedIn: boolean;
 }
 
-export default function HomeView({ setActiveView, theme, isLoggedIn }: HomeViewProps) {
+export default function HomeView({ setActiveView, isLoggedIn }: HomeViewProps) {
   const [activePath, setActivePath] = useState<Path>('incubation');
+  const { theme } = useTheme();
 
   return (
     <div className="relative w-full h-full overflow-y-auto">
@@ -182,9 +183,9 @@ export default function HomeView({ setActiveView, theme, isLoggedIn }: HomeViewP
                         <strong style={{ color: '#D4AF37' }}>Hustloop</strong> is your launchpad for success. We connect visionary entrepreneurs with elite mentors, top-tier incubators, and strategic MSME partners to fuel innovation and accelerate growth.
                     </p>
                     {isLoggedIn ? (
-                        <Button size="lg" className="bg-primary hover:bg-primary/90" onClick={() => setActiveView('dashboard')}>Explore Dashboard</Button>
+                        <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setActiveView('dashboard')}>Explore Dashboard</Button>
                     ) : (
-                        <Button size="lg" className="bg-primary hover:bg-primary/90" onClick={() => setActiveView('signup')}>Join a Thriving Ecosystem</Button>
+                        <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setActiveView('signup')}>Join a Thriving Ecosystem</Button>
                     )}
                 </div>
                 <div className="hidden md:block">
@@ -209,7 +210,7 @@ export default function HomeView({ setActiveView, theme, isLoggedIn }: HomeViewP
             </p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
               {services.map((service) => (
-                <Card key={service.title} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 hover:bg-card/75 transition-all">
+                <Card key={service.title} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-accent/50 hover:bg-card/75 transition-all">
                   <CardHeader className="flex flex-row items-center gap-4 p-6">
                     {service.icon}
                     <CardTitle className="text-xl">{service.title}</CardTitle>
@@ -262,7 +263,7 @@ export default function HomeView({ setActiveView, theme, isLoggedIn }: HomeViewP
                 {groupedBenefits.map((group) => (
                     <Card key={group.title} className="p-6 bg-card/70 backdrop-blur-sm border-border/50 text-center">
                         <div className="flex justify-center mb-4">
-                            {React.cloneElement(group.icon, { className: "h-10 w-10 text-primary"})}
+                            {React.cloneElement(group.icon, { className: "h-10 w-10 text-accent"})}
                         </div>
                         <h4 className="text-xl font-bold mb-2">{group.title}</h4>
                         <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
@@ -282,7 +283,7 @@ export default function HomeView({ setActiveView, theme, isLoggedIn }: HomeViewP
         
         {/* Final CTA Section */}
         <section className="py-24 md:py-32 container mx-auto px-4">
-          <div className="bg-card/50 rounded-lg p-12 text-center border border-primary/50 shadow-lg shadow-primary/10">
+          <div className="bg-card/50 rounded-lg p-12 text-center border border-accent/50 shadow-lg shadow-accent/10">
             <h2 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Ready to Build the Future?</h2>
             <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-8">
               Join Hustloop today and let&apos;s turn your vision into reality. Your journey to success starts here.
