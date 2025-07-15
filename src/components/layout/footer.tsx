@@ -13,7 +13,7 @@ export default function Footer() {
           {/* Left: Logo and Tagline */}
           <div className="flex-1 flex justify-center md:justify-start">
             <div className="flex items-center gap-3 text-center md:text-left">
-              <div className="font-headline text-2xl" style={{ color: '#facc15' }}>
+              <div className="font-headline text-2xl" style={{ color: '#D4AF37' }}>
                 hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
               </div>
               <Separator orientation="vertical" className="h-8 bg-border hidden md:block" />

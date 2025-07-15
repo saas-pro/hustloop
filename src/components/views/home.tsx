@@ -179,7 +179,7 @@ export default function HomeView({ setActiveView, theme, isLoggedIn }: HomeViewP
                         Empowering Tomorrow&apos;s Innovators
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground mt-6 mb-12">
-                        <strong style={{ color: '#facc15' }}>Hustloop</strong> is your launchpad for success. We connect visionary entrepreneurs with elite mentors, top-tier incubators, and strategic MSME partners to fuel innovation and accelerate growth.
+                        <strong style={{ color: '#D4AF37' }}>Hustloop</strong> is your launchpad for success. We connect visionary entrepreneurs with elite mentors, top-tier incubators, and strategic MSME partners to fuel innovation and accelerate growth.
                     </p>
                     {isLoggedIn ? (
                         <Button size="lg" className="bg-primary hover:bg-primary/90" onClick={() => setActiveView('dashboard')}>Explore Dashboard</Button>
