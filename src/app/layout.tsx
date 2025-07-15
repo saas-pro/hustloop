@@ -1,23 +1,10 @@
 
 import type {Metadata} from 'next';
-import { Inter, Righteous } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import TwinklingStars from '@/components/layout/twinkling-stars';
 import Script from 'next/script';
 import { ThemeProvider } from '@/components/theme-provider';
-
-const fontSans = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  weight: ['400', '500', '600', '700'],
-});
-
-const fontHeadline = Righteous({
-  subsets: ['latin'],
-  variable: '--font-headline',
-  weight: ['400'],
-});
 
 export const metadata: Metadata = {
   title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
@@ -30,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fontSans.variable} ${fontHeadline.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head />
       <body className="antialiased bg-background font-sans">
         <ThemeProvider>
