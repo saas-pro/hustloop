@@ -2,7 +2,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBw7SxFgACSo_BqMiwpl_Wmha1yljkhVhc",
+  apiKey: "AIzaSyDEv3CHNo3X0pg0ssG8hdO1-mJNPpXlE-s",
   authDomain: "hustloop.firebaseapp.com",
   projectId: "hustloop",
   storageBucket: "hustloop.firebasestorage.app",
