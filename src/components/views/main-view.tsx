@@ -388,12 +388,10 @@ export default function MainView() {
         setActiveView={setActiveView}
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}
-        theme={theme}
-        setTheme={setTheme}
         isLoading={isLoading}
       />
       <main className="flex-grow">
-        <HomeView setActiveView={setActiveView} theme={theme} isLoggedIn={isLoggedIn} />
+        <HomeView setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
       </main>
       <Footer />
 
