@@ -44,7 +44,7 @@ type User = {
 type AuthProvider = 'local' | 'google';
 
 // Version for localStorage data
-const LOCAL_STORAGE_VERSION = '1.0';
+const LOCAL_STORAGE_VERSION = '1.1'; // bump to invalidate old data
 
 function safeParse<T>(value: string | null, fallback: T, key?: string, validate: (obj: any) => boolean = () => true): T {
   try {
@@ -90,15 +90,15 @@ export default function MainView() {
     if (typeof window === 'undefined') return; // SSR safety
 
     // Migration/version handling
-    const version = localStorage.getItem('localStorageVersion');
-    if (version !== LOCAL_STORAGE_VERSION) {
-      // Clear all relevant keys if version mismatch
+    if (localStorage.getItem('localStorageVersion') !== LOCAL_STORAGE_VERSION) {
+      // Clear only auth/session keys (keep theme, etc.)
       localStorage.removeItem('user');
       localStorage.removeItem('appliedPrograms');
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('userRole');
       localStorage.removeItem('hasSubscription');
       localStorage.removeItem('authProvider');
+      localStorage.removeItem('token');
       localStorage.setItem('localStorageVersion', LOCAL_STORAGE_VERSION);
     }
 
