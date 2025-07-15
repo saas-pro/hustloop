@@ -239,5 +239,3 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     </Dialog>
   );
 }
-
-    

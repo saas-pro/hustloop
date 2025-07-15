@@ -8,35 +8,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState, useEffect } from 'react';
 
 export default function PrivacyPolicyPage() {
-  // Since this is now a client component, we manage state here.
-  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
   const [lastUpdated, setLastUpdated] = useState('');
 
   // This prevents hydration mismatch by rendering the date only on the client.
   useEffect(() => {
     setLastUpdated(new Date().toLocaleDateString());
-
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    setTheme(initialTheme);
-    if (initialTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
   }, []);
-
-  useEffect(() => {
-    if (theme) {
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      localStorage.setItem('theme', theme);
-    }
-  }, [theme]);
-
 
   // Dummy props for the Header, as it's used statically here and doesn't need to change views.
   const headerProps = {
@@ -44,8 +21,6 @@ export default function PrivacyPolicyPage() {
     setActiveView: () => {},
     isLoggedIn: false,
     onLogout: () => {},
-    theme: theme,
-    setTheme: (t: 'light' | 'dark') => setTheme(t),
     isLoading: false, // Set to false as we are not checking auth status on this page
     isStaticPage: true,
   };

@@ -78,7 +78,7 @@ export default function PricingView({ isOpen, onOpenChange, onGetStartedClick }:
                 {plans.map((plan) => (
                 <Card key={plan.name} className={cn("relative flex flex-col bg-card/50 backdrop-blur-sm", plan.primary ? "border-primary ring-2 ring-primary" : "border-border/50")}>
                     <CardHeader>
-                    {plan.tag && <Badge className="absolute top-[-12px] right-4">{plan.tag}</Badge>}
+                    {plan.tag && <Badge className="absolute top-[-12px] right-4 bg-accent text-accent-foreground hover:bg-accent/90">{plan.tag}</Badge>}
                     <CardTitle>{plan.name}</CardTitle>
                     <CardDescription>{plan.description}</CardDescription>
                     <div>
@@ -97,7 +97,7 @@ export default function PricingView({ isOpen, onOpenChange, onGetStartedClick }:
                     </ul>
                     </CardContent>
                     <CardFooter className="flex-col items-start mt-4">
-                    <Button onClick={onGetStartedClick} className={cn("w-full", plan.primary ? "bg-primary hover:bg-primary/90" : "bg-accent hover:bg-accent/90 text-accent-foreground")}>
+                    <Button onClick={onGetStartedClick} className={cn("w-full", plan.primary ? "bg-accent text-accent-foreground hover:bg-accent/90" : "bg-primary text-primary-foreground hover:bg-primary/90")}>
                         {plan.cta}
                     </Button>
                     {plan.note && <p className="text-xs text-muted-foreground mt-3 text-center w-full">{plan.note}</p>}

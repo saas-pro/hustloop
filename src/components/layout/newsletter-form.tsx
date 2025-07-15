@@ -89,7 +89,7 @@ export default function NewsletterForm() {
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="bg-accent hover:bg-accent/90 text-accent-foreground">
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Let Me In
           </Button>

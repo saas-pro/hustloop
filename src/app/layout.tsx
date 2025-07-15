@@ -5,6 +5,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import TwinklingStars from '@/components/layout/twinkling-stars';
 import Script from 'next/script';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -30,47 +31,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${fontSans.variable} ${fontHeadline.variable}`} suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                // Add no-transition class to prevent flash during initial load
-                document.documentElement.classList.add('no-transition');
-                
-                try {
-                  var theme = localStorage.getItem('theme');
-                  var systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  
-                  if (theme === 'dark' || (!theme && systemPrefersDark)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {
-                  // Fallback to system preference if localStorage fails
-                  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    document.documentElement.classList.add('dark');
-                  }
-                }
-                
-                // Remove no-transition class after a short delay to enable smooth transitions
-                setTimeout(function() {
-                  document.documentElement.classList.remove('no-transition');
-                }, 100);
-              })();
-            `,
-          }}
-        />
-      </head>
+      <head />
       <body className="antialiased bg-background font-sans">
-        <div className="flex flex-col min-h-screen">
-          <div className="hidden dark:block">
+        <ThemeProvider>
+          <div className="flex flex-col min-h-screen">
             <TwinklingStars />
+            {children}
           </div>
-          {children}
-        </div>
-        <Toaster />
+          <Toaster />
+        </ThemeProvider>
         <Script id="zoho-salesiq-script" strategy="lazyOnload">
           {`
             window.$zoho = window.$zoho || {};

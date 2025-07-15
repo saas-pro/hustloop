@@ -35,7 +35,7 @@ import Image from "next/image";
 import { API_BASE_URL } from "@/lib/api";
 
 function getFriendlyError(code: string, fallback: string) {
-  switch (code) {
+    switch (code) {
     case "auth/invalid-action-code":
     case "invalid-action-code":
       return "This verification link is invalid or has already been used.";
@@ -48,9 +48,9 @@ function getFriendlyError(code: string, fallback: string) {
     case "auth/too-many-requests":
     case "too-many-requests":
       return "Too many attempts. Please try again later.";
-    default:
-      return fallback;
-  }
+        default:
+            return fallback;
+    }
 }
 
 const passwordResetSchema = z
@@ -62,15 +62,15 @@ const passwordResetSchema = z
       .regex(/[a-z]/, "Must contain at least one lowercase letter.")
       .regex(/[0-9]/, "Must contain at least one number.")
       .regex(/[^A-Za-z0-9]/, "Must contain at least one special character."),
-    confirmPassword: z.string(),
+  confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match.",
-    path: ["confirmPassword"],
-  });
+  message: "Passwords do not match.",
+  path: ["confirmPassword"],
+});
 
 const resendSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address." }),
+    email: z.string().email({ message: "Please enter a valid email address." }),
 });
 
 type Action = "resetPassword" | "verifyEmail" | null;
@@ -78,185 +78,185 @@ type PasswordResetValues = z.infer<typeof passwordResetSchema>;
 type ResendValues = z.infer<typeof resendSchema>;
 
 const ResendVerificationForm = () => {
-  const { toast } = useToast();
-  const router = useRouter();
+    const { toast } = useToast();
+    const router = useRouter();
   const form = useForm<ResendValues>({ resolver: zodResolver(resendSchema) });
 
-  const onSubmit = async (data: ResendValues) => {
-    try {
+    const onSubmit = async (data: ResendValues) => {
+        try {
       const res = await fetch(`${API_BASE_URL}/api/resend-verification`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+                body: JSON.stringify(data),
+            });
       const result = await res.json();
       if (res.ok) {
-        toast({ title: "Email Sent", description: result.message });
+                toast({ title: "Email Sent", description: result.message });
         router.push("/");
-      } else {
-        let errorMsg = result.error;
+            } else {
+                let errorMsg = result.error;
         if (errorMsg?.toLowerCase().includes("already verified")) {
-          errorMsg = "This email is already verified. Please log in.";
-        }
+                    errorMsg = "This email is already verified. Please log in.";
+                }
         toast({ variant: "destructive", title: "Failed", description: errorMsg });
-      }
+            }
     } catch (err) {
       toast({ variant: "destructive", title: "Network Error" });
-    }
-  };
+        }
+    };
 
-  return (
+    return (
     <>
-      <CardHeader className="text-center">
-        <CardTitle>Link Expired or Invalid</CardTitle>
+            <CardHeader className="text-center">
+                <CardTitle>Link Expired or Invalid</CardTitle>
         <CardDescription>
           This link has expired. Enter your email to receive a new one.
         </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="you@example.com" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
             <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
               {form.formState.isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Resend Verification Link
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
+                            Resend Verification Link
+                        </Button>
+                    </form>
+                </Form>
+            </CardContent>
     </>
-  );
+    );
 };
 
 const ActionHandlerContent = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+    const router = useRouter();
+    const searchParams = useSearchParams();
   const { auth } = useFirebaseAuth();
-  const { toast } = useToast();
+    const { toast } = useToast();
 
-  const [mode, setMode] = React.useState<Action>(null);
-  const [actionCode, setActionCode] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState(false);
-  const [showVerifiedSuccess, setShowVerifiedSuccess] = React.useState(false);
+    const [mode, setMode] = React.useState<Action>(null);
+    const [actionCode, setActionCode] = React.useState<string | null>(null);
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
+    const [success, setSuccess] = React.useState(false);
+    const [showVerifiedSuccess, setShowVerifiedSuccess] = React.useState(false);
   const [info, setInfo] = React.useState<{ email: string; from: Action } | null>(null);
   const [showResendForm, setShowResendForm] = React.useState(false);
   const form = useForm<PasswordResetValues>({ resolver: zodResolver(passwordResetSchema) });
 
-  const handlePasswordResetSubmit = async (data: PasswordResetValues) => {
-    if (!auth || !actionCode) return;
-    try {
-      await confirmPasswordReset(auth, actionCode, data.password);
-      setSuccess(true);
-    } catch (err) {
+    const handlePasswordResetSubmit = async (data: PasswordResetValues) => {
+        if (!auth || !actionCode) return;
+        try {
+            await confirmPasswordReset(auth, actionCode, data.password);
+            setSuccess(true);
+        } catch (err) {
       setError("Failed to reset password. Try again.");
-    }
-  };
+        }
+    };
 
-  React.useEffect(() => {
+    React.useEffect(() => {
     const modeParam = searchParams.get("mode") as Action;
     const codeParam = searchParams.get("oobCode");
     if (!auth || !modeParam || !codeParam) return;
 
-    setMode(modeParam);
-    setActionCode(codeParam);
+        setMode(modeParam);
+        setActionCode(codeParam);
 
-    const handleAction = async () => {
-      try {
-        const actionInfo = await checkActionCode(auth, codeParam);
-        const { operation } = actionInfo;
-        const { email } = actionInfo.data;
+        const handleAction = async () => {
+            try {
+                const actionInfo = await checkActionCode(auth, codeParam);
+                const { operation } = actionInfo;
+                const { email } = actionInfo.data;
 
         if (!email) throw new Error("Email missing in action.");
 
         if (operation === "VERIFY_EMAIL") {
-          await applyActionCode(auth, codeParam);
-          setSuccess(true);
+                    await applyActionCode(auth, codeParam);
+                    setSuccess(true);
           setInfo({ email, from: "verifyEmail" });
         } else if (operation === "PASSWORD_RESET") {
           await verifyPasswordResetCode(auth, codeParam);
           setInfo({ email, from: "resetPassword" });
-        } else {
-          throw new Error("Unsupported action.");
-        }
-      } catch (err: any) {
+                } else {
+                    throw new Error("Unsupported action.");
+                }
+            } catch (err: any) {
         if (err.code === "auth/invalid-action-code") {
-          setShowResendForm(true);
-        } else {
+                    setShowResendForm(true);
+                } else {
           setError(getFriendlyError(err.code, err.message));
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    handleAction();
+        handleAction();
   }, [auth, searchParams]);
 
-  React.useEffect(() => {
+    React.useEffect(() => {
     if (success && info?.from === "verifyEmail") {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      if (token) {
-        (async () => {
-          try {
+            if (token) {
+                (async () => {
+                    try {
             const res = await fetch(`${API_BASE_URL}/api/check-profile`, {
               method: "GET",
               headers: { Authorization: `Bearer ${token}` },
-            });
+                        });
             const data = await res.json();
             if (res.ok && data.profile_complete) {
               toast({ title: "Email Verified!", description: "You can now log in." });
               router.push("/?action=login&from=verification_success");
-            } else if (data.token) {
+                        } else if (data.token) {
               toast({ title: "Verified!", description: "Complete your profile." });
-              router.push(`/complete-profile?token=${data.token}`);
-            } else {
+                            router.push(`/complete-profile?token=${data.token}`);
+                        } else {
               toast({ title: "Verified!", description: "Proceed to login." });
               router.push("/");
-            }
+                        }
           } catch {
             setShowVerifiedSuccess(true);
-          }
-        })();
-      } else {
-        setShowVerifiedSuccess(true);
-      }
-    }
-  }, [success, info, router, toast]);
+                    }
+                })();
+            } else {
+                setShowVerifiedSuccess(true);
+            }
+        }
+    }, [success, info, router, toast]);
 
-  if (loading) {
-    return (
+    if (loading) {
+        return (
       <div className="text-center p-8">
         <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
         <p>Verifying...</p>
-      </div>
-    );
-  }
+            </div>
+        );
+    }
   if (showResendForm) return <ResendVerificationForm />;
   if (error)
-    return (
+        return (
       <div className="text-center p-8">
         <XCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
         <p className="font-bold">{error}</p>
         <Button onClick={() => router.push("/")} className="mt-4">
           Go to Homepage
         </Button>
-      </div>
+                </div>
     );
   if (showVerifiedSuccess)
     return (
@@ -265,91 +265,91 @@ const ActionHandlerContent = () => {
         <p className="font-bold">Email Verified!</p>
         <p className="text-muted-foreground">You can now log in.</p>
         <Button className="mt-4" onClick={() => router.push("/?action=login")}>Go to Login</Button>
-      </div>
-    );
+            </div>
+        );
   if (success && info?.from === 'resetPassword') {
-    return (
-      <div className="text-center">
-        <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+        return (
+            <div className="text-center">
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
         <h2 className="text-2xl font-bold mb-2">Password Updated!</h2>
         <p className="mb-6">Your password has been reset successfully. You can now log in with your new password.</p>
-        <Button onClick={() => router.push('/?action=login')}>Go to Login</Button>
-      </div>
-    );
-  }
+                <Button onClick={() => router.push('/?action=login')}>Go to Login</Button>
+            </div>
+        );
+    }
   if (mode === "resetPassword" && info)
-    return (
+        return (
       <>
-        <CardHeader className="text-center">
-          <CardTitle>Reset Your Password</CardTitle>
-          <CardDescription>Enter a new password for {info.email}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
+                <CardHeader className="text-center">
+                    <CardTitle>Reset Your Password</CardTitle>
+                    <CardDescription>Enter a new password for {info.email}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handlePasswordResetSubmit)}
               className="space-y-4"
             >
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New Password</FormLabel>
+                             <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>New Password</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="confirmPassword"
+                                render={({ field }) => (
+                                    <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
               <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
                 {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
+                            </Button>
+                        </form>
+                    </Form>
+                </CardContent>
       </>
-    );
-  return (
+        );
+        return (
     <div className="text-center p-8">
       <CardHeader>
-        <CardTitle>Check or Resend Email Verification</CardTitle>
+                        <CardTitle>Check or Resend Email Verification</CardTitle>
         <CardDescription>
           Enter your email to check verification status or resend the link.
         </CardDescription>
-      </CardHeader>
-      <CardContent>
+                    </CardHeader>
+                    <CardContent>
         <p className="text-muted">This is the fallback screen.</p>
         <Button className="mt-4" onClick={() => router.push("/")}>Go to Homepage</Button>
-      </CardContent>
-    </div>
-  );
+                    </CardContent>
+            </div>
+        );
 };
 
 export default function AuthActionPage() {
-  const router = useRouter();
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-      <div
-        className="flex items-center gap-2 cursor-pointer mb-8"
+    const router = useRouter();
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
+             <div
+              className="flex items-center gap-2 cursor-pointer mb-8"
         onClick={() => router.push("/")}
-      >
+            >
         <span className="font-headline text-2xl text-yellow-400">hustl∞p</span>
-      </div>
+              </div>
       <Card className="w-full max-w-md">
         <React.Suspense
           fallback={
@@ -358,9 +358,9 @@ export default function AuthActionPage() {
             </div>
           }
         >
-          <ActionHandlerContent />
-        </React.Suspense>
-      </Card>
-    </div>
-  );
+                    <ActionHandlerContent />
+                </React.Suspense>
+            </Card>
+        </div>
+    );
 }
