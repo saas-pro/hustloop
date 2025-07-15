@@ -339,7 +339,7 @@ export default function MainView() {
         return (
           <MentorDashboardView
             isOpen={true}
-            onOpenChange={handleModalOpenChange('dashboard')}
+            onOpenChange={() => setActiveView('home')}
             setActiveView={setActiveView}
             user={user}
             authProvider={authProvider}
@@ -349,7 +349,7 @@ export default function MainView() {
         return (
           <IncubatorDashboardView
             isOpen={true}
-            onOpenChange={handleModalOpenChange('dashboard')}
+            onOpenChange={() => setActiveView('home')}
             user={user}
             authProvider={authProvider}
           />
@@ -358,7 +358,7 @@ export default function MainView() {
         return (
             <MsmeDashboardView
                 isOpen={true}
-                onOpenChange={handleModalOpenChange('dashboard')}
+                onOpenChange={() => setActiveView('home')}
                 user={user}
                 authProvider={authProvider}
             />
@@ -368,7 +368,7 @@ export default function MainView() {
         return (
           <DashboardView
             isOpen={true}
-            onOpenChange={handleModalOpenChange('dashboard')} 
+            onOpenChange={() => setActiveView('home')} 
             user={user}
             userRole={userRole}
             authProvider={authProvider}
