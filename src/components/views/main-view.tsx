@@ -140,6 +140,68 @@ export default function MainView() {
   }, []);
 
   useEffect(() => {
+    if (!auth) return;
+
+    const unsubscribe = auth.onAuthStateChanged(async (user: import('firebase/auth').User | null) => {
+      if (user) {
+        // User is signed in, update your state accordingly
+        const userData = { name: user.displayName || '', email: user.email || '' };
+        let role: UserRole | null = null;
+        let hasSubscription = false;
+        let appliedPrograms: Record<string, string> = {};
+        let authProvider: AuthProvider = user.providerData[0]?.providerId === 'google.com' ? 'google' : 'local';
+
+        // Fetch user role and other info from backend
+        try {
+          const token = await user.getIdToken();
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/user-profile`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            role = data.role as UserRole;
+            hasSubscription = !!data.hasSubscription;
+            appliedPrograms = data.appliedPrograms || {};
+            // Optionally update other user info
+          }
+        } catch (e) {
+          // fallback to localStorage if backend fails
+          role = localStorage.getItem('userRole') as UserRole | null;
+          hasSubscription = localStorage.getItem('hasSubscription') === 'true';
+          appliedPrograms = safeParse<Record<string, string>>(localStorage.getItem('appliedPrograms'), {}, 'appliedPrograms', isValidAppliedPrograms);
+        }
+
+        setLoggedIn(true);
+        setUserRole(role);
+        setUser(userData);
+        setAuthProvider(authProvider);
+        setHasSubscription(hasSubscription);
+        setAppliedPrograms(appliedPrograms);
+        setIsLoading(false);
+      } else {
+        // User logged out or no session
+        setLoggedIn(false);
+        setUserRole(null);
+        setUser(null);
+        setAuthProvider(null);
+        setHasSubscription(false);
+        setAppliedPrograms({});
+        setIsLoading(false);
+        // Remove only relevant keys, not theme
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('hasSubscription');
+        localStorage.removeItem('appliedPrograms');
+        localStorage.removeItem('authProvider');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
+
+  useEffect(() => {
     const from = searchParams.get('from');
     const action = searchParams.get('action');
 
