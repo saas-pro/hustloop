@@ -43,6 +43,33 @@ type User = {
 }
 type AuthProvider = 'local' | 'google';
 
+// Version for localStorage data
+const LOCAL_STORAGE_VERSION = '1.0';
+
+function safeParse<T>(value: string | null, fallback: T, key?: string, validate: (obj: any) => boolean = () => true): T {
+  try {
+    if (!value || value === 'undefined') return fallback;
+    const parsed = JSON.parse(value);
+    if (validate(parsed)) {
+      return parsed;
+    } else {
+      if (key) localStorage.removeItem(key);
+      return fallback;
+    }
+  } catch {
+    if (key) localStorage.removeItem(key);
+    return fallback;
+  }
+}
+
+function isValidUser(obj: any): obj is { name: string; email: string } {
+  return obj && typeof obj.name === 'string' && typeof obj.email === 'string';
+}
+
+function isValidAppliedPrograms(obj: any): obj is Record<string, string> {
+  return obj && typeof obj === 'object' && !Array.isArray(obj);
+}
+
 export default function MainView() {
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
   const [activeView, setActiveView] = useState<View>("home");
@@ -60,23 +87,33 @@ export default function MainView() {
   const { auth } = useFirebaseAuth();
   
   useEffect(() => {
-    // Safely set theme only on the client after initial render
+    if (typeof window === 'undefined') return; // SSR safety
+
+    // Migration/version handling
+    const version = localStorage.getItem('localStorageVersion');
+    if (version !== LOCAL_STORAGE_VERSION) {
+      // Clear all relevant keys if version mismatch
+      localStorage.removeItem('user');
+      localStorage.removeItem('appliedPrograms');
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('hasSubscription');
+      localStorage.removeItem('authProvider');
+      localStorage.setItem('localStorageVersion', LOCAL_STORAGE_VERSION);
+    }
+
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     setTheme(initialTheme);
-    
-    // Listen for system theme changes
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = (e: MediaQueryListEvent) => {
       if (!localStorage.getItem('theme')) {
-        // Only update if user hasn't manually set a theme
         setTheme(e.matches ? 'dark' : 'light');
       }
     };
-    
     mediaQuery.addEventListener('change', handleSystemThemeChange);
-    
-    // Auth and other state from localStorage
+
     const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
     const savedUserRole = localStorage.getItem('userRole') as UserRole | null;
     const savedUser = localStorage.getItem('user');
@@ -84,22 +121,21 @@ export default function MainView() {
     const savedAppliedPrograms = localStorage.getItem('appliedPrograms');
     const savedAuthProvider = localStorage.getItem('authProvider') as AuthProvider | null;
 
-    if (savedIsLoggedIn === 'true' && savedUserRole && savedUser) {
+    const parsedUser = safeParse<User | null>(savedUser, null, 'user', isValidUser);
+    const parsedAppliedPrograms = safeParse<Record<string, string>>(savedAppliedPrograms, {}, 'appliedPrograms', isValidAppliedPrograms);
+
+    const validRoles: UserRole[] = ['admin', 'mentor', 'msme', 'incubator', 'founder'];
+    if (savedIsLoggedIn === 'true' && validRoles.includes(savedUserRole as UserRole) && parsedUser) {
       setLoggedIn(true);
       setUserRole(savedUserRole);
-      setUser(JSON.parse(savedUser));
+      setUser(parsedUser);
       setHasSubscription(savedSubscription === 'true');
       setHasUsedFreeSession(false);
-      if (savedAppliedPrograms) {
-        setAppliedPrograms(JSON.parse(savedAppliedPrograms));
-      }
-      if (savedAuthProvider) {
-        setAuthProvider(savedAuthProvider);
-      }
+      setAppliedPrograms(parsedAppliedPrograms);
+      if (savedAuthProvider) setAuthProvider(savedAuthProvider);
     }
+
     setIsLoading(false);
-    
-    // Cleanup listener
     return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
   }, []);
 
