@@ -14,7 +14,8 @@ import { API_BASE_URL } from "@/lib/api";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { 
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  getAdditionalUserInfo
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
@@ -132,7 +133,14 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
         const authProvider = new GoogleAuthProvider();
         try {
             const result = await signInWithPopup(auth, authProvider);
-            toast({ title: "Login Successful", description: `Welcome, ${result.user.displayName || result.user.email}!` });
+            const additionalUserInfo = getAdditionalUserInfo(result);
+
+            if (additionalUserInfo?.isNewUser) {
+                toast({ title: "Registration Successful", description: `Welcome, ${result.user.displayName || result.user.email}!` });
+            } else {
+                toast({ title: "Login Successful", description: `Welcome back, ${result.user.displayName || result.user.email}!` });
+            }
+
             setIsOpen(false);
             // Optionally update UI or redirect
         } catch (error: any) {
