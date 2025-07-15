@@ -71,7 +71,6 @@ function isValidAppliedPrograms(obj: any): obj is Record<string, string> {
 }
 
 export default function MainView() {
-  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
   const [activeView, setActiveView] = useState<View>("home");
   const [isLoggedIn, setLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -102,18 +101,6 @@ export default function MainView() {
       localStorage.setItem('localStorageVersion', LOCAL_STORAGE_VERSION);
     }
 
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    setTheme(initialTheme);
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem('theme')) {
-        setTheme(e.matches ? 'dark' : 'light');
-      }
-    };
-    mediaQuery.addEventListener('change', handleSystemThemeChange);
-
     const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
     const savedUserRole = localStorage.getItem('userRole') as UserRole | null;
     const savedUser = localStorage.getItem('user');
@@ -136,7 +123,6 @@ export default function MainView() {
     }
 
     setIsLoading(false);
-    return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
   }, []);
 
   useEffect(() => {
@@ -214,28 +200,6 @@ export default function MainView() {
         router.replace('/');
     }
   }, [searchParams, router, toast]);
-
-  useEffect(() => {
-    if (theme) {
-      // Add transition class for smooth theme switching
-      document.documentElement.style.transition = 'color-scheme 0.3s ease, background-color 0.3s ease';
-      
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-        document.documentElement.style.colorScheme = 'dark';
-      } else {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.style.colorScheme = 'light';
-      }
-      
-      localStorage.setItem('theme', theme);
-      
-      // Remove transition after animation completes
-      setTimeout(() => {
-        document.documentElement.style.transition = '';
-      }, 300);
-    }
-  }, [theme]);
   
   const handleModalOpenChange = (view: View) => (isOpen: boolean) => {
     if (!isOpen) {
