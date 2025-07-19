@@ -64,7 +64,7 @@ export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) 
             toast({
                 variant: "destructive",
                 title: "Submission Failed",
-                description: result.details ? JSON.stringify(result.details) : (result.error || "An unknown error occurred"),
+                description: result.error || "An unknown error occurred.",
             });
         }
     } catch (error) {

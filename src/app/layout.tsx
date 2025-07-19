@@ -37,9 +37,9 @@ export default function RootLayout({
                 var salesiqDoc = document.getElementById("zsiq_float");
                 if (salesiqDoc) {
                     document.addEventListener('router:end', (event) => {
-                        if (window.\$zoho && window.\$zoho.salesiq && window.\$zoho.salesiq.page) {
-                            window.\$zoho.salesiq.page.popup.close('all');
-                            window.\$zoho.salesiq.page.popup.show();
+                        if (window.$zoho && window.$zoho.salesiq && window.$zoho.salesiq.page) {
+                            window.$zoho.salesiq.page.popup.close('all');
+                            window.$zoho.salesiq.page.popup.show();
                         }
                     });
                 }

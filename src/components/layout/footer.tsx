@@ -1,5 +1,5 @@
 
-import { Linkedin, Github } from "lucide-react";
+import { Linkedin, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import NewsletterForm from "./newsletter-form";
 
@@ -13,9 +13,11 @@ export default function Footer() {
           {/* Left: Logo and Tagline */}
           <div className="flex-1 flex justify-center md:justify-start">
             <div className="flex items-center gap-3 text-center md:text-left">
-              <div className="font-headline text-2xl" style={{ color: '#D4AF37' }}>
-                hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
-              </div>
+              <img
+                src="/logo.png"
+                alt="Hustloop logo"
+                className="h-12 w-auto min-w-[120px] max-w-[200px] object-contain"
+              />
               <Separator orientation="vertical" className="h-8 bg-border hidden md:block" />
               <p className="text-muted-foreground hidden md:block">
                 Smart hustle. <br /> Infinite growth..
@@ -44,8 +46,8 @@ export default function Footer() {
               <a href="https://www.linkedin.com/company/hustloop/" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors">
                 <Linkedin className="h-5 w-5" />
               </a>
-              <a href="#" aria-label="GitHub" className="text-muted-foreground hover:text-primary transition-colors">
-                <Github className="h-5 w-5" />
+              <a href="mailto:support@hustloop.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
+                <Mail className="h-5 w-5" />
               </a>
             </div>
           </div>

@@ -22,13 +22,13 @@ interface HeaderProps {
 }
 
 const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
-  { id: "dashboard", label: "Dashboard", loggedIn: true },
-  { id: "blog", label: "Blog" },
   { id: "mentors", label: "Mentors" },
   { id: "incubators", label: "Incubators" },
-  { id: "pricing", label: "Pricing" },
   { id: "msmes", label: "MSMEs" },
   { id: "education", label: "Education" },
+  { id: "pricing", label: "Pricing" },
+  { id: "blog", label: "Blog" },
+  { id: "dashboard", label: "Dashboard", loggedIn: true },
 ];
 
 const themeOptions = [
@@ -113,9 +113,11 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
         className="flex items-center gap-3 cursor-pointer"
         onClick={handleLogoClick}
       >
-        <div className="font-headline text-2xl" style={{ color: '#D4AF37' }}>
-          hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
-        </div>
+        <img
+          src="/logo.png"
+          alt="Hustloop logo"
+          className="h-12 w-auto min-w-[120px] max-w-[200px] object-contain"
+        />
         {!inSheet && (
           <>
               <Separator orientation="vertical" className="h-6 bg-border" />
