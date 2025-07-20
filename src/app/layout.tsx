@@ -9,6 +9,9 @@ import { ThemeProvider } from '@/components/theme-provider';
 export const metadata: Metadata = {
   title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
   description: 'A prototype startup platform that includes modules such as Blog, Mentors, Incubators, Pricing, and MSMEs.',
+  alternates: {
+    canonical: 'https://hustloop.com/',
+  },
 };
 
 export default function RootLayout({
