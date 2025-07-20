@@ -2,6 +2,7 @@
 import { Linkedin, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import NewsletterForm from "./newsletter-form";
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -13,9 +14,11 @@ export default function Footer() {
           {/* Left: Logo and Tagline */}
           <div className="flex-1 flex justify-center md:justify-start">
             <div className="flex items-center gap-3 text-center md:text-left">
-              <img
+              <Image
                 src="/logo.png"
                 alt="Hustloop logo"
+                width={120}
+                height={48}
                 className="h-12 w-auto min-w-[120px] max-w-[200px] object-contain"
               />
               <Separator orientation="vertical" className="h-8 bg-border hidden md:block" />

@@ -11,6 +11,7 @@ import { Separator } from "../ui/separator";
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import Image from 'next/image';
 
 interface HeaderProps {
   activeView: View;
@@ -113,9 +114,11 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
         className="flex items-center gap-3 cursor-pointer"
         onClick={handleLogoClick}
       >
-        <img
+        <Image
           src="/logo.png"
           alt="Hustloop logo"
+          width={120}
+          height={48}
           className="h-12 w-auto min-w-[120px] max-w-[200px] object-contain"
         />
         {!inSheet && (
