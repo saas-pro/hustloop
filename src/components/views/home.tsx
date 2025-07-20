@@ -339,8 +339,8 @@ export default function HomeView({ setActiveView, isLoggedIn }: HomeViewProps) {
             <div className="container mx-auto px-4">
                 <h2 className="text-4xl font-bold text-center mb-12 font-headline">Start your <HighlightEffect>Journey</HighlightEffect></h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-                    <Card className="text-center p-6 flex flex-col items-center">
-                        <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4">
+                    <Card className="group text-center p-6 flex flex-col items-center transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
+                        <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
                             <Rocket className="h-8 w-8" />
                         </div>
                         <div className="flex-grow">
@@ -349,35 +349,35 @@ export default function HomeView({ setActiveView, isLoggedIn }: HomeViewProps) {
                         </div>
                         <Button variant="secondary" onClick={() => setActiveView('incubators')}>Explore Incubators</Button>
                     </Card>
-                    <Card className="text-center p-6 flex flex-col items-center">
-                        <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4">
+                    <Card className="group text-center p-6 flex flex-col items-center transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
+                        <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
                             <Users className="h-8 w-8" />
                         </div>
                         <div className="flex-grow">
                           <h3 className="text-xl font-bold">For Mentors</h3>
-                          <p className="text-muted-foreground mt-2 mb-4">Share your expertise and shape the next generation of innovators.</p>
+                          <p className="text-muted-foreground mt-2 mb-4">Guide the next generation of innovators and make an impact.</p>
                         </div>
                         <Button variant="secondary" onClick={() => setActiveView('mentors')}>Become a Mentor</Button>
                     </Card>
-                    <Card className="text-center p-6 flex flex-col items-center">
-                        <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4">
-                            <Lightbulb className="h-8 w-8" />
+                    <Card className="group text-center p-6 flex flex-col items-center transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
+                        <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
+                            <Building className="h-8 w-8" />
                         </div>
                         <div className="flex-grow">
                           <h3 className="text-xl font-bold">For Incubators</h3>
-                          <p className="text-muted-foreground mt-2 mb-4">Discover and nurture high-potential startups.</p>
+                          <p className="text-muted-foreground mt-2 mb-4">Support startups and foster a culture of innovation.</p>
                         </div>
-                        <Button variant="secondary" onClick={() => setActiveView('incubators')}>Join as an Incubator</Button>
+                        <Button variant="secondary" onClick={() => setActiveView('incubators')}>Partner with Us</Button>
                     </Card>
-                    <Card className="text-center p-6 flex flex-col items-center">
-                        <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4">
-                            <Briefcase className="h-8 w-8" />
+                    <Card className="group text-center p-6 flex flex-col items-center transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
+                        <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
+                            <Handshake className="h-8 w-8" />
                         </div>
                         <div className="flex-grow">
                           <h3 className="text-xl font-bold">For MSMEs</h3>
-                          <p className="text-muted-foreground mt-2 mb-4">Collaborate with startups to solve challenges and drive growth.</p>
+                          <p className="text-muted-foreground mt-2 mb-4">Collaborate with startups for mutual growth and innovation.</p>
                         </div>
-                        <Button variant="secondary" onClick={() => setActiveView('msmes')}>Find Partners</Button>
+                        <Button variant="secondary" onClick={() => setActiveView('msmes')}>Join as MSME</Button>
                     </Card>
                 </div>
             </div>
