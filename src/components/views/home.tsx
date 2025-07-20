@@ -181,7 +181,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
                     className="absolute z-50 animate-float-1 pointer-events-auto flex items-center justify-center w-16 h-16"
                     style={{ top: '0', right: '0', transform: 'translate(50%,-50%)' }}
                   >
-                    <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain rounded-full" />
+                    <Image src="/logo.png" alt="Logo" width={48} height={48} className="w-12 h-12 object-contain rounded-full" />
                   </div>
                   <div className="rounded-full bg-gradient-to-br from-white/90 via-blue-50 to-blue-100 shadow-2xl ring-4 ring-primary/10 flex items-center justify-center text-center w-[32rem] h-[32rem] transition-transform duration-300 hover:scale-105 border-0">
                     <div className="flex flex-col items-center justify-center w-full h-[32rem]">
@@ -579,12 +579,7 @@ export default function HomeView({ setActiveView, isLoggedIn }: HomeViewProps) {
             <div className="container mx-auto px-4 text-center">
                 <h2 className="text-4xl font-bold mb-4 font-headline flex items-center justify-center gap-2">
                   Why choose
-                  <img
-                    src="/logo.png"
-                    alt="Hustloop logo"
-                    className="inline h-16 w-auto object-contain align-middle mr-[-14px]"
-                    style={{ maxWidth: '220px' }}
-                  />
+                  <Image src="/logo.png" alt="Hustloop logo" width={120} height={60} className="inline h-16 w-auto object-contain align-middle mr-[-14px]" style={{ maxWidth: '220px' }} />
                   <span className="inline-block ml-[-2px]" style={{ color: '#D4AF37' }}>?</span>
                 </h2>
                 <p className="max-w-3xl mx-auto text-muted-foreground mb-12">
