@@ -136,7 +136,13 @@ export default function EducationView({ isOpen, onOpenChange, onApplicationSucce
                         </Alert>
                     ) : (
                         <div className="space-y-8">
-                            {educationPrograms.map((program, index) => {
+                            {educationPrograms.length === 0 ? (
+                              <div className="flex flex-col items-center justify-center py-24">
+                                <span className="text-4xl font-bold text-primary mb-4">🚧 Coming Soon!</span>
+                                <p className="text-lg text-muted-foreground">Our education programs are launching soon. Stay tuned for updates and opportunities!</p>
+                              </div>
+                            ) : (
+                              educationPrograms.map((program, index) => {
                                 const isApplied = !!appliedPrograms[program.title];
                                 return (
                                     <Card key={index} className="bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary transition-colors">
@@ -187,7 +193,8 @@ export default function EducationView({ isOpen, onOpenChange, onApplicationSucce
                                         </CardFooter>
                                     </Card>
                                 );
-                            })}
+                              })
+                            )}
                         </div>
                     )}
                 </section>

@@ -76,6 +76,7 @@ export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubsc
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const SHOW_COMING_SOON = true;
 
   useEffect(() => {
     if (isOpen) {
@@ -91,21 +92,7 @@ export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubsc
                 const data = await response.json();
                 setMentors(data);
             } catch (err: any) {
-                // Fallback static data
-                setMentors([
-                  {
-                    name: "Fallback Mentor",
-                    avatar: "https://placehold.co/100x100",
-                    hint: "fallback",
-                    title: "Expert in fallback logic",
-                    expertise: ["Tech", "Business"],
-                    bio: "This is a fallback mentor shown when the API is unavailable.",
-                    rating: 5,
-                    socials: { x: "#", linkedin: "#" },
-                    hourlyRate: "$0",
-                    availability: {},
-                  },
-                ]);
+                setMentors([]); // No fallback mentors, show Coming Soon
                 setError(null); // Hide error, show fallback
             } finally {
                 setIsLoading(false);
@@ -142,7 +129,13 @@ export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubsc
                 </Alert>
             ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {mentors.map((mentor, index) => {
+                {SHOW_COMING_SOON ? (
+                  <div className="col-span-full flex flex-col items-center justify-center py-24">
+                    <span className="text-4xl font-bold text-primary mb-4">🚧 Coming Soon!</span>
+                    <p className="text-lg text-muted-foreground">Soon we’ll onboard experienced industry leaders. Stay tuned for expert mentorship opportunities!</p>
+                  </div>
+                ) : (
+                  mentors.map((mentor, index) => {
                     return (
                     <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50">
                         <CardHeader className="flex-row gap-4 items-center">
@@ -188,7 +181,8 @@ export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubsc
                         </CardFooter>
                     </Card>
                     );
-                })}
+                })
+                )}
                 </div>
             )}
           </ScrollArea>

@@ -132,20 +132,27 @@ export default function BlogView({ isOpen, onOpenChange }: BlogViewProps) {
                 </Alert>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {blogPosts.map((post, index) => (
-                    <Card key={post.id || index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50">
-                        <CardHeader>
-                        <Image src={post.image} alt={post.title} width={600} height={400} className="rounded-t-lg" data-ai-hint={post.hint}/>
-                        <CardTitle className="pt-4">{post.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                        <p className="text-muted-foreground">{post.excerpt}</p>
-                        </CardContent>
-                        <CardFooter>
-                        <Button variant="link" className="p-0" onClick={() => setSelectedPost(post)}>Read More →</Button>
-                        </CardFooter>
-                    </Card>
-                    ))}
+                    {blogPosts.length === 0 ? (
+                      <div className="col-span-full flex flex-col items-center justify-center py-24">
+                        <span className="text-4xl font-bold text-primary mb-4">🚧 Coming Soon!</span>
+                        <p className="text-lg text-muted-foreground">Our blog is launching soon. Stay tuned for updates and insights!</p>
+                      </div>
+                    ) : (
+                      blogPosts.map((post, index) => (
+                        <Card key={post.id || index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50">
+                            <CardHeader>
+                            <Image src={post.image} alt={post.title} width={600} height={400} className="rounded-t-lg" data-ai-hint={post.hint}/>
+                            <CardTitle className="pt-4">{post.title}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-grow">
+                            <p className="text-muted-foreground">{post.excerpt}</p>
+                            </CardContent>
+                            <CardFooter>
+                            <Button variant="link" className="p-0" onClick={() => setSelectedPost(post)}>Read More →</Button>
+                            </CardFooter>
+                        </Card>
+                      ))
+                    )}
                 </div>
               )}
           </ScrollArea>
