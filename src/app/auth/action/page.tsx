@@ -80,28 +80,34 @@ type ResendValues = z.infer<typeof resendSchema>;
 const ResendVerificationForm = () => {
     const { toast } = useToast();
     const router = useRouter();
-  const form = useForm<ResendValues>({ resolver: zodResolver(resendSchema) });
-
+    const form = useForm<ResendValues>({ resolver: zodResolver(resendSchema) });
+    
     const onSubmit = async (data: ResendValues) => {
         try {
-      const res = await fetch(`${API_BASE_URL}/api/resend-verification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+            const res = await fetch(`${API_BASE_URL}/api/resend-verification`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
-      const result = await res.json();
-      if (res.ok) {
-                toast({ title: "Email Sent", description: result.message });
-        router.push("/");
+            const result = await res.json();
+            if (res.ok) {
+                // Success: user exists and is not verified
+                toast({
+                    title: "Verification Email Sent",
+                    description: `A verification email has been sent to ${data.email}. Please check your inbox.`,
+                });
+                router.push("/");
             } else {
                 let errorMsg = result.error;
-        if (errorMsg?.toLowerCase().includes("already verified")) {
-                    errorMsg = "This email is already verified. Please log in.";
+                if (errorMsg?.toLowerCase().includes("already verified")) {
+                    errorMsg = "Your email is already verified. You can log in with your password.";
+                } else if (errorMsg?.toLowerCase().includes("no account")) {
+                    errorMsg = "No account found with that email address.";
                 }
-        toast({ variant: "destructive", title: "Failed", description: errorMsg });
+                toast({ variant: "destructive", title: "Failed", description: errorMsg });
             }
-    } catch (err) {
-      toast({ variant: "destructive", title: "Network Error" });
+        } catch (err) {
+            toast({ variant: "destructive", title: "Network Error" });
         }
     };
 
@@ -145,7 +151,7 @@ const ResendVerificationForm = () => {
 const ActionHandlerContent = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
-  const { auth } = useFirebaseAuth();
+    const { auth } = useFirebaseAuth();
     const { toast } = useToast();
 
     const [mode, setMode] = React.useState<Action>(null);
@@ -154,9 +160,19 @@ const ActionHandlerContent = () => {
     const [error, setError] = React.useState<string | null>(null);
     const [success, setSuccess] = React.useState(false);
     const [showVerifiedSuccess, setShowVerifiedSuccess] = React.useState(false);
-  const [info, setInfo] = React.useState<{ email: string; from: Action } | null>(null);
-  const [showResendForm, setShowResendForm] = React.useState(false);
-  const form = useForm<PasswordResetValues>({ resolver: zodResolver(passwordResetSchema) });
+    const [info, setInfo] = React.useState<{ email: string; from: Action } | null>(null);
+    const [showResendForm, setShowResendForm] = React.useState(false);
+    const form = useForm<PasswordResetValues>({ resolver: zodResolver(passwordResetSchema) });
+
+    // If there are no query params, show the ResendVerificationForm immediately
+    const modeParam = searchParams.get("mode") as Action;
+    const codeParam = searchParams.get("oobCode");
+    React.useEffect(() => {
+        if (!modeParam && !codeParam) {
+            setShowResendForm(true);
+            setLoading(false);
+        }
+    }, [modeParam, codeParam]);
 
     const handlePasswordResetSubmit = async (data: PasswordResetValues) => {
         if (!auth || !actionCode) return;
@@ -164,49 +180,42 @@ const ActionHandlerContent = () => {
             await confirmPasswordReset(auth, actionCode, data.password);
             setSuccess(true);
         } catch (err) {
-      setError("Failed to reset password. Try again.");
+            setError("Failed to reset password. Try again.");
         }
     };
 
     React.useEffect(() => {
-    const modeParam = searchParams.get("mode") as Action;
-    const codeParam = searchParams.get("oobCode");
-    if (!auth || !modeParam || !codeParam) return;
-
+        if (!auth || !modeParam || !codeParam) return;
         setMode(modeParam);
         setActionCode(codeParam);
-
         const handleAction = async () => {
             try {
                 const actionInfo = await checkActionCode(auth, codeParam);
                 const { operation } = actionInfo;
                 const { email } = actionInfo.data;
-
-        if (!email) throw new Error("Email missing in action.");
-
-        if (operation === "VERIFY_EMAIL") {
+                if (!email) throw new Error("Email missing in action.");
+                if (operation === "VERIFY_EMAIL") {
                     await applyActionCode(auth, codeParam);
                     setSuccess(true);
-          setInfo({ email, from: "verifyEmail" });
-        } else if (operation === "PASSWORD_RESET") {
-          await verifyPasswordResetCode(auth, codeParam);
-          setInfo({ email, from: "resetPassword" });
+                    setInfo({ email, from: "verifyEmail" });
+                } else if (operation === "PASSWORD_RESET") {
+                    await verifyPasswordResetCode(auth, codeParam);
+                    setInfo({ email, from: "resetPassword" });
                 } else {
                     throw new Error("Unsupported action.");
                 }
             } catch (err: any) {
-        if (err.code === "auth/invalid-action-code") {
+                if (err.code === "auth/invalid-action-code") {
                     setShowResendForm(true);
                 } else {
-          setError(getFriendlyError(err.code, err.message));
+                    setError(getFriendlyError(err.code, err.message));
                 }
             } finally {
                 setLoading(false);
             }
         };
-
         handleAction();
-  }, [auth, searchParams]);
+    }, [auth, modeParam, codeParam]);
 
     React.useEffect(() => {
     if (success && info?.from === "verifyEmail") {
@@ -344,20 +353,20 @@ export default function AuthActionPage() {
     const router = useRouter();
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-             <div
-              className="flex items-center gap-2 cursor-pointer mb-8"
-        onClick={() => router.push("/")}
+            <div
+                className="flex items-center gap-2 cursor-pointer mb-8"
+                onClick={() => router.push("/")}
             >
-        <span className="font-headline text-2xl text-yellow-400">hustl∞p</span>
-              </div>
-      <Card className="w-full max-w-md">
-        <React.Suspense
-          fallback={
-            <div className="p-12 flex justify-center">
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <Image src="/logo.png" alt="Logo" width={120} height={40} />
             </div>
-          }
-        >
+            <Card className="w-full max-w-md">
+                <React.Suspense
+                    fallback={
+                        <div className="p-12 flex justify-center">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        </div>
+                    }
+                >
                     <ActionHandlerContent />
                 </React.Suspense>
             </Card>
