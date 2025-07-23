@@ -9,12 +9,12 @@
 - Smooth Transitions: Animated transitions when loading new sections.
 - Client-Side Routing: Routing between modules using client-side Javascript.
 
-## Style Guidelines:
+## Style Guidelines
 
-- Primary color: A vibrant purple (#9400D3) to evoke innovation and sophistication, reflecting the forward-thinking nature of the platform.
-- Background color: Light purple (#F0E6F6) to provide a soft, clean backdrop that allows the primary color to stand out.
-- Accent color: A teal (#008080) to highlight interactive elements and call-to-action buttons, providing a striking contrast to the purple tones.
-- Body and headline font: 'Inter' (sans-serif) for a clean, modern, and highly readable interface. Its neutral design ensures excellent legibility for both headlines and body text.
-- Clean and responsive layout optimized for various screen sizes, ensuring a seamless user experience across devices.
-- Simple, professional icons that are consistently styled throughout the application.
-- Subtle, tasteful animations and transitions to enhance user engagement and provide visual feedback during interactions.
+- **Themes:** Supports multiple color themes (Light, Dark, Purple, Blue, Green, Orange, Blue-Gray). Users can switch themes at runtime.
+- **Primary Colors:** Each theme defines its own primary, accent, and background colors for optimal contrast and accessibility.
+- **Fonts:** Uses 'Nunito' for both body and headlines, providing a modern, clean, and highly readable interface.
+- **Layout:** Fully responsive and optimized for all screen sizes.
+- **UI Components:** Consistent use of custom and ShadCN UI components for a cohesive look and feel.
+- **Animations:** Smooth transitions and subtle animations enhance user engagement and feedback.
+- **Accessibility:** All color choices and font sizes are selected for readability and accessibility.
