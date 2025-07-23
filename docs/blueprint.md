@@ -1,4 +1,4 @@
-# **App Name**: Nexus Platform
+# **App Name**: Hustloop Platform
 
 ## Core Features:
 
