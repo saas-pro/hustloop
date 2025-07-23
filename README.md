@@ -31,13 +31,7 @@ This repository contains the high-fidelity, interactive frontend for the Hustloo
 The application uses environment variables for API and Firebase configuration. These should be set in your deployment environment or in a `.env` file (not committed to source control):
 
 - `NEXT_PUBLIC_API_BASE_URL` — The base URL for the backend API (e.g., `https://api.hustloop.com`)
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-- `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
+
 
 ### Deployment
 - The frontend is deployed via **GitHub Pages** using the workflow defined in `.github/workflows/deploy.yml`.
