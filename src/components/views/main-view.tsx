@@ -431,6 +431,7 @@ export default function MainView() {
       {activeView === 'signup' && <SignupModal 
         isOpen={true} 
         setIsOpen={handleModalOpenChange('signup')}
+        onLoginSuccess={handleLoginSuccess}
       />}
       
       {activeView === 'contact' && <ContactView 

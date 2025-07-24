@@ -18,6 +18,7 @@ import {
   getAdditionalUserInfo
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import type { UserRole } from "@/app/types";
 
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -43,13 +44,15 @@ const signupSchema = z.object({
 
 type SignupSchema = z.infer<typeof signupSchema>;
 
+type AuthProvider = 'local' | 'google';
 
 interface SignupModalProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => void;
 }
 
-export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
+export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess }: SignupModalProps) {
     const { toast } = useToast();
     const router = useRouter();
     const { auth } = useFirebaseAuth();
@@ -126,36 +129,42 @@ export default function SignupModal({ isOpen, setIsOpen }: SignupModalProps) {
     };
 
     const handleSocialLogin = async (provider: 'google') => {
-        if (!auth) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available. Please try again later.' });
-            return;
+      if (!auth) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
+          return;
+      }
+      const authProvider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, authProvider);
+        const idToken = await result.user.getIdToken();
+        const response = await fetch(`${API_BASE_URL}/api/login`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${idToken}` },
+        });
+        const data = await response.json();
+  
+        setIsOpen(false);
+        if (data.action === 'complete-profile' && data.token) {
+          router.push(`/complete-profile?token=${data.token}`);
+          return;
         }
-        const authProvider = new GoogleAuthProvider();
-        try {
-            const result = await signInWithPopup(auth, authProvider);
-            const additionalUserInfo = getAdditionalUserInfo(result);
-
-            if (additionalUserInfo?.isNewUser) {
-                toast({ title: "Registration Successful", description: `Welcome, ${result.user.displayName || result.user.email}!` });
-            } else {
-                toast({ title: "Login Successful", description: `Welcome back, ${result.user.displayName || result.user.email}!` });
-            }
-
-            setIsOpen(false);
-            // Optionally update UI or redirect
-        } catch (error: any) {
-            let description = error.message || 'An error occurred while signing in.';
-            if (error.code === 'auth/invalid-api-key' || error.message.includes('api-key-not-valid')) {
-                description = "The provided API key is not valid. Please check your Firebase project configuration."
-            } else if (error.code === 'auth/popup-closed-by-user') {
-                description = "Sign-in was cancelled. Please try again."
-            }
-            toast({
-                variant: 'destructive',
-                title: 'Social Login Failed',
-                description: description,
-            });
+  
+        if (response.ok) {
+          const additionalUserInfo = getAdditionalUserInfo(result);
+          if (additionalUserInfo?.isNewUser) {
+              toast({ title: "Registration Successful", description: `Welcome, ${result.user.displayName || result.user.email}!` });
+          }
+          onLoginSuccess({
+            role: data.role, token: data.token, hasSubscription: data.hasSubscription,
+            name: data.name, email: data.email, authProvider: 'google'
+          });
+        } else {
+          toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
         }
+      } catch (error: any) {
+        let description = error.message || 'An error occurred while signing in.';
+        toast({ variant: 'destructive', title: 'Social Login Failed', description });
+      }
     };
 
   return (
