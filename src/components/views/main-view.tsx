@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
-import { signOut } from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 
 const ModalSkeleton = () => (
@@ -85,12 +85,10 @@ export default function MainView() {
   const searchParams = useSearchParams();
   const { auth } = useFirebaseAuth();
   
-  useEffect(() => {
-    if (typeof window === 'undefined') return; // SSR safety
+  const loadStateFromStorage = useCallback(() => {
+    if (typeof window === 'undefined') return;
 
-    // Migration/version handling
     if (localStorage.getItem('localStorageVersion') !== LOCAL_STORAGE_VERSION) {
-      // Clear only auth/session keys (keep theme, etc.)
       localStorage.removeItem('user');
       localStorage.removeItem('appliedPrograms');
       localStorage.removeItem('isLoggedIn');
@@ -120,15 +118,32 @@ export default function MainView() {
       setHasUsedFreeSession(false);
       setAppliedPrograms(parsedAppliedPrograms);
       if (savedAuthProvider) setAuthProvider(savedAuthProvider);
+    } else {
+        // Clear state if inconsistent
+        setLoggedIn(false);
+        setUserRole(null);
+        setUser(null);
     }
 
     setIsLoading(false);
   }, []);
+  
+  useEffect(() => {
+      loadStateFromStorage();
+      
+      // Listen for the custom storage event
+      window.addEventListener('storage', loadStateFromStorage);
+
+      return () => {
+          window.removeEventListener('storage', loadStateFromStorage);
+      };
+  }, [loadStateFromStorage]);
+
 
   useEffect(() => {
     if (!auth) return;
 
-    const unsubscribe = auth.onAuthStateChanged(async (user: import('firebase/auth').User | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user: import('firebase/auth').User | null) => {
       if (user) {
         // User is signed in, update your state accordingly
         const userData = { name: user.displayName || '', email: user.email || '' };
@@ -212,11 +227,6 @@ export default function MainView() {
   const handleLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
     const { role, token, hasSubscription, name, email, authProvider } = data;
     const userData = { name, email };
-    setLoggedIn(true);
-    setUserRole(role);
-    setUser(userData);
-    setHasSubscription(hasSubscription);
-    setAuthProvider(authProvider);
 
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userRole', role || '');
@@ -224,9 +234,17 @@ export default function MainView() {
     localStorage.setItem('hasSubscription', String(hasSubscription));
     localStorage.setItem('token', token);
     localStorage.setItem('authProvider', authProvider);
-
-    setHasUsedFreeSession(false);
-    setActiveView('dashboard');
+    
+    // Dispatch event to notify app of state change
+    window.dispatchEvent(new Event('storage'));
+    
+    if (!role) {
+        router.push(`/complete-profile?token=${token}`);
+        // Close any open modals
+        setActiveView('home');
+    } else {
+        setActiveView('dashboard');
+    }
   };
 
   const handleLogout = async () => {

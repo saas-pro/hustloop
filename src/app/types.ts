@@ -30,6 +30,7 @@ export type AppUser = {
   role: UserRole;
   auth_provider: 'local' | 'google' | 'linkedin';
   status: UserStatus;
+  email_verified: boolean;
   created_at: string;
 };
 

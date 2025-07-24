@@ -60,9 +60,11 @@ function CompleteProfileForm() {
         localStorage.setItem('token', loginToken);
         localStorage.setItem('authProvider', authProvider);
 
-        toast({ title: "Profile Complete!", description: `Welcome to Hustloop, ${name}!` });
+        // Dispatch a custom event to notify other parts of the app that auth state has changed.
+        window.dispatchEvent(new Event('storage'));
+
+        toast({ title: "Profile Complete!", description: `Welcome to SynergyHub, ${name}!` });
         router.push('/');
-        setTimeout(() => window.location.reload(), 500); // Reload to ensure correct state on main page
     };
 
     const onSubmit = async (values: ProfileSchema) => {
@@ -125,9 +127,8 @@ function CompleteProfileForm() {
               className="flex items-center gap-2 cursor-pointer mb-8"
               onClick={() => router.push('/')}
             >
-              <span className="font-headline text-2xl text-accent">
-                hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
-              </span>
+                <Image src="/logo.png" alt="SynergyHub Logo" width={40} height={40} />
+                <span className="text-2xl font-bold">SynergyHub</span>
             </div>
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
@@ -150,7 +151,7 @@ function CompleteProfileForm() {
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="founder">Founder</SelectItem>
+                                                <SelectItem value="founder">Entrepreneur</SelectItem>
                                                 <SelectItem value="mentor">Mentor</SelectItem>
                                                 <SelectItem value="incubator">Incubator</SelectItem>
                                                 <SelectItem value="msme">MSME</SelectItem>
@@ -160,7 +161,7 @@ function CompleteProfileForm() {
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>
+                            <Button type="submit" className="w-full" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Complete Registration
                             </Button>
