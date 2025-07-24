@@ -142,7 +142,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
             const response = await fetch(`${API_BASE_URL}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (response.ok) {
                 const data = await response.json();
-                setUsers(Array.isArray(data) ? data : data.users || []);
+                setUsers(Array.isArray(data) ? data : data.items || data.users || []);
             } else toast({ variant: 'destructive', title: 'Failed to fetch users' });
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingUsers(false); }
     }, [toast]);
@@ -155,7 +155,7 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
             const response = await fetch(`${API_BASE_URL}/api/subscribers`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (response.ok) {
                 const data = await response.json();
-                setSubscribers(Array.isArray(data) ? data : data.subscribers || []);
+                setSubscribers(Array.isArray(data) ? data : data.items || data.subscribers || []);
             } else toast({ variant: 'destructive', title: 'Failed to fetch subscribers' });
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingSubscribers(false); }
     }, [toast]);
