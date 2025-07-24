@@ -128,7 +128,11 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                     throw new Error('Failed to fetch MSME data.');
                 }
                 const data = await response.json();
-                setCorporateChallenges(data.corporateChallenges || []);
+                setCorporateChallenges(
+                  Array.isArray(data.corporateChallenges)
+                    ? data.corporateChallenges
+                    : data.corporateChallenges?.items || []
+                );
                 setMsmeCollaborations(data.msmeCollaborations || []);
             } catch (err: any) {
                 // Fallback static data

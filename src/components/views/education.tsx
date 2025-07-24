@@ -90,7 +90,7 @@ export default function EducationView({ isOpen, onOpenChange, onApplicationSucce
                     throw new Error("Failed to fetch education programs.");
                 }
                 const data = await response.json();
-                setEducationPrograms(data);
+                setEducationPrograms(Array.isArray(data) ? data : data.items || []);
             } catch (err: any) {
                  setError(err.message || "An unexpected error occurred.");
             } finally {

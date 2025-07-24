@@ -90,7 +90,7 @@ export default function MentorsView({ isOpen, onOpenChange, isLoggedIn, hasSubsc
                     throw new Error('Failed to fetch mentors.');
                 }
                 const data = await response.json();
-                setMentors(data);
+                setMentors(Array.isArray(data) ? data : data.items || []);
             } catch (err: any) {
                 setMentors([]); // No fallback mentors, show Coming Soon
                 setError(null); // Hide error, show fallback
