@@ -48,7 +48,7 @@ interface LoginModalProps {
   onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => void;
 }
 
-export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess,setActiveView }: LoginModalProps) {
+export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveView, onLoginSuccess }: LoginModalProps) {
   const { toast } = useToast();
   const router = useRouter();
   const { auth } = useFirebaseAuth();
