@@ -236,7 +236,7 @@ export default function LoginModal({ isOpen, setIsOpen, onLoginSuccess,setActive
             <div className="flex justify-center items-center">
               <div>
                 <Button variant="link" type="button" className="text-xs block p-0 h-auto" onClick={() => { handleAuthClick('signup'); }}>
-                  Don't have an account? Sign Up
+                  {`Don't have an account? Sign Up`}
                 </Button>
               </div>
             </div>

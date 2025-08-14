@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Image from 'next/image';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -105,9 +106,11 @@ export const FloatingIcon: React.FC<FloatingIconProps> = ({
         zIndex: 10,
       }}
     >
-      <img
+      <Image
         src={src}
         alt={alt}
+        width={100}
+        height={100}
         style={{ width: '100%', height: '100%' }}
         className="object-contain"
       />
