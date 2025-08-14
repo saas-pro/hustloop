@@ -15,7 +15,7 @@ This repository contains the high-fidelity, interactive frontend for the Hustloo
 - **AI Integration**: Includes a Genkit-powered flow to demonstrate AI content summarization capabilities.
 - **Light/Dark Mode**: A persistent, user-toggleable theme for improved accessibility and user comfort.
 
-## Tech Stack
+ Tech Stack
 
 - **Framework**: [Next.js](https://nextjs.org/) 14 (App Router)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
