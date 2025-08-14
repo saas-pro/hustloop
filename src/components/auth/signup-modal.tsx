@@ -12,13 +12,13 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { 
-  GoogleAuthProvider,
-  signInWithPopup,
-  getAdditionalUserInfo
+import {
+    GoogleAuthProvider,
+    signInWithPopup,
+    getAdditionalUserInfo
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import type { UserRole } from "@/app/types";
+import type { UserRole, View } from "@/app/types";
 
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -47,12 +47,14 @@ type SignupSchema = z.infer<typeof signupSchema>;
 type AuthProvider = 'local' | 'google';
 
 interface SignupModalProps {
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-  onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => void;
+    isOpen: boolean;
+    activeView: View;
+    setActiveView: (view: View) => void;
+    setIsOpen: (isOpen: boolean) => void;
+    onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => void;
 }
 
-export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess }: SignupModalProps) {
+export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActiveView }: SignupModalProps) {
     const { toast } = useToast();
     const router = useRouter();
     const { auth } = useFirebaseAuth();
@@ -64,7 +66,24 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess }: Signu
             password: "",
         },
     });
-    
+
+    const preloadRecaptcha = () => {
+        const scriptId = 'recaptcha-preload-link';
+        if (!document.getElementById(scriptId)) {
+            const link = document.createElement('link');
+            link.id = scriptId;
+            link.rel = 'preload';
+            link.as = 'script';
+            link.href = 'https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI';
+            document.head.appendChild(link);
+        }
+    };
+
+    const handleAuthClick = (view: 'login' | 'signup') => {
+        preloadRecaptcha();
+        setActiveView(view);
+    };
+
     const { formState: { isSubmitting }, getValues } = form;
 
     const handleResendVerification = async () => {
@@ -104,7 +123,7 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess }: Signu
                 });
                 setIsOpen(false);
             } else {
-                 if (data.action === 'resend_verification') {
+                if (data.action === 'resend_verification') {
                     toast({
                         variant: "destructive",
                         title: "Registration Failed",
@@ -129,122 +148,129 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess }: Signu
     };
 
     const handleSocialLogin = async (provider: 'google') => {
-      if (!auth) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
-          return;
-      }
-      const authProvider = new GoogleAuthProvider();
-      try {
-        const result = await signInWithPopup(auth, authProvider);
-        const idToken = await result.user.getIdToken();
-        const response = await fetch(`${API_BASE_URL}/api/login`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${idToken}` },
-        });
-        const data = await response.json();
-  
-        setIsOpen(false);
-        if (data.action === 'complete-profile' && data.token) {
-          router.push(`/complete-profile?token=${data.token}`);
-          return;
+        if (!auth) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
+            return;
         }
-  
-        if (response.ok) {
-          const additionalUserInfo = getAdditionalUserInfo(result);
-          if (additionalUserInfo?.isNewUser) {
-              toast({ title: "Registration Successful", description: `Welcome, ${result.user.displayName || result.user.email}!` });
-          }
-          onLoginSuccess({
-            role: data.role, token: data.token, hasSubscription: data.hasSubscription,
-            name: data.name, email: data.email, authProvider: 'google'
-          });
-        } else {
-          toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
+        const authProvider = new GoogleAuthProvider();
+        try {
+            const result = await signInWithPopup(auth, authProvider);
+            const idToken = await result.user.getIdToken();
+            const response = await fetch(`${API_BASE_URL}/api/login`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${idToken}` },
+            });
+            const data = await response.json();
+
+            setIsOpen(false);
+            if (data.action === 'complete-profile' && data.token) {
+                router.push(`/complete-profile?token=${data.token}`);
+                return;
+            }
+
+            if (response.ok) {
+                const additionalUserInfo = getAdditionalUserInfo(result);
+                if (additionalUserInfo?.isNewUser) {
+                    toast({ title: "Registration Successful", description: `Welcome, ${result.user.displayName || result.user.email}!` });
+                }
+                onLoginSuccess({
+                    role: data.role, token: data.token, hasSubscription: data.hasSubscription,
+                    name: data.name, email: data.email, authProvider: 'google'
+                });
+            } else {
+                toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
+            }
+        } catch (error: any) {
+            let description = error.message || 'An error occurred while signing in.';
+            toast({ variant: 'destructive', title: 'Social Login Failed', description });
         }
-      } catch (error: any) {
-        let description = error.message || 'An error occurred while signing in.';
-        toast({ variant: 'destructive', title: 'Social Login Failed', description });
-      }
     };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-lg auth-modal-glow overflow-hidden">
-        <DialogHeader className="text-center">
-          <DialogTitle>Create an Account</DialogTitle>
-          <DialogDescription>
-            Join hustloop to start your journey.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="grid grid-cols-1 gap-4">
-             <Button variant="outline" onClick={() => handleSocialLogin('google')}><GoogleIcon className="mr-2 h-4 w-4" /> Sign up with Google</Button>
-        </div>
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="sm:max-w-lg auth-modal-glow overflow-hidden">
+                <DialogHeader className="text-center">
+                    <DialogTitle>Create an Account</DialogTitle>
+                    <DialogDescription>
+                        Join hustloop to start your journey.
+                    </DialogDescription>
+                </DialogHeader>
 
-        <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background/80 px-2 text-muted-foreground backdrop-blur-sm">
-                    Or continue with
-                </span>
-            </div>
-        </div>
+                <div className="grid grid-cols-1 gap-4">
+                    <Button variant="outline" onClick={() => handleSocialLogin('google')}><GoogleIcon className="mr-2 h-4 w-4" /> Sign up with Google</Button>
+                </div>
 
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSignup)} className="space-y-4">
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Your Name" {...field} disabled={isSubmitting} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                                <Input type="email" placeholder="you@example.com" {...field} disabled={isSubmitting} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                                <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} />
-                            </FormControl>
-                            <p className="text-xs text-muted-foreground">
-                                Must be at least 10 characters and contain an uppercase, lowercase, number, and special character.
-                            </p>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-              <DialogFooter className="pt-4">
-                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Account
-                </Button>
-              </DialogFooter>
-            </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background/80 px-2 text-muted-foreground backdrop-blur-sm">
+                            Or continue with
+                        </span>
+                    </div>
+                </div>
+
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSignup)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Name</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Your Name" {...field} disabled={isSubmitting} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                        <Input type="email" placeholder="you@example.com" {...field} disabled={isSubmitting} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Password</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} />
+                                    </FormControl>
+                                    <p className="text-xs text-muted-foreground">
+                                        Must be at least 10 characters and contain an uppercase, lowercase, number, and special character.
+                                    </p>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <DialogFooter className="pt-4">
+                            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Create Account
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                    <div className="flex justify-center items-center">
+                            <div>
+                                <Button variant="link" type="button" className="text-xs block p-0 h-auto" onClick={() => { handleAuthClick('login'); }}>
+                                    Already have an account? Log In
+                                </Button>
+                            </div>
+                        </div>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
 }

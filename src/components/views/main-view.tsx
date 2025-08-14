@@ -10,7 +10,8 @@ import HomeView from "@/components/views/home";
 import type { View, UserRole } from "@/app/types";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent,DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Loader2 } from "lucide-react";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
@@ -18,7 +19,10 @@ import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 const ModalSkeleton = () => (
   <Dialog open={true}>
     <DialogContent className="flex items-center justify-center h-64 bg-transparent border-none shadow-none">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      <VisuallyHidden>
+        <DialogTitle>Profile Settings</DialogTitle>
+      </VisuallyHidden>
+      <Loader2 className="h-16 w-16 animate-spin text-primary" />
     </DialogContent>
   </Dialog>
 );
@@ -38,8 +42,8 @@ const EducationView = dynamic(() => import('@/components/views/education'), { lo
 const ContactView = dynamic(() => import('@/components/views/contact'), { loading: () => <ModalSkeleton /> });
 
 type User = {
-    name: string;
-    email: string;
+  name: string;
+  email: string;
 }
 type AuthProvider = 'local' | 'google';
 
@@ -84,7 +88,7 @@ export default function MainView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { auth } = useFirebaseAuth();
-  
+
   const loadStateFromStorage = useCallback(() => {
     if (typeof window === 'undefined') return;
 
@@ -119,24 +123,24 @@ export default function MainView() {
       setAppliedPrograms(parsedAppliedPrograms);
       if (savedAuthProvider) setAuthProvider(savedAuthProvider);
     } else {
-        // Clear state if inconsistent
-        setLoggedIn(false);
-        setUserRole(null);
-        setUser(null);
+      // Clear state if inconsistent
+      setLoggedIn(false);
+      setUserRole(null);
+      setUser(null);
     }
 
     setIsLoading(false);
   }, []);
-  
-  useEffect(() => {
-      loadStateFromStorage();
-      
-      // Listen for the custom storage event
-      window.addEventListener('storage', loadStateFromStorage);
 
-      return () => {
-          window.removeEventListener('storage', loadStateFromStorage);
-      };
+  useEffect(() => {
+    loadStateFromStorage();
+
+    // Listen for the custom storage event
+    window.addEventListener('storage', loadStateFromStorage);
+
+    return () => {
+      window.removeEventListener('storage', loadStateFromStorage);
+    };
   }, [loadStateFromStorage]);
 
 
@@ -202,20 +206,25 @@ export default function MainView() {
     return () => unsubscribe();
   }, [auth]);
 
+  const [navOpen, setNavOpen] = useState<boolean>(false);
+
+
+
+
   useEffect(() => {
     const from = searchParams.get('from');
     const action = searchParams.get('action');
 
     if (action === 'login' && (from === 'verification_success' || from === 'reset_success')) {
-        const title = from === 'verification_success' ? "Verification Successful!" : "Password Reset Successful";
-        const description = from === 'verification_success' ? "Your email has been verified. Please log in to continue." : "Please log in with your new password.";
-        
-        toast({ title, description });
-        setActiveView('login');
-        router.replace('/');
+      const title = from === 'verification_success' ? "Verification Successful!" : "Password Reset Successful";
+      const description = from === 'verification_success' ? "Your email has been verified. Please log in to continue." : "Please log in with your new password.";
+
+      toast({ title, description });
+      setActiveView('login');
+      router.replace('/');
     }
   }, [searchParams, router, toast]);
-  
+
   const handleModalOpenChange = (view: View) => (isOpen: boolean) => {
     if (!isOpen) {
       setActiveView("home");
@@ -234,42 +243,42 @@ export default function MainView() {
     localStorage.setItem('hasSubscription', String(hasSubscription));
     localStorage.setItem('token', token);
     localStorage.setItem('authProvider', authProvider);
-    
+
     // Dispatch event to notify app of state change
     window.dispatchEvent(new Event('storage'));
-    
+
     if (!role) {
-        router.push(`/complete-profile?token=${token}`);
-        // Close any open modals
-        setActiveView('home');
+      router.push(`/complete-profile?token=${token}`);
+      // Close any open modals
+      setActiveView('home');
     } else {
-        setActiveView('dashboard');
+      setActiveView('dashboard');
     }
   };
 
   const handleLogout = async () => {
     if (!auth) return;
     try {
-        await signOut(auth);
-        setLoggedIn(false);
-        setUserRole(null);
-        setUser(null);
-        setHasSubscription(false);
-        setAppliedPrograms({});
-        setAuthProvider(null);
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('user');
-        localStorage.removeItem('hasSubscription');
-        localStorage.removeItem('appliedPrograms');
-        localStorage.removeItem('token');
-        localStorage.removeItem('authProvider');
-        setActiveView('home');
-        router.push('/');
-        toast({ title: "Logged Out", description: "You have been successfully logged out." });
+      await signOut(auth);
+      setLoggedIn(false);
+      setUserRole(null);
+      setUser(null);
+      setHasSubscription(false);
+      setAppliedPrograms({});
+      setAuthProvider(null);
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('user');
+      localStorage.removeItem('hasSubscription');
+      localStorage.removeItem('appliedPrograms');
+      localStorage.removeItem('token');
+      localStorage.removeItem('authProvider');
+      setActiveView('home');
+      router.push('/');
+      toast({ title: "Logged Out", description: "You have been successfully logged out." });
     } catch (error) {
-        console.error("Logout failed:", error);
-        toast({ variant: "destructive", title: "Logout Failed", description: "Could not log out. Please try again." });
+      console.error("Logout failed:", error);
+      toast({ variant: "destructive", title: "Logout Failed", description: "Could not log out. Please try again." });
     }
   };
 
@@ -282,7 +291,7 @@ export default function MainView() {
       description: `Your session with ${mentorName} on ${format(date, 'PPP')} at ${time} is booked.`,
     });
   };
-  
+
   const handleGetStartedOnPricing = () => {
     if (isLoggedIn) {
       setHasSubscription(true);
@@ -296,7 +305,7 @@ export default function MainView() {
       setActiveView('signup');
     }
   };
-  
+
   const handleEducationApplicationSuccess = (programTitle: string, session: { language: string, date: string, time: string }) => {
     const newAppliedPrograms = {
       ...appliedPrograms,
@@ -316,7 +325,7 @@ export default function MainView() {
       return null;
     }
 
-    switch(userRole) {
+    switch (userRole) {
       case 'mentor':
         return (
           <MentorDashboardView
@@ -338,19 +347,19 @@ export default function MainView() {
         );
       case 'msme':
         return (
-            <MsmeDashboardView
-                isOpen={true}
-                onOpenChange={() => setActiveView('home')}
-                user={user}
-                authProvider={authProvider}
-            />
+          <MsmeDashboardView
+            isOpen={true}
+            onOpenChange={() => setActiveView('home')}
+            user={user}
+            authProvider={authProvider}
+          />
         );
       case 'founder':
       case 'admin':
         return (
           <DashboardView
             isOpen={true}
-            onOpenChange={() => setActiveView('home')} 
+            onOpenChange={() => setActiveView('home')}
             user={user}
             userRole={userRole}
             authProvider={authProvider}
@@ -363,24 +372,36 @@ export default function MainView() {
     }
   }
 
+
+
   return (
-    <>
+
+    <div className="overflow-hidden relative flex flex-col min-h-screen bg-background text-foreground" data-overlayscrollbars-initialize data-overlayscrollbars="host">
       <Header
         activeView={activeView}
         setActiveView={setActiveView}
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}
         isLoading={isLoading}
+        navOpen={navOpen}
+        setNavOpen={(value: boolean) => { setNavOpen(value); }}
       />
-      <main className="flex-grow">
-        <HomeView setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
+
+      <main
+        className="view relative z-40 h-screen w-screen flex-grow ultrawide-fix m-auto pointer-events-auto"
+        id="main-view"
+      >
+        <section className={`h-screen`}>
+          <HomeView setActiveView={setActiveView} isLoggedIn={isLoggedIn} navOpen={navOpen} />
+        </section>
+
       </main>
-      <Footer />
+
 
       {activeView === 'blog' && <BlogView isOpen={true} onOpenChange={handleModalOpenChange('blog')} />}
-      
-      {activeView === 'mentors' && <MentorsView 
-        isOpen={true} 
+
+      {activeView === 'mentors' && <MentorsView
+        isOpen={true}
         onOpenChange={handleModalOpenChange('mentors')}
         isLoggedIn={isLoggedIn}
         hasSubscription={hasSubscription}
@@ -388,56 +409,60 @@ export default function MainView() {
         onBookingSuccess={handleBookingSuccess}
         setActiveView={setActiveView}
       />}
-      
-      {activeView === 'incubators' && <IncubatorsView 
-        isOpen={true} 
-        onOpenChange={handleModalOpenChange('incubators')} 
+
+      {activeView === 'incubators' && <IncubatorsView
+        isOpen={true}
+        onOpenChange={handleModalOpenChange('incubators')}
         isLoggedIn={isLoggedIn}
         hasSubscription={hasSubscription}
         setActiveView={setActiveView}
       />}
-      
-      {activeView === 'pricing' && <PricingView 
-        isOpen={true} 
+
+      {activeView === 'pricing' && <PricingView
+        isOpen={true}
         onOpenChange={handleModalOpenChange('pricing')}
         onGetStartedClick={handleGetStartedOnPricing}
       />}
-      
-      {activeView === 'msmes' && <MsmesView 
-        isOpen={true} 
+
+      {activeView === 'msmes' && <MsmesView
+        isOpen={true}
         onOpenChange={handleModalOpenChange('msmes')}
         isLoggedIn={isLoggedIn}
         hasSubscription={hasSubscription}
         setActiveView={setActiveView}
       />}
-      
-      {activeView === 'education' && <EducationView 
-        isOpen={true} 
-        onOpenChange={handleModalOpenChange('education')} 
+
+      {activeView === 'education' && <EducationView
+        isOpen={true}
+        onOpenChange={handleModalOpenChange('education')}
         onApplicationSuccess={handleEducationApplicationSuccess}
         isLoggedIn={isLoggedIn}
         setActiveView={setActiveView}
         appliedPrograms={appliedPrograms}
       />}
-      
+
       {renderDashboard()}
 
-      {activeView === 'login' && <LoginModal 
-        isOpen={true} 
-        setIsOpen={handleModalOpenChange('login')} 
+      {activeView === 'login' && <LoginModal
+        isOpen={true}
+        setIsOpen={handleModalOpenChange('login')}
         onLoginSuccess={handleLoginSuccess}
+        setActiveView={setActiveView} // so you can switch to signup inside signup modal
+        activeView={activeView}
       />}
-      
-      {activeView === 'signup' && <SignupModal 
-        isOpen={true} 
+
+      {activeView === 'signup' && <SignupModal
+        isOpen={true}
         setIsOpen={handleModalOpenChange('signup')}
         onLoginSuccess={handleLoginSuccess}
+        setActiveView={setActiveView} // so you can switch to login inside login modal
+        activeView={activeView}
       />}
-      
-      {activeView === 'contact' && <ContactView 
+
+      {activeView === 'contact' && <ContactView
         isOpen={true}
         onOpenChange={handleModalOpenChange('contact')}
       />}
-    </>
+    </div>
   );
 }

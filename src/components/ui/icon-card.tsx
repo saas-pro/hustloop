@@ -13,7 +13,7 @@ const IconCard = React.forwardRef<HTMLDivElement, IconCardProps>(
     <Card
       ref={ref}
       className={cn(
-        'group flex flex-col text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20',
+        'group flex flex-col text-left transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20',
         className
       )}
       {...props}

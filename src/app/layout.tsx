@@ -1,10 +1,12 @@
 
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import TwinklingStars from '@/components/layout/twinkling-stars';
 import Script from 'next/script';
 import { ThemeProvider } from '@/components/theme-provider';
+
 
 export const metadata: Metadata = {
   title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
@@ -22,9 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body className="antialiased bg-background font-sans">
+      <body className="bg-background font-sans">
         <ThemeProvider>
-          <div className="flex flex-col min-h-screen">
+          <div className="flex-grow ">
             <TwinklingStars />
             {children}
           </div>
@@ -51,12 +53,12 @@ export default function RootLayout({
             
             var d = document;
             var s = d.createElement("script");
-s.type = "text/javascript";
-s.id = "zsiqscript";
-s.defer = true;
-s.src = "https://salesiq.zohopublic.in/widget";
+            s.type = "text/javascript";
+            s.id = "zsiqscript";
+            s.defer = true;
+            s.src = "https://salesiq.zohopublic.in/widget";
             var t = d.getElementsByTagName("script")[0];
-t.parentNode.insertBefore(s, t);
+            t.parentNode.insertBefore(s, t);
           `}
         </Script>
       </body>
