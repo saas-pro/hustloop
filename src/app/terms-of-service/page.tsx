@@ -24,6 +24,8 @@ export default function TermsOfServicePage() {
     onLogout: () => {},
     isLoading: false, // Set to false as we are not checking auth status on this page
     isStaticPage: true,
+    navOpen: false,
+    setNavOpen: () => {},
   };
 
   return (

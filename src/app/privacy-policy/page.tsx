@@ -6,6 +6,7 @@ import Footer from '@/components/layout/footer';
 import Header from '@/components/layout/header';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState, useEffect } from 'react';
+import { set } from 'date-fns';
 
 export default function PrivacyPolicyPage() {
   const [lastUpdated, setLastUpdated] = useState('');
@@ -23,6 +24,8 @@ export default function PrivacyPolicyPage() {
     onLogout: () => {},
     isLoading: false, // Set to false as we are not checking auth status on this page
     isStaticPage: true,
+    navOpen: false,
+    setNavOpen: () => {},
   };
 
   return (
