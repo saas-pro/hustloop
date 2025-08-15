@@ -133,7 +133,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
 
         return (
             <div
-                className="flex flex-col items-center gap-3 cursor-pointer"
+                className="flex flex-col items-center gap-3 cursor-pointer "
                 onClick={handleLogoClick}
             >
                 <Image
@@ -141,7 +141,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     alt="Hustloop logo"
                     width={120}
                     height={48}
-                    className="h-12 w-fit min-w-[120px] max-w-[200px] object-contain "
+                    className="h-12 w-fit min-w-[120px] max-w-[200px] object-contain"
                 />
                 {!inSheet && (
                     <>
@@ -158,24 +158,22 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
     return (
         <div className={`relative z-50 ${navOpen ? '' : 'pointer-events-none cursor-none'}`} >
             <nav className="menu hidden md:flex">
-
                 <DesktopNav
                     activeView={activeView}
                     setActiveView={setActiveView}
-                    isLoggedIn={false}
-                    onLogout={() => console.log("Logged out")}
-                    isLoading={false}
+                    isLoggedIn={isLoggedIn}
+                    onLogout={onLogout}
+                    isLoading={isLoading}
                     navOpen={navOpen}
                     setNavOpen={setNavOpen}
                 />
-
             </nav >
             <nav className="menu flex md:hidden">
                 <MobileNav activeView={activeView}
                     setActiveView={setActiveView}
-                    isLoggedIn={false}
-                    onLogout={() => console.log("Logged out")}
-                    isLoading={false}
+                    isLoggedIn={isLoggedIn}
+                    onLogout={onLogout}
+                    isLoading={isLoading}
                     navOpen={navOpen}
                     setNavOpen={setNavOpen} />
             </nav>

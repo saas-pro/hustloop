@@ -13,7 +13,6 @@ import { Separator } from '@radix-ui/react-separator';
 import Image from 'next/image';
 
 
-
 interface DesktopNavProps {
     activeView: View;
     setActiveView: (view: View) => void;

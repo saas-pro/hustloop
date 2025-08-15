@@ -4,7 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuIte
 import React, { use, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Palette, Check, Loader2, UserCircle, LogOut, Droplet, Leaf, Flame, Cloud } from 'lucide-react';
+import { Sun, Moon, Palette, Check, Loader2, UserCircle, LogOut, Droplet, Leaf, Flame, Cloud, Mail } from 'lucide-react';
 import { View } from '@/app/types';
 import { cn } from '@/lib/utils';
 import { useRouter, usePathname } from "next/navigation";
@@ -40,13 +40,13 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
 export function ThemeToggleDropdown() {
     const { theme, setTheme } = useTheme();
     const themeOptions = [
-        { value: 'light', label: 'Light', icon: Sun },
-        { value: 'dark', label: 'Dark', icon: Moon },
+        { value: 'light', label: 'Light', icon: Palette },
+        { value: 'dark', label: 'Dark', icon: Palette },
         { value: 'purple', label: 'Purple', icon: Palette },
-        { value: 'blue', label: 'Blue', icon: Droplet },
-        { value: 'green', label: 'Green', icon: Leaf },
-        { value: 'orange', label: 'Orange', icon: Flame },
-        { value: 'blue-gray', label: 'Blue Gray', icon: Cloud },
+        { value: 'blue', label: 'Blue', icon: Palette },
+        { value: 'green', label: 'Green', icon: Palette },
+        { value: 'orange', label: 'Orange', icon: Palette },
+        { value: 'blue-gray', label: 'Blue Gray', icon: Palette },
     ];
 
 
@@ -198,90 +198,100 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
             container.removeEventListener("mousemove", handleMouseMove);
             container.removeEventListener("mouseleave", handleMouseLeave);
         };
-    }, []);
-
+    }, [isStaticPage, isLoading, isLoggedIn]);
+    const email = "support@hustloop.com"
     return (
-        <div >
-
-
-            <div className="toggle fixed z-50 justify-end items-center flex gap-8 w-screen pointer-events-none top-4 -left-8">
+        <div>
+            <div className="toggle fixed z-50">
                 {/* Magnetic CTA Button */}
-                <div className="hidden md:flex items-center gap-4 pointer-events-auto">
-                    {!isStaticPage && (
-                        <>
-                            {isLoading ? (
-                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                            ) : isLoggedIn ? (
-                                <>
-                                    <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
-                                        <UserCircle className="h-6 w-6" />
-                                        <span className="sr-only">Dashboard</span>
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={onLogout}>
-                                        <LogOut className="h-6 w-6" />
-                                        <span className="sr-only">Logout</span>
-                                    </Button>
-                                </>
-                            ) : (
-                                <div
-                                    ref={containerRef}
-                                    className='.btn-container1'
-                                >
-                                    <button
-                                        onClick={() => handleAuthClick('login')}
-                                        ref={buttonRef}
-                                        className='login-btn bg-accent hover:bg-accent/90 text-accent-foreground'
+                <div className='flex justify-end fixed items-center gap-8 w-[90%] pointer-events-none top-4'>
+                    <div className="hidden md:flex items-center gap-4 pointer-events-auto">
+                        {!isStaticPage && (
+                            <>
+                                {isLoading ? (
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                ) : isLoggedIn ? (
+                                    <>
+                                        <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
+                                            <UserCircle className="h-6 w-6" />
+                                            <span className="sr-only">Dashboard</span>
+                                        </Button>
+                                        <Button variant="ghost" size="icon" onClick={onLogout}>
+                                            <LogOut className="h-6 w-6" />
+                                            <span className="sr-only">Logout</span>
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <div
+                                        ref={containerRef}
+                                        className='.btn-container1'
                                     >
-                                        Login
-                                    </button>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-                {/* Menu Button */}
-                <div>
-                    <button
-                        id="menu-button"
-                        ref={btnRef}
-                        aria-label="Menu"
-                        onClick={() => {
-                            document.body.classList.toggle('nav-open');
-                            setNavOpen(!navOpen);
+                                        <button
+                                            onClick={() => handleAuthClick('login')}
+                                            ref={buttonRef}
+                                            className='login-btn bg-accent hover:bg-accent/90 text-accent-foreground '
+                                        >   Login
 
-                        }}
-                        className="z-10 relative xl:inline-block w-[3.5rem] rounded-xl border border-solid pointer-events-auto"
-                    >
-                        <svg
-                            className="ham hamRotate pointer-events-none w-full h-full select-none transition-colors relative text-foreground"
-                            viewBox="0 0 100 100"
-                            width="80"
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                    {/* Menu Button */}
+                    <div className='flex items-center justify-center'>
+                        <button
+                            id="menu-button"
+                            ref={btnRef}
+                            aria-label="Menu"
+                            onClick={() => {
+                                document.body.classList.toggle('nav-open');
+                                setNavOpen(!navOpen);
+                            }}
+                            className="z-10 relative xl:inline-block w-[3.5rem] h-[3.5rem] rounded-xl border border-solid  box-border pointer-events-auto"
                         >
-                            <path
-                                className="line top"
-                                stroke="currentColor"
-                                d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20"
-                            />
-                            <path
-                                className="line middle"
-                                stroke="currentColor"
-                                d="m 70,50 h -40"
-                            />
-                            <path
-                                className="line bottom"
-                                stroke="currentColor"
-                                d="m 30,67 h 40 c 0,0 8.5,0.149796 8.5,-8.5 0,-8.649796 -8.5,-8.5 -8.5,-8.5 h -20 v 20"
-                            />
-                        </svg>
-                    </button>
+                            <svg
+                                className="ham hamRotate pointer-events-none w-full h-full select-none transition-colors relative text-foreground"
+                                viewBox="0 0 100 100"
+                                width="80"
+                            >
+                                <path
+                                    className="line top"
+                                    stroke="currentColor"
+                                    d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20"
+                                />
+                                <path
+                                    className="line middle"
+                                    stroke="currentColor"
+                                    d="m 70,50 h -40"
+                                />
+                                <path
+                                    className="line bottom"
+                                    stroke="currentColor"
+                                    d="m 30,67 h 40 c 0,0 8.5,0.149796 8.5,-8.5 0,-8.649796 -8.5,-8.5 -8.5,-8.5 h -20 v 20"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div className="relative pointer-events-auto typeform-trigger rounded-xl border border-solid box-border w-[3.5rem] h-[3.5rem] flex items-center justify-center cursor-pointer hover:bg-accent/10 transition-colors">
+                        <ThemeToggleDropdown />
+                    </div>
+
                 </div>
-
-                <div className="relative pointer-events-auto typeform-trigger">
-
-                    <ThemeToggleDropdown />
+                <div className="flex justify-end fixed items-center gap-8 bg-transparent w-[90%] pointer-events-auto top-24">
+                    <div className="pointer-events-auto typeform-trigger rounded-full border border-solid w-[3.5rem] h-[3.5rem] flex items-center justify-center hover:bg-accent/10 transition-colors">
+                        <a
+                            href={`mailto:${email}`}
+                            className="group flex items-center justify-center w-full h-full cursor-pointer"
+                        >
+                            <Mail
+                                size={24}
+                                className="text-accent transition-transform duration-200 group-hover:scale-110 group-hover:rotate-6"
+                            />
+                        </a>
+                    </div>
                 </div>
-
-
 
             </div>
 

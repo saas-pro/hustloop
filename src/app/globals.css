@@ -97,13 +97,12 @@
   }
 
   .login-btn {
-    
-    padding: 0.6rem 1.5rem;
+    width: 6.5rem;
+    height: 3.5rem;
     font-size: 1.2rem;
     color: #fff;
     border: none;
     border-radius: 12px;
-    
   }
 
   .theme-purple {

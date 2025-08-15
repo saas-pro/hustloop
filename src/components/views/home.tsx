@@ -3,7 +3,7 @@ import GlowingText from "@/components/ui/GlowingText";
 import { FloatingIcon } from "../ui/floating-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Briefcase, PlayCircle, Star, Award, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User } from "lucide-react";
+import { Lightbulb, Briefcase, PlayCircle, Star, Award, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import * as React from "react";
@@ -187,18 +187,18 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
     };
     return (
       <div
-        className="flex items-center z-[1000] gap-3 relative top-4 left-4 "
+        className="flex justify-left items-center z-[1000] gap-2 relative top-5 left-4 md:left-40"
         onClick={handleLogoClick}
       >
         <Image
           src="/logo.png"
           alt="Hustloop logo"
           width={120}
-          height={48}
-          className="h-12 w-auto min-w-[120px] max-w-[200px] object-contain cursor-pointer"
+          height={120}
+          className=" w-auto min-w-[120px] max-w-[200px] h-15 object-contain cursor-pointer"
         />
         {!inSheet && (
-          <div className="absolute top-2 left-36 flex items-center gap-2">
+          <div className=" flex items-center gap-2">
             <Separator orientation="vertical" className="h-6 bg-border w-0.5" />
             <p className="text-xs text-muted-foreground ">
               Smart hustle. <br /> Infinite growth..
@@ -217,13 +217,14 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
       <BrandLogo></BrandLogo>
 
       {/* Particles Layer */}
-      <div className="z-10 container mx-auto grid lg:grid-cols-2 gap-24 items-center h-screen justify-center px-4 py-16 md:py-20">
+      <div className="z-10 container mx-auto grid  gap-24 items-center h-screen justify-center px-4 py-16 md:py-20">
         {/* Left content */}
-        <div className="text-center lg:text-left">
+        <div className="text-center lg:text-center">
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight font-headline">
             Empowering Tomorrow&apos;s{' '}
-            <span className="relative inline-block">
-              <GlowingText>Innovators</GlowingText>
+            <br /><span className="relative inline-block text-primary">
+
+              Innovators
               <svg
                 className="absolute w-[80px] md:w-[117px] right-0 -bottom-[8px] md:-bottom-[12px] pointer-events-none"
                 aria-hidden="true"
@@ -241,7 +242,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
               </svg>
             </span>
           </h1>
-          <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0">
+          <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto">
             Hustloop is your launchpad for success. We connect visionary entrepreneurs with elite mentors, top-tier incubators, and strategic MSME partners to fuel innovation and accelerate growth.
           </p>
           {isLoggedIn ? (
@@ -256,32 +257,15 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
         </div>
 
         {/* Right banner with floating icons */}
-        <div className="relative hidden lg:flex items-center justify-center">
+        {/* <div className="relative hidden lg:flex items-center justify-center">
           <div className="relative flex items-center justify-center">
             <div className="bg-transparent flex items-center justify-center text-center z-10">
-              <div className="flex flex-col items-center justify-center relative">
-                {floatingIcons.map((icon, index) => (
-                  <FloatingIcon
-                    src={icon.src}
-                    key={index}
-                    top={icon.top}
-                    left={icon.left}
-                    delay={icon.delay}
-                    index={index}
-                    right={icon.right}
-                    bottom={icon.bottom}
-                    duration={icon.duration}
-                    size={icon.size}
-                  />
-                ))}
-                <Image src="/images/banner12.png" height={100} width={100} alt="banner" style={{ height: "542px", width: "602px" }} />
-              </div>
+              
             </div>
           </div>
 
-          {/* Floating badges */}
           <div className="absolute inset-0 pointer-events-none z-40"></div>
-        </div>
+        </div> */}
       </div>
     </section>
 
@@ -296,11 +280,12 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
     defaultValues: { fullName: "", email: "", phone: "", message: "" },
   });
 
-  
+
 
   const { formState: { isSubmitting: isContactSubmitting }, reset: resetContactForm } = contactForm;
 
   async function onContactSubmit(data: ContactFormValues) {
+    console.log(data)
     try {
       const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
@@ -309,6 +294,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
         },
         body: JSON.stringify(data),
       });
+
 
       const result = await response.json();
 
@@ -578,33 +564,43 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                     <div className="flex flex-col items-center justify-center min-h-[300px] lg:min-h-[400px]">
                       {/* Mobile view - Vertical layout */}
                       <div className="block lg:hidden w-full">
-                        <div className="space-y-6">
+                        <div className="relative space-y-6">
                           {currentSteps.map((step, index) => {
                             const isLast = index === currentSteps.length - 1;
                             return (
-                              <div key={step.title} className="relative">
-                                {/* Connecting line */}
-                                {!isLast && (
-                                  <div className="absolute left-8 top-16 w-0.5 h-6 bg-border"></div>
-                                )}
+                              <div key={step.title} className="relative flex">
+                                {/* Icon with line */}
+                                <div className="relative flex flex-col items-center mr-4">
+                                  <div
+                                    className={cn(
+                                      "flex size-16 items-center justify-center rounded-full border-2 bg-background shadow-lg shrink-0 z-10",
+                                      isLast ? "border-flow-accent" : "border-primary"
+                                    )}
+                                  >
+                                    <step.icon
+                                      className={cn("size-8", isLast ? "text-flow-accent" : "text-primary")}
+                                    />
+                                  </div>
 
-                                <div className="flex items-start space-x-4">
-                                  <div className={cn(
-                                    "flex size-16 items-center justify-center rounded-full border-2 bg-background shadow-lg shrink-0",
-                                    isLast ? "border-flow-accent" : "border-primary",
-                                  )}>
-                                    <step.icon className={cn("size-8", isLast ? "text-flow-accent" : "text-primary")} />
-                                  </div>
-                                  <div className="flex-1 pt-2">
-                                    <h4 className="font-semibold text-foreground text-lg">{step.title}</h4>
-                                    <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
-                                  </div>
+                                  {/* Connecting line */}
+                                  {!isLast && (
+                                    <div className="absolute top-16 left-1/2 -translate-x-1/2 w-0.5 bg-border"
+                                      style={{ height: "calc(100% + 1.5rem)" }}>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Text */}
+                                <div className="flex-1 pt-2">
+                                  <h4 className="font-semibold text-foreground text-lg">{step.title}</h4>
+                                  <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
                                 </div>
                               </div>
                             );
                           })}
                         </div>
                       </div>
+
 
                       {/* Desktop view - Horizontal layout */}
                       <div className="hidden lg:block w-full">
@@ -843,23 +839,27 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
               <Card className="p-8 lg:p-12 h-full flex flex-col justify-center">
                 <CardHeader className="p-0">
                   <CardTitle className="text-4xl font-bold font-headline">
-                    Ready to build the <span className="relative inline-block align-middle pl-1">Future
+                    Ready to build the{" "}
+                    <span className="relative inline-block  z-10">
+                      Future
                       <svg
-                        className="absolute w-[80px] md:w-[114px] -right-[2px] -bottom-[8px] md:-bottom-[10px]"
+                        className="absolute w-[80px] md:w-[114px] -right-[2px] -bottom-[8px] md:-bottom-[10px] z-0"
                         aria-hidden="true"
                         role="presentation"
                         viewBox="0 0 114 60"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
-                        style={{ pointerEvents: 'none' }}
+                        style={{ pointerEvents: "none" }}
                       >
                         <path
                           d="M61.1407 5.29573C61.5825 5.29573 61.9407 4.93755 61.9407 4.49573C61.9407 4.0539 61.5825 3.69573 61.1407 3.69573V5.29573ZM25.6313 1.18441L25.5712 0.386673L25.6313 1.18441ZM65.1859 56.529L65.2466 57.3267L65.1859 56.529ZM102.238 49.5437L102.146 50.3384L102.238 49.5437ZM113 59L112.33 59.4366C112.546 59.7688 112.973 59.8924 113.333 59.7273C113.694 59.5621 113.879 59.1579 113.768 58.7772L113 59ZM113.483 45.9598C113.667 45.5584 113.492 45.0833 113.09 44.8986C112.689 44.7139 112.214 44.8896 112.029 45.291L113.483 45.9598ZM9.10831 45.245L8.60696 45.8685L8.60698 45.8685L9.10831 45.245ZM61.1407 3.69573C55.3296 3.69573 50.2958 2.60385 44.7326 1.62791C39.1822 0.654208 33.1789 -0.18624 25.5712 0.386673L25.6913 1.98216C33.1047 1.42388 38.9568 2.23909 44.4562 3.20384C49.9428 4.16636 55.1532 5.29573 61.1407 5.29573V5.29573ZM102.146 50.3384C103.978 50.5502 105.816 51.7049 107.587 53.4268C109.346 55.1369 110.954 57.3236 112.33 59.4366L113.67 58.5634C112.268 56.4103 110.585 54.1104 108.703 52.2797C106.832 50.4607 104.678 49.0204 102.329 48.749L102.146 50.3384ZM113.768 58.7772C113.392 57.4794 112.891 55.17 112.707 52.7136C112.521 50.2318 112.669 47.729 113.483 45.9598L112.029 45.291C111.04 47.4401 110.92 50.2798 111.112 52.8333C111.305 55.4122 111.828 57.8311 112.232 59.2228L113.768 58.7772ZM25.5712 0.386673C12.1968 1.39385 4.12231 9.70072 1.32012 19.2877C-1.46723 28.8239 0.948311 39.7092 8.60696 45.8685L9.60967 44.6216C2.5531 38.9466 0.211996 28.7819 2.85587 19.7366C5.4849 10.742 13.0295 2.93568 25.6913 1.98216L25.5712 0.386673ZM8.60698 45.8685C17.052 52.6596 27.4766 55.8004 37.6285 57.1087C47.7823 58.4172 57.7242 57.8998 65.2466 57.3267L65.1251 55.7313C57.6265 56.3026 47.8183 56.8086 37.833 55.5218C27.8456 54.2347 17.7419 51.1613 9.60965 44.6216L8.60698 45.8685ZM65.2466 57.3267C71.9263 56.8179 78.8981 54.7692 85.2941 53.0195C91.7606 51.2505 97.5723 49.8099 102.146 50.3384L102.329 48.749C97.3895 48.1782 91.2605 49.7286 84.8719 51.4762C78.4129 53.2432 71.6155 55.2369 65.1251 55.7313L65.2466 57.3267Z"
                           fill="currentColor"
                         />
                       </svg>
-                    </span>?
+                    </span>
+                    ?
                   </CardTitle>
+
                 </CardHeader>
                 <CardContent className="p-0 mt-4 space-y-6">
                   <p className="text-muted-foreground">
@@ -965,7 +965,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
             </div>
           </div>
         </section>
-        <Footer></Footer>
+        <Footer />
       </div>
     </div>
   );
