@@ -198,7 +198,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
             container.removeEventListener("mousemove", handleMouseMove);
             container.removeEventListener("mouseleave", handleMouseLeave);
         };
-    }, [isStaticPage, isLoading, isLoggedIn]);
+    }, [ isLoading, isLoggedIn]);
     const email = "support@hustloop.com"
     return (
         <div>
