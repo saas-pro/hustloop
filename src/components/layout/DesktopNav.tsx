@@ -55,11 +55,11 @@ export function ThemeToggleDropdown() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <Sun className="h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <button>
+                    <Sun className="h-full w-full rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-accent" size={24} />
                     <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                     <span className="sr-only">Toggle theme</span>
-                </Button>
+                </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 {themeOptions.map((option) => (
@@ -198,13 +198,13 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
             container.removeEventListener("mousemove", handleMouseMove);
             container.removeEventListener("mouseleave", handleMouseLeave);
         };
-    }, [ isLoading, isLoggedIn]);
+    }, [isLoading, isLoggedIn]);
     const email = "support@hustloop.com"
     return (
         <div>
             <div className="toggle fixed z-50">
                 {/* Magnetic CTA Button */}
-                <div className='flex justify-end fixed items-center gap-8 w-[90%] pointer-events-none top-4'>
+                <div className='flex justify-end fixed items-center gap-8 w-full right-4 pointer-events-none top-5'>
                     <div className="hidden md:flex items-center gap-4 pointer-events-auto">
                         {!isStaticPage && (
                             <>
@@ -248,7 +248,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                                 document.body.classList.toggle('nav-open');
                                 setNavOpen(!navOpen);
                             }}
-                            className="z-10 relative xl:inline-block w-[3.5rem] h-[3.5rem] rounded-xl border border-solid  box-border pointer-events-auto"
+                            className="z-10 relative xl:inline-block w-[3.5rem] h-[3.5rem] rounded-xl border border-solid box-border pointer-events-auto"
                         >
                             <svg
                                 className="ham hamRotate pointer-events-none w-full h-full select-none transition-colors relative text-foreground"
@@ -274,13 +274,13 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                         </button>
                     </div>
 
-                    <div className="relative pointer-events-auto typeform-trigger rounded-xl border border-solid box-border w-[3.5rem] h-[3.5rem] flex items-center justify-center cursor-pointer hover:bg-accent/10 transition-colors">
-                        <ThemeToggleDropdown />
+                    <div className="relative pointer-events-auto typeform-trigger rounded-xl border border-solid box-border w-[3.5rem] h-[3.5rem] flex items-center justify-center cursor-pointer hover:bg-accent/20 transition-colors">
+                        <ThemeToggleDropdown/>
                     </div>
 
                 </div>
-                <div className="flex justify-end fixed items-center gap-8 bg-transparent w-[90%] pointer-events-auto top-24">
-                    <div className="pointer-events-auto typeform-trigger rounded-full border border-solid w-[3.5rem] h-[3.5rem] flex items-center justify-center hover:bg-accent/10 transition-colors">
+                <div className="flex justify-end fixed items-center gap-8 bg-transparent w-full right-4 pointer-events-auto top-24 ">
+                    <div className="pointer-events-auto typeform-trigger rounded-full border border-solid w-[3.5rem] h-[3.5rem] flex items-center justify-center hover:bg-accent/20 transition-colors">
                         <a
                             href={`mailto:${email}`}
                             className="group flex items-center justify-center w-full h-full cursor-pointer"
@@ -295,14 +295,14 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
 
             </div>
 
-            <div className="menu-navs flex justify-center absolute top-40 left-[25%] w-1/2 m-auto text-xl 2xl:text-2xl opacity-0 translate-y-1/3 text-main-color-dark ">
-                <div className="hidden md:flex items-center gap-4">
-                    <Button asChild>
+            <div className="menu-navs flex justify-center absolute top-40 left-[25%] w-1/2 m-auto opacity-0 translate-y-1/3 text-main-color-dark ">
+                <div className="hidden md:flex items-center gap-4 text-[18px]">
+                    <Button asChild className='text-[18px] font-medium'>
                         <a href="#newsletter-section" onClick={(e) => handleScrollToSection(e, 'newsletter-section')}>
                             Early Bird
                         </a>
                     </Button>
-                    <a href="#contact-section" onClick={(e) => handleScrollToSection(e, 'contact-section')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                    <a href="#contact-section" onClick={(e) => handleScrollToSection(e, 'contact-section')} className="text-[18px] font-medium text-muted-foreground hover:text-primary transition-colors">
                         Contact Us
                     </a>
                 </div>
@@ -310,7 +310,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
 
             {/* Primary Menu Links */}
             {!isStaticPage && (
-                <div className="menu-navs text-slate-200 z-50 flex justify-between absolute top-20 left-[30%] w-2/5 text-2xl xl:text-4xl opacity-0 translate-y-1/3 ">
+                <div className="menu-navs text-slate-200 z-50 flex justify-between absolute top-20 left-[30%] w-2/5 opacity-0 translate-y-1/3 ">
                     {navItems
                         .filter((item) => !item.loggedIn || isLoggedIn)
                         .map((item) =>
@@ -318,14 +318,15 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                                 key={item.id}
                                 onClick={() => setActiveView(item.id)}
                                 className={cn(
-                                    "text-sm font-medium transition-colors hover:text-foreground",
+                                    "text-[18px] font-medium pb-1 border-b-2 transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary",
                                     activeView === item.id
-                                        ? "text-foreground"
-                                        : "text-muted-foreground"
+                                        ? "text-foreground border-primary"
+                                        : "text-muted-foreground border-transparent"
                                 )}
                             >
                                 {item.label}
                             </button>
+
 
                         )}
                 </div>

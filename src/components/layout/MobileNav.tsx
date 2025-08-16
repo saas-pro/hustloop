@@ -13,15 +13,14 @@ import { Separator } from '@radix-ui/react-separator';
 import Image from 'next/image';
 
 
-interface DesktopNavProps {
+interface MobileNavProps {
     activeView: View;
     setActiveView: (view: View) => void;
     isLoggedIn: boolean;
     onLogout: () => void;
     isLoading: boolean;
     isStaticPage?: boolean;
-    navOpen: boolean;
-    setNavOpen: (value: boolean) => void;
+
 }
 
 const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
@@ -69,7 +68,7 @@ export function ThemeToggleDropdown() {
         </DropdownMenu>)
 }
 
-const MobileNav = ({ activeView, navOpen, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false }: DesktopNavProps) => {
+const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false }: MobileNavProps) => {
     const router = useRouter();
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
@@ -134,26 +133,28 @@ const MobileNav = ({ activeView, navOpen, setActiveView, isLoggedIn, onLogout, i
         }
     };
 
-    const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
-        e.preventDefault();
+    const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement, MouseEvent>, sectionId: string) => {
+
         if (pathname !== '/') {
             router.push('/');
             setTimeout(() => {
                 const section = document.getElementById(sectionId);
                 if (section) {
                     section.scrollIntoView({ behavior: 'smooth' });
+
                 }
             }, 500); // Wait for page to potentially load
         } else {
             const section = document.getElementById(sectionId);
             if (section) {
                 section.scrollIntoView({ behavior: 'smooth' });
+
             }
         }
     };
     return (
         <div>
-            <div className="md:hidden fixed flex top-4 right-4 z-50 pointer-events-auto">
+            <div className="md:hidden fixed flex top-6 right-4 z-50 pointer-events-auto">
                 <div>
                     <ThemeToggleDropdown />
                 </div>
@@ -179,6 +180,7 @@ const MobileNav = ({ activeView, navOpen, setActiveView, isLoggedIn, onLogout, i
                                     </Button>
                                 </SheetClose>
                             </div>
+
                             <nav className="flex flex-col space-y-2">
                                 {navItems
                                     .filter((item) => !item.loggedIn || isLoggedIn)
@@ -196,18 +198,39 @@ const MobileNav = ({ activeView, navOpen, setActiveView, isLoggedIn, onLogout, i
                                             </Button>
                                         </SheetClose>
                                     ))}
-                                <Separator />
-                                <SheetClose asChild>
-                                    <a href="#newsletter-section" onClick={(e) => handleScrollToSection(e, 'newsletter-section')} className="text-muted-foreground hover:text-primary transition-colors text-lg text-left p-4">
+                                <Separator className="ms-3 w-[42%] h-0.5 bg-border"></Separator>
+
+                                <SheetClose asChild >
+                                    <Button
+                                        variant="ghost"
+                                        onClick={(e) => handleScrollToSection(e, 'newsletter-section')}
+                                        className="justify-start text-lg text-muted-foreground hover:text-primary transition-colors"
+                                    >
                                         Early Bird
-                                    </a>
+                                    </Button>
                                 </SheetClose>
-                                <SheetClose asChild>
-                                    <a href="#contact-section" onClick={(e) => handleScrollToSection(e, 'contact-section')} className="text-muted-foreground hover:text-primary transition-colors text-lg text-left p-4">
-                                        Contact Us
-                                    </a>
+
+
+                                <SheetClose asChild >
+                                    <Button
+                                        asChild
+                                        variant="ghost"
+                                        className="justify-start text-lg text-muted-foreground hover:text-primary transition-colors"
+                                    >
+                                        <a
+                                            href="#contact-section"
+                                            onClick={(e) => {
+                                                handleScrollToSection(e, "contact-section");
+
+                                            }}
+                                        >
+                                            Contact Us
+                                        </a>
+                                    </Button>
+
                                 </SheetClose>
                             </nav>
+
                             <div className="absolute bottom-6 left-6 right-6">
                                 {isLoading ? (
                                     <div className="flex justify-center">

@@ -187,7 +187,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
     };
     return (
       <div
-        className="flex justify-left items-center z-[1000] gap-2 relative top-5 left-4 md:left-40"
+        className="flex justify-left items-center z-[1000] gap-2 relative top-5 left-4"
         onClick={handleLogoClick}
       >
         <Image
@@ -195,12 +195,12 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
           alt="Hustloop logo"
           width={120}
           height={120}
-          className=" w-auto min-w-[120px] max-w-[200px] h-15 object-contain cursor-pointer"
+          className=" w-auto min-w-[120px] max-w-[200px] h-12 md:h-16 object-contain cursor-pointer"
         />
         {!inSheet && (
           <div className=" flex items-center gap-2">
-            <Separator orientation="vertical" className="h-6 bg-border w-0.5" />
-            <p className="text-xs text-muted-foreground ">
+            <Separator orientation="vertical" className="h-8 bg-border w-0.5" />
+            <p className="text-sm leading-0.5 text-muted-foreground ">
               Smart hustle. <br /> Infinite growth..
             </p>
           </div>
@@ -220,13 +220,12 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
       <div className="z-10 container mx-auto grid  gap-24 items-center h-screen justify-center px-4 py-16 md:py-20">
         {/* Left content */}
         <div className="text-center lg:text-center">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight font-headline">
+          <h1 className="text-5xl md:text-[90px] font-bold tracking-tight font-headline">
             Empowering Tomorrow&apos;s{' '}
             <br /><span className="relative inline-block text-primary">
-
               Innovators
               <svg
-                className="absolute w-[80px] md:w-[117px] right-0 -bottom-[8px] md:-bottom-[12px] pointer-events-none"
+                className="absolute w-[80px] md:w-[146px] right-0 -bottom-[6px] md:-bottom-[8px] pointer-events-none"
                 aria-hidden="true"
                 role="presentation"
                 viewBox="0 0 117 72"
@@ -242,7 +241,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
               </svg>
             </span>
           </h1>
-          <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto">
+          <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl md:max-w-[50%] mx-auto">
             Hustloop is your launchpad for success. We connect visionary entrepreneurs with elite mentors, top-tier incubators, and strategic MSME partners to fuel innovation and accelerate growth.
           </p>
           {isLoggedIn ? (
@@ -461,15 +460,17 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
             <p className="max-w-2xl mx-auto text-muted-foreground mb-12">
               A comprehensive suite of services designed to support you at every stage of your entrepreneurial journey.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl m-auto">
               {/* First 3 items */}
-              {whatWeOffer.slice(0, 3).map((feature, index) => (
-                <IconCard
-                  key={feature.title}
-                  icon={feature.icon}
-                  title={feature.title}
-                  description={feature.description}
-                />
+              {whatWeOffer.slice(0,3).map((feature) => (
+                <div key={feature.title} className="flex justify-center">
+                  <IconCard
+                    icon={feature.icon}
+                    title={feature.title}
+                    description={feature.description}
+                    className="h-full"
+                  />
+                </div>
               ))}
 
               {/* Last 2 items centered in full-width row */}
@@ -480,6 +481,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                     icon={feature.icon}
                     title={feature.title}
                     description={feature.description}
+                    className="h-full"
                   />
                 ))}
               </div>
@@ -799,7 +801,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                   </div>
                   <div className="relative h-48 md:h-full">
                     <Image
-                      src="https://quixy.com/wp-content/uploads/2025/07/collaboration-examples.png"
+                      src="https://placehold.co/1280x720.png"
                       alt="Decorative abstract image"
                       layout="fill"
                       objectFit="cover"
@@ -840,10 +842,10 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                 <CardHeader className="p-0">
                   <CardTitle className="text-4xl font-bold font-headline">
                     Ready to build the{" "}
-                    <span className="relative inline-block  z-10">
+                    <span className="relative inline-block z-10 pt-2 md:pt-0">
                       Future
                       <svg
-                        className="absolute w-[80px] md:w-[114px] -right-[2px] -bottom-[8px] md:-bottom-[10px] z-0"
+                        className="absolute w-[114px] md:w-[114px] -right-[2px] -bottom-[12px] md:-bottom-[10px] z-0"
                         aria-hidden="true"
                         role="presentation"
                         viewBox="0 0 114 60"

@@ -169,13 +169,13 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                 />
             </nav >
             <nav className="menu flex md:hidden">
-                <MobileNav activeView={activeView}
+                <MobileNav
+                    activeView={activeView}
                     setActiveView={setActiveView}
                     isLoggedIn={isLoggedIn}
                     onLogout={onLogout}
                     isLoading={isLoading}
-                    navOpen={navOpen}
-                    setNavOpen={setNavOpen} />
+                />
             </nav>
         </div>
 
