@@ -55,22 +55,29 @@ export function ThemeToggleDropdown() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button>
-                    <Sun className="h-full w-full rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-accent" size={24} />
-                    <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <button
+                    className="relative flex items-center justify-center w-[3.5rem] h-[3.5rem] rounded-xl border border-solid box-border cursor-pointer hover:bg-accent/20 transition-colors"
+                >
+                    <Sun className="h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-accent" />
+                    <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-accent" />
                     <span className="sr-only">Toggle theme</span>
                 </button>
             </DropdownMenuTrigger>
+
             <DropdownMenuContent align="end">
                 {themeOptions.map((option) => (
-                    <DropdownMenuItem key={option.value} onClick={() => setTheme(option.value)}>
+                    <DropdownMenuItem
+                        key={option.value}
+                        onClick={() => setTheme(option.value)}
+                    >
                         <option.icon className="mr-2 h-4 w-4" />
                         <span>{option.label}</span>
                         {theme === option.value && <Check className="ml-auto h-4 w-4" />}
                     </DropdownMenuItem>
                 ))}
             </DropdownMenuContent>
-        </DropdownMenu>)
+        </DropdownMenu>
+    )
 }
 
 const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false }: DesktopNavProps) => {
@@ -206,7 +213,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                 {/* Magnetic CTA Button */}
                 <div className='flex justify-end fixed items-center gap-8 w-full right-4 pointer-events-none top-5'>
                     <div className="hidden md:flex items-center gap-4 pointer-events-auto">
-                        {!isStaticPage && (
+                        {!isStaticPage && pathname !== "/terms-of-service" && pathname !== "/privacy-policy" && (
                             <>
                                 {isLoading ? (
                                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -274,12 +281,16 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                         </button>
                     </div>
 
-                    <div className="relative pointer-events-auto typeform-trigger rounded-xl border border-solid box-border w-[3.5rem] h-[3.5rem] flex items-center justify-center cursor-pointer hover:bg-accent/20 transition-colors">
-                        <ThemeToggleDropdown/>
+                    <div
+                        className="relative pointer-events-auto typeform-trigger rounded-xl border border-solid box-border w-[3.5rem] h-[3.5rem] flex items-center justify-center cursor-pointer hover:bg-accent/20 transition-colors"
+
+                        aria-label="Toggle Theme"
+                    >
+                        <ThemeToggleDropdown />
                     </div>
 
                 </div>
-                <div className="flex justify-end fixed items-center gap-8 bg-transparent w-full right-4 pointer-events-auto top-24 ">
+                <div className="flex justify-end fixed items-center gap-8 bg-transparent right-4 pointer-events-auto top-24 ">
                     <div className="pointer-events-auto typeform-trigger rounded-full border border-solid w-[3.5rem] h-[3.5rem] flex items-center justify-center hover:bg-accent/20 transition-colors">
                         <a
                             href={`mailto:${email}`}
@@ -295,25 +306,50 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
 
             </div>
 
-            <div className="menu-navs flex justify-center absolute top-40 left-[25%] w-1/2 m-auto opacity-0 translate-y-1/3 text-main-color-dark ">
+            <div
+                className={cn(
+                    "menu-navs flex justify-center absolute top-40 left-[25%] w-1/2 m-auto text-main-color-dark transition-all duration-300 ease-in-out",
+                    navOpen
+                        ? "opacity-100 translate-y-0 pointer-events-auto"
+                        : "opacity-0 translate-y-5 pointer-events-none"
+                )}
+            >
                 <div className="hidden md:flex items-center gap-4 text-[18px]">
-                    <Button asChild className='text-[18px] font-medium'>
-                        <a href="#newsletter-section" onClick={(e) => handleScrollToSection(e, 'newsletter-section')}>
+                    <Button asChild className="text-[18px] font-medium">
+                        <a
+                            href="#newsletter-section"
+                            onClick={(e) => handleScrollToSection(e, "newsletter-section")}
+                        >
                             Early Bird
                         </a>
                     </Button>
-                    <a href="#contact-section" onClick={(e) => handleScrollToSection(e, 'contact-section')} className="text-[18px] font-medium text-muted-foreground hover:text-primary transition-colors">
+
+                    <a
+                        href="#contact-section"
+                        onClick={(e) => handleScrollToSection(e, "contact-section")}
+                        className={cn(
+                            "menu-navs text-[18px] font-medium pb-1 border-b-2 border-transparent text-muted-foreground transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary"
+                        )}
+                    >
                         Contact Us
                     </a>
                 </div>
             </div>
 
+
             {/* Primary Menu Links */}
             {!isStaticPage && (
-                <div className="menu-navs text-slate-200 z-50 flex justify-between absolute top-20 left-[30%] w-2/5 opacity-0 translate-y-1/3 ">
+                <div
+                    className={cn(
+                        "menu-navs text-slate-200 z-50 flex justify-between absolute top-20 left-[30%] w-2/5 transition-all duration-300 ease-in-out",
+                        navOpen
+                            ? "opacity-100 translate-y-0 pointer-events-auto"
+                            : "opacity-0 translate-y-5 pointer-events-none"
+                    )}
+                >
                     {navItems
                         .filter((item) => !item.loggedIn || isLoggedIn)
-                        .map((item) =>
+                        .map((item) => (
                             <button
                                 key={item.id}
                                 onClick={() => setActiveView(item.id)}
@@ -326,10 +362,9 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                             >
                                 {item.label}
                             </button>
-
-
-                        )}
+                        ))}
                 </div>
+
 
             )}
 

@@ -376,7 +376,7 @@ export default function MainView() {
 
   return (
 
-    <div className="overflow-hidden relative flex flex-col min-h-screen bg-background text-foreground" data-overlayscrollbars-initialize data-overlayscrollbars="host">
+    <div className="overflow-hidden relative flex flex-col min-h-screen bg-background text-foreground">
       <Header
         activeView={activeView}
         setActiveView={setActiveView}

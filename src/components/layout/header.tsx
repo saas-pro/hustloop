@@ -157,7 +157,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
 
     return (
         <div className={`relative z-50 ${navOpen ? '' : 'pointer-events-none cursor-none'}`} >
-            <nav className="menu hidden md:flex">
+            <nav className="menu hidden md:flex pointer-events-auto">
                 <DesktopNav
                     activeView={activeView}
                     setActiveView={setActiveView}

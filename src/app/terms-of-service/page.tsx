@@ -6,6 +6,8 @@ import Footer from '@/components/layout/footer';
 import Header from '@/components/layout/header';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
+import Link from 'next/link';
 
 export default function TermsOfServicePage() {
   const [lastUpdated, setLastUpdated] = useState('');
@@ -19,25 +21,35 @@ export default function TermsOfServicePage() {
   // Dummy props for the Header, as it's used statically here and doesn't need to change views.
   const headerProps = {
     activeView: "home" as const,
-    setActiveView: () => {},
+    setActiveView: () => { },
     isLoggedIn: false,
-    onLogout: () => {},
+    onLogout: () => { },
     isLoading: false, // Set to false as we are not checking auth status on this page
     isStaticPage: true,
     navOpen: false,
-    setNavOpen: () => {},
+    setNavOpen: () => { },
   };
 
   return (
     <>
       <div className="flex flex-col min-h-screen">
         <Header {...headerProps} />
-        <main className="flex-grow container mx-auto px-4 py-12 md:py-16">
+        <main className="flex-grow container relative z-40 h-screen w-screen ultrawide-fix m-auto pointer-events-auto  px-4 py-12 md:py-16" id='main-view'>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-3xl md:text-4xl font-headline">Terms of Service</CardTitle>
-              <p className="text-muted-foreground">Last Updated: {lastUpdated}</p>
-            </CardHeader>
+            <div className='relative'>
+              <CardHeader>
+                <CardTitle className="text-3xl md:text-4xl font-headline">Terms of Service</CardTitle>
+                <p className="text-muted-foreground">Last Updated: {lastUpdated}</p>
+              </CardHeader>
+              <Link
+                href="/"
+                className="absolute top-4 right-4 p-2 rounded-md hover:bg-accent transition-colors"
+                aria-label="Close and return home"
+              >
+                <X className="h-6 w-6 text-foreground" />
+              </Link>
+            </div>
+
             <CardContent>
               <ScrollArea className="h-[60vh] pr-6">
                 <div className="space-y-6 prose dark:prose-invert max-w-none">
@@ -72,7 +84,7 @@ export default function TermsOfServicePage() {
                   <p>
                     In no event shall Hustloop, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.
                   </p>
-                  
+
                   <h3 className="font-bold text-xl">6. Governing Law</h3>
                   <p>
                     These Terms shall be governed and construed in accordance with the laws of India, without regard to its conflict of law provisions.
@@ -91,8 +103,12 @@ export default function TermsOfServicePage() {
               </ScrollArea>
             </CardContent>
           </Card>
+          <div className='mt-10'>
+            <Footer />
+          </div>
+
         </main>
-        <Footer />
+
       </div>
     </>
   );

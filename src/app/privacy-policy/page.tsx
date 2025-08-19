@@ -7,6 +7,8 @@ import Header from '@/components/layout/header';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState, useEffect } from 'react';
 import { set } from 'date-fns';
+import Link from 'next/link';
+import { X } from 'lucide-react';
 
 export default function PrivacyPolicyPage() {
   const [lastUpdated, setLastUpdated] = useState('');
@@ -19,25 +21,34 @@ export default function PrivacyPolicyPage() {
   // Dummy props for the Header, as it's used statically here and doesn't need to change views.
   const headerProps = {
     activeView: "home" as const,
-    setActiveView: () => {},
+    setActiveView: () => { },
     isLoggedIn: false,
-    onLogout: () => {},
+    onLogout: () => { },
     isLoading: false, // Set to false as we are not checking auth status on this page
     isStaticPage: true,
     navOpen: false,
-    setNavOpen: () => {},
+    setNavOpen: () => { },
   };
 
   return (
     <>
       <div className="flex flex-col min-h-screen">
         <Header {...headerProps} />
-        <main className="flex-grow container mx-auto px-4 py-12 md:py-16">
+        <main className="flex-grow container relative z-40 h-screen w-screen ultrawide-fix m-auto pointer-events-auto  px-4 py-12 md:py-16" id='main-view'>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-3xl md:text-4xl font-headline">Privacy Policy</CardTitle>
-              <p className="text-muted-foreground">Last Updated: {lastUpdated}</p>
-            </CardHeader>
+            <div className='relative'>
+              <CardHeader>
+                <CardTitle className="text-3xl md:text-4xl font-headline">Privacy Policy</CardTitle>
+                <p className="text-muted-foreground">Last Updated: {lastUpdated}</p>
+              </CardHeader>
+              <Link
+                href="/"
+                className="absolute top-4 right-4 p-2 rounded-md hover:bg-accent transition-colors"
+                aria-label="Close and return home"
+              >
+                <X className="h-6 w-6 text-foreground" />
+              </Link>
+            </div>
             <CardContent>
               <ScrollArea className="h-[60vh] pr-6">
                 <div className="space-y-6 prose dark:prose-invert max-w-none">
@@ -85,8 +96,11 @@ export default function PrivacyPolicyPage() {
               </ScrollArea>
             </CardContent>
           </Card>
+          <div className='mt-10'>
+            <Footer />
+          </div>
         </main>
-        <Footer />
+
       </div>
     </>
   );
