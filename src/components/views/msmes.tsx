@@ -133,7 +133,8 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                     ? data.corporateChallenges
                     : data.corporateChallenges?.items || []
                 );
-                setMsmeCollaborations(data.msmeCollaborations || []);
+                console.log(data)
+                setMsmeCollaborations(data.msmeCollaborations.items || []);
             } catch (err: any) {
                 // Fallback static data
                 setCorporateChallenges([

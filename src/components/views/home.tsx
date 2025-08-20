@@ -750,7 +750,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                 />
                 <span
                   className="ml-[-4px] text-4xl"
-                  style={{ color: '#D4AF37' }}
+                  style={{ color: '#debb64' }}
                 >
                   ?
                 </span>

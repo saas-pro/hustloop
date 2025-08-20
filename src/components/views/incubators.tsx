@@ -135,7 +135,8 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
                     throw new Error('Failed to fetch incubators.');
                 }
                 const data = await response.json();
-                setIncubators(data);
+                
+                setIncubators(data.items);
             } catch (err: any) {
                 // Fallback static data
                 setIncubators([
@@ -212,7 +213,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
                     return (
                       <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
                         <CardHeader className="p-0">
-                          <Image src={incubator.image} alt={incubator.name} width={600} height={400} className="w-full h-48 object-cover" data-ai-hint={incubator.hint}/>
+                          <Image src={incubator.image} alt={incubator.name} width={600} height={400} className="w-full h-53 object-cover" data-ai-hint={incubator.hint}/>
                         </CardHeader>
                         <CardContent className="flex-grow p-4 space-y-3">
                           <CardTitle className="text-xl">{incubator.name}</CardTitle>

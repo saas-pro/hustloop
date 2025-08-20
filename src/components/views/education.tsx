@@ -17,12 +17,12 @@ import { API_BASE_URL } from "@/lib/api";
 
 
 interface EducationViewProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onApplicationSuccess: (programTitle: string, session: EducationSession) => void;
-  isLoggedIn: boolean;
-  setActiveView: (view: View) => void;
-  appliedPrograms: Record<string, string>;
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+    onApplicationSuccess: (programTitle: string, session: EducationSession) => void;
+    isLoggedIn: boolean;
+    setActiveView: (view: View) => void;
+    appliedPrograms: Record<string, string>;
 }
 
 const LoadingSkeleton = () => (
@@ -56,7 +56,7 @@ const LoadingSkeleton = () => (
                     </div>
                 </CardContent>
                 <CardFooter>
-                     <Skeleton className="h-10 w-32 ml-auto" />
+                    <Skeleton className="h-10 w-32 ml-auto" />
                 </CardFooter>
             </Card>
         ))}
@@ -73,140 +73,156 @@ const getIconForFeature = (iconName: string): React.ReactNode => {
 
 
 export default function EducationView({ isOpen, onOpenChange, onApplicationSuccess, isLoggedIn, setActiveView, appliedPrograms }: EducationViewProps) {
-  const [selectedProgram, setSelectedProgram] = useState<EducationProgram | null>(null);
-  const [educationPrograms, setEducationPrograms] = useState<EducationProgram[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    const [selectedProgram, setSelectedProgram] = useState<EducationProgram | null>(null);
+    const [educationPrograms, setEducationPrograms] = useState<EducationProgram[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-        const fetchPrograms = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const apiBaseUrl = API_BASE_URL;
-                const response = await fetch(`${apiBaseUrl}/api/education-programs`);
-                if (!response.ok) {
-                    throw new Error("Failed to fetch education programs.");
+    useEffect(() => {
+        if (isOpen) {
+            const fetchPrograms = async () => {
+                setIsLoading(true);
+                setError(null);
+                try {
+                    const apiBaseUrl = API_BASE_URL;
+                    const response = await fetch(`${apiBaseUrl}/api/education-programs`);
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch education programs.");
+                    }
+                    const data = await response.json();
+                    setEducationPrograms(Array.isArray(data) ? data : data.items || []);
+
+                } catch (err: any) {
+                    setError(err.message || "An unexpected error occurred.");
+                } finally {
+                    setIsLoading(false);
                 }
-                const data = await response.json();
-                setEducationPrograms(Array.isArray(data) ? data : data.items || []);
-            } catch (err: any) {
-                 setError(err.message || "An unexpected error occurred.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchPrograms();
-    }
-  }, [isOpen]);
+            };
+            fetchPrograms();
+        }
+    }, [isOpen]);
 
-  const handleApplyClick = (program: EducationProgram) => {
-    if (isLoggedIn) {
-      setSelectedProgram(program);
-    } else {
-      setActiveView('signup');
-    }
-  };
-  
-  return (
-    <>
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-3xl font-bold text-center font-headline">Transform Your Future Through Education</DialogTitle>
-          <DialogDescription className="text-center">
-            <span className="text-primary">&quot;Knowledge is the Currency of Tomorrow&quot;</span>
-            <span className="block mt-2">
-              Join our comprehensive educational programs designed to empower entrepreneurs and business leaders with cutting-edge skills and insights.
-            </span>
-          </DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="h-full mt-4">
-            <div className="space-y-12">
-                <section>
-                    <h2 className="text-2xl font-bold font-headline mb-6">Featured Programs</h2>
-                    {isLoading ? (
-                        <LoadingSkeleton />
-                    ) : error ? (
-                        <Alert variant="destructive">
-                            <LucideIcons.Terminal className="h-4 w-4" />
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    ) : (
-                        <div className="space-y-8">
-                            {educationPrograms.length === 0 ? (
-                              <div className="flex flex-col items-center justify-center py-24">
-                                <span className="text-4xl font-bold text-primary mb-4">🚧 Coming Soon!</span>
-                                <p className="text-lg text-muted-foreground">Our education programs are launching soon. Stay tuned for updates and opportunities!</p>
-                              </div>
-                            ) : (
-                              educationPrograms.map((program, index) => {
-                                const isApplied = !!appliedPrograms[program.title];
-                                return (
-                                    <Card key={index} className="bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary transition-colors">
-                                        <CardHeader>
-                                            <div className="flex items-center justify-between">
-                                                <CardTitle>{program.title}</CardTitle>
-                                                <Badge>Free</Badge>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="md:flex">
-                                                <div className="md:w-1/3 mb-6 md:mb-0 md:pr-6">
-                                                    <h4 className="font-semibold text-sm mb-2 text-muted-foreground">NEXT SESSIONS</h4>
-                                                    <div className="space-y-3">
-                                                    {program.sessions.map((session, sIndex) => (
-                                                        <div key={sIndex} className="text-sm p-3 rounded-md bg-muted/50 border">
-                                                            <p className="font-bold">{session.language}</p>
-                                                            <p className="text-muted-foreground">{session.date}, {session.time}</p>
+    const handleApplyClick = (program: EducationProgram) => {
+        if (isLoggedIn) {
+            setSelectedProgram(program);
+        } else {
+            setActiveView('signup');
+        }
+    };
+
+    return (
+        <>
+            <Dialog open={isOpen} onOpenChange={onOpenChange}>
+                <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle className="text-3xl font-bold text-center font-headline">Transform Your Future Through Education</DialogTitle>
+                        <DialogDescription className="text-center">
+                            <span className="text-primary">&quot;Knowledge is the Currency of Tomorrow&quot;</span>
+                            <span className="block mt-2">
+                                Join our comprehensive educational programs designed to empower entrepreneurs and business leaders with cutting-edge skills and insights.
+                            </span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="h-full mt-4">
+                        <div className="space-y-12">
+                            <section>
+                                <h2 className="text-2xl font-bold font-headline mb-6">Featured Programs</h2>
+                                {isLoading ? (
+                                    <LoadingSkeleton />
+                                ) : error ? (
+                                    <div className="flex flex-col items-center justify-center py-24">
+                                        <span className="text-4xl font-bold text-primary mb-4">🚧 Coming Soon!</span>
+                                        <p className="text-lg text-muted-foreground">
+                                            Our education programs are launching soon. Stay tuned for updates and opportunities!
+                                        </p>
+                                    </div>
+                                ) : educationPrograms.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-24">
+                                        <span className="text-4xl font-bold text-primary mb-4">🚧 Coming Soon!</span>
+                                        <p className="text-lg text-muted-foreground">
+                                            Our education programs are launching soon. Stay tuned for updates and opportunities!
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-8">
+                                        {educationPrograms.map((program, index) => {
+                                            const isApplied = !!appliedPrograms[program.title];
+                                            return (
+                                                <Card
+                                                    key={index}
+                                                    className="bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary transition-colors"
+                                                >
+                                                    <CardHeader>
+                                                        <div className="flex items-center justify-between">
+                                                            <CardTitle>{program.title}</CardTitle>
+                                                            <Badge>Free</Badge>
                                                         </div>
-                                                    ))}
-                                                    </div>
-                                                </div>
-                                                <div className="md:w-2/3 md:pl-6 border-muted-foreground/20 md:border-l">
-                                                    <p className="text-muted-foreground mb-4">{program.description}</p>
-                                                    <ul className="grid grid-cols-2 gap-4 text-sm">
-                                                        {program.features.map((feature, fIndex) => (
-                                                        <li key={fIndex} className="flex items-center gap-2">
-                                                            {getIconForFeature(feature.icon)}
-                                                            <span>{feature.name}</span>
-                                                        </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                        <CardFooter>
-                                            <Button 
-                                              onClick={() => handleApplyClick(program)} 
-                                              className="w-full md:w-auto ml-auto bg-accent hover:bg-accent/90 text-accent-foreground disabled:bg-green-500 disabled:opacity-100"
-                                              disabled={isApplied}
-                                            >
-                                              {isApplied ? (
-                                                  <>
-                                                      <LucideIcons.CheckCircle className="mr-2 h-4 w-4" /> Applied
-                                                  </>
-                                              ) : "Apply Now"}
-                                            </Button>
-                                        </CardFooter>
-                                    </Card>
-                                );
-                              })
-                            )}
+                                                    </CardHeader>
+                                                    <CardContent>
+                                                        <div className="md:flex">
+                                                            {/* Sessions */}
+                                                            <div className="md:w-1/3 mb-6 md:mb-0 md:pr-6">
+                                                                <h4 className="font-semibold text-sm mb-2 text-muted-foreground">NEXT SESSIONS</h4>
+                                                                <div className="space-y-3">
+                                                                    {program.sessions.map((session, sIndex) => (
+                                                                        <div
+                                                                            key={sIndex}
+                                                                            className="text-sm p-3 rounded-md bg-muted/50 border"
+                                                                        >
+                                                                            <p className="font-bold">{session.language}</p>
+                                                                            <p className="text-muted-foreground">
+                                                                                {session.date}, {session.time}
+                                                                            </p>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Description & Features */}
+                                                            <div className="md:w-2/3 md:pl-6 border-muted-foreground/20 md:border-l">
+                                                                <p className="text-muted-foreground mb-4">{program.description}</p>
+                                                                <ul className="grid grid-cols-2 gap-4 text-sm">
+                                                                    {program.features.map((feature, fIndex) => (
+                                                                        <li key={fIndex} className="flex items-center gap-2">
+                                                                            {getIconForFeature(feature.icon)}
+                                                                            <span>{feature.name}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                    <CardFooter>
+                                                        <Button
+                                                            onClick={() => handleApplyClick(program)}
+                                                            className="w-full md:w-auto ml-auto bg-accent hover:bg-accent/90 text-accent-foreground disabled:bg-green-500 disabled:opacity-100"
+                                                            disabled={isApplied}
+                                                        >
+                                                            {isApplied ? (
+                                                                <>
+                                                                    <LucideIcons.CheckCircle className="mr-2 h-4 w-4" /> Applied
+                                                                </>
+                                                            ) : (
+                                                                "Apply Now"
+                                                            )}
+                                                        </Button>
+                                                    </CardFooter>
+                                                </Card>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                            </section>
                         </div>
-                    )}
-                </section>
-            </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
-    <EducationBookingModal
-        program={selectedProgram}
-        onOpenChange={() => setSelectedProgram(null)}
-        onApplicationSuccess={onApplicationSuccess}
-    />
-    </>
-  );
+                    </ScrollArea>
+                </DialogContent>
+            </Dialog>
+            <EducationBookingModal
+                program={selectedProgram}
+                onOpenChange={() => setSelectedProgram(null)}
+                onApplicationSuccess={onApplicationSuccess}
+            />
+        </>
+    );
 }

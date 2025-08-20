@@ -31,10 +31,7 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
     { id: "education", label: "Education" },
     { id: "pricing", label: "Pricing" },
     { id: "blog", label: "Blog" },
-    { id: "dashboard", label: "Dashboard", loggedIn: true },
 ];
-
-
 
 
 export function ThemeToggleDropdown() {
@@ -349,13 +346,13 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                 >
                     {navItems
                         .filter((item) => !item.loggedIn || isLoggedIn)
-                        .map((item) => (
+                        .map((item,index) => (
                             <button
-                                key={item.id}
+                                key={index}
                                 onClick={() => setActiveView(item.id)}
                                 className={cn(
                                     "text-[18px] font-medium pb-1 border-b-2 transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary",
-                                    activeView === item.id
+                                    activeView == item.id
                                         ? "text-foreground border-primary"
                                         : "text-muted-foreground border-transparent"
                                 )}

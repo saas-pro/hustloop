@@ -208,9 +208,6 @@ export default function MainView() {
 
   const [navOpen, setNavOpen] = useState<boolean>(false);
 
-
-
-
   useEffect(() => {
     const from = searchParams.get('from');
     const action = searchParams.get('action');
