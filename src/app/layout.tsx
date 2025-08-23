@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://hustloop.com/',
   },
+  
 };
 
 export default function RootLayout({

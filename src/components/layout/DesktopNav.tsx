@@ -157,7 +157,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
         };
 
         // Shake every 1 second
-        const interval = setInterval(shakeHamburger, 3000);
+        const interval = setInterval(shakeHamburger, 1000);
 
         return () => clearInterval(interval);
     }, [navOpen]);
@@ -255,7 +255,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                             className="z-10 relative xl:inline-block w-[3.5rem] h-[3.5rem] rounded-xl border border-solid box-border pointer-events-auto"
                         >
                             <svg
-                                className="ham hamRotate pointer-events-none w-full h-full select-none transition-colors relative text-foreground"
+                                className="ham hamRotate pointer-events-none w-full h-full select-none transition-colors relative text-foreground "
                                 viewBox="0 0 100 100"
                                 width="80"
                             >

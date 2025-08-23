@@ -1,11 +1,12 @@
 "use client";
-import GlowingText from "@/components/ui/GlowingText";
-import { FloatingIcon } from "../ui/floating-icons";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Briefcase, PlayCircle, Star, Award, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact } from "lucide-react";
+import { Lightbulb, Briefcase, PlayCircle, Star, Award, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown } from "lucide-react";
+import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import SlidingPuzzle from '../ui/SlidingPuzzle';
 import * as React from "react";
 import type { View } from "@/app/types";
 import Footer from "../layout/footer";
@@ -28,6 +29,7 @@ import BannerImage from "../ui/BannerImage";
 import HanddrawnUnderline from "@/components/ui/handdrawn-underline";
 import { Separator } from "@radix-ui/react-separator";
 import { useRouter } from "next/navigation";
+import VideoClip from '../ui/GlitchText';
 
 
 const contactFormSchema = z.object({
@@ -210,22 +212,39 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
   };
 
 
+
+
   return (
-    <section className="relative hidden-scroll z-[1000] h-screen md:h-[100vh] ">
+    <section className="relative hidden-scroll z-[1000] h-screen overflow-hidden">
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute top-0 left-0 w-full h-full object-cover z-10"
+      >
+        <source src="/video/herosection.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+
+      {/* Overlay for readability (optional, tweak opacity) */}
+      <div className="absolute inset-0 bg-black/20"></div>
+
       {/* Logo in top-right */}
+      <BrandLogo />
 
-      <BrandLogo></BrandLogo>
-
-      {/* Particles Layer */}
-      <div className="z-10 container mx-auto grid  gap-24 items-center h-screen justify-center px-4 py-16 md:py-20">
-        {/* Left content */}
-        <div className="text-center lg:text-center">
-          <h1 className="text-5xl md:text-[90px] font-bold tracking-tight font-headline">
-            Empowering Tomorrow&apos;s{' '}
-            <br /><span className="relative inline-block text-primary">
+      {/* Content Layer */}
+      <div className="relative z-10 h-[90vh] flex flex-col lg:flex-row items-center justify-center">
+        <div className="flex-1 text-center lg:text-left relative left-16">
+          {/* Typed text */}
+          <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-white">
+            {"Empowering Tomorrow's"}
+            <br />
+            <span className="relative left-2 inline-block text-primary">
               Innovators
               <svg
-                className="absolute w-[80px] md:w-[146px] right-0 -bottom-[6px] md:-bottom-[8px] pointer-events-none"
+                className="absolute w-[80px] md:w-[180px] right-0 -bottom-[6px] md:-bottom-[10px] pointer-events-none"
                 aria-hidden="true"
                 role="presentation"
                 viewBox="0 0 117 72"
@@ -241,32 +260,57 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
               </svg>
             </span>
           </h1>
-          <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl md:max-w-[50%] mx-auto">
-            Hustloop is your launchpad for success. We connect visionary entrepreneurs with elite mentors, top-tier incubators, and strategic MSME partners to fuel innovation and accelerate growth.
-          </p>
+
+          <span className="block text-3xl md:text-6xl font-headline mt-4 text-white">
+            The Hustloop
+          </span>
+
+          <div className="block text-4xl md:text-8xl font-headline leading-tight text-white">
+            <span>for </span>
+            <ReactTyped
+              strings={[
+                "Founders",
+                "Innovators",
+                "Students",
+                "MSMEs",
+                "Incubators",
+                "Startups",
+                "Builders",
+                "Mentors",
+              ]}
+              typeSpeed={60}
+              backSpeed={35}
+              backDelay={1200}
+              loop
+              smartBackspace
+              cursorChar="|"
+              className="bg-gradient-to-r from-blue-600 via-primary to-blue-400 bg-clip-text text-transparent"
+            />
+          </div>
+
+          {/* CTA */}
           {isLoggedIn ? (
-            <Button size="lg" className="mt-8 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setActiveView('dashboard')}>
+            <Button
+              size="lg"
+              className="mt-6 bg-accent hover:bg-accent/90 text-accent-foreground"
+              onClick={() => setActiveView("dashboard")}
+            >
               Explore Dashboard
             </Button>
           ) : (
-            <Button size="lg" className="mt-8 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => setActiveView('signup')}>
+            <Button
+              size="lg"
+              className="mt-6 bg-accent hover:bg-accent/90 text-accent-foreground"
+              onClick={() => setActiveView("signup")}
+            >
               Join a Thriving Ecosystem
             </Button>
           )}
         </div>
-
-        {/* Right banner with floating icons */}
-        {/* <div className="relative hidden lg:flex items-center justify-center">
-          <div className="relative flex items-center justify-center">
-            <div className="bg-transparent flex items-center justify-center text-center z-10">
-              
-            </div>
-          </div>
-
-          <div className="absolute inset-0 pointer-events-none z-40"></div>
-        </div> */}
       </div>
     </section>
+
+
 
   );
 };
@@ -410,9 +454,22 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
             <h2 className="text-4xl font-bold text-center mb-12 font-headline">Start your <HighlightEffect> Journey </HighlightEffect></h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
               <Card className="group text-center p-6 flex flex-col items-center transition-all duration-75 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-                <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Rocket className="h-8 w-8" />
+                <div
+                  className="mx-auto bg-primary/10 text-primary 
+             w-28 h-28 flex items-center justify-center 
+             rounded-full overflow-hidden mb-4 
+             transition-all duration-300 
+             group-hover:scale-110"
+                >
+                  <Image
+                    src={"/icons/founders.gif"}
+                    width={100}
+                    height={100}
+                    alt='mentors'
+                  />
                 </div>
+
+
                 <div className="flex-grow">
                   <h3 className="text-xl font-bold">For Founders</h3>
                   <p className="text-muted-foreground mt-2 mb-4">Launch your idea with expert guidance and resources.</p>
@@ -420,8 +477,17 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                 <Button className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input" onClick={() => setActiveView('incubators')}>Explore Incubators</Button>
               </Card>
               <Card className="group text-center p-6 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-                <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Users className="h-8 w-8" />
+                <div className="mx-auto bg-primary/10 text-primary 
+             w-28 h-28 flex items-center justify-center 
+             rounded-full overflow-hidden mb-4 
+             transition-all duration-300 
+             group-hover:scale-110 ">
+                  <Image
+                    src={"/icons/mentoring.gif"}
+                    width={100}
+                    height={100}
+                    alt='mentors'
+                  />
                 </div>
                 <div className="flex-grow">
                   <h3 className="text-xl font-bold">For Mentors</h3>
@@ -430,8 +496,17 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                 <Button className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input" onClick={() => setActiveView('mentors')}>Become a Mentor</Button>
               </Card>
               <Card className="group text-center p-6 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-                <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Building className="h-8 w-8" />
+                <div className="mx-auto bg-primary/10 text-primary 
+             w-28 h-28 flex items-center justify-center 
+             rounded-full overflow-hidden mb-4 
+             transition-all duration-300 
+             group-hover:scale-110">
+                  <DotLottieReact
+                    src="https://lottie.host/0524fb6c-2e9f-4870-b4cc-afa8b781c52c/qwlt9UUd4M.lottie"
+                    loop
+                    autoplay
+                    className='w-full h-full object-contain'
+                  />
                 </div>
                 <div className="flex-grow">
                   <h3 className="text-xl font-bold">For Incubators</h3>
@@ -440,8 +515,17 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                 <Button className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input" onClick={() => setActiveView('incubators')}>Partner with Us</Button>
               </Card>
               <Card className="group text-center p-6 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-                <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Handshake className="h-8 w-8" />
+                <div className="mx-auto bg-primary/10 text-primary 
+             w-28 h-28 flex items-center justify-center 
+             rounded-full overflow-hidden mb-4 
+             transition-all duration-300 
+             group-hover:scale-110">
+                  <DotLottieReact
+                    src="https://lottie.host/6e4403cb-7eaf-475f-b74f-625809327516/QLBMt4JJnQ.lottie"
+                    loop
+                    autoplay
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div className="flex-grow">
                   <h3 className="text-xl font-bold">For MSMEs</h3>
@@ -462,7 +546,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl m-auto">
               {/* First 3 items */}
-              {whatWeOffer.slice(0,3).map((feature) => (
+              {whatWeOffer.slice(0, 3).map((feature) => (
                 <div key={feature.title} className="flex justify-center">
                   <IconCard
                     icon={feature.icon}
