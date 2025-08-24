@@ -6,7 +6,8 @@ import { Lightbulb, Briefcase, PlayCircle, Star, Award, CheckCircle, GraduationC
 import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import SlidingPuzzle from '../ui/SlidingPuzzle';
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import * as React from "react";
 import type { View } from "@/app/types";
 import Footer from "../layout/footer";
@@ -31,6 +32,7 @@ import { Separator } from "@radix-ui/react-separator";
 import { useRouter } from "next/navigation";
 import VideoClip from '../ui/GlitchText';
 
+gsap.registerPlugin(ScrollTrigger);
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters."),
@@ -41,6 +43,7 @@ const contactFormSchema = z.object({
 });
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
+
 
 
 
@@ -127,7 +130,7 @@ const dynamicHeroStates = [
 
 
 
-const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
+const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: HomeViewProps) => {
   const [currentStateIndex, setCurrentStateIndex] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => {
@@ -138,6 +141,10 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
   }, []);
 
   const { stage, icon: StageIcon, tags, users } = dynamicHeroStates[currentStateIndex];
+
+
+
+
 
   const logoPositions = [
     { top: '-4rem', left: '50%', transform: 'translateX(-50%)' }, // top center
@@ -182,6 +189,13 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
       duration: 2.5,
     }
   ];
+
+
+
+
+
+
+
   const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
     const router = useRouter();
     const handleLogoClick = () => {
@@ -189,7 +203,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
     };
     return (
       <div
-        className="flex justify-left items-center z-[1000] gap-2 relative top-5 left-4"
+        className="flex justify-left items-center z-[1000] gap-2 relative top-5 left-4 "
         onClick={handleLogoClick}
       >
         <Image
@@ -215,36 +229,38 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
 
 
   return (
-    <section className="relative hidden-scroll z-[1000] h-screen overflow-hidden">
+    <section className={` hidden-scroll h-screen overflow-hidden card1`} id="hero"
+    >
       {/* Background Video */}
       <video
         autoPlay
         loop
         muted
+        preload="auto"
         playsInline
-        className="absolute top-0 left-0 w-full h-full object-cover z-10"
+        className={`hidden lg:block absolute top-0 left-0 w-full h-full object-cover z-10 `}
       >
-        <source src="/video/herosection.mp4" type="video/mp4" />
+        <source src="/video/HeaderVideo.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
       {/* Overlay for readability (optional, tweak opacity) */}
-      <div className="absolute inset-0 bg-black/20"></div>
+      <div className="hidden lg:block absolute inset-0 bg-black/20 z-10 rounded-lg"></div>
 
       {/* Logo in top-right */}
       <BrandLogo />
 
       {/* Content Layer */}
       <div className="relative z-10 h-[90vh] flex flex-col lg:flex-row items-center justify-center">
-        <div className="flex-1 text-center lg:text-left relative left-16">
+        <div className="lg:flex-1 text-center lg:text-left relative lg:left-16">
           {/* Typed text */}
-          <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-white">
+          <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-current lg:text-white">
             {"Empowering Tomorrow's"}
             <br />
             <span className="relative left-2 inline-block text-primary">
               Innovators
               <svg
-                className="absolute w-[80px] md:w-[180px] right-0 -bottom-[6px] md:-bottom-[10px] pointer-events-none"
+                className="absolute w-[80px] md:w-[160px] right-0 -bottom-[6px] md:-bottom-[10px] pointer-events-none"
                 aria-hidden="true"
                 role="presentation"
                 viewBox="0 0 117 72"
@@ -261,11 +277,11 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
             </span>
           </h1>
 
-          <span className="block text-3xl md:text-6xl font-headline mt-4 text-white">
+          <span className="block text-3xl md:text-6xl font-headline mt-4 text-current lg:text-white">
             The Hustloop
           </span>
 
-          <div className="block text-4xl md:text-8xl font-headline leading-tight text-white">
+          <div className="block text-4xl md:text-8xl font-headline leading-tight text-current lg:text-white">
             <span>for </span>
             <ReactTyped
               strings={[
@@ -308,6 +324,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView }: HomeViewProps) => {
           )}
         </div>
       </div>
+
     </section>
 
 
@@ -433,6 +450,25 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
   const [isPausedRow2, setPausedRow2] = useState(false);
   const [isPausedRow3, setPausedRow3] = useState(false);
 
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (cardRef.current) {
+      gsap.to(cardRef.current, {
+        borderRadius: "25px",
+        scale: 0.6,
+        opacity: 0,
+
+        scrollTrigger: {
+          trigger: cardRef.current,
+          start: "top 15%",
+          end: "bottom 15%",
+          scrub: true,
+        },
+      });
+    }
+  }, []);
+
 
 
 
@@ -446,96 +482,145 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
       <div className="z-10">
 
         {/* Hero Section */}
-        <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
+        <div >
+          <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
 
-        {/* Start Your Journey Section */}
-        <section className="py-16 md:py-20 cursor-default">
-          <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-bold text-center mb-12 font-headline">Start your <HighlightEffect> Journey </HighlightEffect></h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-              <Card className="group text-center p-6 flex flex-col items-center transition-all duration-75 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-                <div
-                  className="mx-auto bg-primary/10 text-primary 
-             w-28 h-28 flex items-center justify-center 
-             rounded-full overflow-hidden mb-4 
-             transition-all duration-300 
-             group-hover:scale-110"
-                >
-                  <Image
-                    src={"/icons/founders.gif"}
-                    width={100}
-                    height={100}
-                    alt='mentors'
-                  />
-                </div>
+          {/* Start Your Journey Section */}
+          <section
+            className="py-16 md:py-20 cursor-default card2 z-10 bg-background h-[90vh]"
+            ref={cardRef}
+          >
+            <div className="container m-auto flex justify-center items-center flex-col ">
+              <h2 className="text-4xl font-bold text-center mb-12 font-headline">
+                Start your <HighlightEffect> Journey </HighlightEffect>
+              </h2>
 
+              {/* Parent container card */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 w-full mx-auto pt-8">
 
-                <div className="flex-grow">
-                  <h3 className="text-xl font-bold">For Founders</h3>
-                  <p className="text-muted-foreground mt-2 mb-4">Launch your idea with expert guidance and resources.</p>
-                </div>
-                <Button className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input" onClick={() => setActiveView('incubators')}>Explore Incubators</Button>
-              </Card>
-              <Card className="group text-center p-6 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-                <div className="mx-auto bg-primary/10 text-primary 
-             w-28 h-28 flex items-center justify-center 
-             rounded-full overflow-hidden mb-4 
-             transition-all duration-300 
-             group-hover:scale-110 ">
-                  <Image
-                    src={"/icons/mentoring.gif"}
-                    width={100}
-                    height={100}
-                    alt='mentors'
-                  />
-                </div>
-                <div className="flex-grow">
+                {/* Card 1 */}
+                <Card className="group text-center p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+                  <div className="mx-auto bg-primary/10 text-primary 
+              w-28 h-28 flex items-center justify-center 
+              rounded-full overflow-hidden mb-4 
+              transition-all duration-300 
+              group-hover:scale-110">
+                    <Image
+                      src={"/icons/founders.gif"}
+                      width={100}
+                      height={100}
+                      alt="mentors"
+                    />
+                  </div>
+                  <div className='flex-grow'>
+                    <h3 className="text-xl font-bold">For Founders</h3>
+                    <p className="text-muted-foreground mt-2 mb-4">
+                      Launch your idea with expert guidance and resources.
+                    </p>
+                  </div>
+
+                  <Button
+                    className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+                    onClick={() => setActiveView("incubators")}
+                  >
+                    Explore Incubators
+                  </Button>
+                </Card>
+
+                {/* Card 2 */}
+                <Card className="group text-center p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+                  <div className="mx-auto bg-primary/10 text-primary 
+              w-28 h-28 flex items-center justify-center 
+              rounded-full overflow-hidden mb-4 
+              transition-all duration-300 
+              group-hover:scale-110">
+                    <Image
+                      src={"/icons/mentoring.gif"}
+                      width={100}
+                      height={100}
+                      alt="mentors"
+                    />
+                  </div>
                   <h3 className="text-xl font-bold">For Mentors</h3>
-                  <p className="text-muted-foreground mt-2 mb-4">Guide the next generation of innovators and make an impact.</p>
-                </div>
-                <Button className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input" onClick={() => setActiveView('mentors')}>Become a Mentor</Button>
-              </Card>
-              <Card className="group text-center p-6 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-                <div className="mx-auto bg-primary/10 text-primary 
-             w-28 h-28 flex items-center justify-center 
-             rounded-full overflow-hidden mb-4 
-             transition-all duration-300 
-             group-hover:scale-110">
-                  <DotLottieReact
-                    src="https://lottie.host/0524fb6c-2e9f-4870-b4cc-afa8b781c52c/qwlt9UUd4M.lottie"
-                    loop
-                    autoplay
-                    className='w-full h-full object-contain'
-                  />
-                </div>
-                <div className="flex-grow">
-                  <h3 className="text-xl font-bold">For Incubators</h3>
-                  <p className="text-muted-foreground mt-2 mb-4">Support startups and foster a culture of innovation.</p>
-                </div>
-                <Button className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input" onClick={() => setActiveView('incubators')}>Partner with Us</Button>
-              </Card>
-              <Card className="group text-center p-6 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-                <div className="mx-auto bg-primary/10 text-primary 
-             w-28 h-28 flex items-center justify-center 
-             rounded-full overflow-hidden mb-4 
-             transition-all duration-300 
-             group-hover:scale-110">
-                  <DotLottieReact
-                    src="https://lottie.host/6e4403cb-7eaf-475f-b74f-625809327516/QLBMt4JJnQ.lottie"
-                    loop
-                    autoplay
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div className="flex-grow">
-                  <h3 className="text-xl font-bold">For MSMEs</h3>
-                  <p className="text-muted-foreground mt-2 mb-4">Collaborate with startups for mutual growth and innovation.</p>
-                </div>
-                <Button className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input" onClick={() => setActiveView('msmes')}>Join as MSME</Button>
-              </Card>
+                  <p className="text-muted-foreground mt-2 mb-4">
+                    Guide the next generation of innovators and make an impact.
+                  </p>
+                  <Button
+                    className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+                    onClick={() => setActiveView("mentors")}
+                  >
+                    Become a Mentor
+                  </Button>
+                </Card>
+
+                {/* Card 3 */}
+                <Card className="group text-center p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+                  <div className="mx-auto bg-primary/10 text-primary 
+              w-28 h-28 flex items-center justify-center 
+              rounded-full overflow-hidden mb-4 
+              transition-all duration-300 
+              group-hover:scale-110">
+                    <DotLottieReact
+                      src="https://lottie.host/0524fb6c-2e9f-4870-b4cc-afa8b781c52c/qwlt9UUd4M.lottie"
+                      loop
+                      autoplay
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className='flex-grow'>
+                    <h3 className="text-xl font-bold">For Incubators</h3>
+                    <p className="text-muted-foreground mt-2 mb-4 w-auto">
+                      Support startups and foster a culture of innovation.
+                    </p>
+                  </div>
+
+                  <Button
+                    className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+                    onClick={() => setActiveView("incubators")}
+                  >
+                    Partner with Us
+                  </Button>
+                </Card>
+
+                {/* Card 4 */}
+                <Card className="group text-center p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+                  <div className="mx-auto bg-primary/10 text-primary 
+              w-28 h-28 flex items-center justify-center 
+              rounded-full overflow-hidden mb-4 
+              transition-all duration-300 
+              group-hover:scale-110">
+                    <DotLottieReact
+                      src="https://lottie.host/6e4403cb-7eaf-475f-b74f-625809327516/QLBMt4JJnQ.lottie"
+                      loop
+                      autoplay
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className='flex-grow'>
+                    <h3 className="text-xl font-bold">For MSMEs</h3>
+                    <p className="text-muted-foreground mt-2 mb-4">
+                      Collaborate with startups for mutual growth and innovation.
+                    </p>
+                  </div>
+
+                  <Button
+                    className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+                    onClick={() => setActiveView("msmes")}
+                  >
+                    Join as MSME
+                  </Button>
+                </Card>
+
+              </div>
+
             </div>
-          </div>
-        </section>
+          </section>
+
+
+        </div>
+
+
+
 
         {/* What We Offer Section */}
         <section className="py-16 md:py-20 bg-muted/30 cursor-default">

@@ -28,6 +28,8 @@ export default function PrivacyPolicyPage() {
     isStaticPage: true,
     navOpen: false,
     setNavOpen: () => { },
+    heroVisible:false
+    
   };
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import React, { use, useEffect, useRef } from 'react'
+import React, { use, useEffect, useRef, useState } from 'react'
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Palette, Check, Loader2, UserCircle, LogOut, Droplet, Leaf, Flame, Cloud, Mail } from 'lucide-react';
@@ -22,6 +22,7 @@ interface DesktopNavProps {
     isStaticPage?: boolean;
     navOpen?: boolean;
     setNavOpen: (value: boolean) => void;
+    heroVisible?: boolean
 }
 
 const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
@@ -77,7 +78,7 @@ export function ThemeToggleDropdown() {
     )
 }
 
-const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false }: DesktopNavProps) => {
+const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false }: DesktopNavProps) => {
     const router = useRouter();
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
@@ -203,6 +204,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
             container.removeEventListener("mouseleave", handleMouseLeave);
         };
     }, [isLoading, isLoggedIn]);
+
     const email = "support@hustloop.com"
     return (
         <div>
@@ -216,14 +218,19 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                                 ) : isLoggedIn ? (
                                     <>
-                                        <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
+                                        <button
+                                            onClick={() => setActiveView('dashboard')}
+                                            className="z-20 relative xl:inline-flex w-14 h-14 rounded-xl border border-solid backdrop-blur-md bg-white/10 flex items-center justify-center"
+                                            style={{ color: (heroVisible && !navOpen)? "white" : "CurrentColor" ,transition: "none"}}
+                                        >
                                             <UserCircle className="h-6 w-6" />
                                             <span className="sr-only">Dashboard</span>
-                                        </Button>
-                                        <Button variant="ghost" size="icon" onClick={onLogout}>
+                                        </button>
+
+                                        <button className={`z-20 relative xl:inline-flex w-14 h-14 rounded-xl border border-solid backdrop-blur-md bg-white/10 flex items-center justify-center `} style={{ color: (heroVisible && !navOpen)? "white" : "CurrentColor" ,transition: "none"}} onClick={onLogout}>
                                             <LogOut className="h-6 w-6" />
                                             <span className="sr-only">Logout</span>
-                                        </Button>
+                                        </button>
                                     </>
                                 ) : (
                                     <div
@@ -243,43 +250,28 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                         )}
                     </div>
                     {/* Menu Button */}
-                    <div className='flex items-center justify-center'>
+                    <div className="flex items-center justify-center">
                         <button
                             id="menu-button"
                             ref={btnRef}
                             aria-label="Menu"
                             onClick={() => {
-                                document.body.classList.toggle('nav-open');
+                                document.body.classList.toggle("nav-open");
                                 setNavOpen(!navOpen);
                             }}
-                            className="z-10 relative xl:inline-block w-[3.5rem] h-[3.5rem] rounded-xl border border-solid box-border pointer-events-auto"
+                            className="z-10 relative xl:inline-block w-[3.5rem] h-[3.5rem] rounded-xl border border-solid backdrop-blur-md bg-white/10 pointer-events-auto flex items-center justify-center"
                         >
-                            <svg
-                                className="ham hamRotate pointer-events-none w-full h-full select-none transition-colors relative text-foreground "
-                                viewBox="0 0 100 100"
-                                width="80"
-                            >
-                                <path
-                                    className="line top"
-                                    stroke="currentColor"
-                                    d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20"
-                                />
-                                <path
-                                    className="line middle"
-                                    stroke="currentColor"
-                                    d="m 70,50 h -40"
-                                />
-                                <path
-                                    className="line bottom"
-                                    stroke="currentColor"
-                                    d="m 30,67 h 40 c 0,0 8.5,0.149796 8.5,-8.5 0,-8.649796 -8.5,-8.5 -8.5,-8.5 h -20 v 20"
-                                />
+                            <svg className="ham hamRotate pointer-events-none w-full h-full select-none transition-colors relative text-foreground duration-300" viewBox="0 0 100 100" width="80" >
+                                <path className="line top transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20" />
+                                <path className="line middle transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 70,50 h -40" />
+                                <path className="line bottom transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 30,67 h 40 c 0,0 8.5,0.149796 8.5,-8.5 0,-8.649796 -8.5,-8.5 -8.5,-8.5 h -20 v 20" />
                             </svg>
                         </button>
                     </div>
 
+
                     <div
-                        className="relative pointer-events-auto typeform-trigger rounded-xl border border-solid box-border w-[3.5rem] h-[3.5rem] flex items-center justify-center cursor-pointer hover:bg-accent/20 transition-colors"
+                        className="relative pointer-events-auto typeform-trigger rounded-xl border border-solid box-border w-[3.5rem] h-[3.5rem] bg-white/10 flex items-center justify-center cursor-pointer hover:bg-accent/20 transition-colors backdrop-blur-md z-10"
 
                         aria-label="Toggle Theme"
                     >
@@ -288,7 +280,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
 
                 </div>
                 <div className="flex justify-end fixed items-center gap-8 bg-transparent right-4 pointer-events-auto top-24 ">
-                    <div className="pointer-events-auto typeform-trigger rounded-full border border-solid w-[3.5rem] h-[3.5rem] flex items-center justify-center hover:bg-accent/20 transition-colors">
+                    <div className="pointer-events-auto typeform-trigger rounded-full border border-solid w-[3.5rem] h-[3.5rem] flex items-center justify-center hover:bg-accent/20 transition-colors backdrop-blur-sm z-10 bg-white/20">
                         <a
                             href={`mailto:${email}`}
                             className="group flex items-center justify-center w-full h-full cursor-pointer"
@@ -310,6 +302,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                         ? "opacity-100 translate-y-0 pointer-events-auto"
                         : "opacity-0 translate-y-5 pointer-events-none"
                 )}
+                id="menu-navs"
             >
                 <div className="hidden md:flex items-center gap-4 text-[18px]">
                     <Button asChild className="text-[18px] font-medium">
@@ -343,10 +336,11 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, setActiveView, isLoggedIn
                             ? "opacity-100 translate-y-0 pointer-events-auto"
                             : "opacity-0 translate-y-5 pointer-events-none"
                     )}
+                    id="menu-navs"
                 >
                     {navItems
                         .filter((item) => !item.loggedIn || isLoggedIn)
-                        .map((item,index) => (
+                        .map((item, index) => (
                             <button
                                 key={index}
                                 onClick={() => setActiveView(item.id)}

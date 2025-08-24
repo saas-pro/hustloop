@@ -26,6 +26,7 @@ interface HeaderProps {
     isStaticPage?: boolean;
     navOpen: boolean;
     setNavOpen: (value: boolean) => void;
+    heroVisible:boolean;
 }
 
 const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
@@ -72,7 +73,7 @@ export function ThemeToggleDropdown() {
         </DropdownMenu>)
 }
 
-export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false, navOpen, setNavOpen }: HeaderProps) {
+export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,heroVisible, isStaticPage = false, navOpen, setNavOpen }: HeaderProps) {
     const router = useRouter();
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
@@ -166,6 +167,8 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     isLoading={isLoading}
                     navOpen={navOpen}
                     setNavOpen={setNavOpen}
+                    heroVisible={heroVisible}
+                    
                 />
             </nav >
             <nav className="menu flex md:hidden">

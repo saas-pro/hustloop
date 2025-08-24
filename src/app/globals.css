@@ -491,6 +491,7 @@
 .view-card {
   transform: scale(0.9) translate(0, 20%);
   transition: transform 750ms cubic-bezier(0.65, 0, 0.076, 1);
+  border-radius: 25% !important;
 }
 
 .view-card-1 {
@@ -521,8 +522,19 @@
 .nav-open #main-view,
 .nav-open .view-card-3 {
   transform: scale(0.9) translate(0, 30%);
-  border-radius: 0.75rem;
+  border-radius: 25%;
   cursor: pointer;
+}
+
+.card1,
+.card2 {
+  position: sticky;
+  top: 0vh;
+}
+
+/* only card2 gets border radius */
+.card2 {
+  border-radius: 25px 25px 0 0 !important;
 }
 
 

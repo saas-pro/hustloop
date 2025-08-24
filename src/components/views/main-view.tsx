@@ -10,7 +10,7 @@ import HomeView from "@/components/views/home";
 import type { View, UserRole } from "@/app/types";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Dialog, DialogContent,DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Loader2 } from "lucide-react";
 import { signOut, onAuthStateChanged } from "firebase/auth";
@@ -279,6 +279,26 @@ export default function MainView() {
     }
   };
 
+  const [isHeroVisible, setIsHeroVisible] = useState(true);
+
+  useEffect(() => {
+    const heroElement = document.getElementById("hero");
+    if (!heroElement) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => setIsHeroVisible(entry.isIntersecting));
+      },
+      { threshold: 0.1 } // triggers when 10% of hero is visible
+    );
+
+    observer.observe(heroElement);
+   
+
+    return () => observer.unobserve(heroElement);
+  }, []);
+
+
   const handleBookingSuccess = (mentorName: string, date: Date, time: string) => {
     if (!hasUsedFreeSession) {
       setHasUsedFreeSession(true);
@@ -382,13 +402,14 @@ export default function MainView() {
         isLoading={isLoading}
         navOpen={navOpen}
         setNavOpen={(value: boolean) => { setNavOpen(value); }}
+        heroVisible={isHeroVisible}
       />
 
       <main
-        className="view relative z-40 h-screen w-screen flex-grow ultrawide-fix m-auto pointer-events-auto"
+        className={`view relative z-40 h-screen w-screen flex-grow ultrawide-fix m-auto pointer-events-auto ${navOpen && "border rounded-lg"}`}
         id="main-view"
       >
-        <section className={`h-screen`}>
+        <section className={`h-screen ${navOpen}`}>
           <HomeView setActiveView={setActiveView} isLoggedIn={isLoggedIn} navOpen={navOpen} />
         </section>
 
