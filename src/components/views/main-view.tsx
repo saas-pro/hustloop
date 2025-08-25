@@ -293,7 +293,7 @@ export default function MainView() {
     );
 
     observer.observe(heroElement);
-   
+
 
     return () => observer.unobserve(heroElement);
   }, []);
@@ -406,14 +406,19 @@ export default function MainView() {
       />
 
       <main
-        className={`view relative z-40 h-screen w-screen flex-grow ultrawide-fix m-auto pointer-events-auto ${navOpen && "border rounded-lg"}`}
+        className={`view relative z-40 min-h-screen w-screen flex-grow ultrawide-fix m-auto pointer-events-auto ${navOpen && "border rounded-lg"
+          }`}
         id="main-view"
       >
-        <section className={`h-screen ${navOpen}`}>
-          <HomeView setActiveView={setActiveView} isLoggedIn={isLoggedIn} navOpen={navOpen} />
+        <section className={`min-h-screen ${navOpen ? "border" : ""}`}>
+          <HomeView
+            setActiveView={setActiveView}
+            isLoggedIn={isLoggedIn}
+            navOpen={navOpen}
+          />
         </section>
-
       </main>
+
 
 
       {activeView === 'blog' && <BlogView isOpen={true} onOpenChange={handleModalOpenChange('blog')} />}

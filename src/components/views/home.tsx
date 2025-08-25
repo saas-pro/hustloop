@@ -6,8 +6,8 @@ import { Lightbulb, Briefcase, PlayCircle, Star, Award, CheckCircle, GraduationC
 import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { motion, useScroll, useTransform } from "framer-motion";
+
 import * as React from "react";
 import type { View } from "@/app/types";
 import Footer from "../layout/footer";
@@ -30,9 +30,6 @@ import BannerImage from "../ui/BannerImage";
 import HanddrawnUnderline from "@/components/ui/handdrawn-underline";
 import { Separator } from "@radix-ui/react-separator";
 import { useRouter } from "next/navigation";
-import VideoClip from '../ui/GlitchText';
-
-gsap.registerPlugin(ScrollTrigger);
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters."),
@@ -238,14 +235,14 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: HomeViewProp
         muted
         preload="auto"
         playsInline
-        className={`hidden lg:block absolute top-0 left-0 w-full h-full object-cover z-10 `}
+        className={`block absolute top-0 left-0 w-full h-full object-cover z-10 `}
       >
         <source src="/video/HeaderVideo.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
       {/* Overlay for readability (optional, tweak opacity) */}
-      <div className="hidden lg:block absolute inset-0 bg-black/20 z-10 rounded-lg"></div>
+      <div className="block lg:block absolute inset-0 bg-black/10 md:bg-black/20 z-10 rounded-lg"></div>
 
       {/* Logo in top-right */}
       <BrandLogo />
@@ -254,7 +251,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: HomeViewProp
       <div className="relative z-10 h-[90vh] flex flex-col lg:flex-row items-center justify-center">
         <div className="lg:flex-1 text-center lg:text-left relative lg:left-16">
           {/* Typed text */}
-          <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-current lg:text-white">
+          <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-white lg:text-white">
             {"Empowering Tomorrow's"}
             <br />
             <span className="relative left-2 inline-block text-primary">
@@ -277,11 +274,11 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: HomeViewProp
             </span>
           </h1>
 
-          <span className="block text-3xl md:text-6xl font-headline mt-4 text-current lg:text-white">
+          <span className="block text-3xl md:text-6xl font-headline mt-4 text-white lg:text-white">
             The Hustloop
           </span>
 
-          <div className="block text-4xl md:text-8xl font-headline leading-tight text-current lg:text-white">
+          <div className="block text-4xl md:text-8xl font-headline leading-tight text-white lg:text-white">
             <span>for </span>
             <ReactTyped
               strings={[
@@ -450,29 +447,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
   const [isPausedRow2, setPausedRow2] = useState(false);
   const [isPausedRow3, setPausedRow3] = useState(false);
 
-  const cardRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (cardRef.current) {
-      gsap.to(cardRef.current, {
-        borderRadius: "25px",
-        scale: 0.6,
-        opacity: 0,
-
-        scrollTrigger: {
-          trigger: cardRef.current,
-          start: "top 15%",
-          end: "bottom 15%",
-          scrub: true,
-        },
-      });
-    }
-  }, []);
-
-
-
-
-
 
   return (
     <div
@@ -482,14 +456,16 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
       <div className="z-10">
 
         {/* Hero Section */}
-        <div >
+        <div>
           <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
 
+
           {/* Start Your Journey Section */}
-          <section
-            className="py-16 md:py-20 cursor-default card2 z-10 bg-background h-[90vh]"
-            ref={cardRef}
+           <section
+            className="py-16 md:py-20 cursor-default card2  bg-white min-h-screen md:h-[90vh]"
+            
           >
+
             <div className="container m-auto flex justify-center items-center flex-col ">
               <h2 className="text-4xl font-bold text-center mb-12 font-headline">
                 Start your <HighlightEffect> Journey </HighlightEffect>
@@ -615,11 +591,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
 
             </div>
           </section>
-
-
         </div>
-
-
 
 
         {/* What We Offer Section */}
@@ -1138,6 +1110,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
         </section>
         <Footer />
       </div>
-    </div>
+    </div >
   );
 }

@@ -178,6 +178,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     isLoggedIn={isLoggedIn}
                     onLogout={onLogout}
                     isLoading={isLoading}
+                    heroVisible={heroVisible}
                 />
             </nav>
         </div>

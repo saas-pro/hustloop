@@ -20,6 +20,7 @@ interface MobileNavProps {
     onLogout: () => void;
     isLoading: boolean;
     isStaticPage?: boolean;
+    heroVisible?:boolean
 
 }
 
@@ -35,7 +36,7 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
 
 
 
-export function ThemeToggleDropdown() {
+export function ThemeToggleDropdown({heroVisible}:MobileNavProps) {
     const { theme, setTheme } = useTheme();
     const themeOptions = [
         { value: 'light', label: 'Light', icon: Sun },
@@ -49,8 +50,8 @@ export function ThemeToggleDropdown() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <Sun className="h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Button variant="ghost" size="icon" className={`${heroVisible ? "text-white":"text-current"}`}>
+                    <Sun className={`h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 `} />
                     <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                     <span className="sr-only">Toggle theme</span>
                 </Button>
@@ -67,7 +68,7 @@ export function ThemeToggleDropdown() {
         </DropdownMenu>)
 }
 
-const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false }: MobileNavProps) => {
+const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false ,heroVisible}: MobileNavProps) => {
     const router = useRouter();
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
@@ -155,14 +156,18 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
         <div>
             <div className="md:hidden fixed flex top-6 right-4 z-50 pointer-events-auto">
                 <div>
-                    <ThemeToggleDropdown />
+                    <ThemeToggleDropdown heroVisible={heroVisible} activeView={"home"} setActiveView={function (view: View): void {
+                        throw new Error("Function not implemented.");
+                    } } isLoggedIn={false} onLogout={function (): void {
+                        throw new Error("Function not implemented.");
+                    } } isLoading={false}/>
                 </div>
                 {!isStaticPage ? (
 
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon">
-                                <Menu className="h-6 w-6" />
+                                <Menu className={`h-6 w-6 ${heroVisible?"text-white":"text-current"}`}  />
                                 <span className="sr-only">Open menu</span>
                             </Button>
                         </SheetTrigger>

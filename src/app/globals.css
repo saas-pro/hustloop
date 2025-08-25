@@ -526,8 +526,7 @@
   cursor: pointer;
 }
 
-.card1,
-.card2 {
+.card1,.card2{
   position: sticky;
   top: 0vh;
 }
