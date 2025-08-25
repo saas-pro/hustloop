@@ -462,7 +462,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
 
           {/* Start Your Journey Section */}
            <section
-            className="py-16 md:py-20 cursor-default card2  bg-white min-h-screen md:h-[90vh]"
+            className="py-16 md:py-20 cursor-default card2  bg-background min-h-screen md:h-[90vh]"
             
           >
 
