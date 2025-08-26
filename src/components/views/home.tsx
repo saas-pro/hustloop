@@ -6,7 +6,7 @@ import { Lightbulb, Briefcase, PlayCircle, Star, Award, CheckCircle, GraduationC
 import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { motion, useScroll, useTransform } from "framer-motion";
+// Removed framer-motion in favor of native scroll-driven transform
 
 import * as React from "react";
 import type { View } from "@/app/types";
@@ -447,6 +447,91 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
   const [isPausedRow2, setPausedRow2] = useState(false);
   const [isPausedRow3, setPausedRow3] = useState(false);
 
+  // Scroll-based zoom for "Start your Journey" (native scroll listener)
+  const journeyRef = useRef<HTMLDivElement | null>(null);
+  const journeyPanelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const panel = journeyPanelRef.current;
+    if (!panel) return;
+
+    let rafId: number | null = null;
+
+    const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+    const updateScale = () => {
+      const section = journeyRef.current;
+      if (!section) return;
+      const rect = section.getBoundingClientRect();
+      const viewportH = window.innerHeight || document.documentElement.clientHeight;
+
+      // Professional-feel window: start growing earlier, finish near the top
+      const start = viewportH * 1.1; // fully below viewport
+      const end = viewportH * 0.15;  // near the top
+      const t = (start - rect.top) / (start - end);
+      const progress = clamp(t, 0, 1);
+
+      const scale = 0.75 + (1.0 - 0.75) * progress; // 0.75 → 1.0
+      panel.style.transform = `scale(${scale})`;
+      panel.style.transformOrigin = 'top center';
+      // Keep text fully readable at all times
+      panel.style.opacity = '1';
+
+      // Subtle shadow while growing
+      panel.style.boxShadow = 'none';
+    };
+
+    const onScrollOrResize = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateScale);
+    };
+
+    // Initialize and bind
+    updateScale();
+    window.addEventListener('scroll', onScrollOrResize, { passive: true });
+    window.addEventListener('resize', onScrollOrResize);
+
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', onScrollOrResize);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, []);
+
+  // IntersectionObserver to reveal journey cards smoothly
+  useEffect(() => {
+    const section = journeyRef.current;
+    if (!section) return;
+
+    const cards = Array.from(section.querySelectorAll<HTMLElement>("[data-journey-card]"));
+    if (cards.length === 0) return;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      cards.forEach((c) => c.classList.add("in-view"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const target = entry.target as HTMLElement;
+          if (entry.isIntersecting) {
+            target.classList.add("in-view");
+            observer.unobserve(target);
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: "0px 0px -10% 0px",
+        threshold: 0.2,
+      }
+    );
+
+    cards.forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
+  }, []);
+
 
   return (
     <div
@@ -460,22 +545,22 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
           <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
 
 
-          {/* Start Your Journey Section */}
-           <section
-            className="py-16 md:py-20 cursor-default card2 bg-background min-h-screen md:h-[90vh]"
-            
+          {/* Start Your Journey Section with native scroll-based zoom */}
+          <section
+            className="relative z-0 w-screen h-[100dvh] md:h-screen flex items-stretch justify-stretch cursor-default card2 bg-background"
+            ref={journeyRef}
           >
 
-            <div className="container m-auto flex justify-center items-center flex-col ">
-              <h2 className="text-4xl font-bold text-center mb-12 font-headline">
+            <div ref={journeyPanelRef} className="journey-panel w-full h-full flex flex-col items-center justify-center px-4 pt-16 md:pt-20">
+              <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8 font-headline">
                 Start your <HighlightEffect> Journey </HighlightEffect>
               </h2>
 
               {/* Parent container card */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 w-full mx-auto pt-8">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 w-full mx-auto pt-2 md:pt-4">
 
                 {/* Card 1 */}
-                <Card className="group text-center p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+                <Card data-journey-card className="journey-card group text-center p-8 md:p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
                   <div className="mx-auto bg-primary/10 text-primary 
               w-28 h-28 flex items-center justify-center 
               rounded-full overflow-hidden mb-4 
@@ -485,7 +570,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                       src={"/icons/founders.gif"}
                       width={100}
                       height={100}
-                      alt="mentors"
+                      alt="founders"
                     />
                   </div>
                   <div className='flex-grow'>
@@ -494,7 +579,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                       Launch your idea with expert guidance and resources.
                     </p>
                   </div>
-
                   <Button
                     className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
                     onClick={() => setActiveView("incubators")}
@@ -503,8 +587,64 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                   </Button>
                 </Card>
 
-                {/* Card 2 */}
-                <Card className="group text-center p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+                {/* Card 2 (MSMEs) */}
+                <Card data-journey-card className="journey-card group text-center p-8 md:p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+                  <div className="mx-auto bg-primary/10 text-primary 
+              w-28 h-28 flex items-center justify-center 
+              rounded-full overflow-hidden mb-4 
+              transition-all duration-300 
+              group-hover:scale-110">
+                    <DotLottieReact
+                      src="https://lottie.host/6e4403cb-7eaf-475f-b74f-625809327516/QLBMt4JJnQ.lottie"
+                      loop
+                      autoplay
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className='flex-grow'>
+                    <h3 className="text-xl font-bold">For MSMEs</h3>
+                    <p className="text-muted-foreground mt-2 mb-4">
+                      Collaborate with startups for mutual growth and innovation.
+                    </p>
+                  </div>
+                  <Button
+                    className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+                    onClick={() => setActiveView("msmes")}
+                  >
+                    Join as MSME
+                  </Button>
+                </Card>
+
+                {/* Card 3 */}
+                <Card data-journey-card className="journey-card group text-center p-8 md:p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+                  <div className="mx-auto bg-primary/10 text-primary 
+              w-28 h-28 flex items-center justify-center 
+              rounded-full overflow-hidden mb-4 
+              transition-all duration-300 
+              group-hover:scale-110">
+                    <DotLottieReact
+                      src="https://lottie.host/0524fb6c-2e9f-4870-b4cc-afa8b781c52c/qwlt9UUd4M.lottie"
+                      loop
+                      autoplay
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className='flex-grow'>
+                    <h3 className="text-xl font-bold">For Incubators</h3>
+                    <p className="text-muted-foreground mt-2 mb-4 w-auto">
+                      Support startups and foster a culture of innovation.
+                    </p>
+                  </div>
+                  <Button
+                    className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+                    onClick={() => setActiveView("incubators")}
+                  >
+                    Partner with Us
+                  </Button>
+                </Card>
+
+                {/* Card 4 (Mentors) */}
+                <Card data-journey-card className="journey-card group text-center p-8 md:p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
                   <div className="mx-auto bg-primary/10 text-primary 
               w-28 h-28 flex items-center justify-center 
               rounded-full overflow-hidden mb-4 
@@ -526,64 +666,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
                     onClick={() => setActiveView("mentors")}
                   >
                     Become a Mentor
-                  </Button>
-                </Card>
-
-                {/* Card 3 */}
-                <Card className="group text-center p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-                  <div className="mx-auto bg-primary/10 text-primary 
-              w-28 h-28 flex items-center justify-center 
-              rounded-full overflow-hidden mb-4 
-              transition-all duration-300 
-              group-hover:scale-110">
-                    <DotLottieReact
-                      src="https://lottie.host/0524fb6c-2e9f-4870-b4cc-afa8b781c52c/qwlt9UUd4M.lottie"
-                      loop
-                      autoplay
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div className='flex-grow'>
-                    <h3 className="text-xl font-bold">For Incubators</h3>
-                    <p className="text-muted-foreground mt-2 mb-4 w-auto">
-                      Support startups and foster a culture of innovation.
-                    </p>
-                  </div>
-
-                  <Button
-                    className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
-                    onClick={() => setActiveView("incubators")}
-                  >
-                    Partner with Us
-                  </Button>
-                </Card>
-
-                {/* Card 4 */}
-                <Card className="group text-center p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-                  <div className="mx-auto bg-primary/10 text-primary 
-              w-28 h-28 flex items-center justify-center 
-              rounded-full overflow-hidden mb-4 
-              transition-all duration-300 
-              group-hover:scale-110">
-                    <DotLottieReact
-                      src="https://lottie.host/6e4403cb-7eaf-475f-b74f-625809327516/QLBMt4JJnQ.lottie"
-                      loop
-                      autoplay
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div className='flex-grow'>
-                    <h3 className="text-xl font-bold">For MSMEs</h3>
-                    <p className="text-muted-foreground mt-2 mb-4">
-                      Collaborate with startups for mutual growth and innovation.
-                    </p>
-                  </div>
-
-                  <Button
-                    className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
-                    onClick={() => setActiveView("msmes")}
-                  >
-                    Join as MSME
                   </Button>
                 </Card>
 
