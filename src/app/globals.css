@@ -518,7 +518,7 @@
 /* Keep a subtle base rounding to prevent square flash when toggling nav */
 #main-view,
 .view-card-3 {
-  border-radius: 12px;
+  
   overflow: hidden;
   transition: border-radius 300ms ease, transform 750ms cubic-bezier(0.65, 0, 0.076, 1);
 }
@@ -549,14 +549,14 @@
 
 /* Base rounding on hero to avoid abrupt square corners */
 #hero {
-  border-radius: 12px;
+  
   overflow: hidden;
   transition: border-radius 300ms ease;
 }
 
 .card1{
   position: sticky;
-  top: 0vh;
+  top: 0;
 }
 
 /* Allow journey section to scroll normally */
@@ -595,9 +595,6 @@
     opacity: 1 !important;
   }
 }
-
-
-
 
 .nav-open #main-view *,
 .nav-open .view-card-3 * {

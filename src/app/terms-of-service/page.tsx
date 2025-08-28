@@ -11,11 +11,26 @@ import Link from 'next/link';
 
 export default function TermsOfServicePage() {
   const [lastUpdated, setLastUpdated] = useState('');
+  const [navOpen, setNavOpen] = useState(false); 
 
   // This prevents hydration mismatch by rendering the date only on the client.
   useEffect(() => {
     setLastUpdated(new Date().toLocaleDateString());
   }, []);
+
+  useEffect(() => {
+    if (navOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    // cleanup on unmount
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [navOpen]);
+
 
 
   // Dummy props for the Header, as it's used statically here and doesn't need to change views.
@@ -26,16 +41,16 @@ export default function TermsOfServicePage() {
     onLogout: () => { },
     isLoading: false, // Set to false as we are not checking auth status on this page
     isStaticPage: true,
-    navOpen: false,
-    setNavOpen: () => { },
-    heroVisible:false
+    navOpen,
+    setNavOpen,
+    heroVisible: false
   };
 
   return (
     <>
       <div className="flex flex-col min-h-screen">
         <Header {...headerProps} />
-        <main className="flex-grow container relative z-40 h-screen w-screen ultrawide-fix m-auto pointer-events-auto  px-4 py-12 md:py-16" id='main-view'>
+        <main className={`flex-grow container relative z-40 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:pt-14 ${navOpen ? "overflow-hidden" : "overflow-auto"} `} id='main-view'>
           <Card>
             <div className='relative'>
               <CardHeader>
@@ -104,9 +119,10 @@ export default function TermsOfServicePage() {
               </ScrollArea>
             </CardContent>
           </Card>
-          <div className='mt-10'>
+          <div>
             <Footer />
           </div>
+
 
         </main>
 

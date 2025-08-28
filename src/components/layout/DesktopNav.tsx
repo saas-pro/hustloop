@@ -221,13 +221,13 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                                         <button
                                             onClick={() => setActiveView('dashboard')}
                                             className="z-20 relative xl:inline-flex w-14 h-14 rounded-xl border border-solid backdrop-blur-md bg-white/10 flex items-center justify-center"
-                                            style={{ color: (heroVisible && !navOpen)? "white" : "CurrentColor" ,transition: "none"}}
+                                            style={{ color: (heroVisible && !navOpen) ? "white" : "CurrentColor", transition: "none" }}
                                         >
                                             <UserCircle className="h-6 w-6" />
                                             <span className="sr-only">Dashboard</span>
                                         </button>
 
-                                        <button className={`z-20 relative xl:inline-flex w-14 h-14 rounded-xl border border-solid backdrop-blur-md bg-white/10 flex items-center justify-center `} style={{ color: (heroVisible && !navOpen)? "white" : "CurrentColor" ,transition: "none"}} onClick={onLogout}>
+                                        <button className={`z-20 relative xl:inline-flex w-14 h-14 rounded-xl border border-solid backdrop-blur-md bg-white/10 flex items-center justify-center `} style={{ color: (heroVisible && !navOpen) ? "white" : "CurrentColor", transition: "none" }} onClick={onLogout}>
                                             <LogOut className="h-6 w-6" />
                                             <span className="sr-only">Logout</span>
                                         </button>
@@ -250,7 +250,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                         )}
                     </div>
                     {/* Menu Button */}
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-center ">
                         <button
                             id="menu-button"
                             ref={btnRef}
@@ -261,13 +261,28 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                             }}
                             className="z-10 relative xl:inline-block w-[3.5rem] h-[3.5rem] rounded-xl border border-solid backdrop-blur-md bg-white/10 pointer-events-auto flex items-center justify-center"
                         >
-                            <svg className="ham hamRotate pointer-events-none w-full h-full select-none transition-colors relative text-foreground duration-300" viewBox="0 0 100 100" width="80" >
-                                <path className="line top transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20" />
-                                <path className="line middle transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 70,50 h -40" />
-                                <path className="line bottom transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 30,67 h 40 c 0,0 8.5,0.149796 8.5,-8.5 0,-8.649796 -8.5,-8.5 -8.5,-8.5 h -20 v 20" />
+                            <svg
+                                className={`ham hamRotate pointer-events-none w-full h-full select-none transition-colors relative duration-300 ${heroVisible && !navOpen ? "stroke-white" : "stroke-black"
+                                    }`}
+                                viewBox="0 0 100 100"
+                                width="80"
+                            >
+                                <path
+                                    className="line top transition-colors duration-300 "
+                                    d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20"
+                                />
+                                <path
+                                    className="line middle transition-colors duration-300"
+                                    d="m 70,50 h -40"
+                                />
+                                <path
+                                    className="line bottom transition-colors duration-300"
+                                    d="m 30,67 h 40 c 0,0 8.5,0.149796 8.5,-8.5 0,-8.649796 -8.5,-8.5 -8.5,-8.5 h -20 v 20"
+                                />
                             </svg>
                         </button>
                     </div>
+
 
 
                     <div

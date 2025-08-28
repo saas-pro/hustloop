@@ -6,8 +6,8 @@ import Image from 'next/image';
 
 export default function Footer() {
   return (
-    <footer className="border-t" id="newsletter-section">
-      <div className="container mx-auto py-12 px-4 space-y-12">
+    <footer className="relative bg-background border-t" id="newsletter-section">
+      <div className="z-10 mx-auto py-12 px-4 space-y-12 bg-background">
         <NewsletterForm />
         <Separator />
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-sm">

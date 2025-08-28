@@ -281,22 +281,30 @@ export default function MainView() {
 
   const [isHeroVisible, setIsHeroVisible] = useState(true);
 
+  // Use scroll position (window or #main-view) to detect leaving the hero
   useEffect(() => {
-    const heroElement = document.getElementById("hero");
-    if (!heroElement) return;
+    const sentinel = document.getElementById("hero-sentinel");
+    const mainView = document.getElementById("main-view");
+    if (!sentinel || !mainView) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => setIsHeroVisible(entry.isIntersecting));
-      },
-      { threshold: 0.1 } // triggers when 10% of hero is visible
-    );
+    const handleScroll = () => {
+      const scrollY = mainView.scrollTop;
+      const sentinelTop = sentinel.offsetTop;
 
-    observer.observe(heroElement);
+      // if we've scrolled past sentinel → hero is NOT visible
+      setIsHeroVisible(scrollY < sentinelTop);
+    };
 
+    mainView.addEventListener("scroll", handleScroll);
+    handleScroll(); // run on load
 
-    return () => observer.unobserve(heroElement);
+    return () => mainView.removeEventListener("scroll", handleScroll);
   }, []);
+
+
+
+
+
 
 
   const handleBookingSuccess = (mentorName: string, date: Date, time: string) => {
@@ -406,11 +414,11 @@ export default function MainView() {
       />
 
       <main
-        className={`view relative z-40 min-h-screen w-screen flex-grow ultrawide-fix m-auto pointer-events-auto ${navOpen && "border rounded-lg"
+        className={` relative z-40 min-h-screen w-screen flex-grow ultrawide-fix m-auto pointer-events-auto ${navOpen && "border rounded-lg"
           }`}
         id="main-view"
       >
-        <section className={`min-h-screen ${navOpen ? "border" : ""}`}>
+        <section className={`min-h-screen`}>
           <HomeView
             setActiveView={setActiveView}
             isLoggedIn={isLoggedIn}
