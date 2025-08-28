@@ -6,28 +6,28 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
-  checkActionCode,
-  applyActionCode,
-  verifyPasswordResetCode,
-  confirmPasswordReset,
+    checkActionCode,
+    applyActionCode,
+    verifyPasswordResetCode,
+    confirmPasswordReset,
 } from "firebase/auth";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from "@/components/ui/form";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -36,38 +36,38 @@ import { API_BASE_URL } from "@/lib/api";
 
 function getFriendlyError(code: string, fallback: string) {
     switch (code) {
-    case "auth/invalid-action-code":
-    case "invalid-action-code":
-      return "This verification link is invalid or has already been used.";
-    case "auth/expired-action-code":
-    case "expired-action-code":
-      return "This verification link has expired. Please request a new one.";
-    case "auth/user-not-found":
-    case "user-not-found":
-      return "No account found with this email.";
-    case "auth/too-many-requests":
-    case "too-many-requests":
-      return "Too many attempts. Please try again later.";
+        case "auth/invalid-action-code":
+        case "invalid-action-code":
+            return "This verification link is invalid or has already been used.";
+        case "auth/expired-action-code":
+        case "expired-action-code":
+            return "This verification link has expired. Please request a new one.";
+        case "auth/user-not-found":
+        case "user-not-found":
+            return "No account found with this email.";
+        case "auth/too-many-requests":
+        case "too-many-requests":
+            return "Too many attempts. Please try again later.";
         default:
             return fallback;
     }
 }
 
 const passwordResetSchema = z
-  .object({
-    password: z
-      .string()
-      .min(10, "Password must be at least 10 characters long.")
-      .regex(/[A-Z]/, "Must contain at least one uppercase letter.")
-      .regex(/[a-z]/, "Must contain at least one lowercase letter.")
-      .regex(/[0-9]/, "Must contain at least one number.")
-      .regex(/[^A-Za-z0-9]/, "Must contain at least one special character."),
-  confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match.",
-  path: ["confirmPassword"],
-});
+    .object({
+        password: z
+            .string()
+            .min(10, "Password must be at least 10 characters long.")
+            .regex(/[A-Z]/, "Must contain at least one uppercase letter.")
+            .regex(/[a-z]/, "Must contain at least one lowercase letter.")
+            .regex(/[0-9]/, "Must contain at least one number.")
+            .regex(/[^A-Za-z0-9]/, "Must contain at least one special character."),
+        confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+        message: "Passwords do not match.",
+        path: ["confirmPassword"],
+    });
 
 const resendSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address." }),
@@ -81,7 +81,7 @@ const ResendVerificationForm = () => {
     const { toast } = useToast();
     const router = useRouter();
     const form = useForm<ResendValues>({ resolver: zodResolver(resendSchema) });
-    
+
     const onSubmit = async (data: ResendValues) => {
         try {
             const res = await fetch(`${API_BASE_URL}/api/resend-verification`, {
@@ -112,12 +112,12 @@ const ResendVerificationForm = () => {
     };
 
     return (
-    <>
+        <>
             <CardHeader className="text-center">
                 <CardTitle>Link Expired or Invalid</CardTitle>
-        <CardDescription>
-          This link has expired. Enter your email to receive a new one.
-        </CardDescription>
+                <CardDescription>
+                    This link has expired. Enter your email to receive a new one.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <Form {...form}>
@@ -128,23 +128,23 @@ const ResendVerificationForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="you@example.com" {...field} />
-                  </FormControl>
+                                    <FormControl>
+                                        <Input type="email" placeholder="you@example.com" {...field} />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
-            <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
-              {form.formState.isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+                        <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
+                            {form.formState.isSubmitting && (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
                             Resend Verification Link
                         </Button>
                     </form>
                 </Form>
             </CardContent>
-    </>
+        </>
     );
 };
 
@@ -218,28 +218,28 @@ const ActionHandlerContent = () => {
     }, [auth, modeParam, codeParam]);
 
     React.useEffect(() => {
-    if (success && info?.from === "verifyEmail") {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        if (success && info?.from === "verifyEmail") {
+            const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
             if (token) {
                 (async () => {
                     try {
-            const res = await fetch(`${API_BASE_URL}/api/check-profile`, {
-              method: "GET",
-              headers: { Authorization: `Bearer ${token}` },
+                        const res = await fetch(`${API_BASE_URL}/api/check-profile`, {
+                            method: "GET",
+                            headers: { Authorization: `Bearer ${token}` },
                         });
-            const data = await res.json();
-            if (res.ok && data.profile_complete) {
-              toast({ title: "Email Verified!", description: "You can now log in." });
-              router.push("/?action=login&from=verification_success");
+                        const data = await res.json();
+                        if (res.ok && data.profile_complete) {
+                            toast({ title: "Email Verified!", description: "You can now log in." });
+                            router.push("/?action=login&from=verification_success");
                         } else if (data.token) {
-              toast({ title: "Verified!", description: "Complete your profile." });
+                            toast({ title: "Verified!", description: "Complete your profile." });
                             router.push(`/complete-profile?token=${data.token}`);
                         } else {
-              toast({ title: "Verified!", description: "Proceed to login." });
-              router.push("/");
+                            toast({ title: "Verified!", description: "Proceed to login." });
+                            router.push("/");
                         }
-          } catch {
-            setShowVerifiedSuccess(true);
+                    } catch {
+                        setShowVerifiedSuccess(true);
                     }
                 })();
             } else {
@@ -250,64 +250,64 @@ const ActionHandlerContent = () => {
 
     if (loading) {
         return (
-      <div className="text-center p-8">
-        <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
-        <p>Verifying...</p>
+            <div className="text-center p-8">
+                <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
+                <p>Verifying...</p>
             </div>
         );
     }
-  if (showResendForm) return <ResendVerificationForm />;
-  if (error)
+    if (showResendForm) return <ResendVerificationForm />;
+    if (error)
         return (
-      <div className="text-center p-8">
-        <XCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
-        <p className="font-bold">{error}</p>
-        <Button onClick={() => router.push("/")} className="mt-4">
-          Go to Homepage
-        </Button>
-                </div>
-    );
-  if (showVerifiedSuccess)
-    return (
-      <div className="text-center p-8">
-        <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-4" />
-        <p className="font-bold">Email Verified!</p>
-        <p className="text-muted-foreground">You can now log in.</p>
-        <Button className="mt-4" onClick={() => router.push("/?action=login")}>Go to Login</Button>
+            <div className="text-center p-8">
+                <XCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
+                <p className="font-bold">{error}</p>
+                <Button onClick={() => router.push("/")} className="mt-4">
+                    Go to Homepage
+                </Button>
             </div>
         );
-  if (success && info?.from === 'resetPassword') {
+    if (showVerifiedSuccess)
         return (
-            <div className="text-center">
+            <div className="text-center p-8">
+                <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-4" />
+                <p className="font-bold">Email Verified!</p>
+                <p className="text-muted-foreground">You can now log in.</p>
+                <Button className="mt-4" onClick={() => router.push("/?action=login")}>Go to Login</Button>
+            </div>
+        );
+    if (success && info?.from === 'resetPassword') {
+        return (
+            <div className="text-center p-12">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Password Updated!</h2>
-        <p className="mb-6">Your password has been reset successfully. You can now log in with your new password.</p>
+                <h2 className="text-2xl font-bold mb-2">Password Updated!</h2>
+                <p className="mb-6">Your password has been reset successfully. You can now log in with your new password.</p>
                 <Button onClick={() => router.push('/?action=login')}>Go to Login</Button>
             </div>
         );
     }
-  if (mode === "resetPassword" && info)
+    if (mode === "resetPassword" && info)
         return (
-      <>
+            <>
                 <CardHeader className="text-center">
                     <CardTitle>Reset Your Password</CardTitle>
                     <CardDescription>Enter a new password for {info.email}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handlePasswordResetSubmit)}
-              className="space-y-4"
-            >
-                             <FormField
+                    <Form {...form}>
+                        <form
+                            onSubmit={form.handleSubmit(handlePasswordResetSubmit)}
+                            className="space-y-4"
+                        >
+                            <FormField
                                 control={form.control}
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>New Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
+                                        <FormControl>
+                                            <Input type="password" {...field} />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -317,36 +317,36 @@ const ActionHandlerContent = () => {
                                 name="confirmPassword"
                                 render={({ field }) => (
                                     <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
+                                        <FormLabel>Confirm Password</FormLabel>
+                                        <FormControl>
+                                            <Input type="password" {...field} />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-              <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
-                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+                            <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
+                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
                             </Button>
                         </form>
                     </Form>
                 </CardContent>
-      </>
+            </>
         );
-        return (
-    <div className="text-center p-8">
-      <CardHeader>
-                        <CardTitle>Check or Resend Email Verification</CardTitle>
-        <CardDescription>
-          Enter your email to check verification status or resend the link.
-        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-        <p className="text-muted">This is the fallback screen.</p>
-        <Button className="mt-4" onClick={() => router.push("/")}>Go to Homepage</Button>
-                    </CardContent>
-            </div>
-        );
+    return (
+        <div className="text-center p-8">
+            <CardHeader>
+                <CardTitle>Check or Resend Email Verification</CardTitle>
+                <CardDescription>
+                    Enter your email to check verification status or resend the link.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-muted">This is the fallback screen.</p>
+                <Button className="mt-4" onClick={() => router.push("/")}>Go to Homepage</Button>
+            </CardContent>
+        </div>
+    );
 };
 
 export default function AuthActionPage() {

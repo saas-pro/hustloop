@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from "@/components/layout/header";
@@ -281,30 +281,22 @@ export default function MainView() {
 
   const [isHeroVisible, setIsHeroVisible] = useState(true);
 
-  // Use scroll position (window or #main-view) to detect leaving the hero
   useEffect(() => {
     const sentinel = document.getElementById("hero-sentinel");
-    const mainView = document.getElementById("main-view");
-    if (!sentinel || !mainView) return;
+    if (!sentinel) return;
 
-    const handleScroll = () => {
-      const scrollY = mainView.scrollTop;
-      const sentinelTop = sentinel.offsetTop;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // if sentinel is visible, hero is visible
+        setIsHeroVisible(entry.isIntersecting);
+      },
+      { root: null, threshold: 0 }
+    );
 
-      // if we've scrolled past sentinel → hero is NOT visible
-      setIsHeroVisible(scrollY < sentinelTop);
-    };
+    observer.observe(sentinel);
 
-    mainView.addEventListener("scroll", handleScroll);
-    handleScroll(); // run on load
-
-    return () => mainView.removeEventListener("scroll", handleScroll);
+    return () => observer.disconnect();
   }, []);
-
-
-
-
-
 
 
   const handleBookingSuccess = (mentorName: string, date: Date, time: string) => {
@@ -396,8 +388,7 @@ export default function MainView() {
         return null;
     }
   }
-
-
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   return (
 
@@ -414,15 +405,18 @@ export default function MainView() {
       />
 
       <main
-        className={` relative z-40 min-h-screen w-screen flex-grow ultrawide-fix m-auto pointer-events-auto ${navOpen && "border rounded-lg"
+        className={`relative overflow-y-scroll z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
           }`}
         id="main-view"
+        
+        
       >
-        <section className={`min-h-screen`}>
+        <section className={`min-h-screen`} ref={scrollContainerRef}>
           <HomeView
             setActiveView={setActiveView}
             isLoggedIn={isLoggedIn}
             navOpen={navOpen}
+            scrollContainerRef={scrollContainerRef}
           />
         </section>
       </main>

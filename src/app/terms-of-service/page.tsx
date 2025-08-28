@@ -43,7 +43,8 @@ export default function TermsOfServicePage() {
     isStaticPage: true,
     navOpen,
     setNavOpen,
-    heroVisible: false
+    heroVisible: false,
+    
   };
 
   return (

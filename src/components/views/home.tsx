@@ -6,8 +6,8 @@ import { Lightbulb, Briefcase, PlayCircle, Star, Award, CheckCircle, GraduationC
 import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-// Removed framer-motion in favor of native scroll-driven transform
-
+import gsap from "gsap";
+import { motion, useScroll, useTransform } from "framer-motion";
 import * as React from "react";
 import type { View } from "@/app/types";
 import Footer from "../layout/footer";
@@ -73,7 +73,14 @@ interface HomeViewProps {
   setActiveView: (view: View) => void;
   isLoggedIn: boolean;
   navOpen?: boolean;
+  scrollContainerRef: React.RefObject<HTMLDivElement>;
 }
+interface DynamicHeroSection {
+  setActiveView: (view: View) => void;
+  isLoggedIn: boolean;
+  navOpen?: boolean;
+}
+
 
 const dynamicHeroStates = [
   {
@@ -127,7 +134,7 @@ const dynamicHeroStates = [
 
 
 
-const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: HomeViewProps) => {
+const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroSection) => {
   const [currentStateIndex, setCurrentStateIndex] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => {
@@ -330,7 +337,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: HomeViewProp
 };
 
 
-export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeViewProps) {
+export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollContainerRef }: HomeViewProps) {
   const { toast } = useToast();
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -537,6 +544,8 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
   }, []);
 
 
+
+
   return (
     <div
       className={`relative w-full h-screen bg-background text-foreground overflow-x-hidden ${navOpen ? "overflow-hidden" : ""
@@ -546,19 +555,21 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen }: HomeVie
       {/* Hero Section */}
       <section id="hero-section" className="h-screen sticky top-0">
         <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
-        <div className='h-1' id='hero-sentinel'></div>
       </section>
 
+      {/* Sentinel goes here, after hero */}
+      <div id="hero-sentinel" className="h-1"></div>
+
       {/* Start Your Journey Section with native scroll-based zoom */}
-      <section
-        className="relative py-14 z-10 w-screen md:h-[90vh] flex cursor-default bg-background rounded-t-2xl"
+      <section ref={journeyRef} className="relative py-14 z-10 w-screen md:h-[90vh] flex cursor-default bg-background rounded-t-2xl"
+
         id='journey second-div'
-        ref={journeyRef}
+
 
 
       >
 
-        <div ref={journeyPanelRef} className="journey-panel container m-auto flex justify-center items-center flex-col ">
+        <div className="journey-panel container m-auto flex justify-center items-center flex-col " ref={journeyPanelRef}>
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8 font-headline">
             Start your <HighlightEffect> Journey </HighlightEffect>
           </h2>

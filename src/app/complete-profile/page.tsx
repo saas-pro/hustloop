@@ -7,19 +7,19 @@ import * as z from "zod";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from "@/components/ui/form";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +31,7 @@ import { API_BASE_URL } from "@/lib/api";
 import { UserRole } from "@/app/types";
 
 const profileSchema = z.object({
-  role: z.string({ required_error: "Please select a role." }),
+    role: z.string({ required_error: "Please select a role." }),
 });
 
 type ProfileSchema = z.infer<typeof profileSchema>;
@@ -52,7 +52,7 @@ function CompleteProfileForm() {
     const onLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
         const { role, token: loginToken, hasSubscription, name, email, authProvider } = data;
         const userData = { name, email };
-        
+
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userRole', role!);
         localStorage.setItem('user', JSON.stringify(userData));
@@ -102,9 +102,9 @@ function CompleteProfileForm() {
             });
         }
     };
-    
+
     if (!token) {
-         return (
+        return (
             <div className="flex items-center justify-center min-h-screen bg-background">
                 <Card className="w-full max-w-md mx-auto">
                     <CardHeader>
@@ -122,13 +122,13 @@ function CompleteProfileForm() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
             <div
-              className="flex items-center gap-2 cursor-pointer mb-8"
-              onClick={() => router.push('/')}
+                className="flex items-center gap-2 cursor-pointer mb-8"
+                onClick={() => router.push('/')}
             >
-              {/* Logo image removed */}
-              <span className="font-headline text-2xl" style={{ color: '#facc15' }}>
-                hustl<strong className="text-3xl align-middle font-bold">∞</strong>p
-              </span>
+                {/* Logo image removed */}
+                
+                    <Image src="/logo.png" alt="Logo" width={120} height={40} />
+                
             </div>
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
