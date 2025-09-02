@@ -1063,7 +1063,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               </CardHeader>
               <CardContent className="p-0 mt-4 space-y-6">
                 <p className="text-muted-foreground">
-                  {"Join Hustloop today and let's turn your vision into reality. Your journey to success starts here."}
+                  {"Join Hustloop today and let turn your vision into reality. Your journey to success starts here."}
                 </p>
                 <div>
                   <p className="text-sm font-semibold">Email us</p>
