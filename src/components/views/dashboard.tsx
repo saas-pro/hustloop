@@ -362,16 +362,20 @@ export default function DashboardView({ isOpen, onOpenChange, user, userRole, au
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0">
-                        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 overflow-x-auto">
-                            {availableTabs.map(tab => {
-                                const Icon = (LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'subscribers' ? 'Mail' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle) as React.ComponentType<LucideProps>;
-                                return (
-                                    <TabsTrigger value={tab} key={tab} className="capitalize">
-                                        <Icon className="mr-2 h-4 w-4" /> {tab === 'mentors' ? 'My Mentors' : tab}
-                                        {tab === 'users' && pendingApprovalCount > 0 && <Badge className="ml-2">{pendingApprovalCount}</Badge>}
-                                    </TabsTrigger>
-                                )
-                            })}
+                        <TabsList className="relative w-full">
+                          <ScrollArea className="w-full whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              {availableTabs.map(tab => {
+                                  const Icon = (LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'subscribers' ? 'Mail' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle) as React.ComponentType<LucideProps>;
+                                  return (
+                                      <TabsTrigger value={tab} key={tab} className="capitalize flex-shrink-0">
+                                          <Icon className="mr-2 h-4 w-4" /> {tab === 'mentors' ? 'My Mentors' : tab}
+                                          {tab === 'users' && pendingApprovalCount > 0 && <Badge className="ml-2">{pendingApprovalCount}</Badge>}
+                                      </TabsTrigger>
+                                  )
+                              })}
+                            </div>
+                           </ScrollArea>
                         </TabsList>
                         <ScrollArea className="flex-grow mt-4">
                             <TabsContent value="overview" className="mt-0 space-y-6"><Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>Activity Overview</CardTitle><CardDescription>Your activity over the last 6 months.</CardDescription></CardHeader><CardContent><ChartContainer config={chartConfig} className="h-[250px] w-full"><RechartsBarChart data={chartData}><CartesianGrid vertical={false} /><XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} /><YAxis /><ChartTooltip cursor={false} content={<ChartTooltipContent />} /><Bar dataKey="activity" fill="var(--color-activity)" radius={4} /></RechartsBarChart></ChartContainer></CardContent></Card></TabsContent>

@@ -2,13 +2,12 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Footer from '@/components/layout/footer';
 import Header from '@/components/layout/header';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState, useEffect } from 'react';
-import { set } from 'date-fns';
 import Link from 'next/link';
 import { X } from 'lucide-react';
+import Footer from '@/components/layout/footer';
 
 export default function PrivacyPolicyPage() {
   const [lastUpdated, setLastUpdated] = useState('');
@@ -16,7 +15,7 @@ export default function PrivacyPolicyPage() {
 
   // This prevents hydration mismatch by rendering the date only on the client.
   useEffect(() => {
-    setLastUpdated(new Date().toLocaleDateString());
+    setLastUpdated(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
   }, []);
 
   useEffect(() => {
@@ -50,7 +49,7 @@ export default function PrivacyPolicyPage() {
     <>
       <div className="flex flex-col min-h-screen">
         <Header {...headerProps} />
-        <main className={`flex-grow container relative z-40 w-screen ultrawide-fix m-auto pointer-events-auto  px-4 py-12 md:py-14 ${navOpen?"overflow-hidden":"overflow-auto"}`} id='main-view'>
+        <main className={`flex-grow container relative z-40 w-4/5 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:py-14 ${navOpen?"overflow-hidden":"overflow-auto"}`} id='main-view1'>
           <Card>
             <div className='relative'>
               <CardHeader>
@@ -112,11 +111,8 @@ export default function PrivacyPolicyPage() {
               </ScrollArea>
             </CardContent>
           </Card>
-          <div className='mt-10'>
-            <Footer />
-          </div>
         </main>
-
+        <Footer />
       </div>
     </>
   );

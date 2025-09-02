@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from "@/components/layout/header";
-import Footer from "@/components/layout/footer";
 import HomeView from "@/components/views/home";
 import type { View, UserRole } from "@/app/types";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +14,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Loader2 } from "lucide-react";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import EventModal from './event-modal';
 
 const ModalSkeleton = () => (
   <Dialog open={true}>
@@ -88,6 +88,7 @@ export default function MainView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { auth } = useFirebaseAuth();
+  const [isEventModalOpen, setEventModalOpen] = useState(false);
 
   const loadStateFromStorage = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -134,6 +135,8 @@ export default function MainView() {
 
   useEffect(() => {
     loadStateFromStorage();
+    setEventModalOpen(true);
+
 
     // Listen for the custom storage event
     window.addEventListener('storage', loadStateFromStorage);
@@ -405,7 +408,7 @@ export default function MainView() {
       />
 
       <main
-        className={`relative overflow-y-scroll z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
+        className={`relative overflow-y-auto z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
           }`}
         id="main-view"
         
@@ -488,6 +491,11 @@ export default function MainView() {
         isOpen={true}
         onOpenChange={handleModalOpenChange('contact')}
       />}
+
+      <EventModal 
+        isOpen={isEventModalOpen}
+        onOpenChange={setEventModalOpen}
+      />
     </div>
   );
 }

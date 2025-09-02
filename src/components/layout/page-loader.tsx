@@ -1,5 +1,6 @@
+"use client";
+
 import { Loader2 } from 'lucide-react';
-import Image from 'next/image';
 
 const PageLoader = () => {
   return (

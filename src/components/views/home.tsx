@@ -28,7 +28,7 @@ import { useRef } from "react";
 import HighlightEffect from "@/components/ui/highlight-effect";
 import BannerImage from "../ui/BannerImage";
 import HanddrawnUnderline from "@/components/ui/handdrawn-underline";
-import { Separator } from "@radix-ui/react-separator";
+import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 
 const contactFormSchema = z.object({
@@ -132,6 +132,34 @@ const dynamicHeroStates = [
 ];
 
 
+const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
+  const router = useRouter();
+  const handleLogoClick = () => {
+    router.push("/");
+  };
+  return (
+    <div
+      className="flex justify-left items-center z-[1000] gap-2 absolute top-5 left-4"
+      onClick={handleLogoClick}
+    >
+      <Image
+        src="/logo.png"
+        alt="Hustloop logo"
+        width={120}
+        height={120}
+        className=" w-auto min-w-[120px] max-w-[200px] h-12 md:h-16 object-contain cursor-pointer"
+      />
+      {!inSheet && (
+        <div className="flex items-center gap-2">
+          <Separator orientation="vertical" className="h-8 bg-border w-0.5" />
+          <p className="text-sm leading-tight text-white">
+            Smart hustle. <br /> Infinite growth..
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 
 const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroSection) => {
@@ -194,44 +222,6 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
     }
   ];
 
-
-
-
-
-
-
-  const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
-    const router = useRouter();
-    const handleLogoClick = () => {
-      router.push("/");
-    };
-    return (
-      <div
-        className="flex justify-left items-center z-[1000] gap-2 relative top-5 left-4"
-        onClick={handleLogoClick}
-      >
-        <Image
-          src="/logo.png"
-          alt="Hustloop logo"
-          width={120}
-          height={120}
-          className=" w-auto min-w-[120px] max-w-[200px] h-12 md:h-16 object-contain cursor-pointer"
-        />
-        {!inSheet && (
-          <div className=" flex items-center gap-2">
-            <Separator orientation="vertical" className="h-8 bg-border w-0.5" />
-            <p className="text-sm leading-0.5 text-muted-foreground ">
-              Smart hustle. <br /> Infinite growth..
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-
-
-
   return (
     <section className={`hidden-scroll h-screen overflow-hidden`} id="hero"
     >
@@ -242,21 +232,21 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         muted
         preload="auto"
         playsInline
-        className={`block absolute top-0 left-0 w-full h-full object-cover z-10 `}
+        className={`block absolute top-0 left-0 w-full h-full object-cover z-0 `}
       >
         <source src="/video/HeaderVideo.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
       {/* Overlay for readability (optional, tweak opacity) */}
-      <div className="block lg:block absolute inset-0 bg-black/30 md:bg-black/20 z-10"></div>
+      <div className="block absolute inset-0 bg-black/40 md:bg-black/30 z-10"></div>
 
-      {/* Logo in top-right */}
+      {/* Logo in top-left */}
       <BrandLogo />
 
       {/* Content Layer */}
-      <div className="relative z-10 h-[90vh] flex flex-col lg:flex-row items-center justify-center">
-        <div className="lg:flex-1 text-center lg:text-left relative lg:left-16">
+      <section className="relative z-20 h-screen flex flex-col lg:flex-row items-center justify-center">
+        <div className="lg:flex-1 text-center lg:text-left relative lg:left-16 lg:top-4">
           {/* Typed text */}
           <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-white lg:text-white">
             {"Empowering Tomorrow's"}
@@ -327,9 +317,8 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
             </Button>
           )}
         </div>
-      </div>
-
-    </section>
+      </section>
+    </section >
 
 
 
@@ -561,26 +550,20 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       <div id="hero-sentinel" className="h-1"></div>
 
       {/* Start Your Journey Section with native scroll-based zoom */}
-      <section ref={journeyRef} className="relative py-14 z-10 w-screen md:h-[90vh] flex cursor-default bg-background rounded-t-2xl"
+      <section ref={journeyRef} className="relative py-14 z-10 w-screen flex cursor-default bg-background rounded-t-2xl" id='journey second-div'>
 
-        id='journey second-div'
-
-
-
-      >
-
-        <div className="journey-panel container m-auto flex justify-center items-center flex-col " ref={journeyPanelRef}>
+        <div className="journey-panel container m-auto flex justify-center items-center flex-col" ref={journeyPanelRef}>
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8 font-headline">
             Start your <HighlightEffect> Journey </HighlightEffect>
           </h2>
 
           {/* Parent container card */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 w-full mx-auto pt-2 md:pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 w-full mx-auto pt-2 md:pt-4">
 
             {/* Card 1 */}
-            <Card data-journey-card className="journey-card group text-center p-8 md:p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+            <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
               <div className="mx-auto bg-primary/10 text-primary 
-              w-28 h-28 flex items-center justify-center 
+              w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
               rounded-full overflow-hidden mb-4 
               transition-all duration-300 
               group-hover:scale-110">
@@ -601,14 +584,15 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
                 onClick={() => setActiveView("incubators")}
               >
-                Explore Incubators
+                Partner with Us
+                
               </Button>
             </Card>
 
             {/* Card 2 (MSMEs) */}
-            <Card data-journey-card className="journey-card group text-center p-8 md:p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+            <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
               <div className="mx-auto bg-primary/10 text-primary 
-              w-28 h-28 flex items-center justify-center 
+              w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
               rounded-full overflow-hidden mb-4 
               transition-all duration-300 
               group-hover:scale-110">
@@ -634,9 +618,9 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
             </Card>
 
             {/* Card 3 */}
-            <Card data-journey-card className="journey-card group text-center p-8 md:p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+            <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
               <div className="mx-auto bg-primary/10 text-primary 
-              w-28 h-28 flex items-center justify-center 
+              w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
               rounded-full overflow-hidden mb-4 
               transition-all duration-300 
               group-hover:scale-110">
@@ -657,14 +641,14 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
                 onClick={() => setActiveView("incubators")}
               >
-                Partner with Us
+                Explore Incubators
               </Button>
             </Card>
 
             {/* Card 4 (Mentors) */}
-            <Card data-journey-card className="journey-card group text-center p-8 md:p-10 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+            <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
               <div className="mx-auto bg-primary/10 text-primary 
-              w-28 h-28 flex items-center justify-center 
+              w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
               rounded-full overflow-hidden mb-4 
               transition-all duration-300 
               group-hover:scale-110">
@@ -712,21 +696,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
                 />
               </div>
             ))}
-
-
-
-            {/* Mobile version for last 2: just stack them */}
-            <div className="md:hidden">
-              {whatWeOffer.slice(3).map((feature) => (
-                <IconCard
-                  key={feature.title}
-                  icon={feature.icon}
-                  title={feature.title}
-                  description={feature.description}
-                  className="mb-8"
-                />
-              ))}
-            </div>
           </div>
 
         </div>
@@ -834,7 +803,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
 
 
                     {/* Desktop view - Horizontal layout */}
-                    <div className="hidden lg:block w-full">
+                    <div className="block lg:block w-full">
                       <div className="relative">
                         {/* Main horizontal line */}
                         <div className="absolute top-8 left-8 right-8 h-0.5 bg-border"></div>
@@ -1083,7 +1052,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
                       style={{ pointerEvents: "none" }}
                     >
                       <path
-                        d="M61.1407 5.29573C61.5825 5.29573 61.9407 4.93755 61.9407 4.49573C61.9407 4.0539 61.5825 3.69573 61.1407 3.69573V5.29573ZM25.6313 1.18441L25.5712 0.386673L25.6313 1.18441ZM65.1859 56.529L65.2466 57.3267L65.1859 56.529ZM102.238 49.5437L102.146 50.3384L102.238 49.5437ZM113 59L112.33 59.4366C112.546 59.7688 112.973 59.8924 113.333 59.7273C113.694 59.5621 113.879 59.1579 113.768 58.7772L113 59ZM113.483 45.9598C113.667 45.5584 113.492 45.0833 113.09 44.8986C112.689 44.7139 112.214 44.8896 112.029 45.291L113.483 45.9598ZM9.10831 45.245L8.60696 45.8685L8.60698 45.8685L9.10831 45.245ZM61.1407 3.69573C55.3296 3.69573 50.2958 2.60385 44.7326 1.62791C39.1822 0.654208 33.1789 -0.18624 25.5712 0.386673L25.6913 1.98216C33.1047 1.42388 38.9568 2.23909 44.4562 3.20384C49.9428 4.16636 55.1532 5.29573 61.1407 5.29573V5.29573ZM102.146 50.3384C103.978 50.5502 105.816 51.7049 107.587 53.4268C109.346 55.1369 110.954 57.3236 112.33 59.4366L113.67 58.5634C112.268 56.4103 110.585 54.1104 108.703 52.2797C106.832 50.4607 104.678 49.0204 102.329 48.749L102.146 50.3384ZM113.768 58.7772C113.392 57.4794 112.891 55.17 112.707 52.7136C112.521 50.2318 112.669 47.729 113.483 45.9598L112.029 45.291C111.04 47.4401 110.92 50.2798 111.112 52.8333C111.305 55.4122 111.828 57.8311 112.232 59.2228L113.768 58.7772ZM25.5712 0.386673C12.1968 1.39385 4.12231 9.70072 1.32012 19.2877C-1.46723 28.8239 0.948311 39.7092 8.60696 45.8685L9.60967 44.6216C2.5531 38.9466 0.211996 28.7819 2.85587 19.7366C5.4849 10.742 13.0295 2.93568 25.6913 1.98216L25.5712 0.386673ZM8.60698 45.8685C17.052 52.6596 27.4766 55.8004 37.6285 57.1087C47.7823 58.4172 57.7242 57.8998 65.2466 57.3267L65.1251 55.7313C57.6265 56.3026 47.8183 56.8086 37.833 55.5218C27.8456 54.2347 17.7419 51.1613 9.60965 44.6216L8.60698 45.8685ZM65.2466 57.3267C71.9263 56.8179 78.8981 54.7692 85.2941 53.0195C91.7606 51.2505 97.5723 49.8099 102.146 50.3384L102.329 48.749C97.3895 48.1782 91.2605 49.7286 84.8719 51.4762C78.4129 53.2432 71.6155 55.2369 65.1251 55.7313L65.2466 57.3267Z"
+                        d="M61.1407 5.29573C61.5825 5.29573 61.9407 4.93755 61.9407 4.49573C61.9407 4.0539 61.5825 3.69573 61.1407 3.69573V5.29573ZM25.6313 1.18441L25.5712 0.386673L25.6313 1.18441ZM65.1859 56.529L65.2466 57.3267L65.1859 56.529ZM102.238 49.5437L102.146 50.3384L102.238 49.5437ZM113 59L112.33 59.4366C112.546 59.7688 112.973 59.8924 113.333 59.7273C113.694 59.5621 113.879 59.1579 113.768 58.7772L113 59ZM113.483 45.9598C113.667 45.5584 113.492 45.0833 113.09 44.8986C112.689 44.7139 112.214 44.8896 112.029 45.291L113.483 45.9598ZM9.10831 45.245L8.60696 45.8685L8.60698 45.8685L9.10831 45.245ZM61.1407 3.69573C55.3296 3.69573 50.2958 2.60385 44.7326 1.62791C39.1822 0.654208 33.1789 -0.18624 25.5712 0.386673L25.6913 1.98216C33.1047 1.42388 38.9568 2.23909 44.4562 3.20384C49.9428 4.16636 55.1532 5.29573 61.1407 5.29573V5.29573ZM102.146 50.3384C103.978 50.5502 105.816 51.7049 107.587 53.4268C109.346 55.1369 110.954 57.3236 112.33 59.4366L113.67 58.5634C112.268 56.4103 110.585 54.1104 108.703 52.2797C106.832 50.4607 104.678 49.0204 102.329 48.749L102.146 50.3384ZM113.768 58.7772C113.392 57.4794 112.891 55.17 112.707 52.7136C112.521 50.2318 112.669 47.729 113.483 45.9598L112.029 45.291C111.04 47.4401 111.092 50.2798 111.112 52.8333C111.305 55.4122 111.828 57.8311 112.232 59.2228L113.768 58.7772ZM25.5712 0.386673C12.1968 1.39385 4.12231 9.70072 1.32012 19.2877C-1.46723 28.8239 0.948311 39.7092 8.60696 45.8685L9.60967 44.6216C2.5531 38.9466 0.211996 28.7819 2.85587 19.7366C5.4849 10.742 13.0295 2.93568 25.6913 1.98216L25.5712 0.386673ZM8.60698 45.8685C17.052 52.6596 27.4766 55.8004 37.6285 57.1087C47.7823 58.4172 57.7242 57.8998 65.2466 57.3267L65.1251 55.7313C57.6265 56.3026 47.8183 56.8086 37.833 55.5218C27.8456 54.2347 17.7419 51.1613 9.60965 44.6216L8.60698 45.8685ZM65.2466 57.3267C71.9263 56.8179 78.8981 54.7692 85.2941 53.0195C91.7606 51.2505 97.5723 49.8099 102.146 50.3384L102.329 48.749C97.3895 48.1782 91.2605 49.7286 84.8719 51.4762C78.4129 53.2432 71.6155 55.2369 65.1251 55.7313L65.2466 57.3267Z"
                         fill="currentColor"
                       />
                     </svg>
@@ -1094,7 +1063,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               </CardHeader>
               <CardContent className="p-0 mt-4 space-y-6">
                 <p className="text-muted-foreground">
-                  Join Hustloop today and let&apos;s turn your vision into reality. Your journey to success starts here.
+                  {"Join Hustloop today and let's turn your vision into reality. Your journey to success starts here."}
                 </p>
                 <div>
                   <p className="text-sm font-semibold">Email us</p>

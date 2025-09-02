@@ -1,3 +1,4 @@
+
 "use client";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -171,16 +172,15 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                                 <span className="sr-only">Open menu</span>
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                        <SheetContent side="right" className="w-[300px] sm:w-[400px]" showCloseButton={false}>
                             <div className="flex items-center justify-between mb-8">
                                 <SheetClose asChild>
                                     <BrandLogo inSheet={true} />
                                 </SheetClose>
-
                                 <SheetClose asChild>
-                                    <Button variant="ghost" size="icon">
+                                    <Button variant="ghost" size="icon" className="h-10 w-10">
                                         <X className="h-6 w-6" />
-                                        <span className="sr-only">Close menu</span>
+                                        <span className="sr-only">Close</span>
                                     </Button>
                                 </SheetClose>
                             </div>
