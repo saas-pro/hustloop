@@ -11,7 +11,7 @@ import Footer from '@/components/layout/footer';
 
 export default function TermsOfServicePage() {
   const [lastUpdated, setLastUpdated] = useState('');
-  const [navOpen, setNavOpen] = useState(false); 
+  const [navOpen, setNavOpen] = useState(false);
 
   // This prevents hydration mismatch by rendering the date only on the client.
   useEffect(() => {
@@ -44,14 +44,14 @@ export default function TermsOfServicePage() {
     navOpen,
     setNavOpen,
     heroVisible: false,
-    
+
   };
 
   return (
     <>
       <div className="flex flex-col min-h-screen">
         <Header {...headerProps} />
-        <main className={`flex-grow w-4/5 container relative z-40 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:pt-14 ${navOpen ? "overflow-hidden" : "overflow-auto"} `} id='main-view1'>
+        <main className={`flex-grow w-4/5 container relative z-40 ultrawide-fix m-auto pointer-events-auto px-4  md:pt-14 ${navOpen ? "overflow-hidden" : "overflow-auto"} `} id='main-view1'>
           <Card>
             <div className='relative'>
               <CardHeader>
@@ -120,8 +120,11 @@ export default function TermsOfServicePage() {
               </ScrollArea>
             </CardContent>
           </Card>
+          <div className='block w-full pt-8'>
+            <Footer />
+          </div>
         </main>
-        <Footer />
+
       </div>
     </>
   );

@@ -49,7 +49,7 @@ export default function PrivacyPolicyPage() {
     <>
       <div className="flex flex-col min-h-screen">
         <Header {...headerProps} />
-        <main className={`flex-grow container relative z-40 w-4/5 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:py-14 ${navOpen?"overflow-hidden":"overflow-auto"}`} id='main-view1'>
+        <main className={`flex-grow container relative z-40 w-4/5 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:pb-4 md:pt-14  ${navOpen?"overflow-hidden":"overflow-auto"}`} id='main-view1'>
           <Card>
             <div className='relative'>
               <CardHeader>
@@ -111,8 +111,11 @@ export default function PrivacyPolicyPage() {
               </ScrollArea>
             </CardContent>
           </Card>
+          <div className='block w-full pt-8'>
+            <Footer />
+          </div>
         </main>
-        <Footer />
+        
       </div>
     </>
   );
