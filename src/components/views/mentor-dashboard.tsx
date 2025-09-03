@@ -368,7 +368,7 @@ export default function MentorDashboardView({ isOpen, onOpenChange, setActiveVie
                                     <CardContent>
                                         <Form {...profileForm}>
                                             <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8">
-                                                <FormField control={profileForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} readOnly /></FormControl><FormMessage /></FormItem>)} />
+                                                <FormField control={profileForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={profileForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title / Headline</FormLabel><FormControl><Input placeholder="e.g., Serial Entrepreneur, Fintech Expert" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={profileForm.control} name="avatar" render={({ field }) => (<FormItem><FormLabel>Avatar URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
                                                 <FormField control={profileForm.control} name="hint" render={({ field }) => (<FormItem><FormLabel>Avatar Hint</FormLabel><FormControl><Input placeholder="e.g., man portrait" {...field} /></FormControl><FormMessage /></FormItem>)} />
