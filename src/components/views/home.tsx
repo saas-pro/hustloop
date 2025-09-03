@@ -223,7 +223,9 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
   ];
 
   return (
-    <section className={`hidden-scroll h-screen overflow-hidden`} id="hero"
+    <section
+      className={`hidden-scroll h-screen overflow-hidden relative`}
+      id="hero"
     >
       {/* Background Video */}
       <video
@@ -232,50 +234,35 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         muted
         preload="auto"
         playsInline
-        className={`block absolute top-0 left-0 w-full h-full object-cover z-0 `}
+        className="block absolute top-0 left-0 w-full h-full object-cover z-0"
       >
         <source src="/video/HeaderVideo.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
-      {/* Overlay for readability (optional, tweak opacity) */}
-      <div className="block absolute inset-0 bg-black/40 md:bg-black/30 z-10"></div>
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/40 md:bg-black/30 z-10"></div>
 
-      {/* Logo in top-left */}
+      {/* Logo */}
       <BrandLogo />
 
-      {/* Content Layer */}
+      {/* Content */}
       <section className="relative z-20 h-screen flex flex-col lg:flex-row items-center justify-center">
         <div className="lg:flex-1 text-center lg:text-left relative lg:left-16 lg:top-4">
-          {/* Typed text */}
-          <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-white lg:text-white">
+          <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-white">
             {"Empowering Tomorrow's"}
             <br />
             <span className="relative left-2 inline-block text-primary">
               Innovators
-              <svg
-                className="absolute w-[100px] md:w-[160px] right-0 -bottom-[6px] md:-bottom-[10px] pointer-events-none"
-                aria-hidden="true"
-                role="presentation"
-                viewBox="0 0 117 72"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M6.52643 7.99766C4.94183 5.69998 2.85228 3.68244 1 1.59863M109.77 14.3969C110.378 13.7416 110.937 13.0433 111.515 12.3608M68 9.00049C68.2139 6.63002 68.6547 4.31683 69 2.00049M17.8709 63.5527C15.6537 64.3763 13.7205 66.0614 11.7627 67.334M70 65.0005C70.3433 66.9512 70.6707 68.9328 71 71.0005M111.806 56.8633C113.335 57.5003 114.724 58.3876 116.169 59.1902"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                />
-              </svg>
+              {/* underline svg */}
             </span>
           </h1>
 
-          <span className="block text-3xl md:text-6xl font-headline mt-4 text-white lg:text-white">
+          <span className="block text-3xl md:text-6xl font-headline mt-4 text-white">
             The Hustloop
           </span>
 
-          <div className="block text-4xl md:text-8xl font-headline leading-tight text-white lg:text-white">
+          <div className="block text-4xl md:text-8xl font-headline leading-tight text-white">
             <span>for </span>
             <ReactTyped
               strings={[
@@ -318,7 +305,25 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
           )}
         </div>
       </section>
-    </section >
+
+      {/* 🔽 Scroll Down Indicator */}
+      <div className="absolute bottom-6 w-full flex justify-center z-20">
+        <div
+          className="flex flex-col items-center text-white"
+        >
+          <span className="text-base mb-1">Scroll Down</span>
+          <svg
+            className="w-6 h-6 animate-bounce"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+    </section>
 
 
 

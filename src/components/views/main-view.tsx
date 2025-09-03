@@ -385,6 +385,7 @@ export default function MainView() {
             authProvider={authProvider}
             hasSubscription={hasSubscription}
             setActiveView={setActiveView}
+            setUser={setUser} 
           />
         );
       default:
