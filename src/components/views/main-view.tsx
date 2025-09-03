@@ -299,7 +299,7 @@ export default function MainView() {
     observer.observe(sentinel);
 
     return () => observer.disconnect();
-  }, []);
+  }, [isHeroVisible]);
 
 
   const handleBookingSuccess = (mentorName: string, date: Date, time: string) => {

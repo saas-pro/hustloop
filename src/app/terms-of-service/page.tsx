@@ -20,12 +20,19 @@ export default function TermsOfServicePage() {
 
   useEffect(() => {
     if (navOpen) {
+      // lock body scroll
       document.body.style.overflow = "hidden";
+
+      // scroll to form section
+      const cardSection = document.querySelector('[data-alt-id="card-anchor"]')
+      if (cardSection) {
+        cardSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     } else {
+      // unlock body scroll
       document.body.style.overflow = "auto";
     }
 
-    // cleanup on unmount
     return () => {
       document.body.style.overflow = "auto";
     };
@@ -51,7 +58,7 @@ export default function TermsOfServicePage() {
     <>
       <div className="flex flex-col min-h-screen">
         <Header {...headerProps} />
-        <main className={`flex-grow w-4/5 container relative z-40 ultrawide-fix m-auto pointer-events-auto px-4  md:pt-14 ${navOpen ? "overflow-hidden" : "overflow-auto"} `} id='main-view1'>
+        <main className={`flex-grow w-4/5 container relative z-40 ultrawide-fix m-auto pointer-events-auto px-4  md:pt-14 ${navOpen ? "overflow-hidden" : "overflow-auto"} `} id='main-view1' data-alt-id="card-anchor">
           <Card>
             <div className='relative'>
               <CardHeader>

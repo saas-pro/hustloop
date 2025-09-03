@@ -18,14 +18,22 @@ export default function PrivacyPolicyPage() {
     setLastUpdated(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
   }, []);
 
+
   useEffect(() => {
     if (navOpen) {
+      // lock body scroll
       document.body.style.overflow = "hidden";
+
+      // scroll to form section
+      const cardSection = document.querySelector('[data-alt-id="card-anchor"]')
+      if (cardSection) {
+        cardSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     } else {
+      // unlock body scroll
       document.body.style.overflow = "auto";
     }
 
-    // cleanup on unmount
     return () => {
       document.body.style.overflow = "auto";
     };
@@ -49,7 +57,7 @@ export default function PrivacyPolicyPage() {
     <>
       <div className="flex flex-col min-h-screen">
         <Header {...headerProps} />
-        <main className={`flex-grow container relative z-40 w-4/5 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:pb-4 md:pt-14  ${navOpen?"overflow-hidden":"overflow-auto"}`} id='main-view1'>
+        <main className={`flex-grow container relative z-40 w-4/5 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:pb-4 md:pt-14  ${navOpen ? "overflow-hidden" : "overflow-auto"}`} id='main-view1' data-alt-id="card-anchor">
           <Card>
             <div className='relative'>
               <CardHeader>
@@ -115,7 +123,7 @@ export default function PrivacyPolicyPage() {
             <Footer />
           </div>
         </main>
-        
+
       </div>
     </>
   );

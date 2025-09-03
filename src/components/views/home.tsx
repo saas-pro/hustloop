@@ -540,17 +540,18 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       className={`relative w-full h-screen bg-background text-foreground overflow-x-hidden ${navOpen ? "overflow-hidden" : ""
         }`}
     >
-
       {/* Hero Section */}
-      <section id="hero-section" className="h-screen sticky top-0">
+      <section id="hero-section" className="h-[91vh] md:min-h-screen sticky top-0">
         <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
       </section>
 
       {/* Sentinel goes here, after hero */}
-      <div id="hero-sentinel" className="h-1"></div>
+      <div id="hero-sentinel" className='h-1'>
+
+      </div>
 
       {/* Start Your Journey Section with native scroll-based zoom */}
-      <section ref={journeyRef} className="relative py-14 z-10 w-screen flex cursor-default bg-background rounded-t-2xl" id='journey second-div'>
+      <section ref={journeyRef} className="relative py-14 z-10 w-screen flex cursor-default bg-background rounded-t-2xl" id='second-section'>
 
         <div className="journey-panel container m-auto flex justify-center items-center flex-col" ref={journeyPanelRef}>
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8 font-headline">
@@ -585,7 +586,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
                 onClick={() => setActiveView("incubators")}
               >
                 Partner with Us
-                
+
               </Button>
             </Card>
 

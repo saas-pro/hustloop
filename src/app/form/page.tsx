@@ -39,7 +39,7 @@ function RegistrationForm() {
     const { toast } = useToast();
     const [isSubmitted, setIsSubmitted] = React.useState(false);
 
-    const eventName = "Hustle Con 2024";
+    const eventName = "Hustle Con 2025";
 
     const form = useForm<RegistrationSchema>({
         resolver: zodResolver(registrationSchema),
@@ -155,14 +155,24 @@ export default function StaticFormPage() {
 
     useEffect(() => {
         if (navOpen) {
+            // lock body scroll
             document.body.style.overflow = "hidden";
+
+            // scroll to form section
+            const formSection = document.getElementById("form-section");
+            if (formSection) {
+                formSection.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
         } else {
+            // unlock body scroll
             document.body.style.overflow = "auto";
         }
+
         return () => {
             document.body.style.overflow = "auto";
         };
     }, [navOpen]);
+
 
     const headerProps = {
         activeView: "home" as const,
@@ -177,18 +187,20 @@ export default function StaticFormPage() {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-background">
+        <div className="overflow-hidden relative flex flex-col min-h-screen bg-background">
             <Header {...headerProps} />
-            <main className="flex-grow flex flex-col items-center justify-center p-4" id="main-view">
-                <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary" />}>
-                    <RegistrationForm />
-                </Suspense>
-                <div className="w-full pt-4">
-                    <Footer />
-                </div>
+            <main className="flex-grow min-h-screen" id="main-view1">
+                <section id="form-section" className="flex flex-col items-center justify-center pt-16">
+                    <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary" />}>
+                        <RegistrationForm />
+                    </Suspense>
+                    <div className="w-full pt-4">
+                        <Footer />
+                    </div>
+                </section>
 
             </main>
-
         </div>
+
     );
 }

@@ -50,7 +50,7 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
         <DialogHeader className="p-6 pt-0 space-y-4 -mt-24 relative z-10 text-white rounded-lg">
           <div className='p-6 bg-card/80 backdrop-blur-sm rounded-lg'>
               <DialogTitle className="text-4xl font-bold font-headline text-foreground">
-                  Hustle Con 2024
+                  Hustle Con 2025
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
                 The premier event for founders, innovators, and investors.
@@ -61,7 +61,7 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
             <div className="flex items-center gap-6 text-muted-foreground mt-4">
               <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-primary"/>
-                  <span>September 15, 2024</span>
+                  <span>September 15, 2025</span>
               </div>
               <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-primary"/>
