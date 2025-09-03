@@ -804,7 +804,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
 
 
                     {/* Desktop view - Horizontal layout */}
-                    <div className="block lg:block w-full">
+                    <div className="hidden lg:block w-full">
                       <div className="relative">
                         {/* Main horizontal line */}
                         <div className="absolute top-8 left-8 right-8 h-0.5 bg-border"></div>
