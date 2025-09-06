@@ -88,7 +88,7 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
     </Card>
 );
 
-export default function DashboardView({ isOpen,setUser,onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView }: DashboardViewProps) {
+export default function DashboardView({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView }: DashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
     const [adminContentTab, setAdminContentTab] = useState('blog');
@@ -356,46 +356,233 @@ export default function DashboardView({ isOpen,setUser,onOpenChange, user, userR
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
-                <DialogHeader className="p-6">
-                    <DialogTitle className="text-3xl font-bold font-headline capitalize">{userRole} Dashboard</DialogTitle>
-                    <DialogDescription>Welcome back, {user.name}! Here&apos;s an overview of your startup journey.</DialogDescription>
+                {/* Header stays fixed */}
+                <DialogHeader className="p-6 shrink-0">
+                    <DialogTitle className="text-3xl font-bold font-headline capitalize">
+                        {userRole} Dashboard
+                    </DialogTitle>
+                    <DialogDescription>
+                        Welcome back, {user.name}! Here&apos;s an overview of your startup journey.
+                    </DialogDescription>
                 </DialogHeader>
-                <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
-                    <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0">
-                        <TabsList className="relative w-full">
-                            <ScrollArea className="w-full whitespace-nowrap">
-                                <div className="flex items-center gap-2">
-                                    {availableTabs.map(tab => {
-                                        const Icon = (LucideIcons[tab === 'overview' ? 'LayoutDashboard' : tab === 'msmes' ? 'Briefcase' : tab === 'incubators' ? 'Lightbulb' : tab === 'mentors' ? 'Users' : tab === 'submission' ? 'FileText' : tab === 'settings' ? 'Settings' : tab === 'users' ? 'User' : tab === 'subscribers' ? 'Mail' : 'BookOpen' as keyof typeof LucideIcons] || LucideIcons.HelpCircle) as React.ComponentType<LucideProps>;
-                                        return (
-                                            <TabsTrigger value={tab} key={tab} className="capitalize flex-shrink-0">
-                                                <Icon className="mr-2 h-4 w-4" /> {tab === 'mentors' ? 'My Mentors' : tab}
-                                                {tab === 'users' && pendingApprovalCount > 0 && <Badge className="ml-2">{pendingApprovalCount}</Badge>}
-                                            </TabsTrigger>
-                                        )
-                                    })}
-                                </div>
-                            </ScrollArea>
+                <div className="flex-grow flex flex-col min-h-0 p-4 pt-0">
+
+                    <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0 ">
+                        <TabsList
+                            className="
+                                grid 
+                                grid-cols-2        /* 📱 mobile → 2 per row */
+                                sm:grid-cols-3     /* tablet → 3 per row */
+                                md:grid-cols-4     /* medium → 4 per row */
+                                lg:grid-cols-6     /* desktop → 6 per row */
+                                gap-2 h-fit
+                                items-stretch       /* ✅ make grid children stretch */
+                                bg-muted/50 rounded-lg p-1
+                                mb-4 sm:mb-6 lg:mb-10 z-10"
+                        >
+                            {availableTabs.map((tab) => {
+                                const Icon = (
+                                    LucideIcons[
+                                    tab === "overview"
+                                        ? "LayoutDashboard"
+                                        : tab === "msmes"
+                                            ? "Briefcase"
+                                            : tab === "incubators"
+                                                ? "Lightbulb"
+                                                : tab === "mentors"
+                                                    ? "Users"
+                                                    : tab === "submission"
+                                                        ? "FileText"
+                                                        : tab === "settings"
+                                                            ? "Settings"
+                                                            : tab === "users"
+                                                                ? "User"
+                                                                : tab === "subscribers"
+                                                                    ? "Mail"
+                                                                    : "BookOpen"
+                                    ] || LucideIcons.HelpCircle
+                                ) as React.ComponentType<LucideProps>;
+
+                                return (
+                                    <TabsTrigger
+                                        key={tab}
+                                        value={tab}
+                                        className="
+                                    flex items-center justify-center gap-2 
+                                    rounded-md bg-card 
+                                    text-sm sm:text-base
+                                    data-[state=active]:bg-accent data-[state=active]:text-accent-foreground 
+                                    hover:bg-accent/20 transition"
+                                    >
+                                        <Icon className="h-4 w-4 shrink-0" />
+                                        <span className="truncate">{tab}</span>
+                                    </TabsTrigger>
+
+                                );
+                            })}
                         </TabsList>
-                        <ScrollArea className="flex-grow mt-4">
-                            <TabsContent value="overview" className="mt-0 space-y-6"><Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>Activity Overview</CardTitle><CardDescription>Your activity over the last 6 months.</CardDescription></CardHeader><CardContent><ChartContainer config={chartConfig} className="h-[250px] w-full"><RechartsBarChart data={chartData}><CartesianGrid vertical={false} /><XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} /><YAxis /><ChartTooltip cursor={false} content={<ChartTooltipContent />} /><Bar dataKey="activity" fill="var(--color-activity)" radius={4} /></RechartsBarChart></ChartContainer></CardContent></Card></TabsContent>
-                            <TabsContent value="msmes" className="mt-0">{hasSubscription || userRole === 'admin' ? (<Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>MSME Collaborations</CardTitle><CardDescription>Your ongoing and potential collaborations with MSMEs.</CardDescription></CardHeader><CardContent><p>You have no active collaboration proposals.</p></CardContent></Card>) : <LockedContent setActiveView={setActiveView} title="MSMEs" />}</TabsContent>
-                            <TabsContent value="incubators" className="mt-0">{hasSubscription || userRole === 'admin' ? (<Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>Incubator Applications</CardTitle><CardDescription>Status of your applications to incubators.</CardDescription></CardHeader><CardContent><p>You have not applied to any incubators yet.</p></CardContent></Card>) : <LockedContent setActiveView={setActiveView} title="Incubators" />}</TabsContent>
-                            <TabsContent value="mentors" className="mt-0"><div className="text-center py-16 text-muted-foreground"><p>You have not had any mentor sessions yet.</p><Button variant="link" onClick={() => setActiveView('mentors')}>Book a session</Button></div></TabsContent>
-                            <TabsContent value="submission" className="mt-0">{hasSubscription || userRole === 'admin' ? (<Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>My Submissions</CardTitle><CardDescription>Your submissions for corporate challenges.</CardDescription></CardHeader><CardContent><p>You have no active submissions.</p></CardContent></Card>) : <LockedContent setActiveView={setActiveView} title="Submissions" />}</TabsContent>
+                        <div className="flex-grow overflow-y-auto  pb-6 w-full">
+                            <TabsContent value="overview" className="mt-0 space-y-6">
+                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                    <CardHeader>
+                                        <CardTitle>Activity Overview</CardTitle>
+                                        <CardDescription>Your activity over the last 6 months.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                                            <RechartsBarChart data={chartData}>
+                                                <CartesianGrid vertical={false} />
+                                                <XAxis
+                                                    dataKey="month"
+                                                    tickLine={false}
+                                                    tickMargin={10}
+                                                    axisLine={false}
+                                                />
+                                                <YAxis />
+                                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                                <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
+                                            </RechartsBarChart>
+                                        </ChartContainer>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                            <TabsContent value="msmes" className="mt-0">
+                                {hasSubscription || userRole === 'admin' ? (
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader>
+                                            <CardTitle>MSME Collaborations</CardTitle>
+                                            <CardDescription>
+                                                Your ongoing and potential collaborations with MSMEs.
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p>You have no active collaboration proposals.</p>
+                                        </CardContent>
+                                    </Card>
+                                ) : (
+                                    <LockedContent setActiveView={setActiveView} title="MSMEs" />
+                                )}
+                            </TabsContent>
+                            <TabsContent value="incubators" className="mt-0">
+                                {hasSubscription || userRole === 'admin' ? (
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader>
+                                            <CardTitle>Incubator Applications</CardTitle>
+                                            <CardDescription>Status of your applications to incubators.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent><p>You have not applied to any incubators yet.</p></CardContent>
+                                    </Card>
+                                ) :
+                                    <LockedContent setActiveView={setActiveView} title="Incubators" />
+                                }
+                            </TabsContent>
+                            <TabsContent value="mentors" className="mt-0">
+                                <div className="text-center py-16 text-muted-foreground">
+                                    <p>You have not had any mentor sessions yet.</p>
+                                    <Button variant="link" onClick={() => setActiveView('mentors')}>Book a session</Button>
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="submission" className="mt-0">
+                                {hasSubscription || userRole === 'admin' ? (
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader>
+                                            <CardTitle>My Submissions</CardTitle>
+                                            <CardDescription>Your submissions for corporate challenges.</CardDescription>
+                                        </CardHeader><CardContent><p>You have no active submissions.</p></CardContent>
+                                    </Card>
+                                ) :
+                                    <LockedContent setActiveView={setActiveView} title="Submissions" />
+                                }
+                            </TabsContent>
 
                             {userRole === "admin" && (
                                 <>
                                     <TabsContent value="users" className="mt-0">
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50"><CardHeader><CardTitle>User Management</CardTitle><CardDescription>Approve, ban, or delete user accounts.</CardDescription></CardHeader><CardContent>
-                                            {isLoadingUsers ? <div className="flex justify-center items-center h-48"><LucideIcons.Loader2 className="h-8 w-8 animate-spin" /></div> : (<Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader><TableBody>
-                                                {users.map(u => (<TableRow key={u.uid}><TableCell><div className="font-medium">{u.name}</div><div className="text-sm text-muted-foreground">{u.email}</div></TableCell><TableCell className="capitalize">{u.role}</TableCell><TableCell><div className="flex flex-col gap-1">{u.status === 'banned' ? <Badge variant="destructive">Banned</Badge> : (u.status === 'active' ? <Badge variant="default">Active</Badge> : <Badge variant="secondary">Pending</Badge>)}</div></TableCell><TableCell className="space-x-2">
-                                                    {u.status === 'pending' && (<Button size="sm" onClick={() => { }} className="bg-accent hover:bg-accent/90 text-accent-foreground"><LucideIcons.CheckCircle className="mr-2 h-4 w-4" />Approve</Button>)}
-                                                    <Button size="sm" variant={u.status === 'banned' ? "outline" : "secondary"} onClick={() => setUserToBan(u)}><LucideIcons.Ban className="mr-2 h-4 w-4" />{u.status === 'banned' ? "Unban" : "Ban"}</Button>
-                                                    <Button size="sm" variant="destructive" onClick={() => setUserToDelete(u)}><LucideIcons.Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-                                                </TableCell></TableRow>))}
-                                            </TableBody></Table>)}
-                                        </CardContent></Card>
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <CardHeader>
+                                                <CardTitle>User Management</CardTitle>
+                                                <CardDescription>Approve, ban, or delete user accounts.</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                {isLoadingUsers ? (
+                                                    <div className="flex justify-center items-center h-48">
+                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                    </div>
+                                                ) : (
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>User</TableHead>
+                                                                <TableHead>Role</TableHead>
+                                                                <TableHead>Status</TableHead>
+                                                                <TableHead>Actions</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {users.map(u => (
+                                                                <TableRow key={u.uid}>
+                                                                    <TableCell>
+                                                                        <div className="font-medium">{u.name}</div>
+                                                                        <div className="text-sm text-muted-foreground">{u.email}</div>
+                                                                    </TableCell>
+                                                                    <TableCell className="capitalize">{u.role}</TableCell>
+                                                                    <TableCell>
+                                                                        <div className="flex flex-col gap-1">
+                                                                            {u.status === 'banned' ? (
+                                                                                <Badge variant="destructive">Banned</Badge>
+                                                                            ) : u.status === 'active' ? (
+                                                                                <Badge variant="default">Active</Badge>
+                                                                            ) : (
+                                                                                <Badge variant="secondary">Pending</Badge>
+                                                                            )}
+                                                                        </div>
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        {/* This div acts as a flexible container.
+                                                                            - `flex`: Enables flexbox.
+                                                                            - `flex-wrap`: Allows buttons to wrap to the next line. 📲
+                                                                            - `gap-2`: Adds consistent spacing between all buttons.
+                                                                        */}
+                                                                        <div className="flex flex-wrap items-center gap-2">
+                                                                            {u.status === 'pending' && (
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    onClick={() => { /* Handle approve logic */ }}
+                                                                                    className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground min-w-[90px]"
+                                                                                >
+                                                                                    <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
+                                                                                    Approve
+                                                                                </Button>
+                                                                            )}
+
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant={u.status === 'banned' ? "outline" : "secondary"}
+                                                                                onClick={() => setUserToBan(u)}
+                                                                                className="flex-1 min-w-[90px]"
+                                                                            >
+                                                                                <LucideIcons.Ban className="mr-2 h-4 w-4" />
+                                                                                {u.status === 'banned' ? "Unban" : "Ban"}
+                                                                            </Button>
+
+                                                                            <Button
+                                                                                size="sm"
+                                                                                variant="destructive"
+                                                                                onClick={() => setUserToDelete(u)}
+                                                                                className="flex-1 min-w-[90px]"
+                                                                            >
+                                                                                <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
+                                                                                Delete
+                                                                            </Button>
+                                                                        </div>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                )}
+                                            </CardContent>
+                                        </Card>
                                     </TabsContent>
                                     <TabsContent value="subscribers" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -514,7 +701,7 @@ export default function DashboardView({ isOpen,setUser,onOpenChange, user, userR
                                                 <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">Save Changes</Button>
                                             </form>
                                         </Form>
-                                        {authProvider === 'local' && (
+                                        {(authProvider === 'local' ) && (
                                             <>
                                                 <Separator />
                                                 <PasswordChangeForm />
@@ -523,7 +710,7 @@ export default function DashboardView({ isOpen,setUser,onOpenChange, user, userR
                                     </CardContent>
                                 </Card>
                             </TabsContent>
-                        </ScrollArea>
+                        </div>
                     </Tabs>
                 </div>
                 <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the user account and remove their data from our servers.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToDelete) { handleDeleteUser(userToDelete.uid); setUserToDelete(null); } }}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
@@ -541,7 +728,7 @@ export default function DashboardView({ isOpen,setUser,onOpenChange, user, userR
                     </AlertDialogContent>
                 </AlertDialog>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }
 

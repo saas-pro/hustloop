@@ -58,7 +58,7 @@ export default function TermsOfServicePage() {
     <>
       <div className="flex flex-col min-h-screen">
         <Header {...headerProps} />
-        <main className={`flex-grow w-4/5 container relative z-40 ultrawide-fix m-auto pointer-events-auto px-4  md:pt-14 ${navOpen ? "overflow-hidden" : "overflow-auto"} `} id='main-view1' data-alt-id="card-anchor">
+        <main className={`flex-grow container relative z-40 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:pb-4 md:pt-14  ${navOpen ? "overflow-hidden" : "overflow-auto"} pt-20 md:pt-0`} id='main-view1' data-alt-id="card-anchor">
           <Card>
             <div className='relative'>
               <CardHeader>
@@ -75,7 +75,12 @@ export default function TermsOfServicePage() {
             </div>
 
             <CardContent>
-              <ScrollArea className="h-[60vh] pr-6">
+              <ScrollArea
+                className="max-h-[60vh] pr-6 overflow-auto touch-auto"
+                style={{ WebkitOverflowScrolling: "touch" }}
+                onWheel={(e) => e.stopPropagation()}       // stop mouse wheel propagation
+                onTouchMove={(e) => e.stopPropagation()}   // stop touch scrolling propagation
+              >
                 <div className="space-y-6 prose dark:prose-invert max-w-none">
                   <p>
                     Please read these Terms of Service (&quot;Terms&quot;, &quot;Terms of Service&quot;) carefully before using the Hustloop website (the &quot;Service&quot;) operated by Hustloop (&quot;us&quot;, &quot;we&quot;, or &quot;our&quot;).

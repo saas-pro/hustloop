@@ -34,7 +34,7 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
         <div className="relative">
           <Image
             src="https://placehold.co/800x400.png"
-            alt="Hustle Con 2024 Banner"
+            alt="Aignite"
             width={800}
             height={400}
             className="w-full h-auto object-cover"
@@ -50,7 +50,7 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
         <DialogHeader className="p-6 pt-0 space-y-4 -mt-24 relative z-10 text-white rounded-lg">
           <div className='p-6 bg-card/80 backdrop-blur-sm rounded-lg'>
               <DialogTitle className="text-4xl font-bold font-headline text-foreground">
-                  Hustle Con 2025
+                  Aignite
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
                 The premier event for founders, innovators, and investors.

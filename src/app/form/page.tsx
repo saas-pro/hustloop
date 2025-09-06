@@ -39,7 +39,7 @@ function RegistrationForm() {
     const { toast } = useToast();
     const [isSubmitted, setIsSubmitted] = React.useState(false);
 
-    const eventName = "Hustle Con 2025";
+    const eventName = "Aignite";
 
     const form = useForm<RegistrationSchema>({
         resolver: zodResolver(registrationSchema),

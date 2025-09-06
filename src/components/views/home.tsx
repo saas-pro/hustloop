@@ -307,7 +307,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       </section>
 
       {/* 🔽 Scroll Down Indicator */}
-      <div className="absolute bottom-6 w-full flex justify-center z-20">
+      <div className="absolute bottom-6 w-full flex justify-center z-20 mb-10 md:mb-0">
         <div
           className="flex flex-col items-center text-white"
         >
@@ -546,7 +546,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
         }`}
     >
       {/* Hero Section */}
-      <section id="hero-section" className="h-[91vh] md:min-h-screen sticky top-0">
+      <section id="hero-section" className="h-[93vh] md:min-h-screen sticky top-0">
         <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
       </section>
 
