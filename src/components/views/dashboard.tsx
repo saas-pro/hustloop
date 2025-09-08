@@ -348,6 +348,47 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }
     }
 
+    async function handleChangeEmail(email: string) {
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_BASE_URL}/api/request-email-change`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ new_email: email }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                toast({
+                    title: "Success",
+                    description: `Verification email sent to ${email}.`
+                });
+            } else {
+                toast({
+                    title: "Error",
+                    description: data.message || data.error || "Failed to send verification email.",
+                    variant: "destructive",
+                });
+            }
+        } catch (err: any) {
+            toast({
+                title: "Error",
+                description: err.message || "Something went wrong.",
+                variant: "destructive",
+            });
+        }
+    }
+
+    async function handleResendEmail(email: string) {
+        await handleChangeEmail(email); // reuse same logic
+    }
+
+
+
     const adminTabs = ["overview", "users", "subscribers", "blog", "sessions", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
@@ -695,13 +736,62 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                     <h3 className="text-lg font-medium mb-4">Profile</h3>
                                                     <div className="space-y-4">
                                                         <FormField control={settingsForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                                        <FormField control={settingsForm.control} name="email" render={({ field }) => (<FormItem><div className="flex justify-between items-center"><FormLabel>Email</FormLabel>{!isEditingEmail && (<Button type="button" variant="link" className="p-0 h-auto text-sm" onClick={() => setIsEditingEmail(true)}>Edit</Button>)}</div><FormControl><Input type="email" placeholder="your@email.com" {...field} readOnly={!isEditingEmail} /></FormControl><FormMessage /></FormItem>)} />
+                                                        <FormField
+                                                            control={settingsForm.control}
+                                                            name="email"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <div className="flex justify-between items-center">
+                                                                        <FormLabel>Email</FormLabel>
+                                                                        {!isEditingEmail ? (
+                                                                            <Button
+                                                                                type="button"
+                                                                                variant="link"
+                                                                                className="p-0 h-auto text-sm"
+                                                                                onClick={() => setIsEditingEmail(true)}
+                                                                            >
+                                                                                Edit
+                                                                            </Button>
+                                                                        ) : (
+                                                                            <div className="flex gap-2">
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="default"
+                                                                                    size="sm"
+                                                                                    onClick={() => handleChangeEmail(field.value)}
+                                                                                >
+                                                                                    Change
+                                                                                </Button>
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="outline"
+                                                                                    size="sm"
+                                                                                    onClick={() => handleResendEmail(field.value)}
+                                                                                >
+                                                                                    Resend Email
+                                                                                </Button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <FormControl>
+                                                                        <Input
+                                                                            type="email"
+                                                                            placeholder="your@email.com"
+                                                                            {...field}
+                                                                            readOnly={!isEditingEmail}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
                                                     </div>
                                                 </div>
                                                 <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">Save Changes</Button>
                                             </form>
                                         </Form>
-                                        {(authProvider === 'local' ) && (
+                                        {(authProvider === 'local') && (
                                             <>
                                                 <Separator />
                                                 <PasswordChangeForm />

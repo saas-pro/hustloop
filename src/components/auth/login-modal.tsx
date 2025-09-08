@@ -79,6 +79,36 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     setActiveView(view);
   };
 
+  const handleResendVerification = async (email:string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({ title: "Email Sent", description: result.message });
+        setIsOpen(false);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Failed to Resend",
+          description: result.error,
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Network Error",
+        description: "Could not connect to server.",
+      });
+    }
+  };
+
+
   const handlePasswordLogin = async (values: LoginSchema) => {
     if (!auth) {
       toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
@@ -88,11 +118,28 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const firebaseUser = userCredential.user;
+      await firebaseUser.reload();
 
       if (!firebaseUser.emailVerified) {
-        toast({ variant: "destructive", title: "Email Not Verified", description: "Please check your inbox to verify your email." });
+        handleResendVerification(values.email)
+        toast({
+          variant: "destructive",
+          title: "Email Not Verified",
+          description: (
+            <div className="flex flex-col gap-2">
+              <span>Please check your inbox to verify your email.</span>
+              <button
+                onClick={()=>handleResendVerification(values.email)}
+                className="px-3 py-1 rounded-md bg-primary text-white hover:bg-primary/80"
+              >
+                Resend Verification Email
+              </button>
+            </div>
+          ),
+        });
         return;
       }
+
 
       const idToken = await firebaseUser.getIdToken();
       const response = await fetch(`${API_BASE_URL}/api/login`, {
@@ -100,7 +147,6 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
         headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
       });
       const data = await response.json();
-
       setIsOpen(false);
       if (data.action === 'complete-profile' && data.token) {
         router.push(`/complete-profile?token=${data.token}`);
