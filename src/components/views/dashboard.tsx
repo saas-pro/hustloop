@@ -110,7 +110,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [editingProgram, setEditingProgram] = useState<EducationProgram | null>(null);
 
     const [itemToDelete, setItemToDelete] = useState<{ type: 'blog' | 'program'; id: number } | null>(null);
-
+    const [loadingChange, setLoadingChange] = useState(false)
+    const [loadingResend, setLoadingResend] = useState(false)
 
     const settingsForm = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
@@ -333,7 +334,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             });
 
             const result = await response.json();
-
+            
             if (response.ok) {
                 toast({ title: "Settings Saved", description: result.message });
                 // Update user data in localStorage to reflect changes immediately
@@ -350,7 +351,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     async function handleChangeEmail(email: string) {
         try {
-            const token = localStorage.getItem("token");
+            setLoadingChange(true)
+            const token = localStorage.getItem("token")
             const res = await fetch(`${API_BASE_URL}/api/request-email-change`, {
                 method: "POST",
                 headers: {
@@ -358,35 +360,74 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ new_email: email }),
-            });
+            })
 
-            const data = await res.json();
+            const data = await res.json()
 
             if (data.success) {
                 toast({
                     title: "Success",
-                    description: `Verification email sent to ${email}.`
-                });
+                    description: `Verification email sent to ${email}.`,
+                })
             } else {
                 toast({
                     title: "Error",
-                    description: data.message || data.error || "Failed to send verification email.",
+                    description:
+                        data.message ||
+                        data.error ||
+                        "Failed to send verification email.",
                     variant: "destructive",
-                });
+                })
             }
         } catch (err: any) {
             toast({
                 title: "Error",
                 description: err.message || "Something went wrong.",
                 variant: "destructive",
-            });
+            })
+        } finally {
+            setLoadingChange(false)
         }
     }
 
     async function handleResendEmail(email: string) {
-        await handleChangeEmail(email); // reuse same logic
-    }
+        try {
+            setLoadingResend(true)
+            const token = localStorage.getItem("token")
+            const res = await fetch(`${API_BASE_URL}/api/resend-email-change`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ email }),
+            })
 
+            const data = await res.json()
+
+            if (data.success) {
+                toast({
+                    title: "Success",
+                    description: `Resent verification email to ${email}.`,
+                })
+            } else {
+                toast({
+                    title: "Error",
+                    description:
+                        data.message || data.error || "Failed to resend verification email.",
+                    variant: "destructive",
+                })
+            }
+        } catch (err: any) {
+            toast({
+                title: "Error",
+                description: err.message || "Something went wrong.",
+                variant: "destructive",
+            })
+        } finally {
+            setLoadingResend(false)
+        }
+    }
 
 
     const adminTabs = ["overview", "users", "subscribers", "blog", "sessions", "settings"];
@@ -731,66 +772,99 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     </CardHeader>
                                     <CardContent className="space-y-8">
                                         <Form {...settingsForm}>
-                                            <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-4">
+                                            <form
+                                                onSubmit={settingsForm.handleSubmit(onSettingsSubmit)}
+                                                className="space-y-4"
+                                            >
                                                 <div>
                                                     <h3 className="text-lg font-medium mb-4">Profile</h3>
                                                     <div className="space-y-4">
-                                                        <FormField control={settingsForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                                        {/* Name Field */}
                                                         <FormField
                                                             control={settingsForm.control}
-                                                            name="email"
+                                                            name="name"
                                                             render={({ field }) => (
                                                                 <FormItem>
-                                                                    <div className="flex justify-between items-center">
-                                                                        <FormLabel>Email</FormLabel>
-                                                                        {!isEditingEmail ? (
-                                                                            <Button
-                                                                                type="button"
-                                                                                variant="link"
-                                                                                className="p-0 h-auto text-sm"
-                                                                                onClick={() => setIsEditingEmail(true)}
-                                                                            >
-                                                                                Edit
-                                                                            </Button>
-                                                                        ) : (
-                                                                            <div className="flex gap-2">
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="default"
-                                                                                    size="sm"
-                                                                                    onClick={() => handleChangeEmail(field.value)}
-                                                                                >
-                                                                                    Change
-                                                                                </Button>
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="outline"
-                                                                                    size="sm"
-                                                                                    onClick={() => handleResendEmail(field.value)}
-                                                                                >
-                                                                                    Resend Email
-                                                                                </Button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
+                                                                    <FormLabel>Full Name</FormLabel>
                                                                     <FormControl>
-                                                                        <Input
-                                                                            type="email"
-                                                                            placeholder="your@email.com"
-                                                                            {...field}
-                                                                            readOnly={!isEditingEmail}
-                                                                        />
+                                                                        <Input placeholder="Your full name" {...field} />
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>
                                                             )}
                                                         />
 
+                                                        {/* Email Field */}
+                                                        <FormField
+                                                            control={settingsForm.control}
+                                                            name="email"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Email</FormLabel>
+                                                                    <div className="relative">
+                                                                        <FormControl>
+                                                                            <Input
+                                                                                type="email"
+                                                                                placeholder="your@email.com"
+                                                                                {...field}
+                                                                                readOnly={!isEditingEmail}
+                                                                                className="pr-28" // make space for buttons
+                                                                            />
+                                                                        </FormControl>
+
+                                                                        {/* Buttons inside input */}
+                                                                        <div className="absolute inset-y-0 right-1 flex items-center gap-1">
+                                                                            {!isEditingEmail ? (
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="link"
+                                                                                    className="p-0 h-auto text-sm"
+                                                                                    onClick={() => setIsEditingEmail(true)}
+                                                                                >
+                                                                                    Edit
+                                                                                </Button>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <Button
+                                                                                        type="button"
+                                                                                        variant="default"
+                                                                                        size="sm"
+                                                                                        className="text-xs"
+                                                                                        disabled={loadingChange}
+                                                                                        onClick={() => handleChangeEmail(field.value)}
+                                                                                    >
+                                                                                        {loadingChange ? "..." : "Change"}
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        type="button"
+                                                                                        variant="outline"
+                                                                                        size="sm"
+                                                                                        className="text-xs"
+                                                                                        disabled={loadingResend}
+                                                                                        onClick={() => handleResendEmail(field.value)}
+                                                                                    >
+                                                                                        {loadingResend ? "..." : "Resend"}
+                                                                                    </Button>
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
                                                     </div>
                                                 </div>
-                                                <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">Save Changes</Button>
+
+                                                <Button
+                                                    type="submit"
+                                                    className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                                                >
+                                                    Save Changes
+                                                </Button>
                                             </form>
                                         </Form>
+
                                         {(authProvider === 'local') && (
                                             <>
                                                 <Separator />

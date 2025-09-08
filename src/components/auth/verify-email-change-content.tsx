@@ -37,7 +37,7 @@ export default function VerifyEmailChangeContent() {
                     description: "Your email has been updated successfully!",
                 });
 
-                router.push("/profile");
+                router.push("/");
             } catch (error) {
                 toast({
                     variant: "destructive",
