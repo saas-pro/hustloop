@@ -591,7 +591,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               transition-all duration-300 
               group-hover:scale-110">
                 <Image
-                  src={"/icons/founders.gif"}
+                  src={"/icons/inventor-unscreen.gif"}
                   width={100}
                   height={100}
                   alt="founders"
@@ -640,7 +640,33 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               </Button>
             </Card>
 
-            {/* Card 3 */}
+            {/* Card 3 (Tech Transfer) */}
+            <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+              <div className="mx-auto bg-primary/10 text-primary 
+              w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
+              rounded-full overflow-hidden mb-4 
+              transition-all duration-300 
+              group-hover:scale-110">
+                <Image
+                  src={"/icons/tech.gif"}
+                  width={100}
+                  height={100}
+                  alt="mentors"
+                />
+              </div>
+              <h3 className="text-xl font-bold">Tech Transfer</h3>
+              <p className="text-muted-foreground mt-2 mb-4">
+                Discover and license ready-to-use technologies from universities and industry partners.
+              </p>
+              <Button
+                className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+                
+              >
+                Browse Technologies
+              </Button>
+            </Card>
+
+            {/* Card 4 */}
             <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
               <div className="mx-auto bg-primary/10 text-primary 
               w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
@@ -667,33 +693,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
                 Explore Incubators
               </Button>
             </Card>
-
-            {/* Card 4 (Mentors) */}
-            <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-              <div className="mx-auto bg-primary/10 text-primary 
-              w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
-              rounded-full overflow-hidden mb-4 
-              transition-all duration-300 
-              group-hover:scale-110">
-                <Image
-                  src={"/icons/mentoring.gif"}
-                  width={100}
-                  height={100}
-                  alt="mentors"
-                />
-              </div>
-              <h3 className="text-xl font-bold">For Mentors</h3>
-              <p className="text-muted-foreground mt-2 mb-4">
-                Guide the next generation of innovators and make an impact.
-              </p>
-              <Button
-                className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
-                onClick={() => setActiveView("mentors")}
-              >
-                Become a Mentor
-              </Button>
-            </Card>
-
           </div>
 
         </div>
