@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
 import Image from "next/image";
+import { Loader2 } from "lucide-react";
 
 
 const settingsFormSchema = z.object({
@@ -93,6 +94,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
     const [adminContentTab, setAdminContentTab] = useState('blog');
     const [isEditingEmail, setIsEditingEmail] = useState(false);
+    const [emailChangeRequested, setEmailChangeRequested] = useState(false);
 
     // Admin state
     const [users, setUsers] = useState<AppUser[]>([]);
@@ -319,40 +321,66 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     async function onSettingsSubmit(data: SettingsFormValues) {
         const token = localStorage.getItem('token');
         if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            toast({
+                variant: 'destructive',
+                title: 'Authentication Error',
+                description: 'Please log in again.'
+            });
             return;
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/update-profile`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(data)
-            });
+            // ⚠️ Separate email from other profile fields
+            const { name, email } = data;
 
-            const result = await response.json();
-            
-            if (response.ok) {
-                toast({ title: "Settings Saved", description: result.message });
-                // Update user data in localStorage to reflect changes immediately
-                localStorage.setItem('user', JSON.stringify(result.user));
-                setUser(result.user);
-                // Optionally, trigger a re-render or state update in the parent component
-            } else {
-                toast({ variant: 'destructive', title: 'Update Failed', description: result.error || 'An unknown error occurred.' });
+            // 1. If user changed email, start the email-change flow
+            if (email && email !== user?.email) {
+                await handleChangeEmail(email);
+                // Do NOT update localStorage here – wait until verification
+            }
+
+            // 2. Update other profile info (name, etc.)
+            if (name) {
+                const response = await fetch(`${API_BASE_URL}/api/update-profile`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    toast({ title: "Settings Saved", description: result.message });
+                    // Update only non-email fields locally
+                    localStorage.setItem('user', JSON.stringify({
+                        ...user,
+                        ...result.user
+                    }));
+                    setUser((prev) => ({ ...prev, ...result.user }));
+                } else {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Update Failed',
+                        description: result.error || 'An unknown error occurred.'
+                    });
+                }
             }
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
+            toast({
+                variant: 'destructive',
+                title: 'Network Error',
+                description: 'Could not save settings. Please try again later.'
+            });
         }
     }
 
     async function handleChangeEmail(email: string) {
         try {
-            setLoadingChange(true)
-            const token = localStorage.getItem("token")
+            setLoadingChange(true);
+            const token = localStorage.getItem("token");
             const res = await fetch(`${API_BASE_URL}/api/request-email-change`, {
                 method: "POST",
                 headers: {
@@ -360,41 +388,39 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ new_email: email }),
-            })
+            });
 
-            const data = await res.json()
+            const data = await res.json();
 
-            if (data.success) {
+            if (res.ok && data.success) {
                 toast({
                     title: "Success",
-                    description: `Verification email sent to ${email}.`,
-                })
+                    description: `Verification email sent to ${email}. Please confirm to complete the change.`,
+                });
             } else {
                 toast({
                     title: "Error",
-                    description:
-                        data.message ||
-                        data.error ||
-                        "Failed to send verification email.",
+                    description: data.message || data.error || "Failed to send verification email.",
                     variant: "destructive",
-                })
+                });
             }
         } catch (err: any) {
             toast({
                 title: "Error",
                 description: err.message || "Something went wrong.",
                 variant: "destructive",
-            })
+            });
         } finally {
-            setLoadingChange(false)
+            setLoadingChange(false);
         }
     }
+
 
     async function handleResendEmail(email: string) {
         try {
             setLoadingResend(true)
             const token = localStorage.getItem("token")
-            const res = await fetch(`${API_BASE_URL}/api/resend-email-change`, {
+            const res = await fetch(`${API_BASE_URL}/api/request-email-change`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -813,39 +839,56 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                         </FormControl>
 
                                                                         {/* Buttons inside input */}
-                                                                        <div className="absolute inset-y-0 right-1 flex items-center gap-1">
+                                                                        <div className="absolute inset-y-0 right-3 flex items-center gap-1">
                                                                             {!isEditingEmail ? (
+                                                                                // Step 1: Default → Edit
                                                                                 <Button
                                                                                     type="button"
                                                                                     variant="link"
                                                                                     className="p-0 h-auto text-sm"
-                                                                                    onClick={() => setIsEditingEmail(true)}
+                                                                                    onClick={() => {
+                                                                                        setIsEditingEmail(true);
+                                                                                        setEmailChangeRequested(false); // reset state
+                                                                                    }}
                                                                                 >
                                                                                     Edit
                                                                                 </Button>
+                                                                            ) : !emailChangeRequested ? (
+                                                                                // Step 2: While editing → Change
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="default"
+                                                                                    size="sm"
+                                                                                    className="text-xs flex items-center gap-1"
+                                                                                    disabled={loadingChange}
+                                                                                    onClick={async () => {
+                                                                                        await handleChangeEmail(field.value);
+                                                                                        setEmailChangeRequested(true); // Step 3: show Resend button
+                                                                                        setIsEditingEmail(false); // lock input again
+                                                                                    }}
+                                                                                >
+                                                                                    {loadingChange ? (
+                                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                                    ) : (
+                                                                                        "Change"
+                                                                                    )}
+                                                                                </Button>
                                                                             ) : (
-                                                                                <>
-                                                                                    <Button
-                                                                                        type="button"
-                                                                                        variant="default"
-                                                                                        size="sm"
-                                                                                        className="text-xs"
-                                                                                        disabled={loadingChange}
-                                                                                        onClick={() => handleChangeEmail(field.value)}
-                                                                                    >
-                                                                                        {loadingChange ? "..." : "Change"}
-                                                                                    </Button>
-                                                                                    <Button
-                                                                                        type="button"
-                                                                                        variant="outline"
-                                                                                        size="sm"
-                                                                                        className="text-xs"
-                                                                                        disabled={loadingResend}
-                                                                                        onClick={() => handleResendEmail(field.value)}
-                                                                                    >
-                                                                                        {loadingResend ? "..." : "Resend"}
-                                                                                    </Button>
-                                                                                </>
+                                                                                // Step 3: After Change request → Resend
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="outline"
+                                                                                    size="sm"
+                                                                                    className="text-xs flex items-center gap-1"
+                                                                                    disabled={loadingResend}
+                                                                                    onClick={() => handleResendEmail(field.value)}
+                                                                                >
+                                                                                    {loadingResend ? (
+                                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                                    ) : (
+                                                                                        "Resend"
+                                                                                    )}
+                                                                                </Button>
                                                                             )}
                                                                         </div>
                                                                     </div>

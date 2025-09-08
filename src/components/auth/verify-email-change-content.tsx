@@ -32,12 +32,15 @@ export default function VerifyEmailChangeContent() {
                     throw new Error(data.error || "Verification failed");
                 }
 
+                // ✅ Clear token -> logout
+                localStorage.clear();
+
                 toast({
                     title: "Success",
-                    description: "Your email has been updated successfully!",
+                    description: "Your email has been updated successfully! Please log in again.",
                 });
 
-                router.push("/");
+                router.push("/"); // redirect to login page
             } catch (error) {
                 toast({
                     variant: "destructive",
