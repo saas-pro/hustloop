@@ -321,10 +321,9 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                     </Button>
 
                     <a
-                        href="#contact-section"
                         onClick={(e) => handleScrollToSection(e, "contact-section")}
                         className={cn(
-                            "menu-navs text-[18px] font-medium pb-1 border-b-2 border-transparent text-muted-foreground transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary"
+                            "menu-navs text-[18px] cursor-pointer font-medium pb-1 border-b-2 border-transparent text-muted-foreground transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary"
                         )}
                     >
                         Contact Us

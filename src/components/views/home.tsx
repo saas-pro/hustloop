@@ -252,10 +252,27 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
           <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-white">
             {"Empowering Tomorrow's"}
             <br />
-            <span className="relative left-2 inline-block text-primary">
+            <span className="relative inline-block text-primary">
               Innovators
               {/* underline svg */}
+              <svg
+                className="absolute  right-0 mx-auto w-[100px] md:w-[142px] -bottom-1 md:-bottom-1"
+                aria-hidden="true"
+                role="presentation"
+                viewBox="0 0 117 72"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ pointerEvents: "none" }}
+              >
+                <path
+                  d="M6.52643 7.99766C4.94183 5.69998 2.85228 3.68244 1 1.59863M109.77 14.3969C110.378 13.7416 110.937 13.0433 111.515 12.3608M68 9.00049C68.2139 6.63002 68.6547 4.31683 69 2.00049M17.8709 63.5527C15.6537 64.3763 13.7205 66.0614 11.7627 67.334M70 65.0005C70.3433 66.9512 70.6707 68.9328 71 71.0005M111.806 56.8633C113.335 57.5003 114.724 58.3876 116.169 59.1902"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+              </svg>
             </span>
+
           </h1>
 
           <span className="block text-3xl md:text-6xl font-headline mt-4 text-white">
@@ -307,7 +324,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       </section>
 
       {/* 🔽 Scroll Down Indicator */}
-      <div className="absolute bottom-6 w-full flex justify-center z-20 mb-10 md:mb-0">
+      <div className="absolute bottom-6 w-full flex justify-center z-20 mb-14 md:mb-0">
         <div
           className="flex flex-col items-center text-white"
         >
@@ -546,7 +563,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
         }`}
     >
       {/* Hero Section */}
-      <section id="hero-section" className="h-[93vh] md:min-h-screen sticky top-0">
+      <section id="hero-section" className="h-[91vh] md:min-h-screen sticky top-0">
         <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
       </section>
 
@@ -708,7 +725,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       </section>
 
       {/* Choose Your Path Section */}
-      <section className="relative py-16 md:py-20  overflow-hidden bg-background">
+      <section className="relative py-16 md:py-20 overflow-hidden bg-background">
         <div className="container mx-auto px-4">
           <Card className="mx-auto max-w-7xl rounded-2xl shadow-lg bg-card">
             <div className="p-6 sm:p-8 lg:p-12">
@@ -1039,7 +1056,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       </section>
 
       {/* Call to Action Section */}
-      <section id=" contact-section" className="relative py-16 md:py-20 bg-background">
+      <section id="contact-section" className="relative py-16 md:py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto items-center">
             <Card className="p-8 lg:p-12 h-full flex flex-col justify-center">
@@ -1171,7 +1188,10 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
           </div>
         </div>
       </section>
-      <Footer />
+      <section className='relative bg-background'>
+        <Footer />
+      </section>
+
     </div>
   );
 }

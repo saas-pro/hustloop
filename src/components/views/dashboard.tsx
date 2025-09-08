@@ -371,12 +371,12 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         <TabsList
                             className="
                                 grid 
-                                grid-cols-2        /* 📱 mobile → 2 per row */
+                                grid-cols-3        /* 📱 mobile → 2 per row */
                                 sm:grid-cols-3     /* tablet → 3 per row */
                                 md:grid-cols-4     /* medium → 4 per row */
                                 lg:grid-cols-6     /* desktop → 6 per row */
                                 gap-2 h-fit
-                                items-stretch       /* ✅ make grid children stretch */
+                                items-stretch       
                                 bg-muted/50 rounded-lg p-1
                                 mb-4 sm:mb-6 lg:mb-10 z-10"
                         >
@@ -408,7 +408,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         key={tab}
                                         value={tab}
                                         className="
-                                    flex items-center justify-center gap-2 
+                                    flex items-center justify-start md:justify-center gap-2 
                                     rounded-md bg-card 
                                     text-sm sm:text-base
                                     data-[state=active]:bg-accent data-[state=active]:text-accent-foreground 

@@ -219,13 +219,11 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                                     <Button
                                         asChild
                                         variant="ghost"
-                                        className="justify-start text-lg text-muted-foreground hover:text-primary transition-colors"
+                                        className="justify-start  text-lg text-muted-foreground hover:text-primary transition-colors"
                                     >
                                         <a
-                                            href="#contact-section"
                                             onClick={(e) => {
                                                 handleScrollToSection(e, "contact-section");
-
                                             }}
                                         >
                                             Contact Us
