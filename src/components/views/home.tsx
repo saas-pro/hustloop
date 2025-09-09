@@ -2,7 +2,7 @@
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Briefcase, PlayCircle, Star, Award, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins } from "lucide-react";
+import { Lightbulb, Briefcase, PlayCircle, Star, Award,Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins } from "lucide-react";
 import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -459,10 +459,11 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       description: "Join curated events to connect with founders, investors, MSMEs, and industry leaders, expanding your professional network."
     },
     {
-      icon: <HandCoins className="h-8 w-8" />,
-      title: "Crowdfunding",
-      description: "Coming Soon."
+      icon: <Link className="h-8 w-8" />,
+      title: "Tech Transfer",
+      description: "Access a curated portfolio of innovative technologies from top research institutions, universities, and industry partners. Easily browse, select, and license solutions through Hustloop to accelerate your growth."
     }
+
   ];
 
   const [isPausedRow1, setPausedRow1] = useState(false);
@@ -660,7 +661,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               </p>
               <Button
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
-                
+
               >
                 Browse Technologies
               </Button>
