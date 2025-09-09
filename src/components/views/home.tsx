@@ -2,7 +2,7 @@
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Briefcase, PlayCircle, Star, Award,Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins } from "lucide-react";
+import { Lightbulb, Briefcase, PlayCircle, Star, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins } from "lucide-react";
 import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -40,9 +40,6 @@ const contactFormSchema = z.object({
 });
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
-
-
-
 
 
 const marqueeTabsRow1 = [
@@ -173,9 +170,6 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
   }, []);
 
   const { stage, icon: StageIcon, tags, users } = dynamicHeroStates[currentStateIndex];
-
-
-
 
 
   const logoPositions = [
@@ -439,6 +433,11 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       description: "Partner with MSMEs to solve real business challenges, gain market insights, and unlock growth through crowdsourced innovation."
     },
     {
+      icon: <Link className="h-8 w-8" />,
+      title: "Tech Transfer",
+      description: "Access a curated portfolio of innovative technologies from top research institutions, universities, and industry partners. Easily browse, select, and license solutions through Hustloop to accelerate your growth."
+    },
+    {
       icon: <Building className="h-8 w-8" />,
       title: "Incubation & Innovation Hub",
       description: "Connect with leading incubators and industry partners to submit your ideas, access expert mentorship, build your MVP, and accelerate your startup’s growth through tailored resources and collaborative opportunities."
@@ -457,13 +456,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       icon: <Group className="h-8 w-8" />,
       title: "Exclusive Networking",
       description: "Join curated events to connect with founders, investors, MSMEs, and industry leaders, expanding your professional network."
-    },
-    {
-      icon: <Link className="h-8 w-8" />,
-      title: "Tech Transfer",
-      description: "Access a curated portfolio of innovative technologies from top research institutions, universities, and industry partners. Easily browse, select, and license solutions through Hustloop to accelerate your growth."
     }
-
   ];
 
   const [isPausedRow1, setPausedRow1] = useState(false);
@@ -649,7 +642,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               transition-all duration-300 
               group-hover:scale-110">
                 <Image
-                  src={"/icons/tech.gif"}
+                  src={"/icons/file-transfer.gif"}
                   width={100}
                   height={100}
                   alt="mentors"
