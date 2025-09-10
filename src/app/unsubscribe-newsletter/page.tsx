@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 
 function UnsubscribePage() {
 
-    const {toast} = useToast()
+    const { toast } = useToast()
     const router = useRouter()
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);

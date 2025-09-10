@@ -642,7 +642,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               transition-all duration-300 
               group-hover:scale-110">
                 <Image
-                  src={"/icons/file-transfer.gif"}
+                  src={"/icons/patent.gif"}
                   width={100}
                   height={100}
                   alt="mentors"
@@ -654,7 +654,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               </p>
               <Button
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
-
               >
                 Browse Technologies
               </Button>

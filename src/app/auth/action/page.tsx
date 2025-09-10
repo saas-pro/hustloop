@@ -223,6 +223,12 @@ const ActionHandlerContent = () => {
             if (token) {
                 (async () => {
                     try {
+                        await fetch(`${API_BASE_URL}/api/activate-user`, {
+                            method: "POST",
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        });
                         const res = await fetch(`${API_BASE_URL}/api/check-profile`, {
                             method: "GET",
                             headers: { Authorization: `Bearer ${token}` },
