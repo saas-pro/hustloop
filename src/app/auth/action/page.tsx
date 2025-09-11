@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { getAuth } from "firebase/auth";
 import {
     checkActionCode,
     applyActionCode,
@@ -217,42 +218,49 @@ const ActionHandlerContent = () => {
         handleAction();
     }, [auth, modeParam, codeParam]);
 
+    
     React.useEffect(() => {
         if (success && info?.from === "verifyEmail") {
-            const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-            if (token) {
-                (async () => {
-                    try {
-                        await fetch(`${API_BASE_URL}/api/activate-user`, {
-                            method: "POST",
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                        });
-                        const res = await fetch(`${API_BASE_URL}/api/check-profile`, {
-                            method: "GET",
-                            headers: { Authorization: `Bearer ${token}` },
-                        });
-                        const data = await res.json();
-                        if (res.ok && data.profile_complete) {
-                            toast({ title: "Email Verified!", description: "You can now log in." });
-                            router.push("/?action=login&from=verification_success");
-                        } else if (data.token) {
-                            toast({ title: "Verified!", description: "Complete your profile." });
-                            router.push(`/complete-profile?token=${data.token}`);
-                        } else {
-                            toast({ title: "Verified!", description: "Proceed to login." });
-                            router.push("/");
-                        }
-                    } catch {
+            (async () => {
+                try {
+                    // Get a fresh ID token
+                    const idToken = await auth.currentUser?.getIdToken(true);
+                    if (!idToken) {
                         setShowVerifiedSuccess(true);
+                        return;
                     }
-                })();
-            } else {
-                setShowVerifiedSuccess(true);
-            }
+
+                    // Activate user in backend
+                    await fetch(`${API_BASE_URL}/api/activate-user`, {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${idToken}` },
+                    });
+
+                    // Check profile completion
+                    const res = await fetch(`${API_BASE_URL}/api/check-profile`, {
+                        method: "GET",
+                        headers: { Authorization: `Bearer ${idToken}` },
+                    });
+                    const data = await res.json();
+
+                    if (res.ok && data.profile_complete) {
+                        toast({ title: "Email Verified!", description: "You can now log in." });
+                        router.push("/?action=login&from=verification_success");
+                    } else if (data.token) {
+                        toast({ title: "Verified!", description: "Complete your profile." });
+                        router.push(`/complete-profile?token=${data.token}`);
+                    } else {
+                        toast({ title: "Verified!", description: "Proceed to login." });
+                        router.push("/");
+                    }
+                } catch (err: any) {
+                    console.error("Email verification error:", err);
+                    setShowVerifiedSuccess(true);
+                }
+            })();
         }
-    }, [success, info, router, toast]);
+    }, [success, info, auth, router, toast]);
+
 
     if (loading) {
         return (
