@@ -34,6 +34,7 @@ import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { API_BASE_URL } from "@/lib/api";
+import { useEffect } from "react";
 
 function getFriendlyError(code: string, fallback: string) {
     switch (code) {
@@ -168,7 +169,7 @@ const ActionHandlerContent = () => {
     // If there are no query params, show the ResendVerificationForm immediately
     const modeParam = searchParams.get("mode") as Action;
     const codeParam = searchParams.get("oobCode");
-    React.useEffect(() => {
+    useEffect(() => {
         if (!modeParam && !codeParam) {
             setShowResendForm(true);
             setLoading(false);
@@ -185,20 +186,28 @@ const ActionHandlerContent = () => {
         }
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (!auth || !modeParam || !codeParam) return;
         setMode(modeParam);
         setActionCode(codeParam);
+
         const handleAction = async () => {
             try {
                 const actionInfo = await checkActionCode(auth, codeParam);
                 const { operation } = actionInfo;
                 const { email } = actionInfo.data;
+
                 if (!email) throw new Error("Email missing in action.");
+
                 if (operation === "VERIFY_EMAIL") {
                     await applyActionCode(auth, codeParam);
-                    setSuccess(true);
-                    setInfo({ email, from: "verifyEmail" });
+
+                    toast({
+                        title: "Email Verified!",
+                        description: "Please log in to activate your account.",
+                    });
+                    router.push("/?action=login&from=verification_success");
+
                 } else if (operation === "PASSWORD_RESET") {
                     await verifyPasswordResetCode(auth, codeParam);
                     setInfo({ email, from: "resetPassword" });
@@ -215,52 +224,9 @@ const ActionHandlerContent = () => {
                 setLoading(false);
             }
         };
+
         handleAction();
-    }, [auth, modeParam, codeParam]);
-
-    
-    React.useEffect(() => {
-        if (success && info?.from === "verifyEmail") {
-            (async () => {
-                try {
-                    // Get a fresh ID token
-                    const idToken = await auth.currentUser?.getIdToken(true);
-                    if (!idToken) {
-                        setShowVerifiedSuccess(true);
-                        return;
-                    }
-
-                    // Activate user in backend
-                    await fetch(`${API_BASE_URL}/api/activate-user`, {
-                        method: "POST",
-                        headers: { Authorization: `Bearer ${idToken}` },
-                    });
-
-                    // Check profile completion
-                    const res = await fetch(`${API_BASE_URL}/api/check-profile`, {
-                        method: "GET",
-                        headers: { Authorization: `Bearer ${idToken}` },
-                    });
-                    const data = await res.json();
-
-                    if (res.ok && data.profile_complete) {
-                        toast({ title: "Email Verified!", description: "You can now log in." });
-                        router.push("/?action=login&from=verification_success");
-                    } else if (data.token) {
-                        toast({ title: "Verified!", description: "Complete your profile." });
-                        router.push(`/complete-profile?token=${data.token}`);
-                    } else {
-                        toast({ title: "Verified!", description: "Proceed to login." });
-                        router.push("/");
-                    }
-                } catch (err: any) {
-                    console.error("Email verification error:", err);
-                    setShowVerifiedSuccess(true);
-                }
-            })();
-        }
-    }, [success, info, auth, router, toast]);
-
+    }, [auth, modeParam, codeParam, router, toast]);
 
     if (loading) {
         return (

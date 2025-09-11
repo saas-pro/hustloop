@@ -126,9 +126,9 @@ function CompleteProfileForm() {
                 onClick={() => router.push('/')}
             >
                 {/* Logo image removed */}
-                
-                    <Image src="/logo.png" alt="Logo" width={120} height={40} />
-                
+
+                <Image src="/logo.png" alt="Logo" width={120} height={40} />
+
             </div>
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
