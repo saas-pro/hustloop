@@ -201,7 +201,7 @@ const ActionHandlerContent = () => {
 
                 if (operation === "VERIFY_EMAIL") {
                     await applyActionCode(auth, codeParam);
-
+                    setShowVerifiedSuccess(true);
                     toast({
                         title: "Email Verified!",
                         description: "Please log in to activate your account.",
