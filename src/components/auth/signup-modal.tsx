@@ -12,6 +12,8 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import {
     GoogleAuthProvider,
     signInWithPopup,
@@ -86,25 +88,6 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
 
     const { formState: { isSubmitting }, getValues } = form;
 
-    const handleResendVerification = async () => {
-        const email = getValues("email");
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            });
-            const result = await response.json();
-            if (response.ok) {
-                toast({ title: "Email Sent", description: result.message });
-                setIsOpen(false);
-            } else {
-                toast({ variant: "destructive", title: "Failed to resend", description: result.error });
-            }
-        } catch (error) {
-            toast({ variant: "destructive", title: "Network Error", description: "Could not connect to server." });
-        }
-    };
 
     const handleSignup = async (values: SignupSchema) => {
         try {
@@ -113,22 +96,19 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...values }),
             });
-
             const data = await response.json();
-
-            if (response.ok) {
+            if (data.success) {
                 toast({
                     title: "Registration Successful",
                     description: "Your account has been created. Please check your email to verify your account.",
                 });
                 setIsOpen(false);
             } else {
-                if (data.action === 'resend_verification') {
+                if (data.error === 'Email is already Exists.') {
                     toast({
                         variant: "destructive",
-                        title: "Registration Failed",
-                        description: data.error,
-                        action: <Button onClick={handleResendVerification}>Resend Link</Button>,
+                        title: "Email is already Exists.",
+                        description: "An account with this email address already exists. Please log in or use a different email",
                     });
                 } else {
                     toast({
@@ -185,7 +165,7 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
             toast({ variant: 'destructive', title: 'Social Login Failed', description });
         }
     };
-
+    const [showPassword, setShowPassword] = useState(false);
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="sm:max-w-lg auth-modal-glow overflow-hidden">
@@ -242,18 +222,38 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                         <FormField
                             control={form.control}
                             name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Password</FormLabel>
-                                    <FormControl>
-                                        <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} />
-                                    </FormControl>
-                                    <p className="text-xs text-muted-foreground">
-                                        Must be at least 10 characters and contain an uppercase, lowercase, number, and special character.
-                                    </p>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                            render={({ field }) => {
+
+
+                                return (
+                                    <FormItem>
+                                        <FormLabel>Password</FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Input
+                                                    type={showPassword ? "text" : "password"}
+                                                    placeholder="••••••••"
+                                                    {...field}
+                                                    disabled={isSubmitting}
+                                                    className="pr-10" // space for eye button
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword((prev) => !prev)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                                    tabIndex={-1} // prevent stealing focus while typing
+                                                >
+                                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
+                                            </div>
+                                        </FormControl>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Must be at least 10 characters and contain an uppercase, lowercase, number, and special character.
+                                        </p>
+                                        <FormMessage />
+                                    </FormItem>
+                                );
+                            }}
                         />
                         <DialogFooter className="pt-4">
                             <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>
@@ -263,12 +263,12 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                         </DialogFooter>
                     </form>
                     <div className="flex justify-center items-center">
-                            <div>
-                                <Button variant="link" type="button" className="text-xs block p-0 h-auto" onClick={() => { handleAuthClick('login'); }}>
-                                    Already have an account? Log In
-                                </Button>
-                            </div>
+                        <div>
+                            <Button variant="link" type="button" className="text-xs block p-0 h-auto" onClick={() => { handleAuthClick('login'); }}>
+                                Already have an account? Log In
+                            </Button>
                         </div>
+                    </div>
                 </Form>
             </DialogContent>
         </Dialog>

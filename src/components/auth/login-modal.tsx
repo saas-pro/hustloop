@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { UserRole, View } from "@/app/types";
 import { API_BASE_URL } from "@/lib/api";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { Eye, EyeOff } from "lucide-react"
+import { useState } from "react";
 import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -79,7 +81,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     setActiveView(view);
   };
 
-  const handleResendVerification = async (email:string) => {
+  const handleResendVerification = async (email: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
         method: "POST",
@@ -121,7 +123,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       await firebaseUser.reload();
 
       if (!firebaseUser.emailVerified) {
-        handleResendVerification(values.email)
+        await handleResendVerification(values.email);
         toast({
           variant: "destructive",
           title: "Email Not Verified",
@@ -129,7 +131,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
             <div className="flex flex-col gap-2">
               <span>Please check your inbox to verify your email.</span>
               <button
-                onClick={()=>handleResendVerification(values.email)}
+                onClick={() => handleResendVerification(values.email)}
                 className="px-3 py-1 rounded-md bg-primary text-white hover:bg-primary/80"
               >
                 Resend Verification Email
@@ -139,7 +141,6 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
         });
         return;
       }
-
 
       const idToken = await firebaseUser.getIdToken();
       const response = await fetch(`${API_BASE_URL}/api/login`, {
@@ -226,6 +227,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       toast({ variant: "destructive", title: "Failed to Send Email", description: "Could not send password reset email. Please ensure the email address is correct." });
     }
   };
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -262,16 +264,45 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
             <FormField
               control={form.control}
               name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex justify-between">
-                    <FormLabel>Password</FormLabel>
-                    <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset}>Forgot password?</Button>
-                  </div>
-                  <FormControl><Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+
+
+                return (
+                  <FormItem>
+                    <div className="flex justify-between">
+                      <FormLabel>Password</FormLabel>
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="h-auto p-0 text-xs"
+                        onClick={handlePasswordReset}
+                      >
+                        Forgot password?
+                      </Button>
+                    </div>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          {...field}
+                          disabled={isSubmitting}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          tabIndex={-1} // prevent focus stealing
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
             <DialogFooter className="pt-4">
               <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>

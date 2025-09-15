@@ -415,45 +415,44 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }
     }
 
-
     async function handleResendEmail(email: string) {
         try {
-            setLoadingResend(true)
-            const token = localStorage.getItem("token")
+            setLoadingResend(true);
+            const token = localStorage.getItem("token");
             const res = await fetch(`${API_BASE_URL}/api/request-email-change`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ email }),
-            })
+                body: JSON.stringify({ new_email: email }),
+            });
 
-            const data = await res.json()
+            const data = await res.json();
 
-            if (data.success) {
+            if (res.ok && data.success) {
                 toast({
                     title: "Success",
                     description: `Resent verification email to ${email}.`,
-                })
+                });
             } else {
                 toast({
                     title: "Error",
-                    description:
-                        data.message || data.error || "Failed to resend verification email.",
+                    description: data.message || data.error || "Failed to resend verification email.",
                     variant: "destructive",
-                })
+                });
             }
         } catch (err: any) {
             toast({
                 title: "Error",
                 description: err.message || "Something went wrong.",
                 variant: "destructive",
-            })
+            });
         } finally {
-            setLoadingResend(false)
+            setLoadingResend(false);
         }
     }
+
 
 
     const adminTabs = ["overview", "users", "subscribers", "blog", "sessions", "settings"];
@@ -840,40 +839,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                                                                         {/* Buttons inside input */}
                                                                         <div className="absolute inset-y-0 right-3 flex items-center gap-1">
-                                                                            {!isEditingEmail ? (
-                                                                                // Step 1: Default → Edit
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="link"
-                                                                                    className="p-0 h-auto text-sm"
-                                                                                    onClick={() => {
-                                                                                        setIsEditingEmail(true);
-                                                                                        setEmailChangeRequested(false); // reset state
-                                                                                    }}
-                                                                                >
-                                                                                    Edit
-                                                                                </Button>
-                                                                            ) : !emailChangeRequested ? (
-                                                                                // Step 2: While editing → Change
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="default"
-                                                                                    size="sm"
-                                                                                    className="text-xs flex items-center gap-1"
-                                                                                    disabled={loadingChange}
-                                                                                    onClick={async () => {
-                                                                                        await handleChangeEmail(field.value);
-                                                                                        setEmailChangeRequested(true); // Step 3: show Resend button
-                                                                                        setIsEditingEmail(false); // lock input again
-                                                                                    }}
-                                                                                >
-                                                                                    {loadingChange ? (
-                                                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                                                    ) : (
-                                                                                        "Change"
-                                                                                    )}
-                                                                                </Button>
-                                                                            ) : (
+                                                                            {emailChangeRequested ? (
                                                                                 // Step 3: After Change request → Resend
                                                                                 <Button
                                                                                     type="button"
@@ -889,8 +855,42 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                         "Resend"
                                                                                     )}
                                                                                 </Button>
+                                                                            ) : !isEditingEmail ? (
+                                                                                // Step 1: Default → Edit
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="link"
+                                                                                    className="p-0 h-auto text-sm"
+                                                                                    onClick={() => {
+                                                                                        setIsEditingEmail(true);
+                                                                                        setEmailChangeRequested(false); // reset state
+                                                                                    }}
+                                                                                >
+                                                                                    Edit
+                                                                                </Button>
+                                                                            ) : (
+                                                                                // Step 2: While editing → Change
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="default"
+                                                                                    size="sm"
+                                                                                    className="text-xs flex items-center gap-1"
+                                                                                    disabled={loadingChange}
+                                                                                    onClick={async () => {
+                                                                                        await handleChangeEmail(field.value);
+                                                                                        setEmailChangeRequested(true);  // ✅ Resend will show
+                                                                                        setIsEditingEmail(false);       // input locks, but still shows Resend
+                                                                                    }}
+                                                                                >
+                                                                                    {loadingChange ? (
+                                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                                    ) : (
+                                                                                        "Change"
+                                                                                    )}
+                                                                                </Button>
                                                                             )}
                                                                         </div>
+
                                                                     </div>
                                                                     <FormMessage />
                                                                 </FormItem>

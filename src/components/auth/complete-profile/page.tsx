@@ -123,13 +123,6 @@ function CompleteProfileForm() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-            <div
-              className="flex items-center gap-2 cursor-pointer mb-8"
-              onClick={() => router.push('/')}
-            >
-                <Image src="/logo.png" alt="SynergyHub Logo" width={40} height={40} />
-                <span className="text-2xl font-bold">SynergyHub</span>
-            </div>
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <CardTitle>One Last Step!</CardTitle>
