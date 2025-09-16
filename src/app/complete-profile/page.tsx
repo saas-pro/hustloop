@@ -186,7 +186,7 @@ function CompleteProfileForm() {
                                     name="founder_role"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Select your founder role</FormLabel>
+                                            <FormLabel>Select your area of innovation</FormLabel>
                                             <Select
                                                 onValueChange={field.onChange}
                                                 defaultValue={field.value}

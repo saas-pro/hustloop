@@ -207,26 +207,49 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
   };
 
   const handlePasswordReset = async () => {
-    if (!auth) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
-      return;
-    }
     const email = getValues("email");
+
     if (!email) {
-      toast({ variant: "destructive", title: "Email Required", description: "Please enter your email address to reset your password." });
+      toast({
+        variant: "destructive",
+        title: "Email Required",
+        description: "Please enter your email address to reset your password.",
+      });
       return;
     }
-    const actionCodeSettings = {
-      url: `${window.location.origin}/auth/action`,
-      handleCodeInApp: true,
-    };
+
     try {
-      await sendPasswordResetEmail(auth, email, actionCodeSettings);
-      toast({ title: "Password Reset Email Sent", description: "Please check your inbox for a link to reset your password." });
+      const response = await fetch(`${API_BASE_URL}/api/forgot-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Password Reset Email",
+          description: result.message || "If this email is registered, a reset link has been sent.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.message || "If this email is registered, a password reset link has been sent. If you don’t receive an email, your account may not exist in our database.",
+        });
+      }
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Failed to Send Email", description: "Could not send password reset email. Please ensure the email address is correct." });
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Email",
+        description: "Something went wrong. Please try again later.",
+      });
     }
   };
+
   const [showPassword, setShowPassword] = useState(false);
 
   return (
