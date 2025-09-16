@@ -577,7 +577,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
           {/* Parent container card */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 w-full mx-auto pt-2 md:pt-4">
 
-            {/* Card 1 */}
+            {/* Card 1 (Founders)*/}
             <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
               <div className="mx-auto bg-primary/10 text-primary 
               w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
@@ -594,15 +594,14 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               <div className='flex-grow'>
                 <h3 className="text-xl font-bold">For Founders</h3>
                 <p className="text-muted-foreground mt-2 mb-4">
-                  Launch your idea with expert guidance and resources.
+                  Register, choose your role, and either submit an innovative idea to an incubation center to get incubated, or offer a technology for transfer.
                 </p>
               </div>
               <Button
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
                 onClick={() => setActiveView("incubators")}
               >
-                Partner with Us
-
+                Get Started
               </Button>
             </Card>
 
@@ -623,18 +622,46 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               <div className='flex-grow'>
                 <h3 className="text-xl font-bold">For MSMEs</h3>
                 <p className="text-muted-foreground mt-2 mb-4">
-                  Collaborate with startups for mutual growth and innovation.
+                  Register, post your business challenges, and collaborate with problem solvers.
                 </p>
               </div>
               <Button
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
                 onClick={() => setActiveView("msmes")}
               >
-                Join as MSME
+                Join as an MSME
               </Button>
             </Card>
 
-            {/* Card 3 (Tech Transfer) */}
+            {/* Card 3 (Problem Solvers (Innovators) */}
+            <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
+              <div className="mx-auto bg-primary/10 text-primary 
+              w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
+              rounded-full overflow-hidden mb-4 
+              transition-all duration-300 
+              group-hover:scale-110">
+                <Image
+                  src={"/icons/problem-solver.gif"}
+                  width={100}
+                  height={100}
+                  alt="mentors"
+                />
+              </div>
+              <div className='flex-grow'>
+                <h3 className="text-xl font-bold">Problem Solvers (Innovators)</h3>
+                <p className="text-muted-foreground mt-2 mb-4">
+                  Register, browse MSME problem statements, and submit your solutions.
+                </p>
+              </div>
+
+              <Button
+                className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+              >
+                Solve Challenges
+              </Button>
+            </Card>
+
+            {/* Card 4 (Tech Transfer) */}
             <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
               <div className="mx-auto bg-primary/10 text-primary 
               w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
@@ -648,10 +675,13 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
                   alt="mentors"
                 />
               </div>
-              <h3 className="text-xl font-bold">Tech Transfer</h3>
-              <p className="text-muted-foreground mt-2 mb-4">
-                Discover and license ready-to-use technologies from universities and industry partners.
-              </p>
+              <div className='flex-grow'>
+                <h3 className="text-xl font-bold">Tech Transfer</h3>
+                <p className="text-muted-foreground mt-2 mb-4">
+                  Browse and license innovative technologies from universities and industry partners.
+                </p>
+              </div>
+
               <Button
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
               >
@@ -659,35 +689,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               </Button>
             </Card>
 
-            {/* Card 4 */}
-            <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
-              <div className="mx-auto bg-primary/10 text-primary 
-              w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
-              rounded-full overflow-hidden mb-4 
-              transition-all duration-300 
-              group-hover:scale-110">
-                <DotLottieReact
-                  src="https://lottie.host/0524fb6c-2e9f-4870-b4cc-afa8b781c52c/qwlt9UUd4M.lottie"
-                  loop
-                  autoplay
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className='flex-grow'>
-                <h3 className="text-xl font-bold">For Incubators</h3>
-                <p className="text-muted-foreground mt-2 mb-4 w-auto">
-                  Support startups and foster a culture of innovation.
-                </p>
-              </div>
-              <Button
-                className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
-                onClick={() => setActiveView("incubators")}
-              >
-                Explore Incubators
-              </Button>
-            </Card>
           </div>
-
         </div>
       </section>
 

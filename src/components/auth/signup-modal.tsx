@@ -108,7 +108,7 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                     toast({
                         variant: "destructive",
                         title: "Email is already Exists.",
-                        description: "An account with this email address already exists. Please log in or use a different email",
+                        description: "An account with this email/username already exists. If you forgot your password, please try resetting it",
                     });
                 } else {
                     toast({

@@ -14,6 +14,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import { Portal } from "@radix-ui/react-portal"
 import {
     Select,
     SelectContent,
@@ -29,10 +30,23 @@ import * as React from 'react';
 import { Suspense } from 'react';
 import { API_BASE_URL } from "@/lib/api";
 import { UserRole } from "@/app/types";
+import { Info } from "lucide-react"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+    TooltipProvider,
+} from "@/components/ui/tooltip"
 
 const profileSchema = z.object({
     role: z.string({ required_error: "Please select a role." }),
-});
+    founder_role: z.string().optional(), // conditionally required below
+}).refine(
+    (data) => data.role !== "founder" || !!data.founder_role,
+    {
+        path: ["founder_role"],
+        message: "Please select a founder role.",
+    });
 
 type ProfileSchema = z.infer<typeof profileSchema>;
 type AuthProvider = 'local' | 'google' | 'linkedin';
@@ -45,6 +59,10 @@ function CompleteProfileForm() {
 
     const form = useForm<ProfileSchema>({
         resolver: zodResolver(profileSchema),
+        defaultValues: {
+            role: "",
+            founder_role: "",
+        },
     });
 
     const { formState: { isSubmitting } } = form;
@@ -161,6 +179,94 @@ function CompleteProfileForm() {
                                     </FormItem>
                                 )}
                             />
+                            {/* Founder Sub-Role Selection (only if role === "founder") */}
+                            {form.watch("role") === "founder" && (
+                                <FormField
+                                    control={form.control}
+                                    name="founder_role"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Select your founder role</FormLabel>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                disabled={isSubmitting}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Choose a founder role" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <TooltipProvider >
+                                                        <SelectItem value="Solve MSME's challenge">
+                                                            <div className="flex items-center gap-2 ">
+                                                                {"Solve MSME's challenge"}
+                                                                <Tooltip >
+                                                                    <TooltipTrigger asChild>
+                                                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                                                    </TooltipTrigger>
+                                                                    <Portal>
+                                                                        <TooltipContent
+                                                                            side="right"
+                                                                            align="center"
+                                                                            className="z-[9999] max-w-xs whitespace-normal"
+                                                                        >
+                                                                            Requires an active subscription to submit solutions. Rewards apply if selected. See pricing for details.                                                                        </TooltipContent>
+                                                                    </Portal>
+
+                                                                </Tooltip>
+                                                            </div>
+                                                        </SelectItem>
+
+                                                        <SelectItem value="List a technology for licensing">
+                                                            <div className="flex items-center gap-2">
+                                                                List a technology for licensing
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                                                    </TooltipTrigger>
+                                                                    <Portal>
+                                                                        <TooltipContent
+                                                                            side="right"
+                                                                            align="center"
+                                                                            className="z-[9999] max-w-xs whitespace-normal"
+                                                                        >
+                                                                            Listing is free. Your submission is reviewed for quality before it’s published for licensees.                                                                        </TooltipContent>
+                                                                    </Portal>
+                                                                </Tooltip>
+                                                            </div>
+                                                        </SelectItem>
+
+                                                        <SelectItem value="Submit an innovative idea">
+                                                            <div className="flex items-center gap-2">
+                                                                Submit an innovative idea
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                                                    </TooltipTrigger>
+                                                                    <Portal>
+                                                                        <TooltipContent
+                                                                            side="right"
+                                                                            align="center"
+                                                                            className="z-[9999] max-w-xs whitespace-normal"
+                                                                        >
+                                                                            Requires an active subscription to submit and track applications to incubators. See pricing for details.
+                                                                        </TooltipContent>
+                                                                    </Portal>
+                                                                </Tooltip>
+                                                            </div>
+                                                        </SelectItem>
+                                                    </TooltipProvider>
+
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+
                             <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Complete Registration
