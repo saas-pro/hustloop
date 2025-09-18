@@ -76,6 +76,8 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     }
   };
 
+  const [resetLoadingBtn, setResetLoadingBtn] = useState(false)
+
   const handleAuthClick = (view: 'login' | 'signup') => {
     preloadRecaptcha();
     setActiveView(view);
@@ -219,6 +221,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     }
 
     try {
+      setResetLoadingBtn(true)
       const response = await fetch(`${API_BASE_URL}/api/forgot-password`, {
         method: "POST",
         headers: {
@@ -241,6 +244,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
           description: result.message || "If this email is registered, a password reset link has been sent. If you don’t receive an email, your account may not exist in our database.",
         });
       }
+      setResetLoadingBtn(false)
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -297,10 +301,18 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
                       <Button
                         type="button"
                         variant="link"
-                        className="h-auto p-0 text-xs"
+                        className="h-auto p-0 text-xs flex items-center gap-1"
                         onClick={handlePasswordReset}
+                        disabled={resetLoadingBtn}
                       >
-                        Forgot password?
+                        {resetLoadingBtn ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Forgot password?"
+                        )}
                       </Button>
                     </div>
                     <FormControl>

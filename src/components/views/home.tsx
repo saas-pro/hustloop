@@ -1151,6 +1151,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
                             <SelectItem value="incubation">Incubation Support</SelectItem>
                             <SelectItem value="msme">MSME Partnerships</SelectItem>
                             <SelectItem value="support">Support</SelectItem>
+                            <SelectItem value="tech-transfer">Tech Transfer</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

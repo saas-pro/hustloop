@@ -210,28 +210,33 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
         <div>
             <div className="toggle fixed z-50">
                 {/* Magnetic CTA Button */}
-                <div className='flex justify-end fixed items-center gap-8 w-full right-4 pointer-events-none top-5'>
+                <div className='flex justify-end fixed items-center gap-8 right-4 top-5'>
                     <div className="hidden md:flex items-center gap-4 pointer-events-auto">
                         {!isStaticPage && pathname !== "/terms-of-service" && pathname !== "/privacy-policy" && (
                             <>
                                 {isLoading ? (
                                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                                 ) : isLoggedIn ? (
-                                    <>
+                                    <div className="inline-flex rounded-xl border border-solid backdrop-blur-md bg-white/10">
                                         <button
                                             onClick={() => setActiveView('dashboard')}
-                                            className="z-20 relative xl:inline-flex w-14 h-14 rounded-xl border border-solid backdrop-blur-md bg-white/10 flex items-center justify-center"
+                                            className="w-14 h-14 flex items-center justify-center"
                                             style={{ color: (heroVisible && !navOpen) ? "white" : "CurrentColor", transition: "none" }}
                                         >
                                             <UserCircle className="h-6 w-6" />
                                             <span className="sr-only">Dashboard</span>
                                         </button>
 
-                                        <button className={`z-20 relative xl:inline-flex w-14 h-14 rounded-xl border border-solid backdrop-blur-md bg-white/10 flex items-center justify-center `} style={{ color: (heroVisible && !navOpen) ? "white" : "CurrentColor", transition: "none" }} onClick={onLogout}>
+                                        <button
+                                            onClick={onLogout}
+                                            className="w-14 h-14 flex items-center justify-center border-l border-solid"
+                                            style={{ color: (heroVisible && !navOpen) ? "white" : "CurrentColor", transition: "none" }}
+                                        >
                                             <LogOut className="h-6 w-6" />
                                             <span className="sr-only">Logout</span>
                                         </button>
-                                    </>
+                                    </div>
+
                                 ) : (
                                     <div
                                         ref={containerRef}
@@ -250,7 +255,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                         )}
                     </div>
                     {/* Menu Button */}
-                    <div className="flex items-center justify-center ">
+                    <div className="flex items-center justify-center">
                         <button
                             id="menu-button"
                             ref={btnRef}
