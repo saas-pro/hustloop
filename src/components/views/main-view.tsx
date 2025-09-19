@@ -89,6 +89,7 @@ export default function MainView() {
   const searchParams = useSearchParams();
   const { auth } = useFirebaseAuth();
   const [isEventModalOpen, setEventModalOpen] = useState(false);
+  
 
   const loadStateFromStorage = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -233,14 +234,15 @@ export default function MainView() {
     }
   };
 
-  const handleLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
-    const { role, token, hasSubscription, name, email, authProvider } = data;
+  const handleLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, founder_role: string, name: string, email: string, authProvider: AuthProvider }) => {
+    const { role, token, hasSubscription, name, email, authProvider, founder_role } = data;
     const userData = { name, email };
 
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userRole', role || '');
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('hasSubscription', String(hasSubscription));
+    localStorage.setItem('founder_role', founder_role);
     localStorage.setItem('token', token);
     localStorage.setItem('authProvider', authProvider);
 
@@ -385,7 +387,8 @@ export default function MainView() {
             authProvider={authProvider}
             hasSubscription={hasSubscription}
             setActiveView={setActiveView}
-            setUser={setUser} 
+            setUser={setUser}
+            
           />
         );
       default:
@@ -412,8 +415,8 @@ export default function MainView() {
         className={`relative overflow-y-auto z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
           }`}
         id="main-view"
-        
-        
+
+
       >
         <section className={`min-h-screen`} ref={scrollContainerRef}>
           <HomeView
@@ -493,7 +496,7 @@ export default function MainView() {
         onOpenChange={handleModalOpenChange('contact')}
       />}
 
-      <EventModal 
+      <EventModal
         isOpen={isEventModalOpen}
         onOpenChange={setEventModalOpen}
       />

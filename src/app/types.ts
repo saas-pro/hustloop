@@ -4,7 +4,8 @@ export type DashboardTab = "overview" | "msmes" | "incubators" | "mentors" | "su
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
 export type IncubatorDashboardTab = "overview" | "submissions" | "profile" | "settings";
 export type MsmeDashboardTab = "overview" | "submissions" | "profile" | "settings";
-export type UserRole = "admin" | "mentor" | "incubator" | "msme" | "founder" | null;
+export type UserRole = "admin" | "mentor" | "incubator" | "msme" | "founder";
+export type founderRole = "Solve MSME's challenge" | "List a technology for licensing" | "Submit an innovative idea"
 export type UserStatus = "active" | "banned" | "pending";
 
 export type Comment = {

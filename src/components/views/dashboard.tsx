@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -74,6 +74,20 @@ interface DashboardViewProps {
     setActiveView: (view: View) => void;
     setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
+
+interface TechTransferIP {
+    id: number;
+    ipTitle: string;
+    firstName: string;
+    lastName: string;
+    description: string;
+    inventorName: string;
+    organization: string;
+    supportingFile?: string;
+    approvalStatus: string;
+    created_by?: number;
+}
+
 
 const iconNames = Object.keys(LucideIcons).filter(k => k !== 'createLucideIcon' && k !== 'icons' && k !== 'default');
 
@@ -452,13 +466,160 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setLoadingResend(false);
         }
     }
+    const [isTechTransfer, setIsTechTransfer] = useState(false)
 
-
-
+    useEffect(() => {
+        const founder_role = localStorage.getItem("founder_role");
+        if (founder_role === "List a technology for licensing") {
+            setIsTechTransfer(true);
+        } else {
+            setIsTechTransfer(false)
+        }
+    }, []);
     const adminTabs = ["overview", "users", "subscribers", "blog", "sessions", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
+    const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];
+    const filteredTabs = isTechTransfer ? techTransferTabs : availableTabs
     const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
+    const [techtransferData, setTechtransferData] = useState<{
+        ipTitle: string;
+        firstName: string;
+        lastName: string;
+        description: string;
+        inventorName: string;
+        organization: string;
+        supportingFile: File | null;
+    }>({
+        ipTitle: "",
+        firstName: "",
+        lastName: "",
+        description: "",
+        inventorName: "",
+        organization: "",
+        supportingFile: null,
+    });
+    const techTransferFile = useRef<HTMLInputElement>(null);
+
+    const handleTechTransferSubmit = async (
+        e: React.FormEvent<HTMLFormElement>
+    ): Promise<void> => {
+        e.preventDefault();
+        const data = new FormData();
+        Object.entries(techtransferData).forEach(([key, value]) => {
+            if (value) {
+                // handle File separately
+                if (key === "supportingFile" && value instanceof File) {
+                    data.append(key, value);
+                } else if (typeof value === "string") {
+                    data.append(key, value);
+                }
+            }
+        });
+        data.append("contactEmail", user.email);
+        const token = localStorage.getItem("token");
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/techtransfer`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`, // attach token
+                },
+                body: data, // FormData for file uploads
+            });
+
+            if (res.ok) {
+                toast({
+                    title: "Submission successful",
+                    description: "Your IP has been submitted for review.",
+                });
+
+                // Reset form after success
+                setTechtransferData({
+                    ipTitle: "",
+                    firstName: "",
+                    lastName: "",
+                    description: "",
+                    inventorName: "",
+                    organization: "",
+                    supportingFile: null,
+                });
+                if (techTransferFile.current) techTransferFile.current.value = "";
+            } else {
+                toast({
+                    title: "Submission failed",
+                    description: "Please try again later.",
+                    variant: "destructive",
+                });
+            }
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            toast({
+                title: "Error occurred",
+                description: message,
+                variant: "destructive",
+            });
+        }
+    };
+    const handleInputChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
+        const { name, value } = e.target;
+        setTechtransferData({
+            ...techtransferData,
+            [name]: value,
+        });
+    };
+
+    const [mySubmissions, setMySubmissions] = useState<TechTransferIP[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [emptyToastShown, setEmptyToastShown] = useState(false); // track empty toast
+
+
+
+    useEffect(() => {
+        const fetchMySubmissions = async () => {
+            setLoading(true);
+            setEmptyToastShown(false); // reset
+            try {
+                const user = JSON.parse(localStorage.getItem("user") || "{}");
+                const token = localStorage.getItem("token");
+                const res = await fetch(`${API_BASE_URL}/api/techtransfer/${user.email}`, {
+                    headers: {
+                        Authorization: `Bearer ${token || ""}`,
+                    },
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    setMySubmissions(data.ips);
+
+                } else {
+                    setMySubmissions([]);
+                    toast({
+                        title: "Failed to load submissions",
+                        description: data.error || "Please try again later.",
+                        variant: "destructive",
+                    });
+                }
+            } catch (err: any) {
+                console.error(err);
+                setMySubmissions([]);
+                toast({
+                    title: "Error occurred",
+                    description: err.message || "Unable to fetch submissions.",
+                    variant: "destructive",
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (activeTab === "submission") {
+            fetchMySubmissions();
+        }
+    }, [activeTab,toast]);
+
+
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -476,18 +637,18 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                     <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0 ">
                         <TabsList
-                            className="
+                            className={`
                                 grid 
                                 grid-cols-3        /* 📱 mobile → 2 per row */
                                 sm:grid-cols-3     /* tablet → 3 per row */
                                 md:grid-cols-4     /* medium → 4 per row */
-                                lg:grid-cols-6     /* desktop → 6 per row */
+                                ${(isTechTransfer) ? "lg:grid-cols-5" : "lg:grid-cols-6"}   /* desktop → 6 per row */
                                 gap-2 h-fit
                                 items-stretch       
                                 bg-muted/50 rounded-lg p-1
-                                mb-4 sm:mb-6 lg:mb-10 z-10"
+                                mb-4 sm:mb-6 lg:mb-10 z-10`}
                         >
-                            {availableTabs.map((tab) => {
+                            {filteredTabs.map((tab) => {
                                 const Icon = (
                                     LucideIcons[
                                     tab === "overview"
@@ -496,17 +657,19 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             ? "Briefcase"
                                             : tab === "incubators"
                                                 ? "Lightbulb"
-                                                : tab === "mentors"
-                                                    ? "Users"
-                                                    : tab === "submission"
-                                                        ? "FileText"
-                                                        : tab === "settings"
-                                                            ? "Settings"
-                                                            : tab === "users"
-                                                                ? "User"
-                                                                : tab === "subscribers"
-                                                                    ? "Mail"
-                                                                    : "BookOpen"
+                                                : tab === "engagements"
+                                                    ? "Handshake"
+                                                    : tab === "mentors"
+                                                        ? "Users"
+                                                        : tab === "submission"
+                                                            ? "FileText"
+                                                            : tab === "settings"
+                                                                ? "Settings"
+                                                                : tab === "users"
+                                                                    ? "User"
+                                                                    : tab === "subscribers"
+                                                                        ? "Mail"
+                                                                        : "BookOpen"
                                     ] || LucideIcons.HelpCircle
                                 ) as React.ComponentType<LucideProps>;
 
@@ -590,16 +753,152 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                 </div>
                             </TabsContent>
                             <TabsContent value="submission" className="mt-0">
-                                {hasSubscription || userRole === 'admin' ? (
+                                {userRole === 'admin' || (
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                         <CardHeader>
                                             <CardTitle>My Submissions</CardTitle>
                                             <CardDescription>Your submissions for corporate challenges.</CardDescription>
-                                        </CardHeader><CardContent><p>You have no active submissions.</p></CardContent>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {loading ? (
+                                                <p>Loading...</p>
+                                            ) : mySubmissions.length === 0 ? (
+                                                <p>You have no active submissions.</p>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {mySubmissions.map((submission) => (
+                                                        <div key={submission.id} className="p-2 border rounded">
+                                                            <p><strong>IP Title:</strong> {submission.ipTitle}</p>
+                                                            <p><strong>Description:</strong> {submission.description}</p>
+                                                            <p><strong>Inventor:</strong> {submission.firstName} {submission.lastName}</p>
+                                                            <p><strong>Organization:</strong> {submission.organization}</p>
+                                                            <p><strong>Status:</strong> {submission.approvalStatus}</p>
+                                                            {submission.supportingFile && (
+                                                                <a
+                                                                    href={`${API_BASE_URL}/${submission.supportingFile.replace(/^app\//, "")}`}
+                                                                    target="_blank"
+                                                                    className="text-blue-500 underline"
+                                                                    rel="noopener noreferrer"
+                                                                >
+                                                                    View Document
+                                                                </a>
+                                                            )}
+
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </CardContent>
                                     </Card>
-                                ) :
-                                    <LockedContent setActiveView={setActiveView} title="Submissions" />
-                                }
+                                )}
+                            </TabsContent>
+
+                            <TabsContent value="engagements" className="mt-0">
+                                {(
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader>
+                                            <CardTitle>IP Submission Form</CardTitle>
+                                            <CardDescription>
+                                                Submit details of your Intellectual Property for review and engagement.
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <form onSubmit={handleTechTransferSubmit} className="space-y-4">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium mb-1">First Name</label>
+                                                        <Input
+                                                            name="firstName"
+                                                            value={techtransferData.firstName}
+                                                            onChange={handleInputChange}
+                                                            placeholder="First Name"
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium mb-1">Last Name</label>
+                                                        <Input
+                                                            name="lastName"
+                                                            value={techtransferData.lastName}
+                                                            onChange={handleInputChange}
+                                                            placeholder="Last Name"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium mb-1">IP Title</label>
+                                                    <Input
+                                                        name="ipTitle"
+                                                        value={techtransferData.ipTitle}
+                                                        onChange={handleInputChange}
+                                                        placeholder="Enter your IP title"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium mb-1">Description</label>
+                                                    <Textarea
+                                                        name="description"
+                                                        value={techtransferData.description}
+                                                        onChange={handleInputChange}
+                                                        placeholder="Briefly describe your IP"
+                                                    />
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium mb-1">Inventor Name</label>
+                                                        <Input
+                                                            name="inventorName"
+                                                            value={techtransferData.inventorName}
+                                                            onChange={handleInputChange}
+                                                            placeholder="Inventor full name"
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium mb-1">Organization</label>
+                                                        <Input
+                                                            name="organization"
+                                                            value={techtransferData.organization}
+                                                            onChange={handleInputChange}
+                                                            placeholder="Organization / Institution"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* File Upload */}
+                                                <div>
+                                                    <label className="block text-sm font-medium mb-1">Upload Supporting Document</label>
+                                                    <Input
+                                                        ref={techTransferFile}
+                                                        type="file"
+                                                        name="supportingFile"
+                                                        onChange={(e) => {
+                                                            if (e.target.files && e.target.files.length > 0) {
+                                                                setTechtransferData({
+                                                                    ...techtransferData,
+                                                                    supportingFile: e.target.files[0],
+                                                                });
+                                                            }
+                                                        }}
+                                                        accept=".pdf,.doc,.docx"
+                                                    />
+                                                    {techtransferData.supportingFile && (
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Selected: {techtransferData.supportingFile?.name}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <Button type="submit" className="w-full mt-4">
+                                                    Submit IP
+                                                </Button>
+                                            </form>
+                                        </CardContent>
+                                    </Card>
+                                )}
                             </TabsContent>
 
                             {userRole === "admin" && (

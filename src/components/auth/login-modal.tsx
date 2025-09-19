@@ -47,7 +47,7 @@ interface LoginModalProps {
   setIsOpen: (isOpen: boolean) => void;
   activeView: View;
   setActiveView: (view: View) => void;
-  onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => void;
+  onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean,founder_role:string, name: string, email: string, authProvider: AuthProvider }) => void;
 }
 
 export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveView, onLoginSuccess }: LoginModalProps) {
@@ -155,11 +155,11 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
         router.push(`/complete-profile?token=${data.token}`);
         return;
       }
-
+      console.log("Data:",data)
       if (response.ok) {
         onLoginSuccess({
           role: data.role, token: data.token, hasSubscription: data.hasSubscription,
-          name: data.name, email: data.email, authProvider: 'local'
+          name: data.name, email: data.email, authProvider: 'local',founder_role:data.founder_role
         });
       } else {
         toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
@@ -197,7 +197,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       if (response.ok) {
         onLoginSuccess({
           role: data.role, token: data.token, hasSubscription: data.hasSubscription,
-          name: data.name, email: data.email, authProvider: 'google'
+          name: data.name, email: data.email, authProvider: 'google',founder_role:data.founder_role
         });
       } else {
         toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });

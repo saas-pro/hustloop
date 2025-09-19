@@ -53,7 +53,7 @@ interface SignupModalProps {
     activeView: View;
     setActiveView: (view: View) => void;
     setIsOpen: (isOpen: boolean) => void;
-    onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => void;
+    onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string,founder_role:string, authProvider: AuthProvider }) => void;
 }
 
 export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActiveView }: SignupModalProps) {
@@ -147,7 +147,7 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                 router.push(`/complete-profile?token=${data.token}`);
                 return;
             }
-
+            
             if (response.ok) {
                 const additionalUserInfo = getAdditionalUserInfo(result);
                 if (additionalUserInfo?.isNewUser) {
@@ -155,7 +155,7 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                 }
                 onLoginSuccess({
                     role: data.role, token: data.token, hasSubscription: data.hasSubscription,
-                    name: data.name, email: data.email, authProvider: 'google'
+                    name: data.name, email: data.email, authProvider: 'google',founder_role:data.founder_role
                 });
             } else {
                 toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
