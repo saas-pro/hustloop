@@ -1,6 +1,6 @@
 
 
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import TwinklingStars from '@/components/layout/twinkling-stars';
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://hustloop.com/',
   },
-  
+
 };
 
 export default function RootLayout({
@@ -26,13 +26,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head />
       <body className="bg-background font-sans">
-        <ThemeProvider>
-          <div className="flex-grow ">
-            <TwinklingStars />
-            {children}
-          </div>
-          <Toaster />
-        </ThemeProvider>
+        
+          <ThemeProvider>
+            <div className="flex-grow ">
+              <TwinklingStars />
+
+              {children}
+            </div>
+            <Toaster />
+          </ThemeProvider>
+        
         <Script id="zoho-salesiq-script" strategy="lazyOnload">
           {`
             window.$zoho = window.$zoho || {};

@@ -6,8 +6,6 @@ import { Lightbulb, Briefcase, PlayCircle, Star, Award, Link, CheckCircle, Gradu
 import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import gsap from "gsap";
-import { motion, useScroll, useTransform } from "framer-motion";
 import * as React from "react";
 import type { View } from "@/app/types";
 import Footer from "../layout/footer";
@@ -28,8 +26,11 @@ import { useRef } from "react";
 import HighlightEffect from "@/components/ui/highlight-effect";
 import BannerImage from "../ui/BannerImage";
 import HanddrawnUnderline from "@/components/ui/handdrawn-underline";
+import Lenis from '@studio-freight/lenis'
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
+import SolutionCard from '../SolutionCard';
+import { useScroll } from 'framer-motion';
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters."),
@@ -127,6 +128,39 @@ const dynamicHeroStates = [
     ]
   }
 ];
+
+export const solutionSteps = {
+  incubation: {
+    title: 'Incubation Journey',
+    steps: [
+      { icon: Rocket, title: "Entrepreneur", description: "Start Your Journey with a Vision" },
+      { icon: Lightbulb, title: "Innovative Idea", description: "Submit Your Groundbreaking Concept" },
+      { icon: Briefcase, title: "Incubation Support", description: "Get Expert Guidance & Resources" },
+      { icon: Award, title: "MVP Development", description: "Build, Test, and Refine Your Solution" },
+      { icon: GraduationCap, title: "Success", description: "Graduate from the Program & Scale" },
+    ]
+  },
+  'market-solution': {
+    title: 'Market Solution Path',
+    steps: [
+      { icon: Search, title: "Market Analysis", description: "Identify Your Target Audience & Niche" },
+      { icon: Target, title: "Product Validation", description: "Confirm Product-Market Fit with Real Users" },
+      { icon: TrendingUp, title: "Go-to-Market", description: "Develop a Winning Launch Strategy" },
+      { icon: Scaling, title: "Launch & Iterate", description: "Execute, Measure Your KPIs, and Adapt" },
+      { icon: CircleDollarSign, title: "Scale & Grow", description: "Expand Your User Base and Revenue" },
+    ]
+  },
+  partnership: {
+    title: 'Partnership Roadmap',
+    steps: [
+      { icon: Handshake, title: "Partner Discovery", description: "Identify and Vet Strategic Partners" },
+      { icon: BarChart, title: "Value Proposition", description: "Connect with MSMEs and Corporates" },
+      { icon: Wrench, title: "Pilot Program", description: "Forge Pilot Projects to Prove Value" },
+      { icon: GitBranch, title: "Integration", description: "Align Goals and Grow Together" },
+      { icon: ShieldCheck, title: "Long-Term Synergy", description: "Achieve Mutual and Lasting Success" },
+    ]
+  },
+};
 
 
 const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
@@ -335,11 +369,9 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         </div>
       </div>
     </section>
-
-
-
   );
 };
+
 
 
 export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollContainerRef }: HomeViewProps) {
@@ -387,44 +419,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       });
     }
   }
-
-
-  const solutionSteps = {
-    incubation: {
-      title: 'Incubation Journey',
-      steps: [
-        { icon: Rocket, title: "Entrepreneur", description: "Start Your Journey with a Vision" },
-        { icon: Lightbulb, title: "Innovative Idea", description: "Submit Your Groundbreaking Concept" },
-        { icon: Briefcase, title: "Incubation Support", description: "Get Expert Guidance & Resources" },
-        { icon: Award, title: "MVP Development", description: "Build, Test, and Refine Your Solution" },
-        { icon: GraduationCap, title: "Success", description: "Graduate from the Program & Scale" },
-      ]
-    },
-    'market-solution': {
-      title: 'Market Solution Path',
-      steps: [
-        { icon: Search, title: "Market Analysis", description: "Identify Your Target Audience & Niche" },
-        { icon: Target, title: "Product Validation", description: "Confirm Product-Market Fit with Real Users" },
-        { icon: TrendingUp, title: "Go-to-Market", description: "Develop a Winning Launch Strategy" },
-        { icon: Scaling, title: "Launch & Iterate", description: "Execute, Measure Your KPIs, and Adapt" },
-        { icon: CircleDollarSign, title: "Scale & Grow", description: "Expand Your User Base and Revenue" },
-      ]
-    },
-    partnership: {
-      title: 'Partnership Roadmap',
-      steps: [
-        { icon: Handshake, title: "Partner Discovery", description: "Identify and Vet Strategic Partners" },
-        { icon: BarChart, title: "Value Proposition", description: "Connect with MSMEs and Corporates" },
-        { icon: Wrench, title: "Pilot Program", description: "Forge Pilot Projects to Prove Value" },
-        { icon: GitBranch, title: "Integration", description: "Align Goals and Grow Together" },
-        { icon: ShieldCheck, title: "Long-Term Synergy", description: "Achieve Mutual and Lasting Success" },
-      ]
-    },
-  };
-
-  const [activeSolution, setActiveSolution] = useState<keyof typeof solutionSteps>('incubation');
-
-  const currentSteps = solutionSteps[activeSolution].steps;
 
   const whatWeOffer = [
     {
@@ -549,11 +543,9 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
   }, []);
 
 
-
-
   return (
     <div
-      className={`relative w-full h-screen bg-background text-foreground overflow-x-hidden ${navOpen ? "overflow-hidden" : ""
+      className={`relative pointer-events-auto w-full h-screen bg-background text-foreground overflow-x-hidden ${navOpen ? "overflow-hidden" : ""
         }`}
     >
       {/* Hero Section */}
@@ -718,237 +710,16 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
         </div>
       </section>
 
+
+      <SolutionCard solutionSteps={solutionSteps}/>
+
+
+
+
+
       {/* Choose Your Path Section */}
-      <section className="relative py-16 md:py-20 overflow-hidden bg-background">
-        <div className="container mx-auto px-4">
-          <Card className="mx-auto max-w-7xl rounded-2xl shadow-lg bg-card">
-            <div className="p-6 sm:p-8 lg:p-12">
-              <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
-                {/* Left side - Path selection */}
-                <div className="lg:col-span-4 flex flex-col justify-center">
-                  <h3 className="text-xl sm:text-2xl font-bold text-primary mb-6 lg:mb-8">
-                    Choose your{' '}
-                    <span className="relative inline-block">
-                      path
-                      <svg
-                        className="absolute left-0 bottom-0 w-[38px] sm:w-[50px] text-primary"
-                        aria-hidden="true"
-                        role="presentation"
-                        viewBox="0 0 50 7"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        style={{ pointerEvents: 'none' }}
-                      >
-                        <path
-                          d="M1 2.94452C14.5 0.48118 31 0.481247 49 2.25307M10.6944 6C19.3488 4.11245 30 4.16042 38.4059 5.21069"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </span>{' '}
-                    to success
-                  </h3>
-
-                  <div className="space-y-2">
-                    {(Object.keys(solutionSteps) as Array<keyof typeof solutionSteps>).map((key) => (
-                      <button
-                        key={key}
-                        className={cn(
-                          "group w-full p-4 text-left text-base sm:text-lg font-medium transition-all duration-300 border-l-4 rounded-r-md",
-                          activeSolution === key
-                            ? "border-primary text-primary bg-primary/10 shadow-glow"
-                            : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:border-primary/30"
-                        )}
-                        onClick={() => setActiveSolution(key)}
-                      >
-                        <span className="capitalize flex justify-between items-center">
-                          {key.replace('-', ' ')}
-                          <ArrowRight
-                            className={cn(
-                              "h-5 w-5 opacity-0 -translate-x-2 transition-all duration-300",
-                              activeSolution === key && "opacity-100 translate-x-0"
-                            )}
-                          />
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right side - Process visualization */}
-                <div className="lg:col-span-8">
-                  <div className="flex flex-col items-center justify-center min-h-[300px] lg:min-h-[400px]">
-                    {/* Mobile view - Vertical layout */}
-                    <div className="block lg:hidden w-full">
-                      <div className="relative space-y-6">
-                        {currentSteps.map((step, index) => {
-                          const isLast = index === currentSteps.length - 1;
-                          return (
-                            <div key={step.title} className="relative flex">
-                              {/* Icon with line */}
-                              <div className="relative flex flex-col items-center mr-4">
-                                <div
-                                  className={cn(
-                                    "flex size-16 items-center justify-center rounded-full border-2 bg-background shadow-lg shrink-0 z-10",
-                                    isLast ? "border-flow-accent" : "border-primary"
-                                  )}
-                                >
-                                  <step.icon
-                                    className={cn("size-8", isLast ? "text-flow-accent" : "text-primary")}
-                                  />
-                                </div>
-
-                                {/* Connecting line */}
-                                {!isLast && (
-                                  <div className="absolute top-16 left-1/2 -translate-x-1/2 w-0.5 bg-border"
-                                    style={{ height: "calc(100% + 1.5rem)" }}>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Text */}
-                              <div className="flex-1 pt-2">
-                                <h4 className="font-semibold text-foreground text-lg">{step.title}</h4>
-                                <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
 
 
-                    {/* Desktop view - Horizontal layout */}
-                    <div className="hidden lg:block w-full">
-                      <div className="relative">
-                        {/* Main horizontal line */}
-                        <div className="absolute top-8 left-8 right-8 h-0.5 bg-border"></div>
-
-                        <div className="relative flex justify-between items-start">
-                          {/* Vertical lines between items */}
-                          {currentSteps.slice(0, -1).map((_, index) => {
-                            const position = ((index + 1) / currentSteps.length) * 100;
-                            return (
-                              <div
-                                key={`line-${index}`}
-                                className="absolute top-8 h-8 w-0.5 bg-border"
-                                style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
-                              ></div>
-                            );
-                          })}
-
-                          {currentSteps.map((step, index) => {
-                            const isLast = index === currentSteps.length - 1;
-                            return (
-                              <div key={step.title} className="relative flex flex-col items-center text-center" style={{ width: `${100 / currentSteps.length}%` }}>
-                                <div className={cn(
-                                  "relative flex size-16 items-center justify-center rounded-full border-2 bg-background shadow-lg mb-4",
-                                  isLast ? "   border-yellow-400" : "border-primary",
-                                )}>
-                                  <step.icon className={cn("size-8", isLast ? "text-yellow-400" : "text-primary")} />
-                                </div>
-                                <h4 className="font-semibold text-foreground text-sm lg:text-base px-2">{step.title}</h4>
-                                <p className="text-xs lg:text-sm text-muted-foreground mt-1 px-2">{step.description}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-          {/* New Marquee Section - Reskinned and Fixed */}
-          <div className="reskin-marquee pt-10 mb-6 md:mt-6 md:mb-6 w-screen relative left-1/2 right-1/2 -translate-x-1/2 px-0 overflow-x-hidden">
-            <div className="reskin-marquee-holder flex flex-col gap-0">
-              {/* Row 1 */}
-              <div
-                className="reskin-marquee-content relative w-full overflow-hidden h-16"
-                onMouseEnter={() => setPausedRow1(true)}
-                onMouseLeave={() => setPausedRow1(false)}
-              >
-                <ul className={cn("reskin-marquee-list flex animate-marquee space-x-4 w-max items-center h-16", isPausedRow1 && "paused")}>
-                  {[...Array(6)].flatMap(() => marqueeTabsRow1).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 hover:bg-muted transition-colors rounded-full px-4 py-3 text-sm text-muted-foreground hover:text-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <ul className={cn("reskin-marquee-list flex animate-marquee space-x-4 w-max items-center h-16 absolute left-0 top-0 pointer-events-none", isPausedRow1 && "paused")} aria-hidden="true">
-                  {[...Array(6)].flatMap(() => marqueeTabsRow1).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 rounded-full px-4 py-3 text-sm text-muted-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {/* Row 2 */}
-              <div
-                className="reskin-marquee-content relative w-full overflow-hidden h-16"
-                onMouseEnter={() => setPausedRow2(true)}
-                onMouseLeave={() => setPausedRow2(false)}
-              >
-                <ul className={cn("reskin-marquee-list flex animate-marquee-reverse space-x-4 w-max items-center h-16", isPausedRow2 && "paused")}>
-                  {[...Array(6)].flatMap(() => marqueeTabsRow2).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 hover:bg-muted transition-colors rounded-full px-4 py-3 text-sm text-muted-foreground hover:text-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <ul className={cn("reskin-marquee-list flex animate-marquee-reverse space-x-4 w-max items-center h-16 absolute left-0 top-0 pointer-events-none", isPausedRow2 && "paused")} aria-hidden="true">
-                  {[...Array(6)].flatMap(() => marqueeTabsRow2).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 rounded-full px-4 py-3 text-sm text-muted-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {/* Row 3 */}
-              <div
-                className="reskin-marquee-content relative w-full overflow-hidden h-16"
-                onMouseEnter={() => setPausedRow3(true)}
-                onMouseLeave={() => setPausedRow3(false)}
-              >
-                <ul className={cn("reskin-marquee-list flex animate-marquee space-x-4 w-max items-center h-16", isPausedRow3 && "paused")}>
-                  {[...Array(6)].flatMap(() => marqueeTabsRow3).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 hover:bg-muted transition-colors rounded-full px-4 py-3 text-sm text-muted-foreground hover:text-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <ul className={cn("reskin-marquee-list flex animate-marquee space-x-4 w-max items-center h-16 absolute left-0 top-0 pointer-events-none", isPausedRow3 && "paused")} aria-hidden="true">
-                  {[...Array(6)].flatMap(() => marqueeTabsRow3).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 rounded-full px-4 py-3 text-sm text-muted-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Why Choose Hustloop Section */}
       <section className="relative py-16 md:py-20 bg-background">

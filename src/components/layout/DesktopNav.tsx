@@ -264,10 +264,10 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                                 document.body.classList.toggle("nav-open");
                                 setNavOpen(!navOpen);
                             }}
-                            className="z-10 relative xl:inline-block w-[3.5rem] h-[3.5rem] rounded-xl border border-solid backdrop-blur-md bg-white/10 pointer-events-auto flex items-center justify-center"
+                            className="relative xl:inline-block w-[3.5rem] h-[3.5rem] rounded-xl border border-solid backdrop-blur-md bg-white/10 pointer-events-auto flex items-center justify-center"
                         >
                             <svg
-                                className={`ham hamRotate pointer-events-none w-full h-full select-none transition-colors relative duration-300 ${heroVisible && !navOpen ? "stroke-white" : "stroke-black"
+                                className={`ham hamRotate pointer-events-auto w-[3.5rem] h-[3.5rem] select-none transition-colors relative duration-300 ${heroVisible && !navOpen ? "stroke-white" : "stroke-black"
                                     }`}
                                 viewBox="0 0 100 100"
                                 width="80"
@@ -310,11 +310,12 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                 className={cn(
                     "menu-navs flex justify-center absolute top-40 left-[25%] w-1/2 m-auto text-main-color-dark transition-all duration-300 ease-in-out",
                     navOpen
-                        ? "opacity-100 translate-y-0 pointer-events-auto"
-                        : "opacity-0 translate-y-5 pointer-events-none"
+                        ? "opacity-100 translate-y-0 visible"
+                        : "opacity-0 translate-y-5 invisible"
                 )}
                 id="menu-navs"
             >
+
                 <div className="hidden md:flex items-center gap-4 text-[18px]">
                     <Button asChild className="text-[18px] font-medium">
                         <a
