@@ -155,7 +155,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
         router.push(`/complete-profile?token=${data.token}`);
         return;
       }
-      console.log("Data:",data)
+      
       if (response.ok) {
         onLoginSuccess({
           role: data.role, token: data.token, hasSubscription: data.hasSubscription,

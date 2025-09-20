@@ -29,12 +29,12 @@ const SolutionCard = ({ solutionSteps }: SolutionCardsProps) => {
     return (
         <section className="relative py-16 md:py-20 bg-background">
             <div className="mx-auto px-4 max-w-7xl">
-                <h3 className="text-xl sm:text-2xl font-bold text-primary mb-16 lg:mb-16 text-center">
+                <h3 className="text-4xl font-bold text-current mb-16 lg:mb-16 text-center">
                     Choose your{' '}
                     <span className="relative inline-block">
                         path
                         <svg
-                            className="absolute left-0 bottom-0 w-[38px] sm:w-[50px] text-primary"
+                            className="absolute left-0 bottom-0 w-[38px] sm:w-[50px] text-current"
                             aria-hidden="true"
                             role="presentation"
                             viewBox="0 0 50 7"
@@ -54,7 +54,7 @@ const SolutionCard = ({ solutionSteps }: SolutionCardsProps) => {
                 </h3>
 
                 {/* Wrapper for scrollable cards */}
-                <div className="flex flex-col gap-32">
+                <div className="flex flex-col">
                     {Object.entries(solutionSteps).map(([key, solution], index) => {
                         return (
                             <motion.div key={key} className={styles.cardContainer}>
@@ -66,7 +66,7 @@ const SolutionCard = ({ solutionSteps }: SolutionCardsProps) => {
                                         <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
                                             {/* Left side: title */}
                                             <div className="lg:col-span-4 flex flex-col justify-center">
-                                                <h4 className="text-xl sm:text-2xl font-semibold text-primary mb-4 capitalize">
+                                                <h4 className="text-xl sm:text-2xl font-bold text-current mb-4 capitalize">
                                                     {solution.title}
                                                 </h4>
                                             </div>

@@ -29,7 +29,7 @@ import Image from "next/image";
 import * as React from 'react';
 import { Suspense } from 'react';
 import { API_BASE_URL } from "@/lib/api";
-import { UserRole } from "@/app/types";
+import { founderRole, UserRole } from "@/app/types";
 import { Info } from "lucide-react"
 import {
     Tooltip,
@@ -67,12 +67,13 @@ function CompleteProfileForm() {
 
     const { formState: { isSubmitting } } = form;
 
-    const onLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
+    const onLoginSuccess = (data: { role: UserRole, token: string,founder_role:string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
         const { role, token: loginToken, hasSubscription, name, email, authProvider } = data;
         const userData = { name, email };
 
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userRole', role!);
+        
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('hasSubscription', String(hasSubscription));
         localStorage.setItem('token', loginToken);
@@ -102,9 +103,11 @@ function CompleteProfileForm() {
             });
 
             const data = await response.json();
-
+            
             if (response.ok) {
                 onLoginSuccess(data);
+                localStorage.setItem("founder_role", values.founder_role ?? "");
+
             } else {
                 toast({
                     variant: "destructive",
@@ -189,7 +192,7 @@ function CompleteProfileForm() {
                                             <FormLabel>Select your area of innovation</FormLabel>
                                             <Select
                                                 onValueChange={field.onChange}
-                                                defaultValue={field.value}
+                                                value={field.value}
                                                 disabled={isSubmitting}
                                             >
                                                 <FormControl>

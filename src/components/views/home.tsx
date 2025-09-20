@@ -2,7 +2,7 @@
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Briefcase, PlayCircle, Star, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins } from "lucide-react";
+import { Lightbulb, Briefcase, PlayCircle, Globe, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins, Puzzle, Microscope, FileSearch, Layers, Network, Sprout } from "lucide-react";
 import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,7 @@ import Lenis from '@studio-freight/lenis'
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import SolutionCard from '../SolutionCard';
-import { useScroll } from 'framer-motion';
+import { steps, useScroll } from 'framer-motion';
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters."),
@@ -130,36 +130,47 @@ const dynamicHeroStates = [
 ];
 
 export const solutionSteps = {
-  incubation: {
-    title: 'Incubation Journey',
-    steps: [
-      { icon: Rocket, title: "Entrepreneur", description: "Start Your Journey with a Vision" },
-      { icon: Lightbulb, title: "Innovative Idea", description: "Submit Your Groundbreaking Concept" },
-      { icon: Briefcase, title: "Incubation Support", description: "Get Expert Guidance & Resources" },
-      { icon: Award, title: "MVP Development", description: "Build, Test, and Refine Your Solution" },
-      { icon: GraduationCap, title: "Success", description: "Graduate from the Program & Scale" },
-    ]
-  },
   'market-solution': {
-    title: 'Market Solution Path',
+    title: 'Market Solutions Path',
     steps: [
-      { icon: Search, title: "Market Analysis", description: "Identify Your Target Audience & Niche" },
-      { icon: Target, title: "Product Validation", description: "Confirm Product-Market Fit with Real Users" },
-      { icon: TrendingUp, title: "Go-to-Market", description: "Develop a Winning Launch Strategy" },
-      { icon: Scaling, title: "Launch & Iterate", description: "Execute, Measure Your KPIs, and Adapt" },
-      { icon: CircleDollarSign, title: "Scale & Grow", description: "Expand Your User Base and Revenue" },
+      { icon: Globe, title: "Real-World Challenges", description: "MSMEs post pressing industry problems" },
+      { icon: Lightbulb, title: "Innovator Solutions", description: "Browse, ideate, and submit breakthrough solutions" },
+      { icon: Puzzle, title: "Collaborative MVPs", description: "Work hand-in-hand to co-create minimum viable products" },
+      { icon: BarChart, title: "Business Growth", description: "Unlock measurable growth with tested solutions" },
     ]
   },
-  partnership: {
-    title: 'Partnership Roadmap',
+
+  'tech-transfer': {
+    title: 'Tech Transfer Path',
     steps: [
-      { icon: Handshake, title: "Partner Discovery", description: "Identify and Vet Strategic Partners" },
-      { icon: BarChart, title: "Value Proposition", description: "Connect with MSMEs and Corporates" },
-      { icon: Wrench, title: "Pilot Program", description: "Forge Pilot Projects to Prove Value" },
-      { icon: GitBranch, title: "Integration", description: "Align Goals and Grow Together" },
-      { icon: ShieldCheck, title: "Long-Term Synergy", description: "Achieve Mutual and Lasting Success" },
+      { icon: Microscope, title: "Tech Discovery", description: "Explore cutting-edge university & industry innovations" },
+      { icon: FileSearch, title: "IP & Licensing", description: "Review intellectual property and licensing terms" },
+      { icon: Layers, title: "Integration", description: "Embed validated technologies into your MVP" },
+      { icon: Rocket, title: "Accelerated Development", description: "Boost growth with field-proven solutions" },
     ]
   },
+
+  'value-added': {
+    title: 'Value-Added Features',
+    steps: [
+      {
+        icon: Sprout,
+        title: "Incubation Support",
+        description: "Access resources, workspace, and structured programs to nurture early-stage ideas into viable businesses."
+      },
+      {
+        icon: Users,
+        title: "Mentor Support",
+        description: "Gain guidance from experienced industry experts to refine strategy, avoid pitfalls, and accelerate growth."
+      },
+      {
+        icon: Network,
+        title: "Network Support",
+        description: "Connect with investors, partners, and peers to expand opportunities and strengthen your market presence."
+      },
+    ]
+  }
+
 };
 
 
@@ -711,7 +722,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       </section>
 
 
-      <SolutionCard solutionSteps={solutionSteps}/>
+      <SolutionCard solutionSteps={solutionSteps} />
 
 
 

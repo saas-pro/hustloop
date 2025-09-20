@@ -141,7 +141,7 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                 headers: { 'Authorization': `Bearer ${idToken}` },
             });
             const data = await response.json();
-
+            
             setIsOpen(false);
             if (data.action === 'complete-profile' && data.token) {
                 router.push(`/complete-profile?token=${data.token}`);
