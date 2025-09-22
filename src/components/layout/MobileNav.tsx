@@ -51,7 +51,7 @@ export function ThemeToggleDropdown({heroVisible}:MobileNavProps) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className={`${heroVisible ? "text-white":"text-current"}`}>
+                <Button variant="ghost" size="icon" className={`${heroVisible && "text-white"} text-current`}>
                     <Sun className={`h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 `} />
                     <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                     <span className="sr-only">Toggle theme</span>
@@ -155,7 +155,7 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
     };
     return (
         <div>
-            <div className="md:hidden fixed flex top-6 right-4 z-50 pointer-events-auto">
+            <div className="md:hidden fixed flex top-6 right-4 z-50 pointer-events-auto text-current">
                 <div>
                     <ThemeToggleDropdown heroVisible={heroVisible} activeView={"home"} setActiveView={function (view: View): void {
                         throw new Error("Function not implemented.");
@@ -168,7 +168,7 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon">
-                                <Menu className={`h-6 w-6 ${heroVisible?"text-white":"text-current"}`}  />
+                                <Menu className={`h-6 w-6 text-current`}  />
                                 <span className="sr-only">Open menu</span>
                             </Button>
                         </SheetTrigger>

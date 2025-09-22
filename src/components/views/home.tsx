@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lightbulb, Briefcase, PlayCircle, Globe, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins, Puzzle, Microscope, FileSearch, Layers, Network, Sprout } from "lucide-react";
 import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
+import SolutionCard from '../SolutionCard';
 import { cn } from "@/lib/utils";
+import ValueAdded from '../valueadded';
 import * as React from "react";
 import type { View } from "@/app/types";
 import Footer from "../layout/footer";
@@ -29,7 +31,6 @@ import HanddrawnUnderline from "@/components/ui/handdrawn-underline";
 import Lenis from '@studio-freight/lenis'
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
-import SolutionCard from '../SolutionCard';
 import { steps, useScroll } from 'framer-motion';
 
 const contactFormSchema = z.object({
@@ -150,26 +151,16 @@ export const solutionSteps = {
     ]
   },
 
-  'value-added': {
-    title: 'Value-Added Features',
+  incubation: {
+    title: 'Incubation Journey',
     steps: [
-      {
-        icon: Sprout,
-        title: "Incubation Support",
-        description: "Access resources, workspace, and structured programs to nurture early-stage ideas into viable businesses."
-      },
-      {
-        icon: Users,
-        title: "Mentor Support",
-        description: "Gain guidance from experienced industry experts to refine strategy, avoid pitfalls, and accelerate growth."
-      },
-      {
-        icon: Network,
-        title: "Network Support",
-        description: "Connect with investors, partners, and peers to expand opportunities and strengthen your market presence."
-      },
+      { icon: Rocket, title: "Entrepreneur", description: "Start Your Journey with a Vision" },
+      { icon: Lightbulb, title: "Innovative Idea", description: "Submit Your Groundbreaking Concept" },
+      { icon: Briefcase, title: "Incubation Support", description: "Get Expert Guidance & Resources" },
+      { icon: Award, title: "MVP Development", description: "Build, Test, and Refine Your Solution" },
+      { icon: GraduationCap, title: "Success", description: "Graduate from the Program & Scale" },
     ]
-  }
+  },
 
 };
 
@@ -194,7 +185,7 @@ const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
       {!inSheet && (
         <div className="flex items-center gap-2">
           <Separator orientation="vertical" className="h-8 bg-border w-0.5" />
-          <p className="text-sm leading-tight text-white">
+          <p className="text-sm leading-tight text-muted-foreground md:text-white">
             Smart hustle. <br /> Infinite growth..
           </p>
         </div>
@@ -263,7 +254,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
 
   return (
     <section
-      className={`hidden-scroll h-screen overflow-hidden relative`}
+      className={`hidden-scroll h-screen overflow-hidden relative bg-background`}
       id="hero"
     >
       {/* Background Video */}
@@ -273,14 +264,14 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         muted
         preload="auto"
         playsInline
-        className="block absolute top-0 left-0 w-full h-full object-cover z-0"
+        className="hidden absolute top-0 left-0 w-full h-full object-cover z-0 md:block"
       >
         <source src="/video/HeaderVideo.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/40 md:bg-black/30 z-10"></div>
+      <div className="hidden absolute inset-0 bg-black/40 md:bg-black/30 z-10 md:block"></div>
 
       {/* Logo */}
       <BrandLogo />
@@ -288,14 +279,14 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       {/* Content */}
       <section className="relative z-20 h-screen flex flex-col lg:flex-row items-center justify-center">
         <div className="lg:flex-1 text-center lg:text-left relative lg:left-16 lg:top-4">
-          <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-white">
+          <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-current md:text-white">
             {"Empowering Tomorrow's"}
             <br />
             <span className="relative inline-block text-primary">
               Innovators
               {/* underline svg */}
               <svg
-                className="absolute  right-0 mx-auto w-[100px] md:w-[142px] -bottom-1 md:-bottom-1"
+                className="absolute right-0 mx-auto w-[100px] md:w-[142px] -bottom-1 md:-bottom-1"
                 aria-hidden="true"
                 role="presentation"
                 viewBox="0 0 117 72"
@@ -314,11 +305,11 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
 
           </h1>
 
-          <span className="block text-3xl md:text-6xl font-headline mt-4 text-white">
+          <span className="block text-3xl md:text-6xl font-headline mt-4 text-current md:text-white">
             The Hustloop
           </span>
 
-          <div className="block text-4xl md:text-8xl font-headline leading-tight text-white">
+          <div className="block text-4xl md:text-8xl font-headline leading-tight text-current md:text-white">
             <span>for </span>
             <ReactTyped
               strings={[
@@ -462,6 +453,24 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       title: "Exclusive Networking",
       description: "Join curated events to connect with founders, investors, MSMEs, and industry leaders, expanding your professional network."
     }
+  ];
+
+  const valueAddedFeatures = [
+    {
+      icon: Sprout,
+      title: "Incubation Support",
+      description: "Access resources, workspace, and structured programs to nurture early-stage ideas into viable businesses."
+    },
+    {
+      icon: Users,
+      title: "Mentor Support",
+      description: "Gain guidance from experienced industry experts to refine strategy, avoid pitfalls, and accelerate growth."
+    },
+    {
+      icon: Network,
+      title: "Network Support",
+      description: "Connect with investors, partners, and peers to expand opportunities and strengthen your market presence."
+    },
   ];
 
   const [isPausedRow1, setPausedRow1] = useState(false);
@@ -722,15 +731,10 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       </section>
 
 
-      <SolutionCard solutionSteps={solutionSteps} />
+      <SolutionCard solutionSteps={solutionSteps}></SolutionCard>
 
 
-
-
-
-      {/* Choose Your Path Section */}
-
-
+      <ValueAdded valueAddedFeatures={valueAddedFeatures}></ValueAdded>
 
       {/* Why Choose Hustloop Section */}
       <section className="relative py-16 md:py-20 bg-background">
