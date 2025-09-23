@@ -47,7 +47,7 @@ interface LoginModalProps {
   setIsOpen: (isOpen: boolean) => void;
   activeView: View;
   setActiveView: (view: View) => void;
-  onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean,founder_role:string, name: string, email: string, authProvider: AuthProvider }) => void;
+  onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, founder_role: string, name: string, email: string, authProvider: AuthProvider }) => void;
 }
 
 export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveView, onLoginSuccess }: LoginModalProps) {
@@ -155,11 +155,11 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
         router.push(`/complete-profile?token=${data.token}`);
         return;
       }
-      
+
       if (response.ok) {
         onLoginSuccess({
           role: data.role, token: data.token, hasSubscription: data.hasSubscription,
-          name: data.name, email: data.email, authProvider: 'local',founder_role:data.founder_role
+          name: data.name, email: data.email, authProvider: 'local', founder_role: data.founder_role
         });
       } else {
         toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
@@ -197,7 +197,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       if (response.ok) {
         onLoginSuccess({
           role: data.role, token: data.token, hasSubscription: data.hasSubscription,
-          name: data.name, email: data.email, authProvider: 'google',founder_role:data.founder_role
+          name: data.name, email: data.email, authProvider: 'google', founder_role: data.founder_role
         });
       } else {
         toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
@@ -207,6 +207,9 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       toast({ variant: 'destructive', title: 'Social Login Failed', description });
     }
   };
+
+  const [resetBtnState, setResetBtnState] = useState<"idle" | "sending" | "sent">("idle");
+
 
   const handlePasswordReset = async () => {
     const email = getValues("email");
@@ -221,12 +224,10 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     }
 
     try {
-      setResetLoadingBtn(true)
+      setResetBtnState("sending");
       const response = await fetch(`${API_BASE_URL}/api/forgot-password`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
 
@@ -235,22 +236,31 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       if (response.ok) {
         toast({
           title: "Password Reset Email",
-          description: result.message || "If this email is registered, a reset link has been sent.",
+          description:
+            result.message ||
+            "If this email is registered, a reset link has been sent.",
         });
+        setResetBtnState("sent");
       } else {
         toast({
           variant: "destructive",
           title: "Error",
-          description: result.message || "If this email is registered, a password reset link has been sent. If you don’t receive an email, your account may not exist in our database.",
+          description:
+            result.message ||
+            "If this email is registered, a password reset link has been sent. If you don’t receive an email, your account may not exist in our database.",
         });
+        setResetBtnState("idle");
       }
-      setResetLoadingBtn(false)
+
+      // Reset back to idle after 3s
+      setTimeout(() => setResetBtnState("idle"), 3000);
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Failed to Send Email",
         description: "Something went wrong. Please try again later.",
       });
+      setResetBtnState("idle");
     }
   };
 
@@ -303,16 +313,16 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
                         variant="link"
                         className="h-auto p-0 text-xs flex items-center gap-1"
                         onClick={handlePasswordReset}
-                        disabled={resetLoadingBtn}
+                        disabled={resetBtnState === "sending"}
                       >
-                        {resetLoadingBtn ? (
+                        {resetBtnState === "sending" && (
                           <>
                             <Loader2 className="h-3 w-3 animate-spin" />
                             Sending...
                           </>
-                        ) : (
-                          "Forgot password?"
                         )}
+                        {resetBtnState === "sent" && "Sent"}
+                        {resetBtnState === "idle" && "Forgot password?"}
                       </Button>
                     </div>
                     <FormControl>
