@@ -7,7 +7,6 @@ import { ReactTyped } from "react-typed";
 import { useState, useEffect } from "react";
 import SolutionCard from '../SolutionCard';
 import { cn } from "@/lib/utils";
-import ValueAdded from '../valueadded';
 import * as React from "react";
 import type { View } from "@/app/types";
 import Footer from "../layout/footer";
@@ -132,7 +131,7 @@ const dynamicHeroStates = [
 
 export const solutionSteps = {
   'market-solution': {
-    title: 'Market Solutions Path',
+    title: 'Market Solutions',
     steps: [
       { icon: Globe, title: "Real-World Challenges", description: "MSMEs post pressing industry problems" },
       { icon: Lightbulb, title: "Innovator Solutions", description: "Browse, ideate, and submit breakthrough solutions" },
@@ -142,7 +141,7 @@ export const solutionSteps = {
   },
 
   'tech-transfer': {
-    title: 'Tech Transfer Path',
+    title: 'Tech Transfer',
     steps: [
       { icon: Microscope, title: "Tech Discovery", description: "Explore cutting-edge university & industry innovations" },
       { icon: FileSearch, title: "IP & Licensing", description: "Review intellectual property and licensing terms" },
@@ -150,17 +149,29 @@ export const solutionSteps = {
       { icon: Rocket, title: "Accelerated Development", description: "Boost growth with field-proven solutions" },
     ]
   },
-
-  incubation: {
-    title: 'Incubation Journey',
+  'valueAddedFeatures': {
+    title: 'valueAddedFeatures',
     steps: [
-      { icon: Rocket, title: "Entrepreneur", description: "Start Your Journey with a Vision" },
-      { icon: Lightbulb, title: "Innovative Idea", description: "Submit Your Groundbreaking Concept" },
-      { icon: Briefcase, title: "Incubation Support", description: "Get Expert Guidance & Resources" },
-      { icon: Award, title: "MVP Development", description: "Build, Test, and Refine Your Solution" },
-      { icon: GraduationCap, title: "Success", description: "Graduate from the Program & Scale" },
+      {
+        icon: Sprout,
+        title: "Incubation Support",
+        description: "Access resources, workspace, and structured programs to nurture early-stage ideas into viable businesses."
+      },
+      {
+        icon: Users,
+        title: "Mentor Support",
+        description: "Gain guidance from experienced industry experts to refine strategy, avoid pitfalls, and accelerate growth."
+      },
+      {
+        icon: Network,
+        title: "Network Support",
+        description: "Connect with investors, partners, and peers to expand opportunities and strengthen your market presence."
+      },
     ]
-  },
+  }
+
+
+
 
 };
 
@@ -455,23 +466,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
     }
   ];
 
-  const valueAddedFeatures = [
-    {
-      icon: Sprout,
-      title: "Incubation Support",
-      description: "Access resources, workspace, and structured programs to nurture early-stage ideas into viable businesses."
-    },
-    {
-      icon: Users,
-      title: "Mentor Support",
-      description: "Gain guidance from experienced industry experts to refine strategy, avoid pitfalls, and accelerate growth."
-    },
-    {
-      icon: Network,
-      title: "Network Support",
-      description: "Connect with investors, partners, and peers to expand opportunities and strengthen your market presence."
-    },
-  ];
+
 
   const [isPausedRow1, setPausedRow1] = useState(false);
   const [isPausedRow2, setPausedRow2] = useState(false);
@@ -624,11 +619,11 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               rounded-full overflow-hidden mb-4 
               transition-all duration-300 
               group-hover:scale-110">
-                <DotLottieReact
-                  src="https://lottie.host/6e4403cb-7eaf-475f-b74f-625809327516/QLBMt4JJnQ.lottie"
-                  loop
-                  autoplay
-                  className="w-full h-full object-contain"
+                <Image
+                  src={"/icons/Handshake.gif"}
+                  width={100}
+                  height={100}
+                  alt="founders"
                 />
               </div>
               <div className='flex-grow'>
@@ -732,9 +727,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
 
 
       <SolutionCard solutionSteps={solutionSteps}></SolutionCard>
-
-
-      <ValueAdded valueAddedFeatures={valueAddedFeatures}></ValueAdded>
 
       {/* Why Choose Hustloop Section */}
       <section className="relative py-16 md:py-20 bg-background">

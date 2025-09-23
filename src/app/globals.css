@@ -5,14 +5,36 @@
 @tailwind components;
 @tailwind utilities;
 
-html{
+html {
   scroll-behavior: smooth !important;
 }
 
+/* Hides scrollbars for Firefox */
+html,
+body {
+  scrollbar-width: none;
+}
+
+/* Hides scrollbars for Chrome, Safari, and Edge */
+::-webkit-scrollbar {
+  scrollbar-width: none;
+}
+
+:root{
+  scrollbar-color: transparent !important;
+  scrollbar-width: none !important;
+}
+
+.moz-container{
+  overflow: hidden;
+}
+
+#main-view {
+  overflow-y: scroll;
+  width: calc(100% + 15px);
+}
+
 @layer base {
-
-
-
   :root,
   .theme-light {
 
@@ -106,6 +128,8 @@ html{
     border: none;
     border-radius: 12px;
   }
+
+  
 
   .theme-purple {
     --background: 259 31% 14%;
@@ -299,7 +323,7 @@ html{
     font-family: 'Nunito', 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
     height: 100vh;
-
+    scrollbar-width: none;
   }
 
   h1,
@@ -316,6 +340,7 @@ html{
   /* Smooth transitions for theme switching */
   html {
     transition: color-scheme 0.3s ease;
+    scrollbar-width: none;
   }
 
   /* Ensure all elements transition smoothly */
@@ -345,17 +370,6 @@ html{
   animation: fade-in-up 0.6s ease-out forwards;
 }
 
-/* Remove arrows */
-/* Hide arrows (buttons) */
-
-
-/* Scrollbar width */
-
-
-::-webkit-scrollbar {
-  display: none;
-  color: white;
-}
 
 @keyframes twinkle {
 
@@ -529,6 +543,7 @@ html{
 #main-view div[data-overlayscrollbars-viewport] {
   scroll-behavior: smooth;
 }
+
 #main-view1 div[data-overlayscrollbars-viewport] {
   scroll-behavior: smooth;
 }
@@ -541,8 +556,9 @@ html{
   cursor: pointer;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
 }
+
 .nav-open #main-view1,
-.nav-open .view-card-3 {  
+.nav-open .view-card-3 {
   transform: scale(0.9) translate(0, 30%);
   border-radius: 24px;
   overflow: hidden;
@@ -555,6 +571,7 @@ html{
   border-radius: 24px;
   overflow: hidden;
 }
+
 .nav-open #hero,
 .nav-open .card2 {
   border-radius: 24px;
@@ -563,12 +580,12 @@ html{
 
 /* Base rounding on hero to avoid abrupt square corners */
 #hero {
-  
+
   overflow: hidden;
   transition: border-radius 300ms ease;
 }
 
-.card1{
+.card1 {
   position: sticky;
   top: 0;
 }
@@ -591,6 +608,7 @@ html{
     opacity 500ms ease,
     box-shadow 200ms ease;
 }
+
 .journey-card.in-view {
   transform: translateY(0) scale(1);
   opacity: 1;
@@ -856,63 +874,79 @@ body {
   font-family: monospace;
   letter-spacing: 2px;
   text-transform: uppercase;
-  
+
 }
 
- .grid-container {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      width: 320px;
-      height: 320px;
-      padding: 10px;
-      background-color: #1a202c;
-      border-radius: 12px;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-    .grid-item {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 2.5rem;
-      font-weight: 700;
-      border-radius: 8px;
-      transition: all 0.3s ease-in-out;
-      cursor: pointer;
-      user-select: none;
-      color: #1a202c;
-    }
-    .empty {
-      background-color: #2d3748;
-      cursor: default;
-      color: #a0aec0;
-      font-weight: 600;
-    }
-    .tile {
-      background-color: #a0aec0;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-    .tile:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-    .message-box {
-      transition: opacity 0.5s ease-in-out;
-    }
-    /* Blinking underscore */
-    .blinking {
-      animation: blink 1s infinite;
-    }
-    @keyframes blink {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0; }
-    }
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 320px;
+  height: 320px;
+  padding: 10px;
+  background-color: #1a202c;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.grid-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+  user-select: none;
+  color: #1a202c;
+}
+
+.empty {
+  background-color: #2d3748;
+  cursor: default;
+  color: #a0aec0;
+  font-weight: 600;
+}
+
+.tile {
+  background-color: #a0aec0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.message-box {
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* Blinking underscore */
+.blinking {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+
+  0%,
+  50%,
+  100% {
+    opacity: 1;
+  }
+
+  25%,
+  75% {
+    opacity: 0;
+  }
+}
 
 .glitch::before,
 .glitch::after {
   content: attr(data-text);
   position: absolute;
-  
+
   left: 0;
   top: 0;
   width: 100%;
@@ -934,20 +968,53 @@ body {
 }
 
 @keyframes glitchTop {
-  0% { clip: rect(10px, 9999px, 50px, 0); }
-  20% { clip: rect(60px, 9999px, 90px, 0); }
-  40% { clip: rect(20px, 9999px, 60px, 0); }
-  60% { clip: rect(40px, 9999px, 80px, 0); }
-  80% { clip: rect(5px, 9999px, 30px, 0); }
-  100% { clip: rect(25px, 9999px, 70px, 0); }
+  0% {
+    clip: rect(10px, 9999px, 50px, 0);
+  }
+
+  20% {
+    clip: rect(60px, 9999px, 90px, 0);
+  }
+
+  40% {
+    clip: rect(20px, 9999px, 60px, 0);
+  }
+
+  60% {
+    clip: rect(40px, 9999px, 80px, 0);
+  }
+
+  80% {
+    clip: rect(5px, 9999px, 30px, 0);
+  }
+
+  100% {
+    clip: rect(25px, 9999px, 70px, 0);
+  }
 }
 
 @keyframes glitchBottom {
-  0% { clip: rect(70px, 9999px, 100px, 0); }
-  20% { clip: rect(30px, 9999px, 60px, 0); }
-  40% { clip: rect(50px, 9999px, 80px, 0); }
-  60% { clip: rect(15px, 9999px, 40px, 0); }
-  80% { clip: rect(60px, 9999px, 90px, 0); }
-  100% { clip: rect(35px, 9999px, 65px, 0); }
-}
+  0% {
+    clip: rect(70px, 9999px, 100px, 0);
+  }
 
+  20% {
+    clip: rect(30px, 9999px, 60px, 0);
+  }
+
+  40% {
+    clip: rect(50px, 9999px, 80px, 0);
+  }
+
+  60% {
+    clip: rect(15px, 9999px, 40px, 0);
+  }
+
+  80% {
+    clip: rect(60px, 9999px, 90px, 0);
+  }
+
+  100% {
+    clip: rect(35px, 9999px, 65px, 0);
+  }
+}

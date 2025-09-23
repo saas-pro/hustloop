@@ -399,7 +399,7 @@ export default function MainView() {
 
   return (
 
-    <div className="overflow-hidden relative flex flex-col min-h-screen bg-background text-foreground">
+    <div className="overflow-hidden relative flex flex-col min-h-screen bg-background text-foreground moz-container">
       <Header
         activeView={activeView}
         setActiveView={setActiveView}
