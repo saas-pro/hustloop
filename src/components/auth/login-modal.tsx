@@ -308,22 +308,27 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
                   <FormItem>
                     <div className="flex justify-between">
                       <FormLabel>Password</FormLabel>
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="h-auto p-0 text-xs flex items-center gap-1"
-                        onClick={handlePasswordReset}
-                        disabled={resetBtnState === "sending"}
-                      >
-                        {resetBtnState === "sending" && (
-                          <>
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            Sending...
-                          </>
-                        )}
-                        {resetBtnState === "sent" && "Sent"}
-                        {resetBtnState === "idle" && "Forgot password?"}
-                      </Button>
+                      {resetBtnState === "sent" ? (
+                        <div className="text-xs text-ring">Sent</div>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="h-auto p-0 text-xs flex items-center gap-1"
+                          onClick={handlePasswordReset}
+                          disabled={resetBtnState === "sending"}
+                        >
+                          {resetBtnState === "sending" ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            "Forgot password?"
+                          )}
+                        </Button>
+                      )}
+
                     </div>
                     <FormControl>
                       <div className="relative">
