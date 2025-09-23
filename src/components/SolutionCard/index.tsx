@@ -1,7 +1,7 @@
 import { ComponentType, SVGProps, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import styles from "./solutionstyle.module.css";
+import styles from "./solutionstyle.module.css"
 import { motion, useTransform, useScroll } from "framer-motion";
 
 
