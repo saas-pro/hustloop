@@ -20,12 +20,12 @@ body {
   scrollbar-width: none;
 }
 
-:root{
+:root {
   scrollbar-color: transparent !important;
   scrollbar-width: none !important;
 }
 
-.moz-container{
+.moz-container {
   overflow: hidden;
 }
 
@@ -34,7 +34,16 @@ body {
   width: calc(100% + 15px);
 }
 
+@media (max-width: 768px) {
+  #main-view {
+    width: 100%;
+  }
+}
+
+
+
 @layer base {
+
   :root,
   .theme-light {
 
@@ -129,7 +138,7 @@ body {
     border-radius: 12px;
   }
 
-  
+
 
   .theme-purple {
     --background: 259 31% 14%;
