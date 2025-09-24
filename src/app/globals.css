@@ -25,9 +25,7 @@ body {
   scrollbar-width: none !important;
 }
 
-.moz-container {
-  overflow: hidden;
-}
+
 
 #main-view {
   overflow-y: scroll;
@@ -36,7 +34,7 @@ body {
 
 @media (max-width: 768px) {
   #main-view {
-    width: 100%;
+    width: auto;
   }
 }
 

@@ -265,7 +265,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
 
   return (
     <section
-      className={`hidden-scroll h-screen overflow-hidden relative bg-background`}
+      className={`hidden-scroll h-screen overflow-hidden relative bg-background w-full`}
       id="hero"
     >
       {/* Background Video */}
@@ -288,8 +288,8 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       <BrandLogo />
 
       {/* Content */}
-      <section className="relative z-20 h-screen flex flex-col lg:flex-row items-center justify-center">
-        <div className="lg:flex-1 text-center lg:text-left relative lg:left-16 lg:top-4">
+      <section className="relative text-center w-full md:text-left z-20 h-screen flex flex-col lg:flex-row items-center justify-center">
+        <div className="lg:flex-1 flex-0 lg:text-left relative lg:left-16 lg:top-4">
           <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-current md:text-white">
             {"Empowering Tomorrow's"}
             <br />
