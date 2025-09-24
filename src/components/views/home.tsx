@@ -557,6 +557,15 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
     return () => observer.disconnect();
   }, []);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreen = () => setIsMobile(window.innerWidth <= 768);
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
+
 
   return (
     <div
@@ -592,9 +601,9 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               transition-all duration-300 
               group-hover:scale-110">
                 <Image
-                  src={"/icons/inventor-unscreen.gif"}
-                  width={100}
-                  height={100}
+                  src={isMobile ? "/icons/inventor.png" : "/icons/inventor.gif"}
+                  width={isMobile ? 70 : 100}
+                  height={isMobile ? 70 : 100}
                   alt="founders"
                 />
               </div>
@@ -620,9 +629,9 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               transition-all duration-300 
               group-hover:scale-110">
                 <Image
-                  src={"/icons/Handshake.gif"}
-                  width={100}
-                  height={100}
+                  src={isMobile ? "/icons/Handshake.png" : "/icons/Handshake.gif"}
+                  width={isMobile ? 120 : 120}
+                  height={isMobile ? 120 : 120}
                   alt="founders"
                 />
               </div>
@@ -648,10 +657,10 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               transition-all duration-300 
               group-hover:scale-110">
                 <Image
-                  src={"/icons/problem-solver.gif"}
-                  width={100}
-                  height={100}
-                  alt="mentors"
+                  src={isMobile ? "/icons/problem-solver.png" : "/icons/problem-solver.gif"}
+                  width={isMobile ? 70 : 120}
+                  height={isMobile ? 70 : 120}
+                  alt="founders"
                 />
               </div>
               <div className='flex-grow'>
@@ -676,10 +685,10 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               transition-all duration-300 
               group-hover:scale-110">
                 <Image
-                  src={"/icons/patent.gif"}
-                  width={100}
-                  height={100}
-                  alt="mentors"
+                  src={isMobile ? "/icons/patent.png" : "/icons/patent.gif"}
+                  width={isMobile ? 70 : 120}
+                  height={isMobile ? 70 : 120}
+                  alt="founders"
                 />
               </div>
               <div className='flex-grow'>
