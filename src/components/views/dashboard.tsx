@@ -581,9 +581,9 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setLoading(true);
             setEmptyToastShown(false); // reset
             try {
-                const user = JSON.parse(localStorage.getItem("user") || "{}");
+                
                 const token = localStorage.getItem("token");
-                const res = await fetch(`${API_BASE_URL}/api/techtransfer/${user.email}`, {
+                const res = await fetch(`${API_BASE_URL}/api/techtransfer/my-ips`, {
                     headers: {
                         Authorization: `Bearer ${token || ""}`,
                     },
