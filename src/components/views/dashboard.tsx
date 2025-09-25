@@ -574,8 +574,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [loading, setLoading] = useState(false);
     const [emptyToastShown, setEmptyToastShown] = useState(false); // track empty toast
 
-
-
     useEffect(() => {
         const fetchMySubmissions = async () => {
             setLoading(true);

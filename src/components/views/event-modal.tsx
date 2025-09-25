@@ -61,11 +61,11 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
             <div className="flex items-center gap-6 text-muted-foreground mt-4">
               <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-primary"/>
-                  <span>September 15, 2025</span>
+                  <span>From October 6 to 12 2025</span>
               </div>
               <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-primary"/>
-                  <span>9:00 AM - 6:00 PM</span>
+                  <span>4 Hours/Day</span>
               </div>
             </div>
           </div>
