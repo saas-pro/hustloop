@@ -1,6 +1,6 @@
 
 export type View = "home" | "blog" | "mentors" | "incubators" | "pricing" | "msmes" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile";
-export type DashboardTab = "overview" | "msmes" | "incubators" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers";
+export type DashboardTab = "overview" | "msmes" |"ip/technologies"|"incubators" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers";
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
 export type IncubatorDashboardTab = "overview" | "submissions" | "profile" | "settings";
 export type MsmeDashboardTab = "overview" | "submissions" | "profile" | "settings";

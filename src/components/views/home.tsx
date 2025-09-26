@@ -713,9 +713,9 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
       {/* What We Offer Section */}
       <section className="relative py-16 md:py-20 cursor-default bg-background">
         
-        <div className="container m-auto flex justify-center items-center flex-col">
+        <div className="container mx-auto flex justify-center items-center flex-col">
           <h2 className="text-4xl font-bold mb-4 font-headline">What we offer</h2>
-          <p className="max-w-2xl mx-auto text-muted-foreground mb-12">
+          <p className="max-w-2xl mx-auto text-muted-foreground mb-12 text-center">
             A comprehensive suite of services designed to support you at every stage of your entrepreneurial journey.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">

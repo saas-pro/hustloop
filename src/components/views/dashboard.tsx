@@ -6,6 +6,12 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -26,6 +32,8 @@ import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 
 const settingsFormSchema = z.object({
@@ -110,11 +118,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [emailChangeRequested, setEmailChangeRequested] = useState(false);
 
+
+
     // Admin state
     const [users, setUsers] = useState<AppUser[]>([]);
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
     const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
     const [userToBan, setUserToBan] = useState<AppUser | null>(null);
+
 
     const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
     const [isLoadingSubscribers, setIsLoadingSubscribers] = useState(false);
@@ -149,19 +160,49 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     });
     const { fields: sessionFields, append: appendSession, remove: removeSession } = useFieldArray({ control: programForm.control, name: "sessions" });
     const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({ control: programForm.control, name: "features" });
-
-    const fetchUsers = useCallback(async () => {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const itemsPerPage = 10; // Set your desired items per page
+    const fetchUsers = useCallback(async (page: number, perPage: number) => {
         setIsLoadingUsers(true);
         const token = localStorage.getItem('token');
-        if (!token) { toast({ variant: 'destructive', title: 'Authentication Error' }); setIsLoadingUsers(false); return; }
+
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'No token found. Please log in again.' });
+            setIsLoadingUsers(false);
+            return;
+        }
+
         try {
-            const response = await fetch(`${API_BASE_URL}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (response.ok) {
-                const data = await response.json();
-                setUsers(Array.isArray(data) ? data : data.items || data.users || []);
-            } else toast({ variant: 'destructive', title: 'Failed to fetch users' });
-        } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingUsers(false); }
+            const response = await fetch(`${API_BASE_URL}/api/users?page=${page}&per_page=${perPage}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                toast({ variant: 'destructive', title: 'Network Error', description: `Failed to fetch users: ${response.status} ${response.statusText}` });
+            }
+
+            const data = await response.json();
+
+            // The API must return an object with 'users' (or a similar key) and 'totalPages'
+            setUsers(data.items || []);
+            setTotalPages(data.pages || 1);
+            setCurrentPage(page);
+
+        } catch (error) {
+
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not connect to the server or retrieve data.' });
+        } finally {
+            setIsLoadingUsers(false);
+        }
     }, [toast]);
+
+    // Dependency array ensures the fetch runs when these values change
+
+    const handlePageChange = (page: number) => {
+        fetchUsers(page, itemsPerPage);
+    };
+
 
     const fetchSubscribers = useCallback(async () => {
         setIsLoadingSubscribers(true);
@@ -225,20 +266,49 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             if (response.ok) setEducationPrograms(await response.json());
         } catch (error) { console.error("Failed to fetch education programs"); }
     }, []);
+    const [techTransferIps, setTechTransferIps] = useState<TechTransferIP[]>([]);
+    const [isLoadingIps, setIsLoadingIps] = useState(false);
+
+    const fetchIps = useCallback(async () => {
+        setIsLoadingIps(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error' });
+            setIsLoadingIps(false);
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/getIps`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+
+                setTechTransferIps(data.ips || []);
+            } else {
+                toast({ variant: 'destructive', title: 'Failed to fetch IPs' });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error' });
+        } finally {
+            setIsLoadingIps(false);
+        }
+    }, [toast]);
 
     useEffect(() => {
         if (userRole === 'admin') {
-            if (activeTab === 'users') fetchUsers();
+            if (activeTab === 'users') fetchUsers(1, 10);
             if (activeTab === 'blog') fetchBlogPosts();
             if (activeTab === 'sessions') fetchEducationPrograms();
+            if (activeTab === 'ip/technologies') fetchIps();
             if (activeTab === 'subscribers') fetchSubscribers();
         }
-    }, [activeTab, userRole, fetchUsers, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers]);
+    }, [activeTab, userRole, fetchUsers, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps]);
 
     const handleApiResponse = async (response: Response, successMessage: string, errorMessage: string) => {
         if (response.ok) {
             toast({ title: 'Success', description: successMessage });
-            await fetchUsers();
+            await fetchUsers(1, 10);
         } else {
             const data = await response.json();
             toast({ variant: 'destructive', title: errorMessage, description: data.error });
@@ -247,6 +317,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     const handleDeleteUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User deleted successfully.', 'Deletion Failed');
     const handleToggleBanUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/toggle-ban`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User status updated.', 'Update Failed');
+
+
 
     const handleEditPost = (post: BlogPost) => {
         setEditingPost(post);
@@ -466,6 +538,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setLoadingResend(false);
         }
     }
+
+
     const [isTechTransfer, setIsTechTransfer] = useState(false)
 
     useEffect(() => {
@@ -476,12 +550,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setIsTechTransfer(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "subscribers", "blog", "sessions", "settings"];
+    const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "blog", "sessions", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
     const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];
     const filteredTabs = isTechTransfer ? techTransferTabs : availableTabs
+    const tabsToRender = filteredTabs.filter(tab => tab !== "overview");
     const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
+
     const [techtransferData, setTechtransferData] = useState<{
         ipTitle: string;
         firstName: string;
@@ -500,6 +576,19 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         supportingFile: null,
     });
     const techTransferFile = useRef<HTMLInputElement>(null);
+
+    const handleButtonClick = () => {
+        techTransferFile.current!.click(); // Trigger hidden input
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setTechtransferData({
+                ...techtransferData,
+                supportingFile: e.target.files[0],
+            });
+        }
+    };
 
     const handleTechTransferSubmit = async (
         e: React.FormEvent<HTMLFormElement>
@@ -579,7 +668,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setLoading(true);
             setEmptyToastShown(false); // reset
             try {
-                
+
                 const token = localStorage.getItem("token");
                 const res = await fetch(`${API_BASE_URL}/api/techtransfer/my-ips`, {
                     headers: {
@@ -601,7 +690,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     });
                 }
             } catch (err: any) {
-                console.error(err);
+
                 setMySubmissions([]);
                 toast({
                     title: "Error occurred",
@@ -615,10 +704,102 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         if (activeTab === "submission") {
             fetchMySubmissions();
         }
-    }, [activeTab,toast]);
+    }, [activeTab, toast]);
 
+    const useGroupedIps = (techTransferIps: TechTransferIP[]) => {
+        const [groupedIps, setGroupedIps] = useState<Record<string, TechTransferIP[]>>({});
+        const [statusUpdates, setStatusUpdates] = useState<Record<string, "approved" | "rejected" | "needInfo">>({});
+        const [isUpdating, setIsUpdating] = useState<Record<string, boolean>>({});
 
+        useEffect(() => {
+            if (techTransferIps.length > 0) {
+                const groups = techTransferIps.reduce((acc, ip) => {
+                    const orgName = ip.organization;
+                    if (!acc[orgName]) {
+                        acc[orgName] = [];
+                    }
 
+                    // Apply local status update if it exists
+                    const updatedIp = {
+                        ...ip,
+                        approvalStatus: statusUpdates[ip.id] || ip.approvalStatus,
+                    };
+
+                    acc[orgName].push(updatedIp);
+                    return acc;
+                }, {} as Record<string, TechTransferIP[]>);
+
+                setGroupedIps(groups);
+            } else {
+                setGroupedIps({});
+            }
+        }, [techTransferIps, statusUpdates]);
+
+        // This function handles the local state change
+        const handleActionClick = (ipId: number, newStatus: "approved" | "rejected" | "needInfo") => {
+            setStatusUpdates((prev) => ({
+                ...prev,
+                [ipId]: newStatus,
+            }));
+        };
+
+        const handleUpdateStatus = async (ipId: number) => {
+            const newStatus = statusUpdates[ipId];
+
+            if (!newStatus) return;
+
+            setIsUpdating((prev) => ({ ...prev, [ipId]: true }));
+
+            try {
+                const token = localStorage.getItem('token')
+
+                const response = await fetch(`${API_BASE_URL}/api/techtransfer/${ipId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: newStatus }),
+                });
+
+                if (!response.ok) {
+
+                    toast({ title: "error", description: "Failed to get TechTransferIps" });
+                }
+                if (response.ok) {
+
+                    setTechTransferIps(prev => prev.map(ip => ip.id === ipId ? { ...ip, approvalStatus: newStatus } : ip));
+                    toast({ title: "Success", description: "IP status updated successfully." });
+
+                }
+                setStatusUpdates((prev) => {
+                    const newUpdates = { ...prev };
+                    delete newUpdates[ipId];
+                    return newUpdates;
+                });
+
+            } catch (error) {
+
+                toast({ title: "error", description: "Failed to update status" });
+
+                setStatusUpdates((prev) => {
+                    const newUpdates = { ...prev };
+                    delete newUpdates[ipId];
+                    return newUpdates;
+                });
+            } finally {
+                setIsUpdating((prev) => {
+                    const newUpdating = { ...prev };
+                    delete newUpdating[ipId];
+                    return newUpdating;
+                });
+            }
+        };
+
+        return { groupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating };
+    };
+
+    const { groupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating } = useGroupedIps(techTransferIps)
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
@@ -632,29 +813,31 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     </DialogDescription>
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-4 pt-0">
-
-                    <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as DashboardTab)} className="flex flex-col flex-grow min-h-0 ">
+                    <Tabs value={activeTab}
+                        className="flex flex-col flex-grow min-h-0">
                         <TabsList
                             className={`
                                 grid 
                                 grid-cols-3        /* 📱 mobile → 2 per row */
                                 sm:grid-cols-3     /* tablet → 3 per row */
                                 md:grid-cols-4     /* medium → 4 per row */
-                                ${(isTechTransfer) ? "lg:grid-cols-5" : "lg:grid-cols-6"}   /* desktop → 6 per row */
+                                ${isTechTransfer ? "lg:grid-cols-4" : (userRole === 'admin' ? "lg:grid-cols-6" : "lg:grid-cols-5")}
                                 gap-2 h-fit
                                 items-stretch       
                                 bg-muted/50 rounded-lg p-1
                                 mb-4 sm:mb-6 lg:mb-10 z-10`}
                         >
-                            {filteredTabs.map((tab) => {
+
+                            {tabsToRender.map((tab) => {
+
                                 const Icon = (
                                     LucideIcons[
-                                    tab === "overview"
-                                        ? "LayoutDashboard"
-                                        : tab === "msmes"
-                                            ? "Briefcase"
-                                            : tab === "incubators"
-                                                ? "Lightbulb"
+                                    tab === "msmes"
+                                        ? "Briefcase"
+                                        : tab === "incubators"
+                                            ? "Lightbulb"
+                                            : tab === "ip/technologies"
+                                                ? "FileSignature"
                                                 : tab === "engagements"
                                                     ? "Handshake"
                                                     : tab === "mentors"
@@ -675,6 +858,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     <TabsTrigger
                                         key={tab}
                                         value={tab}
+                                        onClick={() => setActiveTab(tab as DashboardTab)}
                                         className="
                                     flex items-center justify-start md:justify-center gap-2 
                                     rounded-md bg-card 
@@ -869,24 +1053,31 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 {/* File Upload */}
                                                 <div>
                                                     <label className="block text-sm font-medium mb-1">Upload Supporting Document</label>
-                                                    <Input
+                                                    <div className="relative w-full">
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleButtonClick}
+                                                            className=" px-4 py-2 bg-primary text-white border rounded-lg"
+                                                        >
+                                                            Upload File
+                                                        </button>
+
+                                                        {/* This acts like a :before pseudo-element */}
+                                                        <div className="absolute bottom-0 left-0 w-full h-fit bg-gray-700"></div>
+                                                    </div>
+
+
+                                                    <input
                                                         ref={techTransferFile}
                                                         type="file"
                                                         name="supportingFile"
-                                                        onChange={(e) => {
-                                                            if (e.target.files && e.target.files.length > 0) {
-                                                                setTechtransferData({
-                                                                    ...techtransferData,
-                                                                    supportingFile: e.target.files[0],
-                                                                });
-                                                            }
-                                                        }}
+                                                        onChange={handleFileChange}
                                                         accept=".pdf,.doc,.docx"
+                                                        style={{ display: "none" }} // hide the default input
                                                     />
+
                                                     {techtransferData.supportingFile && (
-                                                        <p className="text-xs text-gray-500 mt-1">
-                                                            Selected: {techtransferData.supportingFile?.name}
-                                                        </p>
+                                                        <p>Selected file: {techtransferData.supportingFile.name}</p>
                                                     )}
                                                 </div>
 
@@ -906,6 +1097,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             <CardHeader>
                                                 <CardTitle>User Management</CardTitle>
                                                 <CardDescription>Approve, ban, or delete user accounts.</CardDescription>
+
                                             </CardHeader>
                                             <CardContent>
                                                 {isLoadingUsers ? (
@@ -913,80 +1105,257 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
                                                     </div>
                                                 ) : (
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead>User</TableHead>
-                                                                <TableHead>Role</TableHead>
-                                                                <TableHead>Status</TableHead>
-                                                                <TableHead>Actions</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {users.map(u => (
-                                                                <TableRow key={u.uid}>
-                                                                    <TableCell>
-                                                                        <div className="font-medium">{u.name}</div>
-                                                                        <div className="text-sm text-muted-foreground">{u.email}</div>
-                                                                    </TableCell>
-                                                                    <TableCell className="capitalize">{u.role}</TableCell>
-                                                                    <TableCell>
-                                                                        <div className="flex flex-col gap-1">
-                                                                            {u.status === 'banned' ? (
-                                                                                <Badge variant="destructive">Banned</Badge>
-                                                                            ) : u.status === 'active' ? (
-                                                                                <Badge variant="default">Active</Badge>
-                                                                            ) : (
-                                                                                <Badge variant="secondary">Pending</Badge>
-                                                                            )}
-                                                                        </div>
-                                                                    </TableCell>
-                                                                    <TableCell>
-                                                                        {/* This div acts as a flexible container.
-                                                                            - `flex`: Enables flexbox.
-                                                                            - `flex-wrap`: Allows buttons to wrap to the next line. 📲
-                                                                            - `gap-2`: Adds consistent spacing between all buttons.
-                                                                        */}
-                                                                        <div className="flex flex-wrap items-center gap-2">
-                                                                            {u.status === 'pending' && (
+                                                    <>
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead>User</TableHead>
+                                                                    <TableHead>Role</TableHead>
+                                                                    <TableHead>Status</TableHead>
+                                                                    <TableHead>Actions</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {users.map(u => (
+                                                                    <TableRow key={u.uid}>
+                                                                        <TableCell>
+                                                                            <div className="font-medium">{u.name}</div>
+                                                                            <div className="text-sm text-muted-foreground">{u.email}</div>
+                                                                        </TableCell>
+                                                                        <TableCell className="capitalize">{u.role}</TableCell>
+                                                                        <TableCell>
+                                                                            <div className="flex flex-col gap-1">
+                                                                                {u.status === 'banned' ? (
+                                                                                    <Badge variant="destructive">Banned</Badge>
+                                                                                ) : u.status === 'active' ? (
+                                                                                    <Badge variant="default">Active</Badge>
+                                                                                ) : (
+                                                                                    <Badge variant="secondary">Pending</Badge>
+                                                                                )}
+                                                                            </div>
+                                                                        </TableCell>
+                                                                        <TableCell>
+
+                                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                                {u.status === 'pending' && (
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        onClick={() => { /* Handle approve logic */ }}
+                                                                                        className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground min-w-[90px]"
+                                                                                    >
+                                                                                        <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
+                                                                                        Approve
+                                                                                    </Button>
+                                                                                )}
+
                                                                                 <Button
                                                                                     size="sm"
-                                                                                    onClick={() => { /* Handle approve logic */ }}
-                                                                                    className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground min-w-[90px]"
+                                                                                    variant={u.status === 'banned' ? "outline" : "secondary"}
+                                                                                    onClick={() => setUserToBan(u)}
+                                                                                    className="flex-1 min-w-[90px]"
                                                                                 >
-                                                                                    <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
-                                                                                    Approve
+                                                                                    <LucideIcons.Ban className="mr-2 h-4 w-4" />
+                                                                                    {u.status === 'banned' ? "Unban" : "Ban"}
                                                                                 </Button>
-                                                                            )}
 
-                                                                            <Button
-                                                                                size="sm"
-                                                                                variant={u.status === 'banned' ? "outline" : "secondary"}
-                                                                                onClick={() => setUserToBan(u)}
-                                                                                className="flex-1 min-w-[90px]"
-                                                                            >
-                                                                                <LucideIcons.Ban className="mr-2 h-4 w-4" />
-                                                                                {u.status === 'banned' ? "Unban" : "Ban"}
-                                                                            </Button>
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="destructive"
+                                                                                    onClick={() => setUserToDelete(u)}
+                                                                                    className="flex-1 min-w-[90px]"
+                                                                                >
+                                                                                    <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
+                                                                                    Delete
+                                                                                </Button>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
 
-                                                                            <Button
-                                                                                size="sm"
-                                                                                variant="destructive"
-                                                                                onClick={() => setUserToDelete(u)}
-                                                                                className="flex-1 min-w-[90px]"
-                                                                            >
-                                                                                <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
-                                                                                Delete
-                                                                            </Button>
-                                                                        </div>
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
+                                                        {/* Pagination Controls */}
+                                                        {totalPages > 1 && (
+                                                            <div className="flex justify-center mt-6">
+                                                                <Pagination>
+                                                                    <PaginationContent>
+                                                                        <PaginationItem>
+                                                                            <PaginationPrevious
+                                                                                href="#"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (currentPage > 1) handlePageChange(currentPage - 1);
+                                                                                }}
+                                                                                className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                            />
+                                                                        </PaginationItem>
+
+                                                                        {/* Page Numbers */}
+                                                                        {Array.from({ length: totalPages }, (_, i) => {
+                                                                            const pageNumber = i + 1;
+                                                                            return (
+                                                                                <PaginationItem key={pageNumber}>
+                                                                                    <PaginationLink
+                                                                                        href="#"
+                                                                                        onClick={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            handlePageChange(pageNumber);
+                                                                                        }}
+                                                                                        isActive={currentPage === pageNumber}
+                                                                                        className="cursor-pointer"
+                                                                                    >
+                                                                                        {pageNumber}
+                                                                                    </PaginationLink>
+                                                                                </PaginationItem>
+                                                                            );
+                                                                        })}
+
+                                                                        <PaginationItem>
+                                                                            <PaginationNext
+                                                                                href="#"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                                                                                }}
+                                                                                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                            />
+                                                                        </PaginationItem>
+                                                                    </PaginationContent>
+                                                                </Pagination>
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
                                             </CardContent>
                                         </Card>
+                                    </TabsContent>
+                                    <TabsContent value="ip/technologies" className="mt-0">
+                                        {isLoadingIps ? (
+                                            <div className="flex justify-center items-center h-48">
+                                                <Loader2 className="h-8 w-8 animate-spin" />
+                                            </div>
+                                        ) : techTransferIps.length === 0 ? (
+                                            <p className="text-center text-muted-foreground py-8">
+                                                No IP submissions found.
+                                            </p>
+                                        ) : (
+                                            <Accordion type="single" collapsible className="w-full">
+                                                {Object.keys(groupedIps).map((organizationName) => (
+                                                    <AccordionItem value={`org-${organizationName}`} key={organizationName} className="border-b">
+                                                        <AccordionTrigger className="flex items-center justify-between gap-4 p-4 hover:no-underline data-[state=open]:bg-muted/50 rounded-md transition-colors">
+                                                            <p className="font-medium truncate">
+                                                                {organizationName}
+                                                                <span className="text-sm text-muted-foreground ml-2">
+                                                                    ({groupedIps[organizationName].length} submissions)
+                                                                </span>
+                                                            </p>
+                                                        </AccordionTrigger>
+                                                        <AccordionContent className="p-4">
+                                                            <div className="space-y-4">
+                                                                {groupedIps[organizationName].map((ip) => (
+                                                                    <div key={ip.id} className="border rounded-md p-4 space-y-2">
+                                                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                                                            <p className="font-semibold text-lg text-foreground">{ip.ipTitle}</p>
+                                                                            <Badge
+                                                                                variant={
+                                                                                    ip.approvalStatus === "pending"
+                                                                                        ? "secondary"
+                                                                                        : ip.approvalStatus === "approved"
+                                                                                            ? "default"
+                                                                                            : ip.approvalStatus === "needInfo"
+                                                                                                ? "secondary"
+                                                                                                : "destructive"
+
+
+                                                                                }
+                                                                                className="mt-2 sm:mt-0"
+                                                                            >
+                                                                                {ip.approvalStatus}
+                                                                            </Badge>
+                                                                        </div>
+                                                                        <div className="text-sm text-muted-foreground space-y-1">
+                                                                            <p>
+                                                                                <strong>Inventor:</strong> {ip.firstName} {ip.lastName}
+                                                                            </p>
+                                                                            <div className="max-h-24 overflow-y-auto pr-2">
+                                                                                <p>
+                                                                                    <strong>Description:</strong> {ip.description}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="pt-4 flex justify-between items-center">
+                                                                            {ip.supportingFile && (
+                                                                                <a
+                                                                                    href={`${API_BASE_URL}/${ip.supportingFile.replace(/^app\//, "")}`}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                >
+                                                                                    <Button variant="outline" size="sm">
+                                                                                        <LucideIcons.Download className="mr-2 h-4 w-4" />
+                                                                                        View Document
+                                                                                    </Button>
+                                                                                </a>
+                                                                            )}
+                                                                            <div className="flex items-center gap-2 ml-auto">
+                                                                                {statusUpdates[ip.id] && (
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        onClick={() => { handleUpdateStatus(ip.id); }}
+                                                                                        disabled={isUpdating[ip.id]}
+                                                                                    >
+                                                                                        {isUpdating[ip.id] ? (
+                                                                                            <LucideIcons.Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                                        ) : (
+                                                                                            <LucideIcons.Save className="mr-2 h-4 w-4" />
+                                                                                        )}
+                                                                                        Update Status
+                                                                                    </Button>
+                                                                                )}
+                                                                                <DropdownMenu>
+                                                                                    <DropdownMenuTrigger asChild>
+                                                                                        <Button variant="outline" size="sm">
+                                                                                            Actions
+                                                                                            <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
+                                                                                        </Button>
+                                                                                    </DropdownMenuTrigger>
+                                                                                    <DropdownMenuContent align="end">
+
+                                                                                        <>
+                                                                                            <DropdownMenuItem
+                                                                                                onClick={() => handleActionClick(ip.id, "approved")}
+                                                                                            >
+                                                                                                <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
+                                                                                                <span>Approve</span>
+                                                                                            </DropdownMenuItem>
+
+                                                                                            <DropdownMenuItem
+                                                                                                className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                                                                                                onClick={() => handleActionClick(ip.id, "rejected")}
+                                                                                            >
+                                                                                                <LucideIcons.XCircle className="mr-2 h-4 w-4" />
+                                                                                                <span>Reject</span>
+                                                                                            </DropdownMenuItem>
+                                                                                            <DropdownMenuItem
+                                                                                                className="focus:bg-muted"
+                                                                                                onClick={() => handleActionClick(ip.id, "needInfo")}
+                                                                                            >
+                                                                                                <LucideIcons.XCircle className="mr-2 h-4 w-4" />
+                                                                                                <span>Need Info</span>
+                                                                                            </DropdownMenuItem>
+                                                                                        </>
+
+                                                                                    </DropdownMenuContent>
+                                                                                </DropdownMenu>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </AccordionContent>
+                                                    </AccordionItem>
+                                                ))}
+                                            </Accordion>
+                                        )}
                                     </TabsContent>
                                     <TabsContent value="subscribers" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -1231,7 +1600,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-            </DialogContent>
+            </DialogContent >
         </Dialog >
     );
 }
