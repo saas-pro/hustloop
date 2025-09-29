@@ -223,8 +223,15 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       return;
     }
 
+    // Instant feedback
+    setResetBtnState("sending");
+    toast({
+      title: "Sending Password Reset Email...",
+      description: "Processing your request.",
+    });
+
     try {
-      setResetBtnState("sending");
+      // Fire the request in background
       const response = await fetch(`${API_BASE_URL}/api/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -234,8 +241,9 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       const result = await response.json();
 
       if (response.ok) {
+        // Optional: you can update the toast or button later
         toast({
-          title: "Password Reset Email",
+          title: "Password Reset Email Sent",
           description:
             result.message ||
             "If this email is registered, a reset link has been sent.",
@@ -247,13 +255,11 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
           title: "Error",
           description:
             result.message ||
-            "If this email is registered, a password reset link has been sent. If you don’t receive an email, your account may not exist in our database.",
+            "If this email is registered, a password reset link has been sent. If not, your account may not exist.",
         });
         setResetBtnState("idle");
       }
 
-      // Reset back to idle after 3s
-      setTimeout(() => setResetBtnState("idle"), 3000);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -261,8 +267,12 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
         description: "Something went wrong. Please try again later.",
       });
       setResetBtnState("idle");
+    } finally {
+      // Reset back to idle after 2s regardless of success/error
+      setTimeout(() => setResetBtnState("idle"), 2000);
     }
   };
+
 
   const [showPassword, setShowPassword] = useState(false);
 
