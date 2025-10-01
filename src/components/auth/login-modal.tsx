@@ -225,10 +225,15 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
 
     // Instant feedback
     setResetBtnState("sending");
-    toast({
-      title: "Sending Password Reset Email...",
-      description: "Processing your request.",
-    });
+
+    setTimeout(() => {
+      setResetBtnState("sent");
+      toast({
+        title: "Password Reset Email Sent",
+        description:
+          "If this email is registered, a reset link has been sent.",
+      });
+    }, 1000); 
 
     try {
       // Fire the request in background
@@ -240,16 +245,9 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
 
       const result = await response.json();
 
-      if (response.ok) {
-        // Optional: you can update the toast or button later
-        toast({
-          title: "Password Reset Email Sent",
-          description:
-            result.message ||
-            "If this email is registered, a reset link has been sent.",
-        });
-        setResetBtnState("sent");
-      } else {
+
+
+      if (!(response.ok)) {
         toast({
           variant: "destructive",
           title: "Error",

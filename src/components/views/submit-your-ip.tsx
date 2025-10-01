@@ -111,9 +111,9 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
     </Card>
 );
 
-export default function DashboardView({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView }: DashboardViewProps) {
+export default function SubmitIPDashboard({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView }: DashboardViewProps) {
     const { toast } = useToast();
-    const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+    const [activeTab, setActiveTab] = useState<DashboardTab>("engagements");
     const [adminContentTab, setAdminContentTab] = useState('blog');
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [emailChangeRequested, setEmailChangeRequested] = useState(false);

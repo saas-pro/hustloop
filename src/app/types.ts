@@ -1,6 +1,6 @@
 
-export type View = "home" | "blog" | "mentors" | "incubators" | "pricing" | "msmes" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile";
-export type DashboardTab = "overview" | "msmes" |"ip/technologies"|"incubators" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers";
+export type View = "home" | "blog" | "mentors" | "incubators" | "submitIP" | "pricing" | "msmes" | "solveChallenges" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile" | "joinasanMSME" |"browseTech";
+export type DashboardTab = "overview" | "msmes" |"ip/technologies"| "incubators" | "engagements" | "mentors"  | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers";
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
 export type IncubatorDashboardTab = "overview" | "submissions" | "profile" | "settings";
 export type MsmeDashboardTab = "overview" | "submissions" | "profile" | "settings";
@@ -16,8 +16,8 @@ export type Comment = {
 
 export type Submission = {
   id: number;
-  founder: string; // Represents the startup or founder name
-  idea: string; // Represents the idea or solution title
+  founder: string; 
+  idea: string; 
   status: 'New' | 'Under Review' | 'Valid' | 'Duplicate' | 'Rejected';
   description: string;
   submittedDate: string;

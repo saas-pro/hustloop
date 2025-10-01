@@ -54,6 +54,23 @@ export type MSMECollaboration = {
     }
   };
 };
+export type Governmentchallenges = {
+  name: string;
+  logo: string;
+  hint: string;
+  sector: string;
+  description: string;
+  details: {
+    about: string;
+    scope: string[];
+    lookingFor: string;
+    benefits: string[];
+    contact: {
+        name: string;
+        title: string;
+    }
+  };
+};
 
 interface MsmesViewProps {
   isOpen: boolean;
@@ -109,10 +126,12 @@ const LoadingSkeleton = () => (
 export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscription, setActiveView }: MsmesViewProps) {
   const [selectedChallenge, setSelectedChallenge] = useState<CorporateChallenge | null>(null);
   const [selectedCollaboration, setSelectedCollaboration] = useState<MSMECollaboration | null>(null);
+  const [selectedGovernmentchallenges, setSelectedGovernmentchallenges] = useState<Governmentchallenges[]>([]);
   const { toast } = useToast();
 
   const [corporateChallenges, setCorporateChallenges] = useState<CorporateChallenge[]>([]);
   const [msmeCollaborations, setMsmeCollaborations] = useState<MSMECollaboration[]>([]);
+  const [Governmentchallenges, setGovernmentchallenges] = useState<Governmentchallenges[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,12 +147,14 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                     throw new Error('Failed to fetch MSME data.');
                 }
                 const data = await response.json();
+               
                 setCorporateChallenges(
                   Array.isArray(data.corporateChallenges)
                     ? data.corporateChallenges
                     : data.corporateChallenges?.items || []
                 );
                 setMsmeCollaborations(data.msmeCollaborations.items || []);
+                setGovernmentchallenges(data.Government_challenges.items || []);
             } catch (err: any) {
                 // Fallback static data
                 setCorporateChallenges([
@@ -181,10 +202,11 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
   }, [isOpen, isLoggedIn]);
 
 
-  const handleViewDetails = (type: 'challenge' | 'collaboration', item: any) => {
+  const handleViewDetails = (type: 'challenge' | 'collaboration' | 'GovernmentChallenges', item: any) => {
     if (hasSubscription) {
       if (type === 'challenge') setSelectedChallenge(item);
       if (type === 'collaboration') setSelectedCollaboration(item);
+      if (type === 'GovernmentChallenges') setSelectedGovernmentchallenges(item);
     } else {
       toast({
         variant: "destructive",
@@ -213,11 +235,15 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
             <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="challenges">Corporate Challenges</TabsTrigger>
                 <TabsTrigger value="collaborations">MSME Collaboration</TabsTrigger>
+                <TabsTrigger value="Governmentchallenges">Government Challenges</TabsTrigger>
             </TabsList>
             <TabsContent value="challenges" className="mt-4 flex-1 overflow-y-auto pr-4">
                 <LoadingSkeleton />
             </TabsContent>
             <TabsContent value="collaborations" className="mt-4 flex-1 overflow-y-auto pr-4">
+                <LoadingSkeleton />
+            </TabsContent>
+            <TabsContent value="Governmentchallenges" className="mt-4 flex-1 overflow-y-auto pr-4">
                 <LoadingSkeleton />
             </TabsContent>
         </Tabs>
@@ -238,9 +264,10 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
     
     return (
       <Tabs defaultValue="challenges" className="flex flex-col flex-grow min-h-0 px-6 pb-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="challenges">Corporate Challenges</TabsTrigger>
-            <TabsTrigger value="collaborations">MSME Collaboration</TabsTrigger>
+            <TabsTrigger value="collaborations">MSME Challenges</TabsTrigger>
+            <TabsTrigger value="Governmentchallenges">Government Challenges</TabsTrigger>
         </TabsList>
         <TabsContent value="challenges" className="mt-4 flex-1 overflow-y-auto pr-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -291,6 +318,29 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
               ))}
           </div>
         </TabsContent>
+        <TabsContent value="Governmentchallenges" className="mt-4 flex-1 overflow-y-auto pr-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Governmentchallenges.map((gov, index) => (
+              <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
+                <CardHeader>
+                  <div className="flex items-center gap-4">
+                    <Image src={gov.logo} alt={gov.name} width={60} height={60} className="rounded-lg" />
+                    <div>
+                      <CardTitle className="text-base">{gov.name}</CardTitle>
+                      <CardDescription>{gov.sector}</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-muted-foreground">{gov.description}</p>
+                </CardContent>
+                <CardFooter>
+                  <Button variant="outline" className="w-full" onClick={() => handleViewDetails('GovernmentChallenges', gov)}>View</Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
       </Tabs>
     );
   }
@@ -325,6 +375,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
         isLoggedIn={isLoggedIn}
         hasSubscription={hasSubscription}
       />
+      
     </>
   );
 }

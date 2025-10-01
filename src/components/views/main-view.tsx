@@ -15,6 +15,10 @@ import { Loader2 } from "lucide-react";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import EventModal from './event-modal';
+import SubmitIPDashboard from "./submit-your-ip";
+
+
+
 
 const ModalSkeleton = () => (
   <Dialog open={true}>
@@ -32,10 +36,13 @@ const MentorsView = dynamic(() => import('@/components/views/mentors'), { loadin
 const IncubatorsView = dynamic(() => import('@/components/views/incubators'), { loading: () => <ModalSkeleton /> });
 const PricingView = dynamic(() => import('@/components/views/pricing'), { loading: () => <ModalSkeleton /> });
 const MsmesView = dynamic(() => import('@/components/views/msmes'), { loading: () => <ModalSkeleton /> });
+const JoinAsAnMsme = dynamic(() => import('@/components/views/join-as-an-msme'), { loading: () => <ModalSkeleton /> });
 const DashboardView = dynamic(() => import('@/components/views/dashboard'), { loading: () => <ModalSkeleton /> });
 const MentorDashboardView = dynamic(() => import('@/components/views/mentor-dashboard'), { loading: () => <ModalSkeleton /> });
 const IncubatorDashboardView = dynamic(() => import('@/components/views/incubator-dashboard'), { loading: () => <ModalSkeleton /> });
 const MsmeDashboardView = dynamic(() => import('@/components/views/msme-dashboard'), { loading: () => <ModalSkeleton /> });
+const TechTransferView = dynamic(() => import('@/components/views/browsetech'), { loading: () => <ModalSkeleton /> });
+
 const LoginModal = dynamic(() => import('@/components/auth/login-modal'), { loading: () => <ModalSkeleton /> });
 const SignupModal = dynamic(() => import('@/components/auth/signup-modal'), { loading: () => <ModalSkeleton /> });
 const EducationView = dynamic(() => import('@/components/views/education'), { loading: () => <ModalSkeleton /> });
@@ -89,7 +96,7 @@ export default function MainView() {
   const searchParams = useSearchParams();
   const { auth } = useFirebaseAuth();
   const [isEventModalOpen, setEventModalOpen] = useState(false);
-  
+
 
   const loadStateFromStorage = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -275,6 +282,7 @@ export default function MainView() {
       localStorage.removeItem('appliedPrograms');
       localStorage.removeItem('token');
       localStorage.removeItem('authProvider');
+      localStorage.removeItem('founder_role');
       setActiveView('home');
       router.push('/');
       toast({ title: "Logged Out", description: "You have been successfully logged out." });
@@ -388,9 +396,10 @@ export default function MainView() {
             hasSubscription={hasSubscription}
             setActiveView={setActiveView}
             setUser={setUser}
-            
+
           />
         );
+
       default:
         return null;
     }
@@ -422,6 +431,7 @@ export default function MainView() {
           <HomeView
             setActiveView={setActiveView}
             isLoggedIn={isLoggedIn}
+            onLogout={handleLogout}
             navOpen={navOpen}
             scrollContainerRef={scrollContainerRef}
           />
@@ -450,6 +460,19 @@ export default function MainView() {
         setActiveView={setActiveView}
       />}
 
+      {
+        activeView === 'submitIP' && <SubmitIPDashboard
+          isOpen={true}
+          onOpenChange={() => setActiveView('home')}
+          user={user!}
+          userRole={userRole!}
+          authProvider={authProvider!}
+          hasSubscription={hasSubscription}
+          setActiveView={setActiveView}
+          setUser={setUser}
+        />
+      }
+
       {activeView === 'pricing' && <PricingView
         isOpen={true}
         onOpenChange={handleModalOpenChange('pricing')}
@@ -463,6 +486,25 @@ export default function MainView() {
         hasSubscription={hasSubscription}
         setActiveView={setActiveView}
       />}
+
+      {activeView === 'joinasanMSME' && (
+        <JoinAsAnMsme
+          isOpen={true}
+          onOpenChange={handleModalOpenChange('joinasanMSME')}
+          isLoggedIn={isLoggedIn}
+          hasSubscription={hasSubscription}
+          setActiveView={setActiveView}
+          authProvider={authProvider!}
+          user={user!}
+        />
+      )}
+      {activeView === 'browseTech' && (
+        <TechTransferView
+          isOpen={true}
+          onOpenChange={handleModalOpenChange('browseTech')}
+          setActiveView={setActiveView}
+        />
+      )}
 
       {activeView === 'education' && <EducationView
         isOpen={true}

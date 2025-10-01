@@ -70,6 +70,7 @@ const marqueeTabsRow3 = [
 interface HomeViewProps {
   setActiveView: (view: View) => void;
   isLoggedIn: boolean;
+  onLogout:()=>void;
   navOpen?: boolean;
   scrollContainerRef: React.RefObject<HTMLDivElement>;
 }
@@ -170,6 +171,7 @@ export const solutionSteps = {
     ]
   }
 };
+
 
 
 const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
@@ -326,7 +328,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
                 "MSMEs",
                 "Incubators",
                 "Startups",
-                "Builders",
+                "ENABLERS",
                 "Mentors",
               ]}
               typeSpeed={60}
@@ -383,7 +385,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
 
 
 
-export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollContainerRef }: HomeViewProps) {
+export default function HomeView({ setActiveView, isLoggedIn, navOpen,onLogout }: HomeViewProps) {
   const { toast } = useToast();
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -393,6 +395,17 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
 
 
   const { formState: { isSubmitting: isContactSubmitting }, reset: resetContactForm } = contactForm;
+
+  const [isFounderRole,setIsFounderRole] = useState(false);
+
+  useEffect(()=>{
+    const founderRole = localStorage.getItem("founder_role")
+    if(founderRole === "List a technology for licensing"){
+      setIsFounderRole(true)  
+    }else{
+      setIsFounderRole(false)
+    }
+  },[isFounderRole,isLoggedIn,onLogout])
 
   async function onContactSubmit(data: ContactFormValues) {
     try {
@@ -609,12 +622,18 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
                   Register, choose your role, and either submit an innovative idea to an incubation center to get incubated, or offer a technology for transfer.
                 </p>
               </div>
+              {isFounderRole?<Button
+                className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+                onClick={() => setActiveView("submitIP")}
+              >
+                Submit Your IP
+              </Button>:
               <Button
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
                 onClick={() => setActiveView("incubators")}
               >
                 Get Started
-              </Button>
+              </Button>}
             </Card>
 
             {/* Card 2 (MSMEs) */}
@@ -639,7 +658,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
               </div>
               <Button
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
-                onClick={() => setActiveView("msmes")}
+                onClick={() => setActiveView("joinasanMSME")}
               >
                 Join as an MSME
               </Button>
@@ -668,6 +687,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
 
               <Button
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+                onClick={() => setActiveView("msmes")}
               >
                 Solve Challenges
               </Button>
@@ -696,6 +716,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, scrollCon
 
               <Button
                 className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
+                onClick={()=>setActiveView('browseTech')}
               >
                 Browse Technologies
               </Button>

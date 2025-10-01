@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,22 +35,40 @@ type AuthProvider = 'local' | 'google';
 
 // Profile form schema
 const profileFormSchema = z.object({
-  name: z.string().min(1, "Company name is required"),
-  sector: z.string().min(1, "Sector is required"),
-  description: z.string().min(1, "A short description is required"),
-  details: z.object({
-    about: z.string().min(1, "About section is required"),
-    scope: z.array(z.object({ value: z.string().min(1, "Scope item cannot be empty")})).min(1, "At least one scope item is required"),
-    lookingFor: z.string().min(1, "This field is required"),
-    benefits: z.array(z.object({ value: z.string().min(1, "Benefit cannot be empty")})).min(1, "At least one benefit is required"),
-    contact: z.object({
-      name: z.string().min(1, "Contact name is required"),
-      title: z.string().min(1, "Contact title is required"),
+    name: z.string().min(1, "Company name is required"),
+    sector: z.string().min(1, "Sector is required"),
+    description: z.string().min(1, "A short description is required"),
+    rewardAmount: z
+        .number({ invalid_type_error: "Reward amount is required" })
+        .min(0, "Reward cannot be negative"),
+    details: z.object({
+        about: z.string().min(1, "About section is required"),
+        scope: z.array(z.object({ value: z.string().min(1, "Scope item cannot be empty") })).min(1, "At least one scope item is required"),
+        lookingFor: z.string().min(1, "This field is required"),
+        benefits: z.array(z.object({ value: z.string().min(1, "Benefit cannot be empty") })).min(1, "At least one benefit is required"),
+        contact: z.object({
+            name: z.string().min(1, "Contact name is required"),
+            title: z.string().min(1, "Contact title is required"),
+        }),
     }),
-  }),
 });
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
-
+const collaborationSchema = z.object({
+    title: z.string().min(3, { message: "Title is required." }),
+    description: z.string().min(10, { message: "Description is required." }),
+    lookingFor: z.string().min(10, { message: "What you are looking for is required." }),
+    rewardAmount: z.number().min(0, { message: "Reward amount cannot be negative." }).default(0),
+    scope: z.array(
+        z.object({ value: z.string().min(2, { message: "Scope cannot be empty." }) })
+    ),
+    contact: z.object({
+        name: z.string().min(2, { message: "Contact name is required." }),
+        role: z.string().min(2, { message: "Contact role is required." }),
+    }),
+    challengeType: z.enum(["corporate", "msme", "government"], {
+        message: "You must select a challenge type.",
+    }),
+});
 // Settings form schema
 const settingsFormSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -64,27 +82,28 @@ const initialSubmissionsData: Submission[] = [];
 
 // Status Icons
 const statusIcons: { [key: string]: React.ReactNode } = {
-  'New': <Clock className="h-4 w-4 text-blue-500" />,
-  'Under Review': <Clock className="h-4 w-4 text-yellow-500" />,
-  'Valid': <CheckCircle className="h-4 w-4 text-green-500" />,
-  'Duplicate': <Copy className="h-4 w-4 text-orange-500" />,
-  'Rejected': <XCircle className="h-4 w-4 text-red-500" />,
+    'New': <Clock className="h-4 w-4 text-blue-500" />,
+    'Under Review': <Clock className="h-4 w-4 text-yellow-500" />,
+    'Valid': <CheckCircle className="h-4 w-4 text-green-500" />,
+    'Duplicate': <Copy className="h-4 w-4 text-orange-500" />,
+    'Rejected': <XCircle className="h-4 w-4 text-red-500" />,
 };
 
 const emptyProfile: ProfileFormValues = {
-  name: "",
-  sector: "",
-  description: "",
-  details: {
-    about: "",
-    scope: [],
-    lookingFor: "",
-    benefits: [],
-    contact: {
-      name: "",
-      title: "",
+    name: "",
+    sector: "",
+    description: "",
+    rewardAmount: 0,
+    details: {
+        about: "",
+        scope: [],
+        lookingFor: "",
+        benefits: [],
+        contact: {
+            name: "",
+            title: "",
+        },
     },
-  },
 };
 
 interface MsmeDashboardViewProps {
@@ -107,7 +126,23 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
         defaultValues: emptyProfile,
     });
 
-     const settingsForm = useForm<SettingsFormValues>({
+    const collaborationForm = useForm({
+        resolver: zodResolver(collaborationSchema),
+        defaultValues: {
+            title: '',
+            description: '',
+            lookingFor: '',
+            rewardAmount: 0,
+            scope: [{ value: '' }],
+            contact: {
+                name: '',
+                role: '',
+            },
+            challengeType: 'corporate',
+        },
+    });
+
+    const settingsForm = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
         defaultValues: {
             name: user.name,
@@ -118,25 +153,70 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
     const { fields: scopeFields, append: appendScope, remove: removeScope } = useFieldArray({
         control: profileForm.control, name: "details.scope"
     });
-    const { fields: benefitFields, append: appendBenefit, remove: removeBenefit } = useFieldArray({
-        control: profileForm.control, name: "details.benefits"
-    });
+    async function onCollaborationSubmit(data: any) {
+        const token = localStorage.getItem('token');
+
+        // Transform form data for backend
+        const collaborationData = {
+            title: data.title,
+            description: data.description,
+            looking_for: data.lookingFor,
+            reward_amount: data.rewardAmount || 0,
+            challenge_type: data.challengeType,  // single selection
+            scopes: data.scope.map((item: { value: string }) => item.value),
+            contact: {
+                name: data.contact.name,
+                role: data.contact.role,
+            },
+        };
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/msme-collaboration`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify(collaborationData),
+            });
+
+            if (response.ok) {
+                toast({
+                    title: "Collaboration Info Saved",
+                    description: "Your collaboration details have been saved successfully.",
+                });
+            } else {
+                const errorData = await response.json();
+                toast({
+                    variant: "destructive",
+                    title: "Failed to save collaboration",
+                    description: errorData.error || "An unknown error occurred.",
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Network Error",
+                description: "Could not save collaboration info. Please try again later.",
+            });
+        }
+    }
 
     async function onProfileSubmit(data: ProfileFormValues) {
         const token = localStorage.getItem('token');
         const profileData = {
             ...data,
             details: {
-              ...data.details,
-              scope: data.details.scope.map(item => item.value),
-              benefits: data.details.benefits.map(item => item.value),
+                ...data.details,
+                scope: data.details.scope.map(item => item.value),
+                benefits: data.details.benefits.map(item => item.value),
             },
             logo: 'https://placehold.co/100x100.png',
             hint: 'company building',
         };
-        
+
         try {
-            const response = await fetch(`${API_BASE_URL}/api/msme-profile`, {
+            const response = await fetch(`${API_BASE_URL}/api/msme-profile1`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -204,7 +284,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
 
     const handleAddComment = (submissionId: number, commentText: string) => {
         const newComment: Comment = { author: 'MSME', text: commentText, timestamp: 'Just now' };
-        const updatedSubmissions = submissions.map(sub => 
+        const updatedSubmissions = submissions.map(sub =>
             sub.id === submissionId ? { ...sub, comments: [...sub.comments, newComment] } : sub
         );
         setSubmissions(updatedSubmissions);
@@ -213,9 +293,9 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
 
     // Overview Stats
     const overviewStats = {
-      new: submissions.filter(s => s.status === 'New').length,
-      review: submissions.filter(s => s.status === 'Under Review').length,
-      valid: submissions.filter(s => s.status === 'Valid').length,
+        new: submissions.filter(s => s.status === 'New').length,
+        review: submissions.filter(s => s.status === 'Under Review').length,
+        valid: submissions.filter(s => s.status === 'Valid').length,
     };
 
     return (
@@ -269,7 +349,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                     </Card>
                                 </TabsContent>
                                 <TabsContent value="submissions" className="mt-0 space-y-4">
-                                     {submissions.length > 0 ? submissions.map((sub) => (
+                                    {submissions.length > 0 ? submissions.map((sub) => (
                                         <Card key={sub.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 cursor-pointer transition-colors" onClick={() => setSelectedSubmission(sub)}>
                                             <CardHeader>
                                                 <div className="flex justify-between items-start">
@@ -283,7 +363,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                     </div>
                                                 </div>
                                             </CardHeader>
-                                             <CardFooter>
+                                            <CardFooter>
                                                 <p className="text-sm text-muted-foreground">Submitted on {sub.submittedDate}</p>
                                             </CardFooter>
                                         </Card>
@@ -295,51 +375,249 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                 </TabsContent>
                                 <TabsContent value="profile" className="mt-0">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader><CardTitle>Create/Edit MSME Profile</CardTitle><CardDescription>This information will be publicly visible to potential collaborators.</CardDescription></CardHeader>
+                                        <CardHeader>
+                                            <CardTitle>Create MSME Profile</CardTitle>
+                                            <CardDescription>
+                                                This information will be publicly visible to potential collaborators.
+                                            </CardDescription>
+                                        </CardHeader>
                                         <CardContent>
                                             <Form {...profileForm}>
-                                                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8">
-                                                    <FormField control={profileForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                    <FormField control={profileForm.control} name="sector" render={({ field }) => (<FormItem><FormLabel>Sector</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                    <FormField control={profileForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>Short Description</FormLabel><FormControl><Textarea placeholder="A brief one-sentence pitch for your company." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                    
-                                                    <Separator/>
-                                                    <h3 className="text-lg font-medium">Collaboration Details</h3>
-                                                    <FormField control={profileForm.control} name="details.about" render={({ field }) => (<FormItem><FormLabel>About Your Company</FormLabel><FormControl><Textarea rows={5} placeholder="Describe your company, its mission, and what it does." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                                    <FormField control={profileForm.control} name="details.lookingFor" render={({ field }) => (<FormItem><FormLabel>What you&apos;re looking for</FormLabel><FormControl><Textarea rows={3} placeholder="Describe the ideal partner or solution you are seeking." {...field} /></FormControl><FormMessage /></FormItem>)}/>
-
-                                                    <div>
-                                                        <h4 className="text-md font-medium mb-2">Scope of Collaboration</h4>
-                                                        {scopeFields.map((field, index) => (
-                                                            <div key={field.id} className="flex items-center gap-2 mb-2">
-                                                                <FormField control={profileForm.control} name={`details.scope.${index}.value`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder="e.g., E-commerce Strategy" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeScope(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                                            </div>
-                                                        ))}
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => appendScope({value: ''})}><PlusCircle className="mr-2 h-4 w-4" />Add Scope Item</Button>
-                                                    </div>
-
-                                                    <div>
-                                                        <h4 className="text-md font-medium mb-2">Benefits of Partnership</h4>
-                                                        {benefitFields.map((field, index) => (
-                                                            <div key={field.id} className="flex items-center gap-2 mb-2">
-                                                                <FormField control={profileForm.control} name={`details.benefits.${index}.value`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder="e.g., Access to our distribution network" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeBenefit(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                                            </div>
-                                                        ))}
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => appendBenefit({value: ''})}><PlusCircle className="mr-2 h-4 w-4" />Add Benefit</Button>
-                                                    </div>
-
-                                                    <Separator />
-                                                     <h3 className="text-lg font-medium">Contact Person</h3>
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <FormField control={profileForm.control} name="details.contact.name" render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                                        <FormField control={profileForm.control} name="details.contact.title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                                    </div>
+                                                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                                                    <FormField
+                                                        control={profileForm.control}
+                                                        name="name"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Company Name</FormLabel>
+                                                                <FormControl>
+                                                                    <Input {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={profileForm.control}
+                                                        name="sector"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Sector</FormLabel>
+                                                                <FormControl>
+                                                                    <Input {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={profileForm.control}
+                                                        name="description"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Short Description</FormLabel>
+                                                                <FormControl>
+                                                                    <Textarea placeholder="A brief one-sentence pitch for your company." {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
 
                                                     <Button type="submit" disabled={profileForm.formState.isSubmitting}>
                                                         {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                        Save Profile
+                                                        Save Basic Info
+                                                    </Button>
+                                                </form>
+                                            </Form>
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Second Card: Collaboration and Contact Details with its own form and submit button */}
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50 mt-4">
+                                        <CardHeader>
+                                            <CardTitle>Collaboration & Contact</CardTitle>
+                                            <CardDescription>
+                                                Tell us about the collaboration you're seeking and the contact person.
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Form {...collaborationForm}>
+                                                <form onSubmit={collaborationForm.handleSubmit(onCollaborationSubmit)} className="space-y-4">
+
+                                                    {/* Title */}
+                                                    <FormField
+                                                        control={collaborationForm.control}
+                                                        name="title"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Title</FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="Give your collaboration a title" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    {/* Description */}
+                                                    <FormField
+                                                        control={collaborationForm.control}
+                                                        name="description"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Description</FormLabel>
+                                                                <FormControl>
+                                                                    <Textarea rows={4} placeholder="Describe the collaboration or challenge" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    {/* Looking For */}
+                                                    <FormField
+                                                        control={collaborationForm.control}
+                                                        name="lookingFor"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>What you're looking for</FormLabel>
+                                                                <FormControl>
+                                                                    <Textarea rows={3} placeholder="Describe the ideal partner or solution" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    {/* Reward Amount */}
+                                                    <FormField
+                                                        control={collaborationForm.control}
+                                                        name="rewardAmount"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Reward Amount</FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        type="number"
+                                                                        placeholder="Enter reward amount"
+                                                                        {...field}
+                                                                        min={0}
+                                                                        onChange={(e) => {
+                                                                            const value = e.target.value;
+                                                                            if (value === "") {
+                                                                                field.onChange("");
+                                                                            } else {
+                                                                                field.onChange(Math.max(0, Number(value)));
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    {/* Scope of Requirement */}
+                                                    <h4 className="text-md font-medium mb-2">Scope of Requirement</h4>
+                                                    {scopeFields.map((field, index) => (
+                                                        <div key={field.id} className="flex items-center gap-2 mb-2">
+                                                            <FormField
+                                                                control={collaborationForm.control}
+                                                                name={`scope.${index}.value`}
+                                                                render={({ field }) => (
+                                                                    <FormItem className="flex-grow">
+                                                                        <FormControl>
+                                                                            <Input placeholder="e.g., E-commerce Strategy" {...field} />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeScope(index)}>
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendScope({ value: '' })}>
+                                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                                        Add Scope Item
+                                                    </Button>
+
+                                                    {/* Challenge Type */}
+                                                    <FormField
+                                                        control={collaborationForm.control}
+                                                        name="challengeType"
+                                                        render={({ field }) => (
+                                                            <FormItem className="space-y-3">
+                                                                <FormLabel>Challenge Type</FormLabel>
+                                                                <FormControl>
+                                                                    <RadioGroup
+                                                                        onValueChange={field.onChange}
+                                                                        defaultValue={field.value}
+                                                                        className="flex gap-5"
+                                                                    >
+                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                            <FormControl>
+                                                                                <RadioGroupItem value="corporate" />
+                                                                            </FormControl>
+                                                                            <FormLabel className="font-normal">Corporate Challenges</FormLabel>
+                                                                        </FormItem>
+                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                            <FormControl>
+                                                                                <RadioGroupItem value="msme" />
+                                                                            </FormControl>
+                                                                            <FormLabel className="font-normal">MSME Challenges</FormLabel>
+                                                                        </FormItem>
+                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                            <FormControl>
+                                                                                <RadioGroupItem value="government" />
+                                                                            </FormControl>
+                                                                            <FormLabel className="font-normal">Government Challenges</FormLabel>
+                                                                        </FormItem>
+                                                                    </RadioGroup>
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <Separator className="my-4" />
+
+                                                    {/* Contact Person */}
+                                                    <h3 className="text-lg font-medium">Contact Person</h3>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <FormField
+                                                            control={collaborationForm.control}
+                                                            name="contact.name"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Name</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input {...field} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={collaborationForm.control}
+                                                            name="title"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Role</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input {...field} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+
+                                                    <Button type="submit" disabled={collaborationForm.formState.isSubmitting}>
+                                                        {collaborationForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                        Save Collaboration Info
                                                     </Button>
                                                 </form>
                                             </Form>
@@ -352,7 +630,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                         <CardContent className="space-y-8">
                                             <Form {...settingsForm}>
                                                 <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-4">
-                                                     <div>
+                                                    <div>
                                                         <h3 className="text-lg font-medium mb-4">Profile</h3>
                                                         <div className="space-y-4">
                                                             <FormField control={settingsForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -376,7 +654,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                             />
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <Button type="submit">Save Changes</Button>
                                                 </form>
                                             </Form>
@@ -394,15 +672,15 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                     </div>
                 </DialogContent>
             </Dialog>
-            <SubmissionDetailsModal 
-                submission={selectedSubmission} 
+            <SubmissionDetailsModal
+                submission={selectedSubmission}
                 onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
                 onAddComment={handleAddComment}
             />
             <Script
-  src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
-  strategy="afterInteractive"
-/>
+                src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
+                strategy="afterInteractive"
+            />
         </>
     );
 }
@@ -415,10 +693,10 @@ const msmeChartData = [
     { month: "May", solutions: 0 },
     { month: "June", solutions: 0 },
 ];
-  
+
 const msmeChartConfig = {
     solutions: {
-      label: "Solutions",
-      color: "hsl(var(--chart-3))",
+        label: "Solutions",
+        color: "hsl(var(--chart-3))",
     },
 };
