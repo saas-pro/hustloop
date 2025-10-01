@@ -27,7 +27,7 @@ const contactFormSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
-const contactUs = () => {
+const ContactUs = () => {
   const { toast } = useToast();
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -256,4 +256,4 @@ const contactUs = () => {
   )
 }
 
-export default contactUs
+export default ContactUs

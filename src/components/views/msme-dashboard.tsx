@@ -438,7 +438,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                         <CardHeader>
                                             <CardTitle>Collaboration & Contact</CardTitle>
                                             <CardDescription>
-                                                Tell us about the collaboration you're seeking and the contact person.
+                                                {"Tell us about the collaboration you're seeking and the contact person."}
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent>
@@ -481,7 +481,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                         name="lookingFor"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>What you're looking for</FormLabel>
+                                                                <FormLabel>{"What you're looking for"}</FormLabel>
                                                                 <FormControl>
                                                                     <Textarea rows={3} placeholder="Describe the ideal partner or solution" {...field} />
                                                                 </FormControl>

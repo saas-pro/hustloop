@@ -563,7 +563,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                 <CardHeader>
                                                     <CardTitle>Collaboration & Contact</CardTitle>
                                                     <CardDescription>
-                                                        Tell us about the collaboration you're seeking and the contact person.
+                                                        {"Tell us about the collaboration you're seeking and the contact person."}
                                                     </CardDescription>
                                                 </CardHeader>
                                                 <CardContent>
@@ -606,7 +606,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                                 name="lookingFor"
                                                                 render={({ field }) => (
                                                                     <FormItem>
-                                                                        <FormLabel>What you're looking for</FormLabel>
+                                                                        <FormLabel>{"What you're looking fo"}r</FormLabel>
                                                                         <FormControl>
                                                                             <Textarea rows={3} placeholder="Describe the ideal partner or solution" {...field} />
                                                                         </FormControl>
