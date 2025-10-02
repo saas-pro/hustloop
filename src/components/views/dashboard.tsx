@@ -384,7 +384,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             if (activeTab === 'ip/technologies') fetchIps();
             if (activeTab === 'subscribers') fetchSubscribers();
         }
-    }, [activeTab, userRole, fetchUsers, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps]);
+    }, [activeTab, userRole, fetchUsers, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps,fetchRegistrations]);
 
     const handleApiResponse = async (response: Response, successMessage: string, errorMessage: string) => {
         if (response.ok) {
