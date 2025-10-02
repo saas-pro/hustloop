@@ -203,21 +203,12 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
 
 
   const handleViewDetails = (type: 'challenge' | 'collaboration' | 'GovernmentChallenges', item: any) => {
-    if (hasSubscription) {
+    
       if (type === 'challenge') setSelectedChallenge(item);
       if (type === 'collaboration') setSelectedCollaboration(item);
       if (type === 'GovernmentChallenges') setSelectedGovernmentchallenges(item);
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Subscription Required",
-        description: "You need an active subscription to view full details and engage with MSMEs.",
-        action: <ToastAction altText="Upgrade" onClick={() => {
-            onOpenChange(false);
-            setActiveView('pricing');
-        }}>Upgrade Plan</ToastAction>,
-      });
-    }
+    
+    
   };
 
   const renderContent = () => {

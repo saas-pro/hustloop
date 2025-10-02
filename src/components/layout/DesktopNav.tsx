@@ -84,7 +84,6 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
 
-
     const preloadRecaptcha = () => {
         const scriptId = 'recaptcha-preload-link';
         if (!document.getElementById(scriptId)) {
@@ -111,7 +110,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
         }
     };
     const hideMarketplace =
-        pathname === "/privacy-policy" || pathname === "/terms-of-service";
+        pathname === "/privacy-policy" || pathname === "/terms-of-service" || pathname ==="/aignite";
     const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
         e.preventDefault();
         if (pathname !== '/') {
@@ -215,12 +214,12 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                 <div className='flex justify-end fixed items-center gap-8 right-4 top-5'>
 
                     <div className={cn("hidden md:flex relative pointer-events-auto", (heroVisible && !navOpen) ? 'items-center gap-4' : '')}>
-                        {!isStaticPage && pathname !== "/terms-of-service" && pathname !== "/privacy-policy" && (
+                        {!isStaticPage && pathname !== "/terms-of-service" && pathname !== "/privacy-policy" && pathname !== "/aignite" &&(
                             <>
                                 {!hideMarketplace && (<button
                                     onClick={() => setActiveView('marketplace')}
                                     className={cn(
-                                        'text-sm font-medium w-28 h-14 transition-all duration-300 backdrop-blur-md rounded-xl border border-solid',
+                                        'font-medium w-32 h-14 transition-all duration-300 backdrop-blur-md rounded-xl border border-solid',
                                         'bg-white/10',
                                         (heroVisible && !navOpen) ? 'text-white ' : 'hidden',
                                     )}
@@ -315,14 +314,14 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                 <div className="flex justify-end fixed items-center gap-8 bg-transparent right-4 pointer-events-auto top-24 ">
                     {!hideMarketplace && (<div
                         className={cn(
-                            "relative w-28 h-12 rounded-xl",
+                            "relative w-32 h-12 rounded-xl",
                             (heroVisible && !navOpen) && "hidden"
                         )}
                     >
                         <button
                             onClick={() => setActiveView("marketplace")}
                             className={cn(
-                                "relative text-sm font-medium w-full h-full transition-all duration-300",
+                                "relative font-medium w-full h-full transition-all duration-300",
                                 "backdrop-blur-md rounded-xl border border-solid",
                                 "bg-white/10",
                                 "text-foreground border-border"
@@ -333,7 +332,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                     </div>)}
 
 
-                    <div className="pointer-events-auto typeform-trigger rounded-full border border-solid w-[3.5rem] h-[3.5rem] flex items-center justify-center hover:bg-accent/20 transition-colors backdrop-blur-sm z-10 bg-white/20">
+                    <div className="pointer-events-auto typeform-trigger rounded-full border border-solid w-[3.5rem] h-[3.5rem] flex items-center justify-center hover:bg-accent/10 transition-colors backdrop-blur-sm z-10 bg-white/10">
                         <a
                             href={`mailto:${email}`}
                             className="group flex items-center justify-center w-full h-full cursor-pointer"

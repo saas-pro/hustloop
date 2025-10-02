@@ -272,10 +272,10 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         loop
         muted
         preload="auto"
-        playsInline
+        
         className="hidden absolute top-0 left-0 w-full h-full object-cover z-0 md:block"
       >
-        <source src="/video/HeaderVideo.mp4" type="video/mp4" />
+        <source src={`${API_BASE_URL}/static/videos/HeaderVideo.mp4`} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 

@@ -561,7 +561,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                             {/* Second Card: Collaboration and Contact Details with its own form and submit button */}
                                             <Card className="bg-card/50 backdrop-blur-sm border-border/50 mt-4">
                                                 <CardHeader>
-                                                    <CardTitle>Collaboration & Contact</CardTitle>
+                                                    <CardTitle>Collaboration</CardTitle>
                                                     <CardDescription>
                                                         {"Tell us about the collaboration you're seeking and the contact person."}
                                                     </CardDescription>

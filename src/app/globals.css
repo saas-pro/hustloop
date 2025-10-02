@@ -1031,4 +1031,26 @@ body {
   animation: pulse-glow 3s infinite ease-in-out;
 }
 
+.conic-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px; /* makes it a circle */
+    background: conic-gradient(
+        rgba(52, 168, 82, 0) 10deg, 
+        rgba(52, 168, 82, 1) 38.9738deg, 
+        rgba(255, 211, 20, 1) 62.3678deg, 
+        rgba(255, 70, 65, 1) 87.0062deg, 
+        rgba(49, 134, 255, 1) 107.428deg, 
+        rgba(49, 134, 255, 0.5) 150deg, 
+        rgba(49, 134, 255, 0) 200deg, 
+        rgba(52, 168, 82, 0) 360deg
+    );
+    transform: scale(1.5, 0.8) translate(0, -20%);
+    animation: rotate-gradient 8s linear infinite;
+    z-index: 0;
+}
+
+
+
 

@@ -77,6 +77,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
     const router = useRouter();
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
+    
 
     const handleLogoClick = () => {
         if (pathname === '/terms-of-service' || pathname === '/privacy-policy') {
@@ -86,6 +87,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
             setActiveView("home");
         }
     };
+
 
     const preloadRecaptcha = () => {
         const scriptId = 'recaptcha-preload-link';

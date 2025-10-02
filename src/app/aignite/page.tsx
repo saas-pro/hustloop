@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, Home } from "lucide-react";
 import { X } from 'lucide-react'
 import Image from "next/image";
 import * as React from 'react';
@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import { API_BASE_URL } from "@/lib/api";
 
 const registrationSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -52,48 +53,66 @@ function RegistrationForm() {
         },
     });
 
-    const { formState: { isSubmitting } } = form;
+    const { formState: { isSubmitting }, reset } = form;
 
     const onSubmit = async (data: RegistrationSchema) => {
-        // Here you would typically send the data to your backend
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+        const response = await fetch(`${API_BASE_URL}/api/agnite-registrations`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                full_name: data.name,
+                email_address: data.email,
+                phone_number: data.phone,
+                event: data.eventName,
+            }),
+        });
         toast({
             title: "Registration Successful!",
             description: `Thank you for registering for ${data.eventName}. We've sent a confirmation to your email.`,
         });
-        setIsSubmitted(true);
+        if (!response.ok) {
+            const errorData = await response.json();
+
+            toast({
+                title: 'Registration Failed',
+                description: errorData.error || 'Something went wrong. Please try again.',
+                variant: 'destructive',
+            });
+
+            return;
+        }
+
+
+        toast({
+            title: 'Registration Successful!',
+            description: `Thank you for registering for ${data.eventName}. We've sent a confirmation to your email.`,
+        });
+        reset({
+            name: "",
+            email: "",
+            phone: "",
+            eventName: eventName,
+        });
     };
 
-    if (isSubmitted) {
-        return (
-            <Card className="w-full max-w-lg">
-                <CardContent className="flex flex-col items-center justify-center text-center p-8 gap-4">
-                    <CheckCircle className="w-20 h-20 text-green-500" />
-                    <h2 className="text-2xl font-bold">Registration Successful!</h2>
-                    <p className="text-muted-foreground">
-                        Thank you for registering. A confirmation email has been sent to you. We look forward to seeing you there!
-                    </p>
-                    <Button onClick={() => router.push('/')}>Back to Home</Button>
-                </CardContent>
-            </Card>
-        )
-    }
+
 
     return (
-        <Card className="w-full max-w-lg">
-            <div className=" relative">
+        <Card className="w-full md:w-[600px]">
+            <div className="relative w-full">
                 <CardHeader >
                     <CardTitle className="text-3xl font-bold font-headline capitalize">Register for {eventName}</CardTitle>
                     <CardDescription>Complete the form below to secure your spot.</CardDescription>
-
                 </CardHeader>
                 <Link
-                href="/"
-                className="absolute top-4 right-4 p-2 rounded-md hover:bg-accent transition-colors"
-                aria-label="Close and return home"
-            >
-                <X className="h-6 w-6 text-foreground" />
-            </Link>
+                    href="/"
+                    className="absolute top-4 right-4 p-2"
+                    aria-label="Close and return home"
+                >
+                    <X className="h-6 w-6 " />
+                </Link>
             </div>
 
             <CardContent>
@@ -164,7 +183,7 @@ function RegistrationForm() {
 
 export default function StaticFormPage() {
     const [navOpen, setNavOpen] = useState(false);
-
+    const router = useRouter();
     useEffect(() => {
         if (navOpen) {
             // lock body scroll
@@ -200,19 +219,45 @@ export default function StaticFormPage() {
 
     return (
         <div className="overflow-hidden relative flex flex-col min-h-screen bg-background">
+            <div className="absolute top-4 left-4 z-50 flex items-center gap-4">
+                <div onClick={() => router.push('/')} className="cursor-pointer">
+                    <Image src="/logo.png" alt="Hustloop Logo" width={120} height={120} className="h-12 w-auto min-w-[120px] max-w-[200px] object-contain" />
+                </div>
+                <Link
+                    href="/"
+                    passHref
+                    className="
+                    relative pointer-events-auto typeform-trigger rounded-xl 
+                    md:w-[3.5rem] md:h-[3.5rem] 
+                    bg-white/10 flex items-center justify-center cursor-pointer 
+                    
+                    z-10 
+                    md:border md:border-solid md:box-border md:backdrop-blur-md
+                    ">
+                    <button className="w-14 h-14 flex items-center justify-center">
+                        <Home className="h-6 w-6" size={24}/>
+                    </button>
+                </Link>
+
+            </div>
             <Header {...headerProps} />
-            <main className="flex-grow min-h-screen" id="main-view1">
-                <section id="form-section" className="flex flex-col items-center justify-center pt-16">
+
+            <main className="flex flex-col min-h-screen w-full" id="main-view1">
+                {/* Form Section */}
+                <section className="flex flex-col items-center justify-center pt-16 w-full flex-grow">
                     <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary" />}>
                         <RegistrationForm />
                     </Suspense>
-                    <div className="w-full pt-4">
-                        <Footer />
-                    </div>
                 </section>
 
+                {/* Footer always at bottom */}
+                <div className="w-full mt-6">
+                    <Footer />
+                </div>
             </main>
-        </div>
 
+
+
+        </div>
     );
 }

@@ -95,6 +95,16 @@ interface TechTransferIP {
     approvalStatus: string;
     created_by?: number;
 }
+type RegistrationAignite = {
+    id: number;
+    full_name: string;
+    email_address: string;
+    phone_number: string;
+    event: string;
+    registered_at: string;
+};
+
+
 
 
 const iconNames = Object.keys(LucideIcons).filter(k => k !== 'createLucideIcon' && k !== 'icons' && k !== 'default');
@@ -163,6 +173,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const itemsPerPage = 10; // Set your desired items per page
+    const [registrations, setRegistrations] = useState<RegistrationAignite[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [perPage] = useState(10);
+    const [totalRegistrations, setTotalRegistrations] = useState(0);
     const fetchUsers = useCallback(async (page: number, perPage: number) => {
         setIsLoadingUsers(true);
         const token = localStorage.getItem('token');
@@ -295,11 +309,78 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }
     }, [toast]);
 
+    const fetchRegistrations = useCallback(async (page = 1) => {
+        setIsLoading(true);
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/get-aignite?page=${page}&per_page=${perPage}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json()
+
+            setRegistrations(data.items);
+            setTotalPages(data.pages);
+            setTotalRegistrations(data.total);
+            setCurrentPage(data.page);
+
+        } catch (err) {
+            console.error("Failed to fetch registrations", err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [perPage]);
+
+    const registrationColumns = [
+        "Full Name",
+        "Email Address",
+        "Phone Number",
+        "Registered At",
+    ];
+
+    const handleExportAigniteCSV = () => {
+        if (registrations.length === 0) {
+            alert("No registrations to export.");
+            return;
+        }
+
+        // Define CSV headers
+        const headers = ["Full Name", "Email Address", "Phone Number", "Event", "Registered At"];
+
+        // Map registrations into rows
+        const rows = registrations.map(reg => [
+            reg.full_name,
+            reg.email_address,
+            reg.phone_number,
+            reg.event,
+            new Date(reg.registered_at).toLocaleString(),
+        ]);
+
+        // Convert to CSV format
+        const csvContent =
+            [headers, ...rows]
+                .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(","))
+                .join("\n");
+
+        // Create a Blob and trigger download
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `registrations_page_${currentPage}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+
+
     useEffect(() => {
         if (userRole === 'admin') {
             if (activeTab === 'users') fetchUsers(1, 10);
-            if (activeTab === 'blog') fetchBlogPosts();
-            if (activeTab === 'sessions') fetchEducationPrograms();
+            if (activeTab === 'aignite') fetchRegistrations();
+            // if (activeTab === 'blog') fetchBlogPosts();
+            // if (activeTab === 'sessions') fetchEducationPrograms();
             if (activeTab === 'ip/technologies') fetchIps();
             if (activeTab === 'subscribers') fetchSubscribers();
         }
@@ -550,7 +631,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setIsTechTransfer(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "blog", "sessions", "settings"];
+    const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "aignite", "engagement", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
     const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];
@@ -661,7 +742,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     const [mySubmissions, setMySubmissions] = useState<TechTransferIP[]>([]);
     const [loading, setLoading] = useState(false);
-    const [emptyToastShown, setEmptyToastShown] = useState(false); 
+    const [emptyToastShown, setEmptyToastShown] = useState(false);
 
     useEffect(() => {
         const fetchMySubmissions = async () => {
@@ -1395,6 +1476,117 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 )}
                                                 {subscribers.length === 0 && !isLoadingSubscribers && (
                                                     <p className="text-center text-muted-foreground py-8">There are no newsletter subscribers yet.</p>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
+                                    <TabsContent value="aignite" className="mt-0">
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <CardHeader>
+                                                <div className="flex justify-between items-center">
+                                                    <div className="flex flex-col">
+                                                        <CardTitle>Aignite Registrations</CardTitle>
+                                                        <CardDescription className="mt-2">
+                                                            Total Registrations: {isLoading ? (
+                                                                <div className="flex justify-center items-center h-48">
+                                                                    <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                                </div>
+                                                            ) : totalRegistrations}
+                                                        </CardDescription>
+                                                    </div>
+                                                    <Button className="bg-accent text-accent-foreground hover:bg-accent/90" size="sm" onClick={handleExportAigniteCSV}>
+                                                        <LucideIcons.Download className="mr-2 h-4 w-4" />
+                                                        Export CSV
+                                                    </Button>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                                {isLoading ? (
+                                                    <div className="flex justify-center items-center h-48">
+                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="overflow-x-auto rounded-lg border border-border/50">
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow>
+                                                                        {registrationColumns.map(col => (
+                                                                            <TableHead key={col}>{col}</TableHead>
+                                                                        ))}
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {registrations.length > 0 ? (
+                                                                        registrations.map(reg => (
+                                                                            <TableRow key={reg.id}>
+                                                                                <TableCell className="font-medium">{reg.full_name}</TableCell>
+                                                                                <TableCell className="text-sm text-muted-foreground">{reg.email_address}</TableCell>
+                                                                                <TableCell>{reg.phone_number}</TableCell>
+                                                                                <TableCell>{new Date(reg.registered_at).toLocaleString()}</TableCell>
+                                                                            </TableRow>
+                                                                        ))
+                                                                    ) : (
+                                                                        <TableRow>
+                                                                            <TableCell colSpan={registrationColumns.length} className="text-center py-12 text-lg text-muted-foreground">
+                                                                                No registrations found for this page.
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    )}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+
+                                                        {/* Pagination Controls */}
+                                                        {totalPages > 1 && (
+                                                            <div className="flex justify-center mt-6">
+                                                                <Pagination>
+                                                                    <PaginationContent>
+                                                                        <PaginationItem>
+                                                                            <PaginationPrevious
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (currentPage > 1) handlePageChange(currentPage - 1);
+                                                                                }}
+                                                                                className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                            />
+                                                                        </PaginationItem>
+
+                                                                        {Array.from({ length: totalPages }, (_, i) => {
+                                                                            const pageNumber = i + 1;
+                                                                            if (pageNumber === 1 || pageNumber === totalPages || (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)) {
+                                                                                return (
+                                                                                    <PaginationItem key={pageNumber}>
+                                                                                        <PaginationLink
+                                                                                            onClick={(e) => {
+                                                                                                e.preventDefault();
+                                                                                                handlePageChange(pageNumber);
+                                                                                            }}
+                                                                                            isActive={currentPage === pageNumber}
+                                                                                            className="cursor-pointer"
+                                                                                        >
+                                                                                            {pageNumber}
+                                                                                        </PaginationLink>
+                                                                                    </PaginationItem>
+                                                                                );
+                                                                            }
+                                                                            return null;
+                                                                        })}
+
+                                                                        <PaginationItem>
+                                                                            <PaginationNext
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                                                                                }}
+                                                                                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                            />
+                                                                        </PaginationItem>
+                                                                    </PaginationContent>
+                                                                </Pagination>
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
                                             </CardContent>
                                         </Card>
