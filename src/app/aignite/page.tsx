@@ -17,6 +17,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle } from "lucide-react";
+import { X } from 'lucide-react'
 import Image from "next/image";
 import * as React from 'react';
 import { Suspense, useState, useEffect } from 'react';
@@ -80,10 +81,21 @@ function RegistrationForm() {
 
     return (
         <Card className="w-full max-w-lg">
-            <CardHeader className="text-center">
-                <CardTitle className="text-3xl font-bold font-headline capitalize">Register for {eventName}</CardTitle>
-                <CardDescription>Complete the form below to secure your spot.</CardDescription>
-            </CardHeader>
+            <div className=" relative">
+                <CardHeader >
+                    <CardTitle className="text-3xl font-bold font-headline capitalize">Register for {eventName}</CardTitle>
+                    <CardDescription>Complete the form below to secure your spot.</CardDescription>
+
+                </CardHeader>
+                <Link
+                href="/"
+                className="absolute top-4 right-4 p-2 rounded-md hover:bg-accent transition-colors"
+                aria-label="Close and return home"
+            >
+                <X className="h-6 w-6 text-foreground" />
+            </Link>
+            </div>
+
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

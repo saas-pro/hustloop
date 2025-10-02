@@ -1,10 +1,11 @@
+
 "use client";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import React, { use, useEffect, useRef, useState } from 'react'
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Palette, Check, Loader2, UserCircle, LogOut, Droplet, Leaf, Flame, Cloud, Mail } from 'lucide-react';
+import { Sun, Moon, Palette, Check, Loader2, UserCircle, LogOut, Droplet, Leaf, Flame, Cloud, Mail, ShoppingCart } from 'lucide-react';
 import { View } from '@/app/types';
 import { cn } from '@/lib/utils';
 import { useRouter, usePathname } from "next/navigation";
@@ -109,7 +110,8 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
             setActiveView("home");
         }
     };
-
+    const hideMarketplace =
+        pathname === "/privacy-policy" || pathname === "/terms-of-service";
     const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
         e.preventDefault();
         if (pathname !== '/') {
@@ -211,48 +213,68 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
             <div className="toggle fixed z-50">
                 {/* Magnetic CTA Button */}
                 <div className='flex justify-end fixed items-center gap-8 right-4 top-5'>
-                    <div className="hidden md:flex items-center gap-4 pointer-events-auto">
+
+                    <div className={cn("hidden md:flex relative pointer-events-auto", (heroVisible && !navOpen) ? 'items-center gap-4' : '')}>
                         {!isStaticPage && pathname !== "/terms-of-service" && pathname !== "/privacy-policy" && (
                             <>
+                                {!hideMarketplace && (<button
+                                    onClick={() => setActiveView('marketplace')}
+                                    className={cn(
+                                        'text-sm font-medium w-28 h-14 transition-all duration-300 backdrop-blur-md rounded-xl border border-solid',
+                                        'bg-white/10',
+                                        (heroVisible && !navOpen) ? 'text-white ' : 'hidden',
+                                    )}
+                                >
+                                    Marketplace
+                                </button>)}
                                 {isLoading ? (
                                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                                 ) : isLoggedIn ? (
-                                    <div className="inline-flex rounded-xl border border-solid backdrop-blur-md bg-white/10">
-                                        <button
-                                            onClick={() => setActiveView('dashboard')}
-                                            className="w-14 h-14 flex items-center justify-center"
-                                            style={{ color: (heroVisible && !navOpen) ? "white" : "CurrentColor", transition: "none" }}
-                                        >
-                                            <UserCircle className="h-6 w-6" />
-                                            <span className="sr-only">Dashboard</span>
-                                        </button>
+                                    <>
 
-                                        <button
-                                            onClick={onLogout}
-                                            className="w-14 h-14 flex items-center justify-center border-l border-solid"
-                                            style={{ color: (heroVisible && !navOpen) ? "white" : "CurrentColor", transition: "none" }}
-                                        >
-                                            <LogOut className="h-6 w-6" />
-                                            <span className="sr-only">Logout</span>
-                                        </button>
-                                    </div>
+                                        <div className="inline-flex rounded-xl border border-solid backdrop-blur-md bg-white/10">
+                                            <button
+                                                onClick={() => setActiveView('dashboard')}
+                                                className="w-14 h-14 flex items-center justify-center"
+                                                style={{ color: (heroVisible && !navOpen) ? "white" : "CurrentColor", transition: "none" }}
+                                            >
+                                                <UserCircle className="h-6 w-6" />
+                                                <span className="sr-only">Dashboard</span>
+                                            </button>
+
+                                            <button
+                                                onClick={onLogout}
+                                                className="w-14 h-14 flex items-center justify-center border-l border-solid"
+                                                style={{ color: (heroVisible && !navOpen) ? "white" : "CurrentColor", transition: "none" }}
+                                            >
+                                                <LogOut className="h-6 w-6" />
+                                                <span className="sr-only">Logout</span>
+                                            </button>
+
+                                        </div>
+                                    </>
+
 
                                 ) : (
                                     <div
                                         ref={containerRef}
-                                        className='.btn-container1'
+                                        className='flex gap-2 items-center'
                                     >
                                         <button
                                             onClick={() => handleAuthClick('login')}
                                             ref={buttonRef}
-                                            className='login-btn bg-accent hover:bg-accent/90 text-accent-foreground '
-                                        >   Login
-
+                                            className='login-btn bg-accent hover:bg-accent/90 text-accent-foreground rounded-full px-6 py-2'
+                                        >
+                                            Login
                                         </button>
                                     </div>
+
                                 )}
+
+
                             </>
                         )}
+
                     </div>
                     {/* Menu Button */}
                     <div className="flex items-center justify-center">
@@ -291,6 +313,26 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
 
                 </div>
                 <div className="flex justify-end fixed items-center gap-8 bg-transparent right-4 pointer-events-auto top-24 ">
+                    {!hideMarketplace && (<div
+                        className={cn(
+                            "relative w-28 h-12 rounded-xl",
+                            (heroVisible && !navOpen) && "hidden"
+                        )}
+                    >
+                        <button
+                            onClick={() => setActiveView("marketplace")}
+                            className={cn(
+                                "relative text-sm font-medium w-full h-full transition-all duration-300",
+                                "backdrop-blur-md rounded-xl border border-solid",
+                                "bg-white/10",
+                                "text-foreground border-border"
+                            )}
+                        >
+                            Marketplace
+                        </button>
+                    </div>)}
+
+
                     <div className="pointer-events-auto typeform-trigger rounded-full border border-solid w-[3.5rem] h-[3.5rem] flex items-center justify-center hover:bg-accent/20 transition-colors backdrop-blur-sm z-10 bg-white/20">
                         <a
                             href={`mailto:${email}`}
@@ -302,8 +344,8 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                             />
                         </a>
                     </div>
-                </div>
 
+                </div>
             </div>
 
             <div
@@ -378,3 +420,8 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
 }
 
 export default DesktopNav
+
+
+
+
+

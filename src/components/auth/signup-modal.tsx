@@ -60,6 +60,7 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
     const { toast } = useToast();
     const router = useRouter();
     const { auth } = useFirebaseAuth();
+    const [isSocialLoading, setIsSocialLoading] = useState(false);
     const form = useForm<SignupSchema>({
         resolver: zodResolver(signupSchema),
         defaultValues: {
@@ -132,6 +133,7 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
             toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
             return;
         }
+        setIsSocialLoading(true);
         const authProvider = new GoogleAuthProvider();
         try {
             const result = await signInWithPopup(auth, authProvider);
@@ -163,12 +165,14 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
         } catch (error: any) {
             let description = error.message || 'An error occurred while signing in.';
             toast({ variant: 'destructive', title: 'Social Login Failed', description });
+        } finally {
+            setIsSocialLoading(false);
         }
     };
     const [showPassword, setShowPassword] = useState(false);
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="sm:max-w-lg auth-modal-glow overflow-hidden">
+            <DialogContent className="sm:max-w-lg overflow-hidden">
                 <DialogHeader className="text-center">
                     <DialogTitle>Create an Account</DialogTitle>
                     <DialogDescription>
@@ -177,18 +181,21 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                 </DialogHeader>
 
                 <div className="grid grid-cols-1 gap-4">
-                    <Button variant="outline" onClick={() => handleSocialLogin('google')}><GoogleIcon className="mr-2 h-4 w-4" /> Sign up with Google</Button>
+                    <Button variant="outline" onClick={() => handleSocialLogin('google')} disabled={isSocialLoading}>
+                        {isSocialLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                        <GoogleIcon className="mr-2 h-4 w-4" />
+                        )}
+                        Sign up with Google
+                    </Button>
                 </div>
 
                 <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background/80 px-2 text-muted-foreground backdrop-blur-sm">
-                            Or continue with
-                        </span>
-                    </div>
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                  </div>
                 </div>
 
                 <Form {...form}>

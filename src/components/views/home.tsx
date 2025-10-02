@@ -328,7 +328,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
                 "MSMEs",
                 "Incubators",
                 "Startups",
-                "ENABLERS",
+                "Enablers",
                 "Mentors",
               ]}
               typeSpeed={60}

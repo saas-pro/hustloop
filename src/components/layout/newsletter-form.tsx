@@ -89,10 +89,13 @@ export default function NewsletterForm() {
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isSubmitting} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Let Me In
-          </Button>
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-full blur opacity-75 animate-tilt"></div>
+            <Button type="submit" disabled={isSubmitting} className="relative bg-accent hover:bg-accent/90 text-accent-foreground">
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Let Me In
+            </Button>
+          </div>
         </form>
       </Form>
     </div>

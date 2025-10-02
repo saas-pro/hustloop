@@ -1,7 +1,8 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Linkedin, Loader2, Mail, Send } from "lucide-react";
+import { Home, Linkedin, Loader2, Mail, Send } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as z from "zod";
@@ -15,6 +16,10 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import Footer from "@/components/layout/footer";
 import Header from "@/components/layout/header";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
 
 
 const contactFormSchema = z.object({
@@ -27,13 +32,14 @@ const contactFormSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
-const ContactUs = () => {
+export default function ContactUs() {
   const { toast } = useToast();
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: { fullName: "", email: "", phone: "", message: "" },
   });
   const [navOpen, setNavOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (navOpen) {
@@ -106,6 +112,16 @@ const ContactUs = () => {
   }
   return (
     <div className="flex flex-col">
+       <div className="absolute top-4 left-4 z-50 flex items-center gap-4">
+        <div onClick={() => router.push('/')} className="cursor-pointer">
+          <Image src="/logo.png" alt="Hustloop Logo" width={120} height={120} />
+        </div>
+        <Link href="/" passHref>
+          <Button variant="outline" size="icon" aria-label="Home">
+            <Home className="h-5 w-5" />  
+          </Button>
+        </Link>
+      </div>
       <Header {...headerProps} />
       <main
         className={`flex-grow container relative z-40 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:pb-4 md:pt-14 ${navOpen ? 'overflow-hidden' : 'overflow-auto'
@@ -250,10 +266,7 @@ const ContactUs = () => {
           </div>
         </section>
       </main>
-
     </div>
-
-  )
+  );
 }
-
-export default ContactUs
+    

@@ -42,6 +42,7 @@ const MentorDashboardView = dynamic(() => import('@/components/views/mentor-dash
 const IncubatorDashboardView = dynamic(() => import('@/components/views/incubator-dashboard'), { loading: () => <ModalSkeleton /> });
 const MsmeDashboardView = dynamic(() => import('@/components/views/msme-dashboard'), { loading: () => <ModalSkeleton /> });
 const TechTransferView = dynamic(() => import('@/components/views/browsetech'), { loading: () => <ModalSkeleton /> });
+const MarketplaceView = dynamic(() => import('@/components/views/marketplace-view'), { loading: () => <ModalSkeleton /> });
 
 const LoginModal = dynamic(() => import('@/components/auth/login-modal'), { loading: () => <ModalSkeleton /> });
 const SignupModal = dynamic(() => import('@/components/auth/signup-modal'), { loading: () => <ModalSkeleton /> });
@@ -513,6 +514,12 @@ export default function MainView() {
         isLoggedIn={isLoggedIn}
         setActiveView={setActiveView}
         appliedPrograms={appliedPrograms}
+      />}
+
+      {activeView === 'marketplace' && <MarketplaceView 
+        isOpen={true} 
+        onOpenChange={handleModalOpenChange('marketplace')} 
+        setActiveView={setActiveView} 
       />}
 
       {renderDashboard()}

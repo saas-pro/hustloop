@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 
 export default function Footer() {
   const pathname = usePathname();
-  const hideNewsletter = ['/privacy-policy', '/terms-of-service', '/form','/contact-us'].includes(pathname);
+  const hideNewsletter = ['/privacy-policy', '/terms-of-service', '/aignite','/contact-us'].includes(pathname);
 
   return (
     <footer className="relative bg-background border-t" id="contact-section">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -25,7 +24,7 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
 
   const handleRegisterClick = () => {
     onOpenChange(false);
-    router.push('/form');
+    router.push('/aignite');
   };
   
   return (
@@ -42,7 +41,6 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
           />
            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
            <DialogClose className="absolute right-4 top-4 rounded-none  bg-background/50 text-foreground/80 hover:bg-background/75 hover:text-foreground transition-opacity z-20">
-              
               <span className="sr-only">Close</span>
           </DialogClose>
         </div>
