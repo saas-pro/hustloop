@@ -110,7 +110,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
         }
     };
     const hideMarketplace =
-        pathname === "/privacy-policy" || pathname === "/terms-of-service" || pathname ==="/aignite";
+        pathname === "/privacy-policy" || pathname === "/terms-of-service" || pathname ==="/sif-aignite";
     const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
         e.preventDefault();
         if (pathname !== '/') {
@@ -259,13 +259,13 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                                         ref={containerRef}
                                         className='flex gap-2 items-center'
                                     >
-                                        <button
+                                        {!hideMarketplace&&<button
                                             onClick={() => handleAuthClick('login')}
                                             ref={buttonRef}
                                             className='login-btn bg-accent hover:bg-accent/90 text-accent-foreground rounded-full px-6 py-2'
                                         >
                                             Login
-                                        </button>
+                                        </button>}
                                     </div>
 
                                 )}

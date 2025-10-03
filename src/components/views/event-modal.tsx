@@ -24,7 +24,7 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
 
   const handleRegisterClick = () => {
     onOpenChange(false);
-    router.push('/aignite');
+    router.push('/sif-aignite');
   };
   
   return (
@@ -48,13 +48,13 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
         <DialogHeader className="p-6 pt-0 space-y-4 -mt-24 relative z-10 text-white rounded-lg">
           <div className='p-6 bg-card/80 backdrop-blur-sm rounded-lg'>
               <DialogTitle className="text-4xl font-bold font-headline text-foreground">
-                  Aignite
+                  {"SIF's-Aignite"}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                The premier event for founders, innovators, and investors.
+                The premier workshop for founders, innovators, and investors.
               </DialogDescription>
             <p className="text-foreground mt-4 text-left">
-              Join us for a day of inspiring keynotes, hands-on workshops, and unparalleled networking opportunities. Learn from industry leaders, pitch your ideas, and connect with the people who can help you build the future.
+              Join SIF’s Aignite: a 6-day online AI transformation workshop series for founders, innovators, and teams. Learn from industry leaders, get hands-on with top AI tools, and build strategies you can implement immediately-4 hours per day, with certificate on completion.
             </p>
             <div className="flex items-center gap-6 text-muted-foreground mt-4">
               <div className="flex items-center gap-2">

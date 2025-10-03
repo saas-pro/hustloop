@@ -100,6 +100,7 @@ type RegistrationAignite = {
     full_name: string;
     email_address: string;
     phone_number: string;
+    who_you_are:string;
     event: string;
     registered_at: string;
 };

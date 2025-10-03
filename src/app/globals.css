@@ -23,6 +23,20 @@ body {
 :root {
   scrollbar-color: transparent !important;
   scrollbar-width: none !important;
+  --icon-size: 112px;
+  /* was 80px; now larger */
+  --gap: 18px;
+  --col-width: calc(var(--icon-size) + var(--gap));
+}
+
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+
+  :root {
+    --icon-size: 90px;
+  }
 }
 
 
@@ -552,6 +566,7 @@ body {
   cursor: pointer;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
 }
+
 .nav-open #main-view2,
 .nav-open .view-card-3 {
   transform: scale(0.9) translate(0, 25%);
@@ -998,15 +1013,19 @@ body {
   0% {
     transform: rotate(0deg);
   }
+
   25% {
     transform: rotate(5deg);
   }
+
   50% {
     transform: rotate(0deg);
   }
+
   75% {
     transform: rotate(-5deg);
   }
+
   100% {
     transform: rotate(0deg);
   }
@@ -1017,10 +1036,13 @@ body {
 }
 
 @keyframes tilt {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.75;
     transform: scale(1);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.02);
@@ -1032,25 +1054,20 @@ body {
 }
 
 .conic-button::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 9999px; /* makes it a circle */
-    background: conic-gradient(
-        rgba(52, 168, 82, 0) 10deg, 
-        rgba(52, 168, 82, 1) 38.9738deg, 
-        rgba(255, 211, 20, 1) 62.3678deg, 
-        rgba(255, 70, 65, 1) 87.0062deg, 
-        rgba(49, 134, 255, 1) 107.428deg, 
-        rgba(49, 134, 255, 0.5) 150deg, 
-        rgba(49, 134, 255, 0) 200deg, 
-        rgba(52, 168, 82, 0) 360deg
-    );
-    transform: scale(1.5, 0.8) translate(0, -20%);
-    animation: rotate-gradient 8s linear infinite;
-    z-index: 0;
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  /* makes it a circle */
+  background: conic-gradient(rgba(52, 168, 82, 0) 10deg,
+      rgba(52, 168, 82, 1) 38.9738deg,
+      rgba(255, 211, 20, 1) 62.3678deg,
+      rgba(255, 70, 65, 1) 87.0062deg,
+      rgba(49, 134, 255, 1) 107.428deg,
+      rgba(49, 134, 255, 0.5) 150deg,
+      rgba(49, 134, 255, 0) 200deg,
+      rgba(52, 168, 82, 0) 360deg);
+  transform: scale(1.5, 0.8) translate(0, -20%);
+  animation: rotate-gradient 8s linear infinite;
+  z-index: 0;
 }
-
-
-
-
