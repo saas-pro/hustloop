@@ -128,9 +128,10 @@ export function PaymentModal({
                     )}
                 </div>
 
-                <div className="p-4 bg-green-50 border border-green-300 rounded-xl text-green-800 font-semibold text-center shadow-inner">
-                    After payment, you’re all set - feel free to explore the website. <br />
-                    Thank you!
+                <div className="card p-4 pt-2 relative bg-green-50 border border-green-300 rounded-xl text-green-800 font-semibold text-left shadow-inner" id="thankYouCard">
+                    <p>After payment, you’re all set feel free to explore the website.</p>
+                    <br />
+                    <div className="absolute right-6 bottom-4"><p>-Thank you!</p></div>
                 </div>
 
                 <DialogFooter className="flex flex-col text-center items-center justify-center gap-3 mt-4">

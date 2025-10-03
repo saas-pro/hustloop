@@ -50,9 +50,7 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
               <DialogTitle className="text-4xl font-bold font-headline text-foreground">
                   {"SIF's-Aignite"}
               </DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                The premier workshop for founders, innovators, and investors.
-              </DialogDescription>
+              
             <p className="text-foreground mt-4 text-left">
               Join SIF’s Aignite: a 6-day online AI transformation workshop series for founders, innovators, and teams. Learn from industry leaders, get hands-on with top AI tools, and build strategies you can implement immediately-4 hours per day, with certificate on completion.
             </p>

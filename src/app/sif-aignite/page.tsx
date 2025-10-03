@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import styles from "./page.styles.module.css";
 import {
@@ -86,6 +86,20 @@ function RegistrationForm() {
             who_you_are: data.whoYouAre === 'other' ? data.otherWhoYouAre : data.whoYouAre,
         };
 
+        toast({
+            title: 'Registration Initiated!',
+            description: `Hi ${data.name}, your registration is started. Proceed to payment.`,
+        });
+
+        // Use API response to generate payment link & QR code if available
+        const paymentLink = `https://rzp.io/rzp/GuIJIk1`;
+        const qrCodeImageUrl = "qr-code.jpeg";
+
+        setCurrentPaymentLink(paymentLink);
+        setCurrentQrCodeImageUrl(qrCodeImageUrl);
+        setCurrentUserName(data.name);
+        setIsPaymentModalOpen(true);
+
         try {
             const response = await fetch(`${API_BASE_URL}/api/agnite-registrations`, {
                 method: 'POST',
@@ -104,21 +118,6 @@ function RegistrationForm() {
             }
 
             const result = await response.json();
-
-            toast({
-                title: 'Registration Initiated!',
-                description: `Hi ${data.name}, your registration is started. Proceed to payment.`,
-            });
-
-            // Use API response to generate payment link & QR code if available
-            const paymentLink = result.payment_link || `https://rzp.io/rzp/GuIJIk1`;
-            const qrCodeImageUrl = result.qr_code || "qr-code.jpeg";
-
-            setCurrentPaymentLink(paymentLink);
-            setCurrentQrCodeImageUrl(qrCodeImageUrl);
-            setCurrentUserName(data.name);
-            setIsPaymentModalOpen(true);
-
         } catch (error: any) {
             console.error("Registration failed:", error);
             toast({
@@ -136,7 +135,7 @@ function RegistrationForm() {
     };
     const router = useRouter()
     return (
-        <div >
+        <div className="">
             <div className="flex items-center justify-center">
                 <div onClick={() => router.push('/')} className="cursor-pointer">
                     <Image src="/logo.png" alt="Hustloop Logo" width={120} height={120} className="h-12 w-auto min-w-[120px] max-w-[200px] object-contain" />
@@ -156,7 +155,7 @@ function RegistrationForm() {
                 <CardContent>
                     <Form {...form}>
                         {/* The form's onSubmit now calls onInitialFormSubmit */}
-                        <form onSubmit={form.handleSubmit(onInitialFormSubmit)} className="space-y-6">
+                        <form onSubmit={form.handleSubmit(onInitialFormSubmit)} className="space-y-6 ">
                             <FormField
                                 control={form.control}
                                 name="name"
@@ -313,6 +312,25 @@ export default function StaticFormPage() {
             document.body.style.overflow = "auto";
         };
     }, [navOpen]);
+    const pathname = usePathname();
+    const isAignite = pathname === "/sif-aignite";
+
+    // Immediately apply class on first render
+    if (typeof window !== "undefined") {
+        if (isAignite) {
+            document.documentElement.classList.add("theme-dark");
+            localStorage.setItem("theme", "dark");
+        } else {
+          
+            document.documentElement.classList.add("theme-light");
+            localStorage.setItem("theme", "light");
+        }
+    }
+
+    useEffect(() => {
+        // Keep localStorage in sync on navigation
+        localStorage.setItem("theme", isAignite ? "dark" : "light");
+    }, [isAignite]);
 
 
     const headerProps = {
@@ -328,7 +346,7 @@ export default function StaticFormPage() {
     };
 
     return (
-        <div className="overflow-hidden relative flex flex-col min-h-screen bg-background h-screen">
+        <div className="overflow-hidden relative flex flex-col min-h-screen bg-background  h-screen">
             <Header {...headerProps} />
             <main className={styles.split} id="main-view1">
                 <div className="hidden md:block">

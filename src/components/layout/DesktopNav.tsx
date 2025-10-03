@@ -206,6 +206,8 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
         };
     }, [isLoading, isLoggedIn]);
 
+
+
     const email = "support@hustloop.com"
     return (
         <div>
@@ -293,7 +295,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                                 viewBox="0 0 100 100"
                                 width="80"
                             >
-                                <path className="line top transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20" />
+                                <path className="line top transition-colors duration-300" stroke={(heroVisible  && !navOpen) ? "white" : "CurrentColor"} d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20" />
                                 <path className="line middle transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 70,50 h -40" />
                                 <path className="line bottom transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 30,67 h 40 c 0,0 8.5,0.149796 8.5,-8.5 0,-8.649796 -8.5,-8.5 -8.5,-8.5 h -20 v 20" />
                             </svg>
