@@ -100,8 +100,7 @@ type RegistrationAignite = {
     full_name: string;
     email_address: string;
     phone_number: string;
-    who_you_are:string;
-    event: string;
+    who_you_are: string;
     registered_at: string;
 };
 
@@ -176,6 +175,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const itemsPerPage = 10; // Set your desired items per page
     const [registrations, setRegistrations] = useState<RegistrationAignite[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingFormUsers,setIsLoadingFormUsers] = useState(false)
     const [perPage] = useState(10);
     const [totalRegistrations, setTotalRegistrations] = useState(0);
     const fetchUsers = useCallback(async (page: number, perPage: number) => {
@@ -268,6 +268,48 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         document.body.removeChild(link);
     };
 
+
+
+    const handleDeleteRegistration = async () => {
+        const token = localStorage.getItem('token');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/delete-all-aignite`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                toast({
+                    title: 'Success',
+                    description: `Successfully deleted ${data.deleted_count} registration(s).`,
+                    variant: 'default',
+                });
+            fetchRegistrations()
+            } else {
+                toast({
+                    title: 'Error',
+                    description: data.message || 'Something went wrong.',
+                    variant: 'destructive',
+                });
+                console.error(data.error);
+            }
+        } catch (error) {
+            console.error(error);
+            toast({
+                title: 'Network Error',
+                description: 'Could not reach the server. Please try again later.',
+                variant: 'destructive',
+            });
+        }
+    };
+
+
     const fetchBlogPosts = useCallback(async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/blog-posts`);
@@ -311,7 +353,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     }, [toast]);
 
     const fetchRegistrations = useCallback(async (page = 1) => {
-        setIsLoading(true);
+        setIsLoadingFormUsers(true);
         const token = localStorage.getItem('token');
         try {
             const res = await fetch(`${API_BASE_URL}/api/get-aignite?page=${page}&per_page=${perPage}`, {
@@ -327,7 +369,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         } catch (err) {
             console.error("Failed to fetch registrations", err);
         } finally {
-            setIsLoading(false);
+            setIsLoadingFormUsers(false);
         }
     }, [perPage]);
 
@@ -335,6 +377,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         "Full Name",
         "Email Address",
         "Phone Number",
+        "Who You Are",
         "Registered At",
     ];
 
@@ -345,14 +388,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }
 
         // Define CSV headers
-        const headers = ["Full Name", "Email Address", "Phone Number", "Event", "Registered At"];
+        const headers = ["Full Name", "Email Address", "Phone Number", "WhoYouAre", "Registered At"];
 
         // Map registrations into rows
         const rows = registrations.map(reg => [
             reg.full_name,
             reg.email_address,
             reg.phone_number,
-            reg.event,
+            reg.who_you_are,
             new Date(reg.registered_at).toLocaleString(),
         ]);
 
@@ -385,7 +428,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             if (activeTab === 'ip/technologies') fetchIps();
             if (activeTab === 'subscribers') fetchSubscribers();
         }
-    }, [activeTab, userRole, fetchUsers, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps,fetchRegistrations]);
+    }, [activeTab, userRole, fetchUsers, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
 
     const handleApiResponse = async (response: Response, successMessage: string, errorMessage: string) => {
         if (response.ok) {
@@ -1445,6 +1488,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 <CardDescription>List of all users subscribed to the newsletter.</CardDescription>
                                                 <div className="flex justify-end gap-2 pt-2">
                                                     <Button variant="outline" onClick={handleExportCSV}><LucideIcons.Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+
                                                     <AlertDialog>
                                                         <AlertDialogTrigger asChild>
                                                             <Button variant="destructive"><LucideIcons.Trash className="mr-2 h-4 w-4" /> Reset List</Button>
@@ -1495,14 +1539,40 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                             ) : totalRegistrations}
                                                         </CardDescription>
                                                     </div>
-                                                    <Button className="bg-accent text-accent-foreground hover:bg-accent/90" size="sm" onClick={handleExportAigniteCSV}>
-                                                        <LucideIcons.Download className="mr-2 h-4 w-4" />
-                                                        Export CSV
-                                                    </Button>
+                                                    <div className="flex gap-2">
+                                                        <Button className="bg-accent text-accent-foreground hover:bg-accent/90" size="sm" onClick={handleExportAigniteCSV}>
+                                                            <LucideIcons.Download className="mr-2 h-4 w-4" />
+                                                            Export CSV
+                                                        </Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="destructive" className="flex items-center">
+                                                                    <LucideIcons.Trash className="mr-2 h-4 w-4" />
+                                                                    Delete
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This action cannot be undone. This will permanently delete all Aignite registrations.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={()=>{ handleDeleteRegistration()}}>
+                                                                        Delete
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
+
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                {isLoading ? (
+                                                {isLoadingFormUsers ? (
                                                     <div className="flex justify-center items-center h-48">
                                                         <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
                                                     </div>
@@ -1524,6 +1594,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                 <TableCell className="font-medium">{reg.full_name}</TableCell>
                                                                                 <TableCell className="text-sm text-muted-foreground">{reg.email_address}</TableCell>
                                                                                 <TableCell>{reg.phone_number}</TableCell>
+                                                                                <TableCell>{reg.who_you_are}</TableCell>
                                                                                 <TableCell>{new Date(reg.registered_at).toLocaleString()}</TableCell>
                                                                             </TableRow>
                                                                         ))
