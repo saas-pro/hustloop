@@ -29,7 +29,7 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-1xl p-0 overflow-hidden bg-transparent text-white">
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-transparent text-white">
         <div className="relative">
           {/* Banner Image */}
           <Image
@@ -37,7 +37,7 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
             alt="Aignite"
             width={800}
             height={400}
-            className=" h-[80vh] object-cover"
+            className=" h-[90vh] object-cover"
           />
 
           {/* Dark gradient for readability */}
