@@ -29,7 +29,7 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-transparent text-white">
+      <DialogContent className="md:max-w-[600px] max-w-sm p-0 overflow-hidden bg-transparent border rounded-md text-white">
         <div className="relative">
           {/* Banner Image */}
           <Image
@@ -37,14 +37,14 @@ export default function EventModal({ isOpen, onOpenChange }: EventModalProps) {
             alt="Aignite"
             width={800}
             height={400}
-            className=" h-[90vh] object-cover"
+            className="h-auto md:h-[90vh] object-cover"
           />
 
           {/* Dark gradient for readability */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
 
           {/* Close button */}
-          <DialogClose className="absolute right-4 top-4 rounded-none  bg-background/50 text-foreground/80 hover:bg-background/75 hover:text-foreground transition-opacity z-20">
+          <DialogClose className="absolute right-4 top-4 rounded-none bg-background/50 text-foreground/80 hover:bg-background/75 hover:text-foreground transition-opacity z-20">
               <X></X>
               <span className="sr-only">Close</span>
           </DialogClose>
