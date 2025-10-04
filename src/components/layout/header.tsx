@@ -169,7 +169,8 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     isLoading={isLoading}
                     navOpen={navOpen}
                     setNavOpen={setNavOpen}
-                    heroVisible={heroVisible}  
+                    heroVisible={heroVisible}
+                   
                 />
             </nav >
             <nav className="menu flex md:hidden">
@@ -180,6 +181,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     onLogout={onLogout}
                     isLoading={isLoading}
                     heroVisible={heroVisible}
+
                 />
             </nav>
         </div>

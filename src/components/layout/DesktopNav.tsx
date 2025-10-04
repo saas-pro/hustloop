@@ -110,7 +110,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
         }
     };
     const hideMarketplace =
-        pathname === "/privacy-policy" || pathname === "/terms-of-service" || pathname ==="/sif-aignite";
+        pathname === "/privacy-policy" || pathname === "/terms-of-service" || pathname === "/sif-aignite";
     const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
         e.preventDefault();
         if (pathname !== '/') {
@@ -206,8 +206,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
         };
     }, [isLoading, isLoggedIn]);
 
-
-
+    const isAignite = pathname === "/sif-aignite"
     const email = "support@hustloop.com"
     return (
         <div>
@@ -216,7 +215,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                 <div className='flex justify-end fixed items-center gap-8 right-4 top-5'>
 
                     <div className={cn("hidden md:flex relative pointer-events-auto", (heroVisible && !navOpen) ? 'items-center gap-4' : '')}>
-                        {!isStaticPage && pathname !== "/terms-of-service" && pathname !== "/privacy-policy" && pathname !== "/aignite" &&(
+                        {!isStaticPage && pathname !== "/terms-of-service" && pathname !== "/privacy-policy" && pathname !== "/aignite" && (
                             <>
                                 {!hideMarketplace && (<button
                                     onClick={() => setActiveView('marketplace')}
@@ -261,7 +260,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                                         ref={containerRef}
                                         className='flex gap-2 items-center'
                                     >
-                                        {!hideMarketplace&&<button
+                                        {!hideMarketplace && <button
                                             onClick={() => handleAuthClick('login')}
                                             ref={buttonRef}
                                             className='login-btn bg-accent hover:bg-accent/90 text-accent-foreground rounded-full px-6 py-2'
@@ -290,15 +289,28 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                             className="relative xl:inline-block w-[3.5rem] h-[3.5rem] rounded-xl border border-solid backdrop-blur-md bg-white/10 pointer-events-auto flex items-center justify-center"
                         >
                             <svg
-                                className={`ham hamRotate pointer-events-auto w-[3.5rem] h-[3.5rem] select-none transition-colors relative duration-300 ${heroVisible && !navOpen ? "stroke-white" : "stroke-black"
+                                className={`ham hamRotate pointer-events-auto w-[3.5rem] h-[3.5rem] select-none transition-colors relative duration-300 ${(heroVisible && !navOpen) ? "stroke-white" : "stroke-black"
                                     }`}
                                 viewBox="0 0 100 100"
                                 width="80"
                             >
-                                <path className="line top transition-colors duration-300" stroke={(heroVisible  && !navOpen) ? "white" : "CurrentColor"} d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20" />
-                                <path className="line middle transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 70,50 h -40" />
-                                <path className="line bottom transition-colors duration-300" stroke={(heroVisible && !navOpen) ? "white" : "CurrentColor"} d="m 30,67 h 40 c 0,0 8.5,0.149796 8.5,-8.5 0,-8.649796 -8.5,-8.5 -8.5,-8.5 h -20 v 20" />
+                                <path
+                                    className="line top transition-colors duration-300"
+                                    stroke={(heroVisible && !navOpen ) ? "white" : "currentColor"}
+                                    d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20"
+                                />
+                                <path
+                                    className="line middle transition-colors duration-300"
+                                    stroke={(heroVisible && !navOpen ) ? "white" : "currentColor"}
+                                    d="m 70,50 h -40"
+                                />
+                                <path
+                                    className="line bottom transition-colors duration-300"
+                                    stroke={(heroVisible && !navOpen ) ? "white" : "currentColor"}
+                                    d="m 30,67 h 40 c 0,0 8.5,0.149796 8.5,-8.5 0,-8.649796 -8.5,-8.5 -8.5,-8.5 h -20 v 20"
+                                />
                             </svg>
+
                         </button>
                     </div>
 

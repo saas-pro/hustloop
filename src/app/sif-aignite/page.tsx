@@ -106,17 +106,6 @@ function RegistrationForm() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                toast({
-                    title: "Registration Failed",
-                    description: errorData.error || "Something went wrong during registration.",
-                    variant: "destructive",
-                });
-                return; // stop further execution
-            }
-
             const result = await response.json();
         } catch (error: any) {
             console.error("Registration failed:", error);
@@ -135,10 +124,13 @@ function RegistrationForm() {
     };
     const router = useRouter()
     return (
-        <div className="">
-            <div className="flex items-center justify-center">
+        <div className="text-white">
+            <div className="flex items-center justify-between px-4">
                 <div onClick={() => router.push('/')} className="cursor-pointer">
                     <Image src="/logo.png" alt="Hustloop Logo" width={120} height={120} className="h-12 w-auto min-w-[120px] max-w-[200px] object-contain" />
+                </div>
+                <div onClick={() => router.push('/')} className="pointer-events-auto cursor-pointer typeform-trigger rounded-md border border-solid w-[3.5rem] h-[3.5rem] flex items-center justify-center transition-colors backdrop-blur-sm z-10 bg-white/10">
+                    <Home />
                 </div>
 
             </div>
@@ -312,25 +304,7 @@ export default function StaticFormPage() {
             document.body.style.overflow = "auto";
         };
     }, [navOpen]);
-    const pathname = usePathname();
-    const isAignite = pathname === "/sif-aignite";
 
-    // Immediately apply class on first render
-    if (typeof window !== "undefined") {
-        if (isAignite) {
-            document.documentElement.classList.add("theme-dark");
-            localStorage.setItem("theme", "dark");
-        } else {
-          
-            document.documentElement.classList.add("theme-light");
-            localStorage.setItem("theme", "light");
-        }
-    }
-
-    useEffect(() => {
-        // Keep localStorage in sync on navigation
-        localStorage.setItem("theme", isAignite ? "dark" : "light");
-    }, [isAignite]);
 
 
     const headerProps = {
@@ -346,13 +320,14 @@ export default function StaticFormPage() {
     };
 
     return (
-        <div className="overflow-hidden relative flex flex-col min-h-screen bg-background  h-screen">
-            <Header {...headerProps} />
+        <div className="overflow-hidden relative flex flex-col min-h-screen bg-background theme-dark  h-screen">
+
             <main className={styles.split} id="main-view1">
                 <div className="hidden md:block">
                     <AnimatedColumns />
                 </div>
-                <section className={styles.right}>
+                <section className={`${styles.right} `}>
+
                     <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary" />}>
                         <RegistrationForm />
                     </Suspense>
