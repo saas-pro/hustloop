@@ -175,9 +175,11 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const itemsPerPage = 10; // Set your desired items per page
     const [registrations, setRegistrations] = useState<RegistrationAignite[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingFormUsers,setIsLoadingFormUsers] = useState(false)
+    const [isLoadingFormUsers, setIsLoadingFormUsers] = useState(false)
     const [perPage] = useState(10);
     const [totalRegistrations, setTotalRegistrations] = useState(0);
+
+
     const fetchUsers = useCallback(async (page: number, perPage: number) => {
         setIsLoadingUsers(true);
         const token = localStorage.getItem('token');
@@ -283,14 +285,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             });
 
             const data = await response.json();
-            
+
             if (response.ok) {
                 toast({
                     title: 'Success',
                     description: `Successfully deleted ${data.deleted_count} registration(s).`,
                     variant: 'default',
                 });
-            fetchRegistrations()
+                fetchRegistrations(0)
             } else {
                 toast({
                     title: 'Error',
@@ -352,7 +354,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }
     }, [toast]);
 
-    const fetchRegistrations = useCallback(async (page = 1) => {
+    const fetchRegistrations = useCallback(async (page: number) => {
         setIsLoadingFormUsers(true);
         const token = localStorage.getItem('token');
         try {
@@ -362,7 +364,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             const data = await res.json()
 
             setRegistrations(data.items);
-            setTotalPages(data.pages);
+            setTotalPages(data.pages || 1);
             setTotalRegistrations(data.total);
             setCurrentPage(data.page);
 
@@ -372,6 +374,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setIsLoadingFormUsers(false);
         }
     }, [perPage]);
+
+    const onPageChange = (page:number) => {
+        fetchRegistrations(page)
+    };
 
     const registrationColumns = [
         "Full Name",
@@ -422,7 +428,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     useEffect(() => {
         if (userRole === 'admin') {
             if (activeTab === 'users') fetchUsers(1, 10);
-            if (activeTab === 'aignite') fetchRegistrations();
+            if (activeTab === 'aignite') fetchRegistrations(1);
             // if (activeTab === 'blog') fetchBlogPosts();
             // if (activeTab === 'sessions') fetchEducationPrograms();
             if (activeTab === 'ip/technologies') fetchIps();
@@ -1561,7 +1567,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
                                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={()=>{ handleDeleteRegistration()}}>
+                                                                    <AlertDialogAction onClick={() => { handleDeleteRegistration() }}>
                                                                         Delete
                                                                     </AlertDialogAction>
                                                                 </AlertDialogFooter>
@@ -1618,7 +1624,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             <PaginationPrevious
                                                                                 onClick={(e) => {
                                                                                     e.preventDefault();
-                                                                                    if (currentPage > 1) handlePageChange(currentPage - 1);
+                                                                                    if (currentPage > 1) onPageChange(currentPage - 1);
                                                                                 }}
                                                                                 className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                                                                             />
@@ -1626,13 +1632,18 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                                                                         {Array.from({ length: totalPages }, (_, i) => {
                                                                             const pageNumber = i + 1;
-                                                                            if (pageNumber === 1 || pageNumber === totalPages || (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)) {
+
+                                                                            if (
+                                                                                pageNumber === 1 ||
+                                                                                pageNumber === totalPages ||
+                                                                                Math.abs(pageNumber - currentPage) <= 1
+                                                                            ) {
                                                                                 return (
                                                                                     <PaginationItem key={pageNumber}>
                                                                                         <PaginationLink
                                                                                             onClick={(e) => {
                                                                                                 e.preventDefault();
-                                                                                                handlePageChange(pageNumber);
+                                                                                                onPageChange(pageNumber);
                                                                                             }}
                                                                                             isActive={currentPage === pageNumber}
                                                                                             className="cursor-pointer"
@@ -1641,7 +1652,13 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                         </PaginationLink>
                                                                                     </PaginationItem>
                                                                                 );
+                                                                            } else if (
+                                                                                pageNumber === currentPage - 2 ||
+                                                                                pageNumber === currentPage + 2
+                                                                            ) {
+                                                                                return <span key={pageNumber} className="px-2">...</span>;
                                                                             }
+
                                                                             return null;
                                                                         })}
 
@@ -1649,7 +1666,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             <PaginationNext
                                                                                 onClick={(e) => {
                                                                                     e.preventDefault();
-                                                                                    if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                                                                                    if (currentPage < totalPages) onPageChange(currentPage + 1);
                                                                                 }}
                                                                                 className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                                                                             />
