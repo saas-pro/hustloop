@@ -11,9 +11,9 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { MSMECollaboration } from './msmes';
-import { Handshake, Target, Check, User } from 'lucide-react';
+import { Handshake, Target, Check, User, Workflow, IndianRupee, Timer, AlertCircle } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -21,7 +21,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import Image from 'next/image';
-import { Badge } from '../ui/badge';
 
 interface MSMECollaborationDetailsProps {
   collaboration: MSMECollaboration | null;
@@ -37,8 +36,10 @@ export default function MSMECollaborationDetails({
   hasSubscription,
 }: MSMECollaborationDetailsProps) {
   if (!collaboration) return null;
-
-  const isDisabled = !isLoggedIn || !hasSubscription;
+  const isOtherUsers = ["msme", "incubator", "mentor"].some(role =>
+    localStorage.getItem('userRole')?.includes(role)
+  );
+  const isDisabled = !isLoggedIn || !hasSubscription || isOtherUsers;
   let tooltipContent = null;
   if (!isLoggedIn) {
     tooltipContent = <p>Please login to connect with MSMEs</p>;
@@ -50,101 +51,125 @@ export default function MSMECollaborationDetails({
     <Button
       size="lg"
       className="bg-accent hover:bg-accent/90 text-accent-foreground"
-      disabled={isDisabled}
     >
-      <Handshake className="mr-2 h-5 w-5" /> Connect Now
+      <Handshake className="mr-2 h-5 w-5" /> Apply Now
     </Button>
   );
-
   return (
     <Dialog open={!!collaboration} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6">
-            <div className='flex items-center gap-4'>
-                <Image src={collaboration.logo} alt={`${collaboration.name} logo`} width={80} height={80} className="rounded-lg" data-ai-hint={collaboration.hint} />
-                <div>
-                    <DialogTitle className="text-3xl font-bold font-headline">{collaboration.name}</DialogTitle>
-                    <DialogDescription>
-                        Collaboration opportunity in the {collaboration.sector} sector.
-                    </DialogDescription>
-                </div>
+          <div className='flex items-center gap-4'>
+            <Image src="https://api.hustloop.com/static/images/building.png" alt={`${collaboration.challenge_type} logo`} width={80} height={80} className="rounded-lg" />
+            <div>
+              <DialogTitle className="text-3xl font-bold font-headline">{collaboration.title}</DialogTitle>
+              <DialogDescription>
+                Collaboration opportunity in the {collaboration.company_name} sector.
+              </DialogDescription>
             </div>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="flex-grow mt-4 px-6">
           <div className="space-y-12">
-            
+
             <div>
-                <h3 className="text-2xl font-bold mb-4 font-headline">About {collaboration.name}</h3>
-                <p className="text-muted-foreground">{collaboration.details.about}</p>
+              <h3 className="text-2xl font-bold mb-4 font-headline">About The Challenge</h3>
+              <p className="text-muted-foreground">{collaboration.description}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+              <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <CardHeader className="items-center">
+                  <Workflow className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle className="text-4xl font-bold">{collaboration.stage}</CardTitle>
+                  <p className="text-sm text-muted-foreground">Challenge Stages</p>
+                </CardHeader>
+              </Card>
+              <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <CardHeader className="items-center">
+                  <Timer className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle className="text-4xl font-bold">
+                    {new Date(collaboration.end_date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">End Date</p>
+                </CardHeader>
+              </Card>
+              <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <CardHeader className="items-center">
+                  <IndianRupee className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle className="text-2xl font-bold">{collaboration.reward_amount}</CardTitle>
+                  <p className="text-sm text-muted-foreground">Reward Amount</p>
+                </CardHeader>
+              </Card>
             </div>
 
             <Separator />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-2xl font-bold mb-4 font-headline flex items-center gap-2"><Target className="h-6 w-6 text-primary" /> What We&apos;re Looking For</h3>
-                <p className="text-muted-foreground">{collaboration.details.lookingFor}</p>
-              </div>
-
-              <div>
-                <h3 className="text-2xl font-bold mb-4 font-headline flex items-center gap-2"><Handshake className="h-6 w-6 text-primary" /> Scope of Collaboration</h3>
-                <div className="flex flex-wrap gap-2">
-                  {collaboration.details.scope.map((item, index) => (
-                    <Badge key={index} variant="secondary">{item}</Badge>
+                <h3 className="text-2xl font-bold mb-4 font-headline">Mission</h3>
+                <ul className="space-y-2">
+                  {Array.isArray(collaboration.scope) && collaboration.scope.map((s, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-green-500 mt-1 shrink-0" />
+                      <span>{s}</span>
+                    </li>
                   ))}
-                </div>
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold mb-4 font-headline">Who Can Participate</h3>
+                <p className="text-muted-foreground">{collaboration.looking_for}</p>
               </div>
             </div>
 
             <Separator />
 
             <div>
-              <h3 className="text-2xl font-bold mb-4 font-headline">Benefits of Partnership</h3>
-              <ul className="space-y-2">
-                {collaboration.details.benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 mt-1 shrink-0" />
-                    <span className="text-muted-foreground">{benefit}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <Separator />
-
-            <div>
-                <h3 className="text-2xl font-bold mb-4 font-headline">Primary Contact</h3>
-                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                    <CardContent className="p-6 flex items-center gap-4">
-                        <User className="h-8 w-8 text-primary" />
-                        <div>
-                            <p className="font-semibold">{collaboration.details.contact.name}</p>
-                            <p className="text-sm text-muted-foreground">{collaboration.details.contact.title}</p>
-                        </div>
-                    </CardContent>
-                </Card>
+              <h3 className="text-2xl font-bold mb-4 font-headline">Primary Contact</h3>
+              <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <CardContent className="p-6 flex items-center gap-4">
+                  <User className="h-8 w-8 text-primary" />
+                  <div>
+                    <p className="font-semibold">{collaboration.contact_name}</p>
+                    <p className="text-sm text-muted-foreground">{collaboration.contact_role}</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
 
-            <div className="text-center bg-card/50 rounded-lg my-12 py-10">
-              <h2 className="text-3xl font-bold mb-4 font-headline">Ready to Collaborate?</h2>
-              <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
-                Reach out to {collaboration.name} to explore partnership opportunities and grow together.
-              </p>
-              {isDisabled ? (
+            {isOtherUsers ?
+              <div className="text-center bg-card/50 rounded-lg my-12 py-10">
+                <h2 className="text-3xl font-bold mb-4 font-headline">
+                  Ready to Solve This Challenge?
+                </h2>
+                <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
+                  Login as Founder to Solve this Problem
+                </p>
+              </div>
+
+              : <div className="text-center bg-card/50 rounded-lg my-12 py-10">
+                <h2 className="text-3xl font-bold mb-4 font-headline">
+                  Ready to Solve This Challenge?
+                </h2>
+                <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
+                  Submit your innovative solution and get a chance to win exciting rewards and partnerships.
+                </p>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span>{connectButton}</span>
                     </TooltipTrigger>
-                    <TooltipContent>{tooltipContent}</TooltipContent>
+                    {isDisabled && <TooltipContent>{tooltipContent}</TooltipContent>}
                   </Tooltip>
                 </TooltipProvider>
-              ) : (
-                connectButton
-              )}
-            </div>
+              </div>}
           </div>
         </ScrollArea>
       </DialogContent>

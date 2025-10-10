@@ -272,6 +272,72 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
 
 
+
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const toggleSelect = (id: number) => {
+        setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+        );
+    };
+
+    const selectAll = () => {
+        if (selectedIds.length === registrations.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(registrations.map((r) => r.id));
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedIds.length === 0) return;
+        setIsDeleting(true);
+
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(
+                `${API_BASE_URL}/api/delete-multiple-aignite`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ ids: selectedIds }),
+                }
+            );
+
+            const data = await res.json();
+
+            if (res.ok) {
+                toast({
+                    title: "Registrations deleted",
+                    description: `${data.deleted_count || selectedIds.length} registration(s) deleted successfully.`,
+
+                });
+                setSelectedIds([]);
+                fetchRegistrations(0);
+            } else {
+                toast({
+                    title: "Deletion failed",
+                    description: data.message || "Unable to delete selected registrations.",
+                    variant: "destructive",
+
+                });
+            }
+        } catch (err) {
+            console.error(err);
+            toast({
+                title: "Server error",
+                description: "An error occurred while deleting registrations.",
+                variant: "destructive",
+
+            });
+        } finally {
+            setIsDeleting(false);
+        }
+    };
     const handleDeleteRegistration = async () => {
         const token = localStorage.getItem('token');
 
@@ -340,12 +406,15 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             const response = await fetch(`${API_BASE_URL}/api/getIps`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            const data = await response.json();
             if (response.ok) {
-                const data = await response.json();
-
                 setTechTransferIps(data.ips || []);
             } else {
-                toast({ variant: 'destructive', title: 'Failed to fetch IPs' });
+                toast({
+                    variant: 'destructive',
+                    description: data.message || 'Something went wrong.',
+                    title: 'Failed to fetch IPs'
+                });
             }
         } catch (error) {
             toast({ variant: 'destructive', title: 'Network Error' });
@@ -368,14 +437,22 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setTotalRegistrations(data.total);
             setCurrentPage(data.page);
 
+            if (!res.ok) {
+                toast({
+                    variant: 'destructive',
+                    description: data.message || 'Something went wrong.',
+                    title: 'Failed to fetch Registered Users'
+                });
+            }
+
         } catch (err) {
-            console.error("Failed to fetch registrations", err);
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not connect to the server or retrieve data.' });
         } finally {
             setIsLoadingFormUsers(false);
         }
-    }, [perPage]);
+    }, [perPage,toast]);
 
-    const onPageChange = (page:number) => {
+    const onPageChange = (page: number) => {
         fetchRegistrations(page)
     };
 
@@ -387,41 +464,73 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         "Registered At",
     ];
 
-    const handleExportAigniteCSV = () => {
-        if (registrations.length === 0) {
-            alert("No registrations to export.");
-            return;
-        }
+    const handleExportAigniteCSV = async () => {
+        try {
+            // Fetch all registrations from backend
+            const token = localStorage.getItem("accessToken"); // if protected
+            const res = await fetch(`${API_BASE_URL}/api/get-aignite?all=true`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-        // Define CSV headers
-        const headers = ["Full Name", "Email Address", "Phone Number", "WhoYouAre", "Registered At"];
+            if (!res.ok) {
+                toast({
+                    title: "Export failed",
+                    description: "Could not fetch registrations for CSV.",
+                    variant: "destructive",
+                });
+                return;
+            }
 
-        // Map registrations into rows
-        const rows = registrations.map(reg => [
-            reg.full_name,
-            reg.email_address,
-            reg.phone_number,
-            reg.who_you_are,
-            new Date(reg.registered_at).toLocaleString(),
-        ]);
+            const data = await res.json();
+            const allRegistrations = data.items;
 
-        // Convert to CSV format
-        const csvContent =
-            [headers, ...rows]
-                .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(","))
+            if (allRegistrations.length === 0) {
+                toast({
+                    title: "No data",
+                    description: "No registrations to export.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            // CSV headers
+            const headers = ["Full Name", "Email Address", "Phone Number", "WhoYouAre", "Registered At"];
+
+            // Map registrations into rows
+            const rows = allRegistrations.map((reg: any) => [
+                reg.full_name,
+                reg.email_address,
+                reg.phone_number,
+                reg.who_you_are,
+                new Date(reg.registered_at).toLocaleString(),
+            ]);
+
+            // Convert to CSV
+            const csvContent = [headers, ...rows]
+                .map((row) => row.map((field: any) => `"${String(field).replace(/"/g, '""')}"`).join(","))
                 .join("\n");
 
-        // Create a Blob and trigger download
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `registrations_page_${currentPage}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            // Trigger download
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `aignite_registrations_all.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (err) {
+            console.error(err);
+            toast({
+                title: "Export failed",
+                description: "An error occurred while exporting CSV.",
+                variant: "destructive",
+            });
+        }
     };
+
 
 
 
@@ -556,7 +665,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 // Do NOT update localStorage here – wait until verification
             }
 
-            // 2. Update other profile info (name, etc.)
             if (name) {
                 const response = await fetch(`${API_BASE_URL}/api/update-profile`, {
                     method: 'POST',
@@ -1003,7 +1111,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                 );
                             })}
                         </TabsList>
-                        <div className="flex-grow overflow-y-auto  pb-6 w-full">
+                        <div className="flex-grow overflow-y-auto pb-6 w-full">
                             <TabsContent value="overview" className="mt-0 space-y-6">
                                 <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                     <CardHeader>
@@ -1545,137 +1653,161 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                             ) : totalRegistrations}
                                                         </CardDescription>
                                                     </div>
+
                                                     <div className="flex gap-2">
-                                                        <Button className="bg-accent text-accent-foreground hover:bg-accent/90" size="sm" onClick={handleExportAigniteCSV}>
+                                                        <Button
+                                                            className="bg-accent text-accent-foreground hover:bg-accent/90"
+                                                            size="sm"
+                                                            onClick={handleExportAigniteCSV}
+                                                        >
                                                             <LucideIcons.Download className="mr-2 h-4 w-4" />
                                                             Export CSV
                                                         </Button>
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="destructive" className="flex items-center">
-                                                                    <LucideIcons.Trash className="mr-2 h-4 w-4" />
-                                                                    Delete
-                                                                </Button>
-                                                            </AlertDialogTrigger>
 
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        This action cannot be undone. This will permanently delete all Aignite registrations.
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={() => { handleDeleteRegistration() }}>
-                                                                        Delete
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
+                                                        {selectedIds.length > 0 && (
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button
+                                                                        variant="destructive"
+                                                                        size="sm"
+                                                                        className="flex items-center"
+                                                                        disabled={isDeleting}
+                                                                    >
+                                                                        <LucideIcons.Trash className="mr-2 h-4 w-4" />
+                                                                        {isDeleting ? "Deleting..." : `Delete Selected (${selectedIds.length})`}
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            This will permanently delete {selectedIds.length} registration(s).
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={handleDeleteSelected}>
+                                                                            Confirm Delete
+                                                                        </AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        )}
                                                     </div>
-
                                                 </div>
                                             </CardHeader>
+
                                             <CardContent>
-                                                {isLoadingFormUsers ? (
-                                                    <div className="flex justify-center items-center h-48">
-                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <div className="overflow-x-auto rounded-lg border border-border/50">
-                                                            <Table>
-                                                                <TableHeader>
-                                                                    <TableRow>
-                                                                        {registrationColumns.map(col => (
-                                                                            <TableHead key={col}>{col}</TableHead>
-                                                                        ))}
+                                                <div className="overflow-x-auto rounded-lg border border-border/50">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={
+                                                                            selectedIds.length === registrations?.length &&
+                                                                            registrations.length > 0
+                                                                        }
+                                                                        onChange={selectAll}
+                                                                    />
+                                                                </TableHead>
+                                                                {registrationColumns.map((col) => (
+                                                                    <TableHead key={col}>{col}</TableHead>
+                                                                ))}
+                                                            </TableRow>
+                                                        </TableHeader>
+
+                                                        <TableBody>
+                                                            {registrations?.length > 0 ? (
+                                                                registrations.map((reg) => (
+                                                                    <TableRow key={reg.id}>
+                                                                        <TableCell>
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={selectedIds.includes(reg.id)}
+                                                                                onChange={() => toggleSelect(reg.id)}
+                                                                            />
+                                                                        </TableCell>
+                                                                        <TableCell>{reg.full_name}</TableCell>
+                                                                        <TableCell>{reg.email_address}</TableCell>
+                                                                        <TableCell>{reg.phone_number}</TableCell>
+                                                                        <TableCell>{reg.who_you_are}</TableCell>
+                                                                        <TableCell>
+                                                                            {new Date(reg.registered_at).toLocaleString()}
+                                                                        </TableCell>
                                                                     </TableRow>
-                                                                </TableHeader>
-                                                                <TableBody>
-                                                                    {registrations.length > 0 ? (
-                                                                        registrations.map(reg => (
-                                                                            <TableRow key={reg.id}>
-                                                                                <TableCell className="font-medium">{reg.full_name}</TableCell>
-                                                                                <TableCell className="text-sm text-muted-foreground">{reg.email_address}</TableCell>
-                                                                                <TableCell>{reg.phone_number}</TableCell>
-                                                                                <TableCell>{reg.who_you_are}</TableCell>
-                                                                                <TableCell>{new Date(reg.registered_at).toLocaleString()}</TableCell>
-                                                                            </TableRow>
-                                                                        ))
-                                                                    ) : (
-                                                                        <TableRow>
-                                                                            <TableCell colSpan={registrationColumns.length} className="text-center py-12 text-lg text-muted-foreground">
-                                                                                No registrations found for this page.
-                                                                            </TableCell>
-                                                                        </TableRow>
-                                                                    )}
-                                                                </TableBody>
-                                                            </Table>
-                                                        </div>
+                                                                ))
+                                                            ) : (
+                                                                <TableRow>
+                                                                    <TableCell colSpan={registrationColumns.length + 1} className="text-center py-12 text-lg text-muted-foreground">
+                                                                        No registrations found for this page.
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            )}
 
-                                                        {/* Pagination Controls */}
-                                                        {totalPages > 1 && (
-                                                            <div className="flex justify-center mt-6">
-                                                                <Pagination>
-                                                                    <PaginationContent>
-                                                                        <PaginationItem>
-                                                                            <PaginationPrevious
-                                                                                onClick={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    if (currentPage > 1) onPageChange(currentPage - 1);
-                                                                                }}
-                                                                                className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                            />
-                                                                        </PaginationItem>
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                                {totalPages > 1 && (
+                                                    <div className="flex justify-center mt-6">
+                                                        <Pagination>
+                                                            <PaginationContent>
+                                                                <PaginationItem>
+                                                                    <PaginationPrevious
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            if (currentPage > 1) onPageChange(currentPage - 1);
+                                                                        }}
+                                                                        className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                    />
+                                                                </PaginationItem>
 
-                                                                        {Array.from({ length: totalPages }, (_, i) => {
-                                                                            const pageNumber = i + 1;
+                                                                {Array.from({ length: totalPages }, (_, i) => {
+                                                                    const pageNumber = i + 1;
 
-                                                                            if (
-                                                                                pageNumber === 1 ||
-                                                                                pageNumber === totalPages ||
-                                                                                Math.abs(pageNumber - currentPage) <= 1
-                                                                            ) {
-                                                                                return (
-                                                                                    <PaginationItem key={pageNumber}>
-                                                                                        <PaginationLink
-                                                                                            onClick={(e) => {
-                                                                                                e.preventDefault();
-                                                                                                onPageChange(pageNumber);
-                                                                                            }}
-                                                                                            isActive={currentPage === pageNumber}
-                                                                                            className="cursor-pointer"
-                                                                                        >
-                                                                                            {pageNumber}
-                                                                                        </PaginationLink>
-                                                                                    </PaginationItem>
-                                                                                );
-                                                                            } else if (
-                                                                                pageNumber === currentPage - 2 ||
-                                                                                pageNumber === currentPage + 2
-                                                                            ) {
-                                                                                return <span key={pageNumber} className="px-2">...</span>;
-                                                                            }
+                                                                    if (
+                                                                        pageNumber === 1 ||
+                                                                        pageNumber === totalPages ||
+                                                                        Math.abs(pageNumber - currentPage) <= 1
+                                                                    ) {
+                                                                        return (
+                                                                            <PaginationItem key={pageNumber}>
+                                                                                <PaginationLink
+                                                                                    onClick={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        onPageChange(pageNumber);
+                                                                                    }}
+                                                                                    isActive={currentPage === pageNumber}
+                                                                                    className="cursor-pointer"
+                                                                                >
+                                                                                    {pageNumber}
+                                                                                </PaginationLink>
+                                                                            </PaginationItem>
+                                                                        );
+                                                                    } else if (
+                                                                        pageNumber === currentPage - 2 ||
+                                                                        pageNumber === currentPage + 2
+                                                                    ) {
+                                                                        return <span key={pageNumber} className="px-2">...</span>;
+                                                                    }
 
-                                                                            return null;
-                                                                        })}
+                                                                    return null;
+                                                                })}
 
-                                                                        <PaginationItem>
-                                                                            <PaginationNext
-                                                                                onClick={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    if (currentPage < totalPages) onPageChange(currentPage + 1);
-                                                                                }}
-                                                                                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                            />
-                                                                        </PaginationItem>
-                                                                    </PaginationContent>
-                                                                </Pagination>
-                                                            </div>
-                                                        )}
-                                                    </>
+                                                                <PaginationItem>
+                                                                    <PaginationNext
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            if (currentPage < totalPages) onPageChange(currentPage + 1);
+                                                                        }}
+                                                                        className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                    />
+                                                                </PaginationItem>
+                                                            </PaginationContent>
+                                                        </Pagination>
+                                                    </div>
                                                 )}
                                             </CardContent>
                                         </Card>

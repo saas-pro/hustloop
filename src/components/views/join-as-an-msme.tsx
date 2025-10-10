@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useForm, useFieldArray, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -36,22 +36,8 @@ type AuthProvider = 'local' | 'google';
 // Profile form schema
 const profileFormSchema = z.object({
     name: z.string().min(1, "Company name is required"),
-    title: z.string().min(1, "Title is required"),
     sector: z.string().min(1, "Sector is required"),
-    description: z.string().min(1, "A short description is required"),
-    rewardAmount: z
-        .number({ invalid_type_error: "Reward amount is required" })
-        .min(0, "Reward cannot be negative"),
-    details: z.object({
-        about: z.string().min(1, "About section is required"),
-        scope: z.array(z.object({ value: z.string().min(1, "Scope item cannot be empty") })).min(1, "At least one scope item is required"),
-        lookingFor: z.string().min(1, "This field is required"),
-        benefits: z.array(z.object({ value: z.string().min(1, "Benefit cannot be empty") })).min(1, "At least one benefit is required"),
-        contact: z.object({
-            name: z.string().min(1, "Contact name is required"),
-            title: z.string().min(1, "Contact title is required"),
-        }),
-    }),
+    short_description: z.string().min(1, "A short description is required")
 });
 
 // Add the new challengeType field to your Zod schema
@@ -98,20 +84,8 @@ const statusIcons: { [key: string]: React.ReactNode } = {
 
 const emptyProfile: ProfileFormValues = {
     name: "",
-    title: "",
     sector: "",
-    description: "",
-    rewardAmount: 0,
-    details: {
-        about: "",
-        scope: [],
-        lookingFor: "",
-        benefits: [],
-        contact: {
-            name: "",
-            title: "",
-        },
-    },
+    short_description: "",
 };
 
 interface MsmeDashboardViewProps {
@@ -191,7 +165,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
     });
 
     const { fields: scopeFields, append: appendScope, remove: removeScope } = useFieldArray({
-        control: profileForm.control, name: "details.scope"
+        control: collaborationForm.control, name: "scope"
     });
 
     async function onCollaborationSubmit(data: any) {
@@ -248,23 +222,11 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
     async function onProfileSubmit(data: ProfileFormValues) {
         const token = localStorage.getItem('token');
         const profileData = {
-            company_name: data.name,
-            sector: data.sector,
-            description: data.description,
-            about: data.details.about,
-            looking_for: data.details.lookingFor,
-            reward_amount: data.rewardAmount || 0,
-            scopes: data.details.scope.map(item => item.value),
-            benefits: data.details.benefits.map(item => item.value),
-            contact: {
-                name: data.details.contact.name,
-                title: data.details.contact.title
-            }
+            ...data
         };
 
-
         try {
-            const response = await fetch(`${API_BASE_URL}/api/msme-profile1`, {
+            const response = await fetch(`${API_BASE_URL}/api/msme-profiles`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -375,7 +337,6 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                     });
                 }
             } catch (err: any) {
-
                 setMySubmissions([]);
                 toast({
                     title: "Error occurred",
@@ -391,6 +352,32 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
         }
     }, [activeTab, toast]);
 
+    const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
+
+    useEffect(() => {
+        const checkProfile = async () => {
+            const token = localStorage.getItem("token");
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/isProfileSubmitted`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                setIsProfileSubmitted(data.status === "submitted")
+            } catch (err: any) {
+                toast({
+                    title: "Network error",
+                    description: err.message || "Please try again later.",
+                    variant: "destructive"
+                });
+            }
+        };
+        checkProfile();
+    }, [toast]);
+
+    const [open, setOpen] = useState(false);
+
 
     return (
         <>
@@ -402,8 +389,8 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                 <DialogTitle className="text-3xl font-bold text-center  font-headline">Join as an MSME</DialogTitle>
                                 <DialogDescription className="text-center">
                                     <span className="text-accent">{"Your business, your potential."}</span><br />
-                                    Browse technology profiles from various organizations seeking collaboration. 
-        
+                                    Browse technology profiles from various organizations seeking collaboration.
+
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="h-[90vh] flex flex-col justify-center items-center">
@@ -412,13 +399,13 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                         </>
 
                     ) : !isMsmerole ? (
-                         <>
+                        <>
                             <DialogHeader className="p-6 m-auto flex items-center">
                                 <DialogTitle className="text-3xl font-bold font-headline">Join as an MSME</DialogTitle>
                                 <DialogDescription className="text-center">
                                     <span className="text-accent">{"Your business, your potential."}</span><br />
-                                    Browse technology profiles from various organizations seeking collaboration. 
-        
+                                    Browse technology profiles from various organizations seeking collaboration.
+
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="h-screen flex flex-col justify-center items-center">
@@ -499,13 +486,14 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                             )}
                                         </TabsContent>
                                         <TabsContent value="profile" className="mt-0">
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/50 backdrop-blur-sm border-border/50`}>
                                                 <CardHeader>
                                                     <CardTitle>Create MSME Profile</CardTitle>
                                                     <CardDescription>
                                                         This information will be publicly visible to potential collaborators.
                                                     </CardDescription>
                                                 </CardHeader>
+
                                                 <CardContent>
                                                     <Form {...profileForm}>
                                                         <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
@@ -537,7 +525,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                             />
                                                             <FormField
                                                                 control={profileForm.control}
-                                                                name="description"
+                                                                name="short_description"
                                                                 render={({ field }) => (
                                                                     <FormItem>
                                                                         <FormLabel>Short Description</FormLabel>
@@ -549,10 +537,40 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                                 )}
                                                             />
 
-                                                            <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-                                                                {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                                Save Basic Info
-                                                            </Button>
+
+                                                            <Dialog open={open} onOpenChange={setOpen}>
+                                                                <DialogTrigger asChild>
+                                                                    <Button>Save Profile</Button>
+                                                                </DialogTrigger>
+
+                                                                <DialogContent>
+                                                                    <DialogHeader>
+                                                                        <DialogTitle>Confirm Submission</DialogTitle>
+                                                                        <DialogDescription>
+                                                                            Are you sure you want to submit your profile? You can only submit once.
+                                                                        </DialogDescription>
+                                                                    </DialogHeader>
+
+                                                                    <DialogFooter className="flex justify-end gap-2">
+                                                                        <Button variant="outline" onClick={() => setOpen(false)}>
+                                                                            Cancel
+                                                                        </Button>
+                                                                        <Button
+                                                                            onClick={() => {
+                                                                                profileForm.handleSubmit(onProfileSubmit)();
+                                                                                setIsProfileSubmitted(true)
+                                                                                setOpen(false); // close dialog after submission
+                                                                            }}
+                                                                            disabled={profileForm.formState.isSubmitting}
+                                                                        >
+                                                                            {profileForm.formState.isSubmitting && (
+                                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                            )}
+                                                                            Confirm
+                                                                        </Button>
+                                                                    </DialogFooter>
+                                                                </DialogContent>
+                                                            </Dialog>
                                                         </form>
                                                     </Form>
                                                 </CardContent>
@@ -606,7 +624,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                                 name="lookingFor"
                                                                 render={({ field }) => (
                                                                     <FormItem>
-                                                                        <FormLabel>{"What you're looking fo"}r</FormLabel>
+                                                                        <FormLabel>{"What you're looking for"}</FormLabel>
                                                                         <FormControl>
                                                                             <Textarea rows={3} placeholder="Describe the ideal partner or solution" {...field} />
                                                                         </FormControl>

@@ -123,8 +123,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const firebaseUser = userCredential.user;
-      await firebaseUser.reload();
-
+     
       if (!firebaseUser.emailVerified) {
         await handleResendVerification(values.email);
         toast({
