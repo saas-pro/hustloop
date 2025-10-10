@@ -467,7 +467,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const handleExportAigniteCSV = async () => {
         try {
             // Fetch all registrations from backend
-            const token = localStorage.getItem("accessToken"); // if protected
+            const token = localStorage.getItem("token"); 
             const res = await fetch(`${API_BASE_URL}/api/get-aignite?all=true`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
