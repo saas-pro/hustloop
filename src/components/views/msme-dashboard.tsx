@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -392,7 +392,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
         }
     }, [selectedCollaborationToEdit, collaborationForm]);
 
-    async function getUsersCollaboration() {
+    const getUsersCollaboration = useCallback(async () => {
         const token = localStorage.getItem('token');
         if (!token) {
             toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
@@ -408,34 +408,34 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
             });
 
             const result = await response.json();
-            setGetUserCollaborationData(result.collaborations)
-            if (!(response.ok)) {
+            setGetUserCollaborationData(result.collaborations);
+
+            if (!response.ok) {
                 toast({ variant: 'destructive', title: 'Update Failed', description: result.error || 'An unknown error occurred.' });
             }
         } catch (error) {
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
         }
-    }
+    }, [setGetUserCollaborationData, toast]);
 
     useEffect(() => {
         const checkProfile = async () => {
             const token = localStorage.getItem("token");
             try {
                 const response = await fetch(`${API_BASE_URL}/api/isProfileSubmitted`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 const data = await response.json();
-                setIsProfileSubmitted(data.status === "submitted")
+                setIsProfileSubmitted(data.status === "submitted");
             } catch (err) {
                 console.error("Network error:", err);
             }
+
+            await getUsersCollaboration(); // call after profile check
         };
+
         checkProfile();
-        getUsersCollaboration();
-    });
+    }, [getUsersCollaboration]);
 
 
 
