@@ -248,6 +248,7 @@ const SolutionCard = ({ solutionSteps }: SolutionCardsProps) => {
             );
           })}
         </div>
+        
       </div>
     </section>
   );
