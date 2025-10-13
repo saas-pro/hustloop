@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { useForm, useFieldArray, SubmitHandler } from "react-hook-form";
+import { useCallback, useEffect, useState } from "react";
+import { useForm, useFieldArray, SubmitHandler, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -24,6 +24,7 @@ import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
 import Script from "next/script";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { format, addDays } from "date-fns";
 
 
 
@@ -44,21 +45,26 @@ const profileFormSchema = z.object({
 const collaborationSchema = z.object({
     title: z.string().min(3, { message: "Title is required." }),
     description: z.string().min(10, { message: "Description is required." }),
-    lookingFor: z.string().min(10, { message: "What you are looking for is required." }),
+    lookingFor: z.string().min(1, { message: "What you are looking for is required." }),
     rewardAmount: z.number().min(0, { message: "Reward amount cannot be negative." }).default(0),
-    scope: z.array(
-        z.object({ value: z.string().min(2, { message: "Scope cannot be empty." }) })
-    ),
+    scope: z.array(z.object({ value: z.string().min(2, { message: "Scope cannot be empty." }) })),
     contact: z.object({
         name: z.string().min(2, { message: "Contact name is required." }),
         role: z.string().min(2, { message: "Contact role is required." }),
     }),
     challengeType: z.enum(["corporate", "msme", "government"], {
-        message: "You must select a challenge type.",
+        errorMap: () => ({ message: "Please select a challenge type." }),
     }),
+    durationInDays: z
+        .preprocess(
+            (val) => (val === "" ? null : Number(val)),
+            z.number().min(1, { message: "Duration must be at least 1 day." }).nullable()
+        )
+        .optional(),
+    dueDate: z.date().optional(),
 });
 
-
+type collaborationFormValues = z.infer<typeof collaborationSchema>;
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
@@ -72,6 +78,21 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 // Sample Data for Submissions
 const initialSubmissionsData: Submission[] = [];
+
+interface getUsersCollaborationSchema {
+    id: number;
+    title: string;
+    description: string;
+    looking_for: string;
+    reward_amount: number | string;
+    challenge_type: "corporate" | "msme" | "government";
+    duration_in_days: number;
+    stage: string;
+    contact_name: string;
+    contact_role: string;
+    scope: string[];
+    created_at: Date;
+}
 
 // Status Icons
 const statusIcons: { [key: string]: React.ReactNode } = {
@@ -97,7 +118,6 @@ interface MsmeDashboardViewProps {
     authProvider: AuthProvider;
     setActiveView: (view: View) => void;
 }
-
 
 
 const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: View) => void, contentType: string }) => (
@@ -139,22 +159,36 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
         defaultValues: emptyProfile,
     });
 
-    const collaborationForm = useForm({
+    const collaborationForm = useForm<collaborationFormValues>({
         resolver: zodResolver(collaborationSchema),
         defaultValues: {
-            title: '',
-            description: '',
-            lookingFor: '',
+            title: "",
+            description: "",
+            lookingFor: "",
             rewardAmount: 0,
-            scope: [{ value: '' }],
-            contact: {
-                name: '',
-                role: '',
-            },
-            challengeType: 'corporate',
+            scope: [{ value: "" }],
+            contact: { name: "", role: "" },
+            challengeType: "corporate",
+            durationInDays: 0,
+            dueDate: new Date(),
         },
     });
 
+    const durationInDays = useWatch({
+        control: collaborationForm.control,
+        name: "durationInDays",
+    });
+
+    const [dueDate, setDueDate] = useState<Date | null>(null);
+
+    useEffect(() => {
+        if (durationInDays && durationInDays > 0) {
+            const calculatedDate = addDays(new Date(), durationInDays);
+            setDueDate(calculatedDate);
+        } else {
+            setDueDate(null);
+        }
+    }, [durationInDays]);
 
     const settingsForm = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
@@ -167,64 +201,17 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
     const { fields: scopeFields, append: appendScope, remove: removeScope } = useFieldArray({
         control: collaborationForm.control, name: "scope"
     });
+    const [getUsersCollaborationData, setGetUserCollaborationData] = useState<getUsersCollaborationSchema[]>([]);
 
-    async function onCollaborationSubmit(data: any) {
-        const token = localStorage.getItem('token');
-
-        // Transform form data for backend
-        const collaborationData = {
-            title: data.title,
-            description: data.description,
-            looking_for: data.lookingFor,
-            reward_amount: data.rewardAmount || 0,
-            challenge_type: data.challengeType,  // single selection
-            scopes: data.scope.map((item: { value: string }) => item.value),
-            contact: {
-                name: data.contact.name,
-                role: data.contact.role,
-            },
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/msme-collaboration`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
-                },
-                body: JSON.stringify(collaborationData),
-            });
-
-            if (response.ok) {
-                toast({
-                    title: "Collaboration Info Saved",
-                    description: "Your collaboration details have been saved successfully.",
-                });
-            } else {
-                const errorData = await response.json();
-                toast({
-                    variant: "destructive",
-                    title: "Failed to save collaboration",
-                    description: errorData.error || "An unknown error occurred.",
-                });
-            }
-        } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Network Error",
-                description: "Could not save collaboration info. Please try again later.",
-            });
-        }
-    }
-
-
+    const [isEditingCollaboration, setIsEditingCollaboration] = useState(false);
+    const [currentEditingCollaborationId, setCurrentEditingCollaborationId] = useState<number | null>(null);
+    const [selectedCollaborationToEdit, setSelectedCollaborationToEdit] = useState<getUsersCollaborationSchema | null>(null);
 
     async function onProfileSubmit(data: ProfileFormValues) {
         const token = localStorage.getItem('token');
         const profileData = {
             ...data
         };
-
         try {
             const response = await fetch(`${API_BASE_URL}/api/msme-profiles`, {
                 method: 'POST',
@@ -257,6 +244,8 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
         }
     }
 
+
+
     async function onSettingsSubmit(data: SettingsFormValues) {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -287,6 +276,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
         }
     }
 
+    // Submission handling
     const handleStatusChange = (id: number, status: string) => {
         setSubmissions(subs => subs.map(s => s.id === id ? { ...s, status: status as Submission['status'] } : s));
     };
@@ -300,83 +290,238 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
         setSelectedSubmission(updatedSubmissions.find(s => s.id === submissionId) || null);
     };
 
-
+    // Overview Stats
     const overviewStats = {
         new: submissions.filter(s => s.status === 'New').length,
         review: submissions.filter(s => s.status === 'Under Review').length,
         valid: submissions.filter(s => s.status === 'Valid').length,
     };
-    const [mySubmissions, setMySubmissions] = useState<ProfileFormValues[]>([]);
-    const [loading, setLoading] = useState(false);
-
-
-    useEffect(() => {
-        const fetchMySubmissions = async () => {
-            setLoading(true);
-
-            try {
-
-                const token = localStorage.getItem("token");
-                const res = await fetch(`${API_BASE_URL}/api/msme-details`, {
-                    headers: {
-                        Authorization: `Bearer ${token || ""}`,
-                    },
-                });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    setMySubmissions(data.profiles);
-
-                } else {
-                    setMySubmissions([]);
-                    toast({
-                        title: "Failed to load submissions",
-                        description: data.error || "Please try again later.",
-                        variant: "destructive",
-                    });
-                }
-            } catch (err: any) {
-                setMySubmissions([]);
-                toast({
-                    title: "Error occurred",
-                    description: err.message || "Unable to fetch submissions.",
-                    variant: "destructive",
-                });
-            } finally {
-                setLoading(false);
-            }
-        };
-        if (activeTab === "submissions") {
-            fetchMySubmissions();
-        }
-    }, [activeTab, toast]);
 
     const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
+
+
+    async function onCollaborationSubmit(data: collaborationFormValues) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+
+        const collaborationData = {
+            title: data.title,
+            description: data.description,
+            looking_for: data.lookingFor,
+            reward_amount: data.rewardAmount || 0,
+            challenge_type: data.challengeType,
+            scopes: data.scope.map((item: { value: string }) => item.value),
+            contact_name: data.contact.name,
+            contact_role: data.contact.role,
+            durationInDays: data.durationInDays,
+            dueDate: data.dueDate,
+        };
+
+
+        let url = `${API_BASE_URL}/api/collaborations`;
+        let method = "POST";
+
+        if (isEditingCollaboration && currentEditingCollaborationId) {
+            url = `${API_BASE_URL}/api/collaborations/${currentEditingCollaborationId}`; // Assuming an update endpoint like /api/collaborations/:id
+            method = "PUT"; // Or 'PATCH' depending on your backend
+        }
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify(collaborationData),
+            });
+
+            if (response.ok) {
+                toast({
+                    title: isEditingCollaboration ? "Collaboration Updated" : "Collaboration Info Saved",
+                    description: isEditingCollaboration ? "Your collaboration details have been updated successfully." : "Your collaboration details have been saved successfully.",
+                });
+                // After successful submission, reset form and editing state
+                getUsersCollaboration()
+                collaborationForm.reset({
+                    title: "",
+                    description: "",
+                    lookingFor: "",
+                    rewardAmount: 0,
+                    scope: [{ value: "" }],
+                    challengeType: "corporate",
+                    durationInDays: 0,
+                    contact: {
+                        name: "",
+                        role: ""
+                    },
+                });
+                setIsEditingCollaboration(false);
+                setCurrentEditingCollaborationId(null);
+                setSelectedCollaborationToEdit(null);
+            } else {
+                const errorData = await response.json();
+                toast({
+                    variant: "destructive",
+                    title: `Failed to ${isEditingCollaboration ? "update" : "save"} collaboration`,
+                    description: errorData.error || "An unknown error occurred.",
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Network Error",
+                description: `Could not ${isEditingCollaboration ? "update" : "save"} collaboration info. Please try again later.`,
+            });
+        }
+    }
+
+    useEffect(() => {
+        if (selectedCollaborationToEdit) {
+
+            // Prepare the scope array for react-hook-form
+            const formattedScope = selectedCollaborationToEdit.scope.map(s => ({ value: s }));
+
+            // Ensure durationInDays is a number or null/undefined for the input
+            const duration = selectedCollaborationToEdit.duration_in_days > 0 ? selectedCollaborationToEdit.duration_in_days : undefined;
+
+            // Calculate dueDate if duration is available
+            const calculatedDueDate = duration ? addDays(new Date(selectedCollaborationToEdit.created_at), duration) : undefined;
+
+
+            collaborationForm.reset({
+                title: selectedCollaborationToEdit.title,
+                description: selectedCollaborationToEdit.description,
+                lookingFor: selectedCollaborationToEdit.looking_for,
+                rewardAmount: Number(selectedCollaborationToEdit.reward_amount),
+                scope: formattedScope.length > 0 ? formattedScope : [{ value: '' }], // Ensure at least one empty scope field if none exist
+                contact: {
+                    name: selectedCollaborationToEdit.contact_name,
+                    role: selectedCollaborationToEdit.contact_role,
+                },
+                challengeType: selectedCollaborationToEdit.challenge_type,
+                durationInDays: duration,
+                dueDate: calculatedDueDate,
+            });
+            setDueDate(calculatedDueDate || null);// Also update the local dueDate state
+        } else {
+            // If no collaboration is selected for edit, reset to default new collaboration values
+            collaborationForm.reset({
+                title: "",
+                description: "",
+                lookingFor: "",
+                rewardAmount: 0,
+                scope: [{ value: "" }],
+                challengeType: "corporate",
+                durationInDays: 0,
+                contact: {
+                    name: "",
+                    role: ""
+                },
+                dueDate: undefined,
+            });
+            setDueDate(null);
+        }
+    }, [selectedCollaborationToEdit, collaborationForm]);
+
+    const getUsersCollaboration = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/get-users-collaboration`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const result = await response.json();
+            setGetUserCollaborationData(result.collaborations);
+
+
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
+        }
+    }, [setGetUserCollaborationData, toast]);
 
     useEffect(() => {
         const checkProfile = async () => {
             const token = localStorage.getItem("token");
             try {
                 const response = await fetch(`${API_BASE_URL}/api/isProfileSubmitted`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
-                setIsProfileSubmitted(data.status === "submitted")
-            } catch (err: any) {
-                toast({
-                    title: "Network error",
-                    description: err.message || "Please try again later.",
-                    variant: "destructive"
-                });
+                setIsProfileSubmitted(data.status === "submitted");
+            } catch (err) {
+                console.error("Network error:", err);
             }
+
+            await getUsersCollaboration();
         };
+
         checkProfile();
-    }, [toast]);
+    }, [getUsersCollaboration]);
 
     const [open, setOpen] = useState(false);
+
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [collaborationToDeleteId, setCollaborationToDeleteId] = useState<number | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    async function onDeleteCollaboration() {
+        if (!collaborationToDeleteId) return;
+
+        setIsDeleting(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            setIsDeleting(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/collaborations/${collaborationToDeleteId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (response.ok) {
+                toast({
+                    title: "Collaboration Deleted",
+                    description: "The collaboration has been successfully removed.",
+                });
+                // Update the UI by removing the deleted item from the state
+                setGetUserCollaborationData(prev => prev.filter(collab => collab.id !== collaborationToDeleteId));
+                setIsDeleteDialogOpen(false);
+                setCollaborationToDeleteId(null);
+            } else {
+                const errorData = await response.json();
+                toast({
+                    variant: "destructive",
+                    title: "Failed to delete collaboration",
+                    description: errorData.error || "An unknown error occurred.",
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Network Error",
+                description: "Could not delete collaboration. Please try again later.",
+            });
+        } finally {
+            setIsDeleting(false);
+        }
+    }
 
 
     return (
@@ -420,9 +565,10 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                             </DialogHeader>
                             <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                                 <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as MsmeDashboardTab)} className="flex flex-col flex-grow min-h-0">
-                                    <TabsList className="grid w-full grid-cols-4">
+                                    <TabsList className="grid w-full grid-cols-5">
                                         <TabsTrigger value="overview" onClick={() => setActiveTab("overview")}><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
                                         <TabsTrigger value="submissions" onClick={() => setActiveTab("submissions")}><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
+                                        <TabsTrigger value="engagement"><FileText className="mr-2 h-4 w-4" /> Engagement</TabsTrigger>
                                         <TabsTrigger value="profile" onClick={() => setActiveTab("profile")}><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
                                         <TabsTrigger value="settings" onClick={() => setActiveTab("settings")}><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
                                     </TabsList>
@@ -485,6 +631,55 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                 </Card>
                                             )}
                                         </TabsContent>
+                                        <TabsContent value="engagement" className="mt-0 space-y-4">
+                                            {getUsersCollaborationData?.length > 0 ? getUsersCollaborationData.map((sub) => (
+                                                <Card key={sub.id} className="bg-card/50 backdrop-blur-sm border-border/50"> {/* Removed onClick from Card */}
+                                                    <CardHeader>
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <CardTitle className="text-lg">{sub.title}</CardTitle>
+                                                                <CardDescription>Submitted by {sub.contact_name}</CardDescription>
+                                                            </div>
+                                                            <div>
+                                                                {/* The new "Edit" button */}
+                                                                <Button
+                                                                    variant="ghost" // Make it look like a link or a subtle button
+                                                                    size="sm"
+                                                                    onClick={() => {
+                                                                        setSelectedCollaborationToEdit(sub); // Store the collaboration data
+                                                                        setIsEditingCollaboration(true); // Set edit mode to true
+                                                                        setCurrentEditingCollaborationId(sub.id); // Store the ID for the update API call
+                                                                        setActiveTab("profile"); // Switch to profile tab
+                                                                    }}
+                                                                >
+                                                                    Edit
+                                                                </Button>
+                                                                <Button
+                                                                    variant="destructive" // Use destructive variant for delete
+                                                                    size="sm"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation(); // Prevent card's onClick from firing if it exists
+                                                                        setCollaborationToDeleteId(sub.id);
+                                                                        setIsDeleteDialogOpen(true); // Open the delete confirmation dialog
+                                                                    }}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                    <span className="ml-2">Delete</span>
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardFooter>
+                                                        <p className="text-sm text-muted-foreground">Submitted on {new Date(sub.created_at).toLocaleString()}</p>
+                                                    </CardFooter>
+                                                </Card>
+                                            )) : (
+                                                <Card className="text-center text-muted-foreground py-16">
+                                                    <CardContent>You have not submit any Collaboration.</CardContent>
+                                                </Card>
+                                            )}
+                                        </TabsContent>
+
                                         <TabsContent value="profile" className="mt-0">
                                             <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/50 backdrop-blur-sm border-border/50`}>
                                                 <CardHeader>
@@ -661,7 +856,6 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                                 )}
                                                             />
 
-                                                            {/* Scope of Requirement */}
                                                             <h4 className="text-md font-medium mb-2">Scope of Requirement</h4>
                                                             {scopeFields.map((field, index) => (
                                                                 <div key={field.id} className="flex items-center gap-2 mb-2">
@@ -698,6 +892,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                                             <RadioGroup
                                                                                 onValueChange={field.onChange}
                                                                                 defaultValue={field.value}
+                                                                                value={field.value}
                                                                                 className="flex gap-5"
                                                                             >
                                                                                 <FormItem className="flex items-center space-x-3 space-y-0">
@@ -724,6 +919,38 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                                     </FormItem>
                                                                 )}
                                                             />
+                                                            <FormField
+                                                                control={collaborationForm.control}
+                                                                name="durationInDays"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>Duration (in days)</FormLabel>
+                                                                        <FormControl>
+                                                                            <Input
+                                                                                type="number"
+                                                                                placeholder="e.g., 30"
+                                                                                {...field}
+                                                                                min={1}
+                                                                                value={field.value ?? undefined}
+                                                                                onChange={(e) => {
+                                                                                    const value = e.target.value;
+                                                                                    field.onChange(value === "" ? "" : Math.max(1, Number(value)));
+                                                                                }}
+                                                                            />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+
+                                                            {/* 💡 Display the calculated due date */}
+                                                            {dueDate && (
+                                                                <div>
+                                                                    <FormLabel>Due Date</FormLabel>
+                                                                    <p className="text-muted-foreground text-sm">{format(dueDate, "PPP")}</p>
+                                                                </div>
+                                                            )}
+
 
                                                             <Separator className="my-4" />
 
@@ -745,7 +972,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                                 />
                                                                 <FormField
                                                                     control={collaborationForm.control}
-                                                                    name="title"
+                                                                    name="contact.role"
                                                                     render={({ field }) => (
                                                                         <FormItem>
                                                                             <FormLabel>Role</FormLabel>
@@ -760,7 +987,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
 
                                                             <Button type="submit" disabled={collaborationForm.formState.isSubmitting}>
                                                                 {collaborationForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                                Save Collaboration Info
+                                                                {isEditingCollaboration ? "Update Collaboration" : "Save Collaboration Info"}
                                                             </Button>
                                                         </form>
                                                     </Form>

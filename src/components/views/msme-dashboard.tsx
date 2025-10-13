@@ -267,6 +267,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
 
     const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
 
+
     async function onCollaborationSubmit(data: collaborationFormValues) {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -491,8 +492,6 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
             setIsDeleting(false);
         }
     }
-
-
 
     return (
         <>

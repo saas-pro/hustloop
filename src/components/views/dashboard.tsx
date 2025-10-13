@@ -450,7 +450,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         } finally {
             setIsLoadingFormUsers(false);
         }
-    }, [perPage,toast]);
+    }, [perPage, toast]);
 
     const onPageChange = (page: number) => {
         fetchRegistrations(page)
@@ -467,7 +467,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const handleExportAigniteCSV = async () => {
         try {
             // Fetch all registrations from backend
-            const token = localStorage.getItem("token"); 
+            const token = localStorage.getItem("token");
             const res = await fetch(`${API_BASE_URL}/api/get-aignite?all=true`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -530,8 +530,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             });
         }
     };
-
-
 
 
     useEffect(() => {
