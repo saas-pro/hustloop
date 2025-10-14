@@ -30,7 +30,7 @@ import HanddrawnUnderline from "@/components/ui/handdrawn-underline";
 import Lenis from '@studio-freight/lenis'
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
-import { steps, useScroll } from 'framer-motion';
+import PricingData from '../BillingCard/billing-card';
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters."),
@@ -592,7 +592,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
       </div>
 
       {/* Start Your Journey Section with native scroll-based zoom */}
-      <div>
+      <div className='bg-background'>
         <section ref={journeyRef} className="relative py-14 z-10 w-screen flex cursor-default bg-background rounded-t-2xl" id='second-section'>
 
           <div className="journey-panel container m-auto flex justify-center items-center flex-col" ref={journeyPanelRef}>
@@ -755,95 +755,8 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
 
         <SolutionCard solutionSteps={solutionSteps}></SolutionCard>
 
+        <PricingData />
 
-        <section className="relative py-16 md:py-20 bg-background">
-
-          <div className="reskin-marquee mt-6 mb-6 md:mt-6 md:mb-6 w-screen relative left-1/2 right-1/2 -translate-x-1/2 px-0 overflow-x-hidden">
-            <div className="reskin-marquee-holder flex flex-col gap-0">
-              {/* Row 1 */}
-              <div
-                className="reskin-marquee-content relative w-full overflow-hidden h-16"
-                onMouseEnter={() => setPausedRow1(true)}
-                onMouseLeave={() => setPausedRow1(false)}
-              >
-                <ul className={cn("reskin-marquee-list flex animate-marquee space-x-4 w-max items-center h-16", isPausedRow1 && "paused")}>
-                  {[...Array(6)].flatMap(() => marqueeTabsRow1).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 hover:bg-muted transition-colors rounded-full px-4 py-3 text-sm text-muted-foreground hover:text-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <ul className={cn("reskin-marquee-list flex animate-marquee space-x-4 w-max items-center h-16 absolute left-0 top-0 pointer-events-none", isPausedRow1 && "paused")} aria-hidden="true">
-                  {[...Array(6)].flatMap(() => marqueeTabsRow1).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 rounded-full px-4 py-3 text-sm text-muted-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {/* Row 2 */}
-              <div
-                className="reskin-marquee-content relative w-full overflow-hidden h-16"
-                onMouseEnter={() => setPausedRow2(true)}
-                onMouseLeave={() => setPausedRow2(false)}
-              >
-                <ul className={cn("reskin-marquee-list flex animate-marquee-reverse space-x-4 w-max items-center h-16", isPausedRow2 && "paused")}>
-                  {[...Array(6)].flatMap(() => marqueeTabsRow2).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 hover:bg-muted transition-colors rounded-full px-4 py-3 text-sm text-muted-foreground hover:text-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <ul className={cn("reskin-marquee-list flex animate-marquee-reverse space-x-4 w-max items-center h-16 absolute left-0 top-0 pointer-events-none", isPausedRow2 && "paused")} aria-hidden="true">
-                  {[...Array(6)].flatMap(() => marqueeTabsRow2).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 rounded-full px-4 py-3 text-sm text-muted-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {/* Row 3 */}
-              <div
-                className="reskin-marquee-content relative w-full overflow-hidden h-16"
-                onMouseEnter={() => setPausedRow3(true)}
-                onMouseLeave={() => setPausedRow3(false)}
-              >
-                <ul className={cn("reskin-marquee-list flex animate-marquee space-x-4 w-max items-center h-16", isPausedRow3 && "paused")}>
-                  {[...Array(6)].flatMap(() => marqueeTabsRow3).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 hover:bg-muted transition-colors rounded-full px-4 py-3 text-sm text-muted-foreground hover:text-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <ul className={cn("reskin-marquee-list flex animate-marquee space-x-4 w-max items-center h-16 absolute left-0 top-0 pointer-events-none", isPausedRow3 && "paused")} aria-hidden="true">
-                  {[...Array(6)].flatMap(() => marqueeTabsRow3).map((tab, idx) => (
-                    <li key={idx} className="reskin-marquee-item flex-shrink-0">
-                      <span className="reskin-marquee-text flex items-center gap-2 bg-muted/50 rounded-full px-4 py-3 text-sm text-muted-foreground">
-                        {tab.icon}
-                        {tab.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
 
 
         {/* Why Choose Hustloop Section */}

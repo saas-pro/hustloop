@@ -9,14 +9,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const plans = [
   {
-    name: "Basic",
-    price: "₹999",
+    name: "Free",
+    price: "₹0",
     period: "/month",
     description: "For individuals getting started.",
     features: [
-      "Access to all incubators",
-      "Submit 1 idea to Incubators",
-      "30 days duration",
+      "Ip List",
       "Basic support",
     ],
     cta: "Get Started",
@@ -24,9 +22,9 @@ const plans = [
     note: "Payment integration coming soon. You will be notified before your plan ends."
   },
   {
-    name: "Pro",
+    name: "",
     tag: "Popular",
-    price: "₹1999",
+    price: "₹999",
     period: "/month",
     description: "For growing teams that need more access and support.",
     features: [

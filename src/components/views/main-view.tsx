@@ -56,7 +56,7 @@ type User = {
 type AuthProvider = 'local' | 'google';
 
 // Version for localStorage data
-const LOCAL_STORAGE_VERSION = '1.1'; // bump to invalidate old data
+const LOCAL_STORAGE_VERSION = '1.2'; // bump to invalidate old data
 
 function safeParse<T>(value: string | null, fallback: T, key?: string, validate: (obj: any) => boolean = () => true): T {
   try {
