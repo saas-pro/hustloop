@@ -8,53 +8,50 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const plans = [
-  {
-    name: "Free",
-    price: "₹0",
-    period: "/month",
-    description: "For individuals getting started.",
-    features: [
-      "Ip List",
-      "Basic support",
-    ],
-    cta: "Get Started",
-    primary: false,
-    note: "Payment integration coming soon. You will be notified before your plan ends."
-  },
-  {
-    name: "",
-    tag: "Popular",
-    price: "₹999",
-    period: "/month",
-    description: "For growing teams that need more access and support.",
-    features: [
-      "Access to all incubators",
-      "Submit up to 2 ideas to incubators and 1 to MSME",
-      "45 days duration",
-      "Priority support",
-      "Basic analytics",
-    ],
-    cta: "Get Started",
-    primary: true,
-    note: "Payment integration coming soon. You will be notified before your plan ends."
-  },
-  {
-    name: "Premium",
-    price: "₹2999",
-    period: "/month",
-    description: "For established businesses and enterprises.",
-    features: [
-      "Access to all incubators",
-      "Submit up to 3 ideas to incubators and 2 to MSME",
-      "60 days duration",
-      "24/7 priority support",
-      "Advanced analytics",
-      "Custom reports"
-    ],
-    cta: "Get Started",
-    primary: false,
-    note: "Payment integration coming soon. You will be notified before your plan ends."
-  },
+    {
+        name: "Free",
+        price: "₹0",
+        period: "/month",
+        description: "For individuals getting started.",
+        features: [
+            "Technology/ IP (Intellectual Property)",
+            "Basic support"
+        ],
+        cta: "Get Started",
+        primary: false,
+        note: "Payment integration coming soon. You will be notified before your plan ends."
+    },
+    {
+        name: "Standard",
+        price: "₹999",
+        period: "/month",
+        description: "For growing teams that need more access and support.",
+        features: [
+            "Access to all incubators",
+            "Submit 1 Idea to Incubator",
+            "45 Days Duration",
+            "Priority Support"
+        ],
+        cta: "Get Started",
+        primary: false,
+        note: "Payment integration coming soon. You will be notified before your plan ends."
+    },
+    {
+        name: "Premium",
+        tag: "Popular",
+        price: "₹2999",
+        period: "/month",
+        description: "For established businesses and enterprises.",
+        features: [
+            "Browse Challenges",
+            "Submit 1 solution to MSME",
+            "60 days duration",
+            "24/7 priority support"
+        ],
+        cta: "Get Started",
+        primary: true,
+        note: "Payment integration coming soon. You will be notified before your plan ends."
+    },
 ];
 
 interface PricingViewProps {
