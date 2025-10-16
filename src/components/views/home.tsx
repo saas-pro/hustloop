@@ -261,6 +261,29 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
     }
   ];
 
+
+  useEffect(() => {
+    const hero = document.getElementById("hero-sentinel") as HTMLElement | null;
+    const video = hero?.querySelector("video") as HTMLVideoElement | null;
+
+    if (!hero || !video) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        video.style.opacity = entry.isIntersecting ? "1" : "0";
+        video.style.transition = "opacity 0.5s ease";
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(hero);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+
   return (
     <section
       className={`hidden-scroll h-screen overflow-hidden relative bg-background w-full`}
@@ -280,7 +303,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       </video>
 
       {/* Overlay */}
-      <div className="hidden absolute inset-0 bg-black/40 md:bg-black/30 z-10 md:block"></div>
+      <div className="hidden absolute inset-0 md:bg-black/40 z-10 md:block"></div>
 
       {/* Logo */}
       <BrandLogo />
