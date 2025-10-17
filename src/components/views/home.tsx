@@ -273,7 +273,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         video.style.opacity = entry.isIntersecting ? "1" : "0";
         video.style.transition = "opacity 0.5s ease";
       },
-      { threshold: 0.5 }
+      { threshold: 0.5 } // adjust when the effect triggers
     );
 
     observer.observe(hero);
@@ -286,10 +286,10 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
 
   return (
     <section
-      className={`hidden-scroll h-screen overflow-hidden relative bg-background w-full`}
+      className={`hidden-scroll h-screen relative bg-background w-full`}
       id="hero"
     >
-      {/* Background Video */}
+
       <video
         autoPlay
         loop
@@ -605,7 +605,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
         }`}
     >
       {/* Hero Section */}
-      <section id="hero-section" className="h-screen md:min-h-screen sticky top-0">
+      <section id="hero-section" className={`h-screen md:min-h-screen sticky top-0 ${navOpen ? 'relative' : 'sticky top-0'}`}>
         <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
       </section>
 
@@ -615,7 +615,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
       </div>
 
       {/* Start Your Journey Section with native scroll-based zoom */}
-      <div className='bg-background'>
+      <div className='bg-background relative'>
         <section ref={journeyRef} className="relative py-14 z-10 w-screen flex cursor-default bg-background rounded-t-2xl" id='second-section'>
 
           <div className="journey-panel container m-auto flex justify-center items-center flex-col" ref={journeyPanelRef}>
@@ -777,12 +777,10 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
 
 
         <SolutionCard solutionSteps={solutionSteps}></SolutionCard>
-
         <PricingData />
 
 
 
-        {/* Why Choose Hustloop Section */}
         <section className="relative py-16 md:py-20 bg-background">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-4xl font-bold mb-4 relative font-headline flex items-center justify-center gap-1 text-center flex-wrap">

@@ -9,7 +9,7 @@ import plans from "../static_price";
 
 export default function PricingAccordion() {
     return (
-        <div className="flex flex-col items-center p-8 relative bg-background">
+        <div className="flex flex-col items-center relative py-16 md:py-20 bg-background">
             <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold font-headline">Our Pricing</h1>
                 <p className="text-muted-foreground max-w-xl mx-auto mt-2">

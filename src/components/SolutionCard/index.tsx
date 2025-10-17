@@ -35,7 +35,7 @@ const SolutionCard = ({ solutionSteps }: SolutionCardsProps) => {
   const headingOpacity = useTransform(scrollYProgress, [0.4, 0.5], [1, 0]); // Fade it out
 
   return (
-    <section className="relative py-16 md:py-20 bg-background " ref={containerRef}>
+    <section className="relative py-16 md:py-20 bg-background" ref={containerRef}>
       <motion.h3
         className="text-4xl font-bold text-current sticky top-8 text-center"
         style={{ y: headingY, opacity: headingOpacity }}
