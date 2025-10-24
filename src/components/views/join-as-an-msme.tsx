@@ -43,8 +43,8 @@ const profileFormSchema = z.object({
 
 // Add the new challengeType field to your Zod schema
 const collaborationSchema = z.object({
-    title: z.string().min(3, { message: "Title is required." }),
-    description: z.string().min(10, { message: "Description is required." }),
+    title: z.string().min(3, { message: "Title is required." }).max(35,"Title must not exceed 35 characters."),
+    description: z.string().min(10, { message: "Description is required." }).max(5000, { message: "Description must not exceed 5000 characters." }),
     lookingFor: z.string().min(1, { message: "What you are looking for is required." }),
     rewardAmount: z.number().min(0, { message: "Reward amount cannot be negative." }).default(0),
     scope: z.array(z.object({ value: z.string().min(2, { message: "Scope cannot be empty." }) })),
@@ -55,12 +55,13 @@ const collaborationSchema = z.object({
     challengeType: z.enum(["corporate", "msme", "government"], {
         errorMap: () => ({ message: "Please select a challenge type." }),
     }),
-    durationInDays: z
-        .preprocess(
-            (val) => (val === "" ? null : Number(val)),
-            z.number().min(1, { message: "Duration must be at least 1 day." }).nullable()
-        )
-        .optional(),
+    durationInDays: z.preprocess(
+        (val) => (val === "" ? null : Number(val)),
+        z.number()
+            .min(1, { message: "Duration must be at least 1 day." })
+            .max(365, { message: "Duration cannot exceed 365 days." })
+            .nullable()
+    ),
     dueDate: z.date().optional(),
 });
 
@@ -282,7 +283,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
     };
 
     const handleAddComment = (submissionId: number, commentText: string) => {
-        const newComment: Comment = { author: 'MSME', text: commentText, timestamp: 'Just now' };
+        const newComment: Comment = { id:0,author: 'MSME', text: commentText, timestamp: 'Just now' };
         const updatedSubmissions = submissions.map(sub =>
             sub.id === submissionId ? { ...sub, comments: [...sub.comments, newComment] } : sub
         );
@@ -290,7 +291,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
         setSelectedSubmission(updatedSubmissions.find(s => s.id === submissionId) || null);
     };
 
-    // Overview Stats
+
     const overviewStats = {
         new: submissions.filter(s => s.status === 'New').length,
         review: submissions.filter(s => s.status === 'Under Review').length,

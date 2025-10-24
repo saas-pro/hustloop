@@ -37,7 +37,6 @@ export function SolutionSubmissionForm({
             toast({ title: 'Solution submitted successfully!' });
             onSubmissionSuccess();
         } catch (error) {
-            console.error('Submission error:', error);
             toast({ variant: 'destructive', title: 'Failed to submit solution. Please try again.' });
         } finally {
             setLoading(false);

@@ -44,7 +44,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const collaborationSchema = z.object({
     title: z.string().min(3, { message: "Title is required." }),
-    description: z.string().min(10, { message: "Description is required." }),
+    description: z.string().min(10, { message: "Description is required." }).max(5000, { message: "Description must not exceed 5000 characters." }),
     lookingFor: z.string().min(1, { message: "What you are looking for is required." }),
     rewardAmount: z.number().min(0, { message: "Reward amount cannot be negative." }).default(0),
     scope: z.array(z.object({ value: z.string().min(2, { message: "Scope cannot be empty." }) })),
@@ -67,7 +67,10 @@ const collaborationSchema = z.object({
 type collaborationFormValues = z.infer<typeof collaborationSchema>;
 
 const settingsFormSchema = z.object({
-    name: z.string().min(1, "Name is required"),
+    name: z
+        .string()
+        .min(1, "Name is required")
+        .max(20, "Name must not exceed 20 characters"),
     email: z.string().email("Invalid email address"),
 });
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
@@ -250,7 +253,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
     };
 
     const handleAddComment = (submissionId: number, commentText: string) => {
-        const newComment: Comment = { author: 'MSME', text: commentText, timestamp: 'Just now' };
+        const newComment: Comment = { id:0,author: 'MSME', text: commentText, timestamp: 'Just now' };
         const updatedSubmissions = submissions.map(sub =>
             sub.id === submissionId ? { ...sub, comments: [...sub.comments, newComment] } : sub
         );

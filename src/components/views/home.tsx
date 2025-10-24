@@ -598,6 +598,8 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
     return () => window.removeEventListener("resize", checkScreen);
   }, []);
 
+  
+
 
   return (
     <div

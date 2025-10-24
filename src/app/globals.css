@@ -663,7 +663,10 @@ body {
   transform: scale(0.9) translate(0, 30%);
 }
 
-
+.event-pointer{
+  pointer-events: auto !important;
+  
+}
 
 
 /* Logo Hover Effect */

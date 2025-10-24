@@ -34,10 +34,15 @@ import Image from "next/image";
 import { Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-
+import { CommentSection } from "../comment-section";
+import { DeleteConfirmationDialog } from '../ui/DeleteConfirmationDialog'
+import MarkdownEditor from "../ui/markdown";
 
 const settingsFormSchema = z.object({
-    name: z.string().min(1, "Name is required"),
+    name: z
+        .string()
+        .min(1, "Name is required")
+        .max(35, "Name must not exceed 35 characters"),
     email: z.string().email("Invalid email address"),
 });
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
@@ -45,10 +50,11 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 const blogPostSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters"),
     excerpt: z.string().min(10, "Excerpt must be at least 10 characters"),
-    content: z.string().min(50, "Content must be at least 50 characters"),
+    content: z.string().min(50, "Content must be at least 50 characters").max(300, "Content must not exceed 300 characters."),
     image: z.string().url("Please enter a valid image URL"),
     hint: z.string().min(1, "Hint is required"),
 });
+
 type BlogPostFormValues = z.infer<typeof blogPostSchema>;
 
 const featureSchema = z.object({
@@ -62,10 +68,11 @@ const sessionSchema = z.object({
 });
 const programSchema = z.object({
     title: z.string().min(5, "Title is required"),
-    description: z.string().min(10, "Description is required"),
+    description: z.string().min(10, "Description is required").max(5000, "Description must not exceed 5000 characters."),
     sessions: z.array(sessionSchema).min(1, "At least one session is required"),
     features: z.array(featureSchema).min(1, "At least one feature is required"),
 });
+
 type ProgramFormValues = z.infer<typeof programSchema>;
 
 
@@ -84,7 +91,7 @@ interface DashboardViewProps {
 }
 
 interface TechTransferIP {
-    id: number;
+    id: string;
     ipTitle: string;
     firstName: string;
     lastName: string;
@@ -95,6 +102,25 @@ interface TechTransferIP {
     approvalStatus: string;
     created_by?: number;
 }
+
+const techTransferSchema = z.object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    ipTitle: z.string().min(1, "IP title is required"),
+    description: z
+        .string()
+        .min(10, "Description must be at least 10 characters")
+        .max(5000, "Description must not exceed 5000 characters"),
+    inventorName: z.string().min(1, "Inventor name is required"),
+    organization: z.string().min(1, "Organization is required"),
+    supportingFile: z
+        .any()
+        .optional(),
+});
+
+// 2️⃣ Type inferred from Zod
+type TechTransferFormData = z.infer<typeof techTransferSchema>;
+
 type RegistrationAignite = {
     id: number;
     full_name: string;
@@ -103,8 +129,6 @@ type RegistrationAignite = {
     who_you_are: string;
     registered_at: string;
 };
-
-
 
 
 const iconNames = Object.keys(LucideIcons).filter(k => k !== 'createLucideIcon' && k !== 'icons' && k !== 'default');
@@ -127,6 +151,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [adminContentTab, setAdminContentTab] = useState('blog');
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [emailChangeRequested, setEmailChangeRequested] = useState(false);
+    const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
 
 
 
@@ -168,6 +193,15 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         resolver: zodResolver(programSchema),
         defaultValues: { title: "", description: "", sessions: [], features: [] },
     });
+
+    const ttForm = useForm<TechTransferFormData>({
+        resolver: zodResolver(techTransferSchema),
+        defaultValues:{
+            description: ""
+        }
+    }
+    )
+
     const { fields: sessionFields, append: appendSession, remove: removeSession } = useFieldArray({ control: programForm.control, name: "sessions" });
     const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({ control: programForm.control, name: "features" });
     const [currentPage, setCurrentPage] = useState(1);
@@ -201,7 +235,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
             const data = await response.json();
 
-            // The API must return an object with 'users' (or a similar key) and 'totalPages'
             setUsers(data.items || []);
             setTotalPages(data.pages || 1);
             setCurrentPage(page);
@@ -368,7 +401,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 console.error(data.error);
             }
         } catch (error) {
-            console.error(error);
             toast({
                 title: 'Network Error',
                 description: 'Could not reach the server. Please try again later.',
@@ -522,7 +554,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             link.click();
             document.body.removeChild(link);
         } catch (err) {
-            console.error(err);
             toast({
                 title: "Export failed",
                 description: "An error occurred while exporting CSV.",
@@ -677,7 +708,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                 if (response.ok) {
                     toast({ title: "Settings Saved", description: result.message });
-                    // Update only non-email fields locally
+
                     localStorage.setItem('user', JSON.stringify({
                         ...user,
                         ...result.user
@@ -776,6 +807,29 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }
     }
 
+    const deleteSubmission = async (
+        id: string | number,
+        setMySubmissions: React.Dispatch<React.SetStateAction<any[]>>
+    ) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${API_BASE_URL}/api/techtransfer/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Failed to delete submission");
+            }
+            setMySubmissions((prev) => prev.filter((s) => s.id !== id));
+            toast({ title: "success", description: "Submission deleted successfully" });
+        } catch (error: any) {
+            toast({ title: "error", description: "Failed to delete submission" });
+        }
+    };
 
     const [isTechTransfer, setIsTechTransfer] = useState(false)
 
@@ -828,21 +882,20 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     };
 
     const handleTechTransferSubmit = async (
-        e: React.FormEvent<HTMLFormElement>
-    ): Promise<void> => {
-        e.preventDefault();
-        const data = new FormData();
-        Object.entries(techtransferData).forEach(([key, value]) => {
+        data: TechTransferFormData
+    ) => {
+        const formData = new FormData();
+        Object.entries(data).forEach(([key, value]) => {
             if (value) {
                 // handle File separately
                 if (key === "supportingFile" && value instanceof File) {
-                    data.append(key, value);
+                    formData.append(key, value);
                 } else if (typeof value === "string") {
-                    data.append(key, value);
+                    formData.append(key, value);
                 }
             }
         });
-        data.append("contactEmail", user.email);
+        formData.append("contactEmail", user.email);
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`${API_BASE_URL}/api/techtransfer`, {
@@ -850,7 +903,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 headers: {
                     Authorization: `Bearer ${token}`, // attach token
                 },
-                body: data, // FormData for file uploads
+                body: formData, // FormData for file uploads
             });
 
             if (res.ok) {
@@ -859,16 +912,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     description: "Your IP has been submitted for review.",
                 });
 
-                // Reset form after success
-                setTechtransferData({
-                    ipTitle: "",
-                    firstName: "",
-                    lastName: "",
-                    description: "",
-                    inventorName: "",
-                    organization: "",
-                    supportingFile: null,
-                });
+                ttForm.reset();
                 if (techTransferFile.current) techTransferFile.current.value = "";
             } else {
                 toast({
@@ -973,14 +1017,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }, [techTransferIps, statusUpdates]);
 
         // This function handles the local state change
-        const handleActionClick = (ipId: number, newStatus: "approved" | "rejected" | "needInfo") => {
+        const handleActionClick = (ipId: string, newStatus: "approved" | "rejected" | "needInfo") => {
             setStatusUpdates((prev) => ({
                 ...prev,
                 [ipId]: newStatus,
             }));
         };
 
-        const handleUpdateStatus = async (ipId: number) => {
+        const handleUpdateStatus = async (ipId: string) => {
             const newStatus = statusUpdates[ipId];
 
             if (!newStatus) return;
@@ -1036,6 +1080,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         return { groupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating };
     };
 
+    const [dialogOpen, setDialogOpen] = useState(false);
     const { groupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating } = useGroupedIps(techTransferIps)
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -1183,24 +1228,24 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             ) : mySubmissions.length === 0 ? (
                                                 <p>You have no active submissions.</p>
                                             ) : (
-                                                <div className="space-y-2">
+                                                <div className="space-y-4">
                                                     {mySubmissions.map((submission) => (
-                                                        <div key={submission.id} className="p-2 border rounded">
-                                                            <p><strong>IP Title:</strong> {submission.ipTitle}</p>
-                                                            <p><strong>Description:</strong> {submission.description}</p>
-                                                            <p><strong>Inventor:</strong> {submission.firstName} {submission.lastName}</p>
-                                                            <p><strong>Organization:</strong> {submission.organization}</p>
-                                                            <p><strong>Status:</strong> {submission.approvalStatus}</p>
-                                                            {submission.supportingFile && (
-                                                                <a
-                                                                    href={`${API_BASE_URL}/${submission.supportingFile.replace(/^app\//, "")}`}
-                                                                    target="_blank"
-                                                                    className="text-blue-500 underline"
-                                                                    rel="noopener noreferrer"
-                                                                >
-                                                                    View Document
-                                                                </a>
-                                                            )}
+                                                        <div
+                                                            key={submission.id}
+                                                            onClick={(e) =>{e.stopPropagation(); setCommentingSubmissionId(submission.id)}}
+                                                            className="p-4 border rounded-lg flex justify-between items-center transition-all cursor-pointer hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-ring"
+                                                            tabIndex={0}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === "Enter" || e.key === " ") {
+                                                                    e.preventDefault()
+                                                                    setCommentingSubmissionId(submission.id);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <div>
+                                                                <p className="font-semibold">{submission.ipTitle}</p>
+                                                                <p className="text-sm text-muted-foreground">Status: {submission.approvalStatus}</p>
+                                                            </div>
 
                                                         </div>
                                                     ))}
@@ -1221,68 +1266,57 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <form onSubmit={handleTechTransferSubmit} className="space-y-4">
+                                            <form onSubmit={ttForm.handleSubmit(handleTechTransferSubmit)} className="space-y-4">
+                                                {/* Name Fields */}
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">First Name</label>
-                                                        <Input
-                                                            name="firstName"
-                                                            value={techtransferData.firstName}
-                                                            onChange={handleInputChange}
-                                                            placeholder="First Name"
-                                                        />
+                                                        <Input {...ttForm.register("firstName")} placeholder="First Name" />
+                                                        {ttForm.formState.errors.firstName && (
+                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.firstName.message}</p>
+                                                        )}
                                                     </div>
 
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">Last Name</label>
-                                                        <Input
-                                                            name="lastName"
-                                                            value={techtransferData.lastName}
-                                                            onChange={handleInputChange}
-                                                            placeholder="Last Name"
-                                                        />
+                                                        <Input {...ttForm.register("lastName")} placeholder="Last Name" />
+                                                        {ttForm.formState.errors.lastName && (
+                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.lastName.message}</p>
+                                                        )}
                                                     </div>
                                                 </div>
 
+                                                {/* IP Title */}
                                                 <div>
                                                     <label className="block text-sm font-medium mb-1">IP Title</label>
-                                                    <Input
-                                                        name="ipTitle"
-                                                        value={techtransferData.ipTitle}
-                                                        onChange={handleInputChange}
-                                                        placeholder="Enter your IP title"
-                                                    />
+                                                    <Input {...ttForm.register("ipTitle")} placeholder="Enter your IP title" />
+                                                    {ttForm.formState.errors.ipTitle && (
+                                                        <p className="text-red-500 text-sm">{ttForm.formState.errors.ipTitle.message}</p>
+                                                    )}
                                                 </div>
 
+                                                {/* Description */}
                                                 <div>
-                                                    <label className="block text-sm font-medium mb-1">Description</label>
-                                                    <Textarea
-                                                        name="description"
-                                                        value={techtransferData.description}
-                                                        onChange={handleInputChange}
-                                                        placeholder="Briefly describe your IP"
-                                                    />
+                                                    <label className="block text-sm font-medium mb-1">Description (Supports Markdown)</label>
+                                                    <MarkdownEditor ttForm={ttForm}/>
                                                 </div>
 
+                                                {/* Inventor & Organization */}
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">Inventor Name</label>
-                                                        <Input
-                                                            name="inventorName"
-                                                            value={techtransferData.inventorName}
-                                                            onChange={handleInputChange}
-                                                            placeholder="Inventor full name"
-                                                        />
+                                                        <Input {...ttForm.register("inventorName")} placeholder="Inventor full name" />
+                                                        {ttForm.formState.errors.inventorName && (
+                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.inventorName.message}</p>
+                                                        )}
                                                     </div>
 
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">Organization</label>
-                                                        <Input
-                                                            name="organization"
-                                                            value={techtransferData.organization}
-                                                            onChange={handleInputChange}
-                                                            placeholder="Organization / Institution"
-                                                        />
+                                                        <Input {...ttForm.register("organization")} placeholder="Organization / Institution" />
+                                                        {ttForm.formState.errors.organization && (
+                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.organization.message}</p>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -1293,32 +1327,41 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         <button
                                                             type="button"
                                                             onClick={handleButtonClick}
-                                                            className=" px-4 py-2 bg-primary text-white border rounded-lg"
+                                                            className="px-4 py-2 bg-primary text-white border rounded-lg"
                                                         >
                                                             Upload File
                                                         </button>
-
-                                                        {/* This acts like a :before pseudo-element */}
-                                                        <div className="absolute bottom-0 left-0 w-full h-fit bg-gray-700"></div>
                                                     </div>
-
-
                                                     <input
                                                         ref={techTransferFile}
                                                         type="file"
-                                                        name="supportingFile"
-                                                        onChange={handleFileChange}
                                                         accept=".pdf,.doc,.docx"
-                                                        style={{ display: "none" }} // hide the default input
+                                                        style={{ display: "none" }}
+                                                        onChange={(e) => {
+                                                            if (e.target.files && e.target.files[0]) {
+                                                                ttForm.setValue("supportingFile", e.target.files[0], { shouldValidate: true });
+                                                            }
+                                                        }}
                                                     />
-
-                                                    {techtransferData.supportingFile && (
-                                                        <p>Selected file: {techtransferData.supportingFile.name}</p>
+                                                    {ttForm.getValues("supportingFile") && (
+                                                        <p>Selected file: {ttForm.getValues("supportingFile")?.name}</p>
                                                     )}
+
                                                 </div>
 
-                                                <Button type="submit" className="w-full mt-4">
-                                                    Submit IP
+                                                <Button
+                                                    type="submit"
+                                                    className="w-full mt-4"
+                                                    disabled={ttForm.formState.isSubmitting}
+                                                >
+                                                    {ttForm.formState.isSubmitting ? (
+                                                        <>
+                                                            <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                                            Submitting...
+                                                        </>
+                                                    ) : (
+                                                        'Submit IP'
+                                                    )}
                                                 </Button>
                                             </form>
                                         </CardContent>
@@ -1489,27 +1532,66 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         <AccordionContent className="p-4">
                                                             <div className="space-y-4">
                                                                 {groupedIps[organizationName].map((ip) => (
-                                                                    <div key={ip.id} className="border rounded-md p-4 space-y-2">
-                                                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                                                                            <p className="font-semibold text-lg text-foreground">{ip.ipTitle}</p>
-                                                                            <Badge
-                                                                                variant={
-                                                                                    ip.approvalStatus === "pending"
-                                                                                        ? "secondary"
-                                                                                        : ip.approvalStatus === "approved"
-                                                                                            ? "default"
-                                                                                            : ip.approvalStatus === "needInfo"
-                                                                                                ? "secondary"
-                                                                                                : "destructive"
-
-
-                                                                                }
-                                                                                className="mt-2 sm:mt-0"
-                                                                            >
-                                                                                {ip.approvalStatus}
-                                                                            </Badge>
+                                                                    <div
+                                                                        key={ip.id}
+                                                                        onClick={(e) => setCommentingSubmissionId(ip.id)}
+                                                                        className="border rounded-md p-4 space-y-2 transition-all cursor-pointer hover:bg-accent/20 hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                                                        tabIndex={0}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === "Enter" || e.key === " ") {
+                                                                                e.preventDefault();
+                                                                                setCommentingSubmissionId(ip.id);
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <p className="font-semibold text-lg text-foreground">{ip.ipTitle}</p>
+                                                                                <Badge
+                                                                                    variant={
+                                                                                        ip.approvalStatus === "pending"
+                                                                                            ? "secondary"
+                                                                                            : ip.approvalStatus === "approved"
+                                                                                                ? "default"
+                                                                                                : ip.approvalStatus === "needInfo"
+                                                                                                    ? "secondary"
+                                                                                                    : "destructive"
+                                                                                    }
+                                                                                >
+                                                                                    {ip.approvalStatus}
+                                                                                </Badge>
+                                                                            </div>
+                                                                            <DropdownMenu>
+                                                                                <DropdownMenuTrigger asChild>
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                    >
+                                                                                        <LucideIcons.MoreVertical className="h-5 w-5" />
+                                                                                    </Button>
+                                                                                </DropdownMenuTrigger>
+                                                                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                                                                    <DropdownMenuItem onClick={() => { return }}>
+                                                                                        <LucideIcons.ArchiveRestore className="mr-2 h-4 w-4" />
+                                                                                        Restore
+                                                                                    </DropdownMenuItem>
+                                                                                    <DropdownMenuItem onClick={() => setDialogOpen(true)}>
+                                                                                        <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
+                                                                                        Delete
+                                                                                    </DropdownMenuItem>
+                                                                                </DropdownMenuContent>
+                                                                            </DropdownMenu>
+                                                                            <DeleteConfirmationDialog
+                                                                                open={dialogOpen}
+                                                                                onOpenChange={setDialogOpen}
+                                                                                submissionId={ip.id}
+                                                                                onDelete={(id) => deleteSubmission(id, setMySubmissions)}
+                                                                            />
                                                                         </div>
-                                                                        <div className="text-sm text-muted-foreground space-y-1">
+
+
+                                                                        <div className="text-sm text-muted-foreground space-y-1" >
                                                                             <p>
                                                                                 <strong>Inventor:</strong> {ip.firstName} {ip.lastName}
                                                                             </p>
@@ -1519,12 +1601,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                 </p>
                                                                             </div>
                                                                         </div>
+
                                                                         <div className="pt-4 flex justify-between items-center">
                                                                             {ip.supportingFile && (
                                                                                 <a
                                                                                     href={`${API_BASE_URL}/${ip.supportingFile.replace(/^app\//, "")}`}
                                                                                     target="_blank"
                                                                                     rel="noopener noreferrer"
+                                                                                    onClick={(e) => e.stopPropagation()}
                                                                                 >
                                                                                     <Button variant="outline" size="sm">
                                                                                         <LucideIcons.Download className="mr-2 h-4 w-4" />
@@ -1532,11 +1616,15 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                     </Button>
                                                                                 </a>
                                                                             )}
+
                                                                             <div className="flex items-center gap-2 ml-auto">
                                                                                 {statusUpdates[ip.id] && (
                                                                                     <Button
                                                                                         size="sm"
-                                                                                        onClick={() => { handleUpdateStatus(ip.id); }}
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            handleUpdateStatus(ip.id);
+                                                                                        }}
                                                                                         disabled={isUpdating[ip.id]}
                                                                                     >
                                                                                         {isUpdating[ip.id] ? (
@@ -1547,18 +1635,26 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                         Update Status
                                                                                     </Button>
                                                                                 )}
+
                                                                                 <DropdownMenu>
                                                                                     <DropdownMenuTrigger asChild>
-                                                                                        <Button variant="outline" size="sm">
+                                                                                        <Button
+                                                                                            variant="outline"
+                                                                                            size="sm"
+                                                                                            onClick={(e) => e.stopPropagation()} // ✅ stop click bubbling when opening dropdown
+                                                                                        >
                                                                                             Actions
                                                                                             <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
                                                                                         </Button>
                                                                                     </DropdownMenuTrigger>
-                                                                                    <DropdownMenuContent align="end">
 
+                                                                                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}> {/* ✅ Stop bubbling inside dropdown */}
                                                                                         <>
                                                                                             <DropdownMenuItem
-                                                                                                onClick={() => handleActionClick(ip.id, "approved")}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation(); // ✅ Prevent triggering parent div click
+                                                                                                    handleActionClick(ip.id, "approved");
+                                                                                                }}
                                                                                             >
                                                                                                 <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
                                                                                                 <span>Approve</span>
@@ -1566,22 +1662,29 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                                                                                             <DropdownMenuItem
                                                                                                 className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
-                                                                                                onClick={() => handleActionClick(ip.id, "rejected")}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handleActionClick(ip.id, "rejected");
+                                                                                                }}
                                                                                             >
                                                                                                 <LucideIcons.XCircle className="mr-2 h-4 w-4" />
                                                                                                 <span>Reject</span>
                                                                                             </DropdownMenuItem>
+
                                                                                             <DropdownMenuItem
                                                                                                 className="focus:bg-muted"
-                                                                                                onClick={() => handleActionClick(ip.id, "needInfo")}
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handleActionClick(ip.id, "needInfo");
+                                                                                                }}
                                                                                             >
                                                                                                 <LucideIcons.XCircle className="mr-2 h-4 w-4" />
                                                                                                 <span>Need Info</span>
                                                                                             </DropdownMenuItem>
                                                                                         </>
-
                                                                                     </DropdownMenuContent>
                                                                                 </DropdownMenu>
+
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -1996,6 +2099,12 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         </div>
                     </Tabs>
                 </div>
+                {commentingSubmissionId !== null && (
+                    <CommentSection
+                        submissionId={commentingSubmissionId}
+                        onClose={() => setCommentingSubmissionId(null)}
+                    />
+                )}
                 <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the user account and remove their data from our servers.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToDelete) { handleDeleteUser(userToDelete.uid); setUserToDelete(null); } }}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                 <AlertDialog open={!!userToBan} onOpenChange={(open) => !open && setUserToBan(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will {userToBan?.status === 'banned' ? "unban" : "ban"} the user, {userToBan?.status === 'banned' ? "allowing" : "preventing"} them from logging in. Do you want to continue?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToBan) { handleToggleBanUser(userToBan.uid); setUserToBan(null); } }}>{userToBan?.status === 'banned' ? "Unban User" : "Ban User"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                 <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>

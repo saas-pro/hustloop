@@ -31,7 +31,9 @@ import { PaymentModal } from "@/components/payment-modal"; // Ensure this path i
 const registrationSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
     email: z.string().email({ message: "Please enter a valid email address." }),
-    phone: z.string().min(10, { message: "Please enter a valid phone number." }),
+    phone: z
+        .string()
+        .regex(/^\d{10}$/, { message: "Please enter a valid 10-digit phone number." }),
     eventName: z.string(),
     whoYouAre: z.string().min(1, { message: "Please select who you are." }),
     otherWhoYouAre: z.string().optional(),
@@ -179,14 +181,26 @@ function RegistrationForm() {
                                 name="phone"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Phone Number<span style={{ color: 'red' }}>*</span></FormLabel>
+                                        <FormLabel>
+                                            Phone Number<span style={{ color: 'red' }}>*</span>
+                                        </FormLabel>
                                         <FormControl>
-                                            <Input type="tel" placeholder="Enter your phone number" {...field} />
+                                            <Input
+                                                type="tel"
+                                                placeholder="Enter your phone number"
+                                                maxLength={10}
+                                                {...field}
+                                                onChange={(e) => {
+                                                    const numericValue = e.target.value.replace(/\D/g, "");
+                                                    field.onChange(numericValue);
+                                                }}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+
                             <FormField
                                 control={form.control}
                                 name="whoYouAre"

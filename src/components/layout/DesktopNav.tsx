@@ -27,12 +27,11 @@ interface DesktopNavProps {
 }
 
 const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
-    { id: "mentors", label: "Mentors" },
-    { id: "incubators", label: "Incubators" },
-    { id: "msmes", label: "MSMEs" },
+    { id: "marketplace", label: "Marketplace" },
     { id: "education", label: "Education" },
+    { id: "mentors", label: "Mentors" },
     { id: "pricing", label: "Pricing" },
-    { id: "blog", label: "Blog" },
+    { id: "blog", label: "Blog" }
 ];
 
 
@@ -47,9 +46,6 @@ export function ThemeToggleDropdown() {
         { value: 'orange', label: 'Orange', icon: Palette },
         { value: 'blue-gray', label: 'Blue Gray', icon: Palette },
     ];
-
-
-
 
     return (
         <DropdownMenu>
@@ -296,17 +292,17 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                             >
                                 <path
                                     className="line top transition-colors duration-300"
-                                    stroke={(heroVisible && !navOpen ) ? "white" : "currentColor"}
+                                    stroke={(heroVisible && !navOpen) ? "white" : "currentColor"}
                                     d="m 70,33 h -40 c 0,0 -8.5,-0.149796 -8.5,8.5 0,8.649796 8.5,8.5 8.5,8.5 h 20 v -20"
                                 />
                                 <path
                                     className="line middle transition-colors duration-300"
-                                    stroke={(heroVisible && !navOpen ) ? "white" : "currentColor"}
+                                    stroke={(heroVisible && !navOpen) ? "white" : "currentColor"}
                                     d="m 70,50 h -40"
                                 />
                                 <path
                                     className="line bottom transition-colors duration-300"
-                                    stroke={(heroVisible && !navOpen ) ? "white" : "currentColor"}
+                                    stroke={(heroVisible && !navOpen) ? "white" : "currentColor"}
                                     d="m 30,67 h 40 c 0,0 8.5,0.149796 8.5,-8.5 0,-8.649796 -8.5,-8.5 -8.5,-8.5 h -20 v 20"
                                 />
                             </svg>

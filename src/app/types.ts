@@ -9,6 +9,7 @@ export type founderRole = "Solve MSME's challenge" | "List a technology for lice
 export type UserStatus = "active" | "banned" | "pending";
 
 export type Comment = {
+  id:number;
   author: 'Founder' | 'Incubator' | 'Triage Team' | 'MSME';
   text: string;
   timestamp: string;
@@ -70,5 +71,6 @@ export type EducationProgram = {
     features: EducationFeature[];
     created_at: string;
 };
+
 
     

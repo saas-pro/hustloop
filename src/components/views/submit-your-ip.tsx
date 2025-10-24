@@ -62,7 +62,7 @@ const sessionSchema = z.object({
 });
 const programSchema = z.object({
     title: z.string().min(5, "Title is required"),
-    description: z.string().min(10, "Description is required"),
+    description: z.string().min(10, "Description is required").max(5000,"Description must not exceed 5000 characters"),
     sessions: z.array(sessionSchema).min(1, "At least one session is required"),
     features: z.array(featureSchema).min(1, "At least one feature is required"),
 });
@@ -184,7 +184,6 @@ export default function SubmitIPDashboard({ isOpen, setUser, onOpenChange, user,
 
             const data = await response.json();
 
-            // The API must return an object with 'users' (or a similar key) and 'totalPages'
             setUsers(data.items || []);
             setTotalPages(data.pages || 1);
             setCurrentPage(page);

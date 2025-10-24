@@ -16,6 +16,7 @@ import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import EventModal from './event-modal';
 import SubmitIPDashboard from "./submit-your-ip";
+import { CommentSection } from "../comment-section";
 
 
 
@@ -97,6 +98,8 @@ export default function MainView() {
   const searchParams = useSearchParams();
   const { auth } = useFirebaseAuth();
   const [isEventModalOpen, setEventModalOpen] = useState(false);
+  const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
+  const [isCommentSectionMaximized, setIsCommentSectionMaximized] = useState(false);
 
 
   const loadStateFromStorage = useCallback(() => {
@@ -328,8 +331,8 @@ export default function MainView() {
       setHasSubscription(true);
       localStorage.setItem('hasSubscription', 'true');
       toast({
-        title: "Subscription Activated!",
-        description: "You now have full access to all premium features.",
+        title: "Payment Integrated Soon!",
+        description: "You will be notified before your plan ends.",
       });
       setActiveView('home');
     } else {
@@ -516,10 +519,10 @@ export default function MainView() {
         appliedPrograms={appliedPrograms}
       />}
 
-      {activeView === 'marketplace' && <MarketplaceView 
-        isOpen={true} 
-        onOpenChange={handleModalOpenChange('marketplace')} 
-        setActiveView={setActiveView} 
+      {activeView === 'marketplace' && <MarketplaceView
+        isOpen={true}
+        onOpenChange={handleModalOpenChange('marketplace')}
+        setActiveView={setActiveView}
       />}
 
       {renderDashboard()}
@@ -544,6 +547,17 @@ export default function MainView() {
         isOpen={true}
         onOpenChange={handleModalOpenChange('contact')}
       />}
+
+      {commentingSubmissionId !== null && (
+        <CommentSection
+          submissionId={commentingSubmissionId}
+          onClose={() => {
+            setCommentingSubmissionId(null);
+            setIsCommentSectionMaximized(false);
+          }}
+          onMaximizeToggle={setIsCommentSectionMaximized}
+        />
+      )}
 
       <EventModal
         isOpen={isEventModalOpen}

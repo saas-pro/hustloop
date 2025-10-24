@@ -35,7 +35,9 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(1, { message: "Password is required." }),
+  password: z
+  .string()
+  .min(10, { message: "Password must be at least 10 characters long." }),
 });
 
 type LoginSchema = z.infer<typeof loginSchema>;

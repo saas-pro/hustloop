@@ -5,9 +5,17 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import plans from "../static_price";
+import { toast } from "@/hooks/use-toast";
 
 
 export default function PricingAccordion() {
+
+    const handleGetStartedOnPricing = () => {
+        toast({
+            title: "Payment Integrated Soon!",
+            description: "You will be notified before your plan ends.",
+        });
+    }
     return (
         <div className="flex flex-col items-center relative py-16 md:py-20 bg-background">
             <div className="text-center mb-8">
@@ -50,7 +58,7 @@ export default function PricingAccordion() {
                                             </div>
                                             <div>
                                                 <span className="text-4xl font-bold">{plan.price}</span>
-                                                
+
                                             </div>
                                         </CardHeader>
                                         <CardContent className="flex-grow">
@@ -65,6 +73,7 @@ export default function PricingAccordion() {
                                         </CardContent>
                                         <CardFooter className="flex-col items-start mt-4">
                                             <Button
+                                                onClick={handleGetStartedOnPricing}
                                                 className={cn(
                                                     "w-full",
                                                     plan.primary ? "bg-accent text-accent-foreground hover:bg-accent/90" : "bg-primary text-primary-foreground hover:bg-primary/90"

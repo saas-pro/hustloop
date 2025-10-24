@@ -10,7 +10,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
   title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
-  description: 'A prototype startup platform that includes modules such as Blog, Mentors, Incubators, Pricing, and MSMEs.',
+  description: 'Open talent, Real impact. An ecosystem for problem solving and tech transfer - founders, enablers, innovators and students.',
   alternates: {
     canonical: 'https://hustloop.com/',
   },
@@ -25,7 +25,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet</title>
-        <meta name="description" content="A prototype startup platform that includes modules such as Blog, Mentors, Incubators, Pricing, and MSMEs."/>
+        <meta name="description" content="Open talent, Real impact. An ecosystem for problem solving and tech transfer - founders, enablers, innovators and students."/>
           <meta name="robots" content="index, follow"/>
             <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
               <link rel="canonical" href="https://hustloop.com"/>

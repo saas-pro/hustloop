@@ -36,7 +36,7 @@ type AuthProvider = 'local' | 'google';
 const profileFormSchema = z.object({
   name: z.string().min(1, "Incubator name is required"),
   location: z.string().min(1, "Location is required"),
-  description: z.string().min(1, "Description is required"),
+  description: z.string().min(1, "Description is required").max(5000,{message:"Description must not exceed 5000 characters"}),
   focus: z.array(z.object({ value: z.string().min(1, "Focus area cannot be empty.") })).min(1, "At least one focus area is required."),
   metrics: z.object({
     startups: z.string().min(1, "Required"),
@@ -47,11 +47,11 @@ const profileFormSchema = z.object({
     overview: z.string().min(1, "Overview is required"),
     services: z.array(z.object({
         title: z.string().min(1, "Service title is required"),
-        description: z.string().min(1, "Service description is required"),
+        description: z.string().min(1, "Service description is required").max(200,"Description must not exceed 200 characters"),
     })),
     benefits: z.array(z.object({ value: z.string().min(1, "Benefit cannot be empty") })),
      eligibility: z.object({
-      focusAreas: z.string().min(1, "Required"),
+      focusAreas: z.string().min(1, "Required").max(200,"Focus area must not exceed 200 characters"),
       requirements: z.array(z.object({ value: z.string().min(1, "Requirement cannot be empty") })),
     }),
     timeline: z.array(z.object({
@@ -232,6 +232,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
 
     const handleAddComment = (submissionId: number, commentText: string) => {
         const newComment: Comment = {
+            id:1,
             author: 'Incubator',
             text: commentText,
             timestamp: 'Just now'
