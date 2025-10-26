@@ -126,7 +126,7 @@ interface ExistingFile {
     url: string;
     name: string;
 }
-
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const techTransferSchema = z.object({
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
@@ -139,7 +139,11 @@ const techTransferSchema = z.object({
     organization: z.string().min(1, "Organization is required"),
     supportingFile: z
         .any()
-        .optional(),
+        .optional()
+        .refine(
+            (file) => !file || file.size <= MAX_FILE_SIZE,
+            "File size must be less than or equal to 10 MB"
+        ),
 });
 
 // 2️⃣ Type inferred from Zod
@@ -595,7 +599,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (res.status === 404) {
-                    setHasDraft(false); 
+                    setHasDraft(false);
                     return;
                 }
                 const data = await res.json();
@@ -1195,7 +1199,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         if (tabFromUrl && (userRole == "admin")) {
             setActiveTab('ip/technologies');
         }
-    }, [searchParams,userRole]);
+    }, [searchParams, userRole]);
     const { groupedIps, setGroupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating } = useGroupedIps(techTransferIps)
 
     useEffect(() => {
@@ -1205,7 +1209,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 fetchIps()
                     .then((ips: any) => {
                         if (!Array.isArray(ips)) {
-                            toast({title:"error", description:"Ips not found", variant:"destructive"});
+                            toast({ title: "error", description: "Ips not found", variant: "destructive" });
                             return;
                         }
                         const grouped: Record<string, any[]> = {};
@@ -1236,10 +1240,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                             }
                         }
                     })
-                    .catch((err) => toast({title:"error", description:"Failed to fetch Ips", variant:"destructive"}));
+                    .catch((err) => toast({ title: "error", description: "Failed to fetch Ips", variant: "destructive" }));
             }
         }
-    }, [activateTab, id,fetchIps,toast,setGroupedIps]);
+    }, [activateTab, id, fetchIps, toast, setGroupedIps]);
 
     const [hasDraft, setHasDraft] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);

@@ -38,7 +38,7 @@ interface Comment {
     fileURL?: string;
     fileName?: string;
     comment_user_id: string;
-    displayTimestamp:string;
+    displayTimestamp: string;
 }
 
 interface CommentsResponse {
@@ -179,8 +179,9 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
     );
 
     useEffect(() => {
-        const socket = io(API_BASE_URL || '', {
-            transports: ['websocket'],
+        const socket = io(API_BASE_URL, {
+            transports: ['websocket', 'polling'],
+            withCredentials: true, 
         });
 
         socket.emit('join', `ip_${submissionId}`);
@@ -196,7 +197,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                     name: data.name || data.comment_user_name,
                     comment: data.comment,
                     timestamp: data.timestamp || new Date(),
-                    displayTimestamp:format(new Date(data.timestamp || new Date()), "do MMM hh:mm a"),
+                    displayTimestamp: format(new Date(data.timestamp || new Date()), "do MMM hh:mm a"),
                     parent_id: data.parent_id ? String(data.parent_id) : null,
                     fileURL: data.fileURL || data.supportingFileUrl || data.file_url,
                     fileName: data.fileName || data.supportingFileKey || data.file_name,
@@ -304,7 +305,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/tt_ip/comments/${id}`, {
+            const response = await fetch(`${API_BASE_URL}/api/tt_ip/${id}/comments`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -569,7 +570,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                         ...c,
                         id: String(c.id),
                         parent_id: c.parent_id ? String(c.parent_id) : null,
-                        timestamp: c.timestamp, 
+                        timestamp: c.timestamp,
                         displayTimestamp: format(new Date(c.timestamp), "do MMM hh:mm a")
                     }));
                     const sortedComments = normalizedComments.sort((a, b) =>
