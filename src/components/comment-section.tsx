@@ -180,8 +180,8 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
 
     useEffect(() => {
         const socket = io(API_BASE_URL, {
-            transports: ['websocket', 'polling'],
-            withCredentials: true, 
+            path: "/socket.io",
+            transports: ['websocket']
         });
 
         socket.emit('join', `ip_${submissionId}`);
