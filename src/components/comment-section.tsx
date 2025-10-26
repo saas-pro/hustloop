@@ -16,6 +16,8 @@ import { API_BASE_URL } from '@/lib/api';
 import io from 'socket.io-client';
 import { jwtDecode } from 'jwt-decode';
 import remarkGfm from "remark-gfm";
+import { format } from 'date-fns';
+import { IpActions } from './ui/ip-actions';
 
 interface IPDetails {
     id: string;
@@ -36,6 +38,7 @@ interface Comment {
     fileURL?: string;
     fileName?: string;
     comment_user_id: string;
+    displayTimestamp:string;
 }
 
 interface CommentsResponse {
@@ -51,7 +54,7 @@ interface CommentSectionProps {
 }
 
 
-export function CommentSection({ submissionId, onClose, highlightedComment, onMaximizeToggle }: CommentSectionProps) {
+export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
     const [comments, setComments] = useState<Comment[]>([]);
     const [ipDetails, setIpDetails] = useState<IPDetails | null>(null);
     const [newComment, setNewComment] = useState('');
@@ -63,6 +66,9 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
     const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
     const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
     const [isFetching, setIsFetching] = useState(true);
+    const [shouldRefetchComments, setShouldRefetchComments] = useState(true);
+    const [isFetchingIpDetails, setIsFetchingIpDetails] = useState(true);
+
 
     const { toast } = useToast();
     const textareaId = useId();
@@ -72,17 +78,10 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
 
     const [isDialogOpen, setIsDialogOpen] = useState(true);
 
-    const toggleFullscreen = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        const newMaximizedState = !isMaximized;
-        setIsMaximized(newMaximizedState);
-        onMaximizeToggle?.(newMaximizedState);
-    };
 
-    // Consolidated close handler
     const handleCloseDialog = useCallback(() => {
         setIsDialogOpen(false);
-        onClose(); // Call the parent's onClose handler
+        onClose();
     }, [onClose]);
 
     const scrollToBottom = useCallback(() => {
@@ -196,12 +195,14 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
                     id: String(data.id),
                     name: data.name || data.comment_user_name,
                     comment: data.comment,
-                    timestamp: data.timestamp || new Date().toLocaleString(),
+                    timestamp: data.timestamp || new Date(),
+                    displayTimestamp:format(new Date(data.timestamp || new Date()), "do MMM hh:mm a"),
                     parent_id: data.parent_id ? String(data.parent_id) : null,
                     fileURL: data.fileURL || data.supportingFileUrl || data.file_url,
                     fileName: data.fileName || data.supportingFileKey || data.file_name,
                     comment_user_id: userId,
                 };
+
                 return [...prev, newComment].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
             });
         });
@@ -212,51 +213,11 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
     }, [submissionId]);
 
     useEffect(() => {
-        scrollToBottom();
-    }, [comments, scrollToBottom]);
+        if (!isFetching) {
+            scrollToBottom();
+        }
+    }, [comments, isFetching, scrollToBottom]);
 
-    useEffect(() => {
-        const fetchComments = async () => {
-            setIsFetching(true);
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/tt_ip/${submissionId}/comments`, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`,
-                    },
-                });
-
-                if (res.ok) {
-                    const data: CommentsResponse = await res.json();
-                    setIpDetails(data.ip_details);
-                    const normalizedComments: Comment[] = data.comments.map(c => ({
-                        ...c,
-                        id: String(c.id),
-                        parent_id: c.parent_id ? String(c.parent_id) : null,
-                    }));
-                    const sortedComments = normalizedComments.sort((a, b) =>
-                        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-                    );
-                    setComments(sortedComments);
-                } else {
-                    toast({
-                        title: 'Failed to load comments',
-                        description: 'Unknown error occurred',
-                        variant: 'destructive',
-                    });
-                }
-            } catch (error) {
-                toast({
-                    title: 'Error',
-                    description: 'Something went wrong while loading comments.',
-                    variant: 'destructive',
-                });
-            } finally {
-                setIsFetching(false);
-            }
-        };
-
-        fetchComments();
-    }, [submissionId, toast]);
 
     const getCommentActions = (comment: Comment) => {
         const authorId = comment.comment_user_id;
@@ -273,7 +234,7 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
         const canEdit = isAuthor && diffMinutes <= 5;
         const canDelete = canDeleteOverride || (isAuthor && diffMinutes <= 30);
 
-        return { canEdit, canDelete, isAuthor };
+        return { canEdit, canDelete, isAuthor, isAdmin };
     };
 
     const handleReplyToComment = (comment: Comment) => {
@@ -322,19 +283,10 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
                 toast({ title: 'Error', description: errorData.error || 'Failed to add comment', variant: 'destructive' });
                 return;
             }
-
             const newCommentData: Comment = await response.json();
-
-            setComments(prev => [...prev, {
-                ...newCommentData,
-                id: String(newCommentData.id),
-                parent_id: newCommentData.parent_id ? String(newCommentData.parent_id) : null,
-                comment_user_id: getCurrentUserId() || newCommentData.comment_user_id
-            } as Comment].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()));
             setNewComment('');
             setAttachedFile(null);
             setReplyingTo(null);
-            toast({ title: 'Comment added successfully' });
 
         } catch (error) {
             console.error('Error adding comment:', error);
@@ -472,26 +424,209 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
             setAttachedFile(file);
         }
     };
+    const [techTransferIps, setTechTransferIps] = useState<IPDetails[]>([]);
 
+    const useGroupedIps = (techTransferIps: IPDetails[]) => {
+        const [groupedIps, setGroupedIps] = useState<Record<string, IPDetails[]>>({});
+        const [statusUpdates, setStatusUpdates] = useState<Record<string, "approved" | "rejected" | "needInfo">>({});
+        const [isUpdating, setIsUpdating] = useState<Record<string, boolean>>({});
+
+        useEffect(() => {
+            if (techTransferIps.length > 0) {
+                const groups = techTransferIps.reduce((acc, ip) => {
+                    const orgName = ip.organization;
+                    if (!acc[orgName]) {
+                        acc[orgName] = [];
+                    }
+                    const updatedIp = {
+                        ...ip,
+                        approvalStatus: statusUpdates[ip.id] || ip.approvalStatus,
+                    };
+
+                    acc[orgName].push(updatedIp);
+                    return acc;
+                }, {} as Record<string, IPDetails[]>);
+
+                setGroupedIps(groups);
+            } else {
+                setGroupedIps({});
+            }
+        }, [techTransferIps, statusUpdates]);
+
+        const handleActionClick = (ipId: string, newStatus: "approved" | "rejected" | "needInfo") => {
+            setStatusUpdates((prev) => ({
+                ...prev,
+                [ipId]: newStatus,
+            }));
+        };
+
+        const handleUpdateStatus = async (ipId: string) => {
+            const newStatus = statusUpdates[ipId];
+
+            if (!newStatus) return;
+
+            setIsUpdating((prev) => ({ ...prev, [ipId]: true }));
+
+            try {
+                const token = localStorage.getItem('token')
+
+                const response = await fetch(`${API_BASE_URL}/api/techtransfer/${ipId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: newStatus }),
+                });
+
+                if (!response.ok) {
+
+                    toast({ title: "error", description: "Failed to get TechTransferIps" });
+                }
+                if (response.ok) {
+
+                    setTechTransferIps(prev => prev.map(ip => ip.id === ipId ? { ...ip, approvalStatus: newStatus } : ip));
+                    toast({ title: "Success", description: "IP status updated successfully." });
+
+                }
+                setStatusUpdates((prev) => {
+                    const newUpdates = { ...prev };
+                    delete newUpdates[ipId];
+                    return newUpdates;
+                });
+
+            } catch (error) {
+
+                toast({ title: "error", description: "Failed to update status" });
+
+                setStatusUpdates((prev) => {
+                    const newUpdates = { ...prev };
+                    delete newUpdates[ipId];
+                    return newUpdates;
+                });
+            } finally {
+                setIsUpdating((prev) => {
+                    const newUpdating = { ...prev };
+                    delete newUpdating[ipId];
+                    return newUpdating;
+                });
+            }
+        };
+
+        return { groupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating };
+    };
+    const { groupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating } = useGroupedIps(techTransferIps)
+    useEffect(() => {
+        const fetchIpDetails = async () => {
+            setIsFetchingIpDetails(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/tt_ip/${submissionId}/comments`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                });
+                if (res.ok) {
+                    const data: CommentsResponse = await res.json();
+                    setIpDetails(data.ip_details);
+                } else {
+                    toast({
+                        title: 'Failed to load IP details',
+                        description: 'Unknown error occurred',
+                        variant: 'destructive',
+                    });
+                }
+            } catch (error) {
+                toast({
+                    title: 'Error',
+                    description: 'Something went wrong while loading IP details.',
+                    variant: 'destructive',
+                });
+            } finally {
+                setIsFetchingIpDetails(false);
+            }
+        };
+
+        fetchIpDetails();
+    }, [submissionId, toast, isUpdating]);
+
+    useEffect(() => {
+        const fetchComments = async () => {
+            if (!shouldRefetchComments) {
+                return;
+            }
+            setIsFetching(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/tt_ip/${submissionId}/comments`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                });
+
+                if (res.ok) {
+                    const data: CommentsResponse = await res.json();
+                    setIpDetails(data.ip_details);
+                    const normalizedComments: Comment[] = data.comments.map(c => ({
+                        ...c,
+                        id: String(c.id),
+                        parent_id: c.parent_id ? String(c.parent_id) : null,
+                        timestamp: c.timestamp, 
+                        displayTimestamp: format(new Date(c.timestamp), "do MMM hh:mm a")
+                    }));
+                    const sortedComments = normalizedComments.sort((a, b) =>
+                        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                    );
+                    setComments(sortedComments);
+
+                } else {
+                    toast({
+                        title: 'Failed to load comments',
+                        description: 'Unknown error occurred',
+                        variant: 'destructive',
+                    });
+                }
+            } catch (error) {
+                toast({
+                    title: 'Error',
+                    description: 'Something went wrong while loading comments.',
+                    variant: 'destructive',
+                });
+            } finally {
+                setIsFetching(false);
+                setShouldRefetchComments(false);
+            }
+        };
+
+        fetchComments();
+    }, [submissionId, shouldRefetchComments, toast]);
+
+    const currentRole = getCurrentUserRoles();
+    const isAdmin = currentRole.includes("admin");
     return (
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
             if (!open) {
-                handleCloseDialog(); 
+                handleCloseDialog();
             }
             setIsDialogOpen(open);
         }} >
             <DialogContent
                 className={`
-                    flex flex-col border bg-background transition-all duration-500 p-0 w-[90vw] max-w-[90vw] shadow-lg text-base fixed  h-[90vh] rounded-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                    }
-                `}
-            >
-                <div className="flex justify-between items-center p-4 rounded-t-lg border-b bg-muted/50 dark:bg-muted/20 flex-shrink-0">
+                    flex flex-col border bg-background transition-all duration-500 p-0 w-[90vw] max-w-[90vw] shadow-lg text-base fixed h-[90vh] rounded-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                `} >
+                <div className="flex justify-between items-center p-4 pr-14 rounded-t-lg border-b bg-muted/50 dark:bg-muted/20 flex-shrink-0">
                     <DialogTitle className="text-xl font-bold">
-                        Submissions ({ipDetails?.title || submissionId})
+                        {ipDetails?.title}
                     </DialogTitle>
-                    <div className="flex items-center">
-                    </div>
+                    {(ipDetails && isAdmin) && (
+                        <div >
+                            <IpActions
+                                ipId={ipDetails.id}
+                                statusUpdates={statusUpdates}
+                                isUpdating={isUpdating}
+                                handleUpdateStatus={handleUpdateStatus}
+                                handleActionClick={handleActionClick}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex-grow overflow-y-auto p-4 space-y-4">
@@ -503,14 +638,14 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
                                     {ipDetails.title}
                                 </CardTitle>
                                 <span className={`px-3 py-1 text-xs font-semibold rounded-full ${ipDetails.approvalStatus === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>
-                                    {ipDetails.approvalStatus.toUpperCase()}
+                                    {ipDetails.approvalStatus}
                                 </span>
                             </CardHeader>
                             <CardContent className="p-4 pt-0 text-sm">
                                 <p>
                                     Description:
                                 </p>
-                                    <div>
+                                <div>
                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{ipDetails.description}</ReactMarkdown>
                                 </div>
                                 <p className="mt-1 text-muted-foreground">Submitted By: <span className="font-semibold">{ipDetails.name}</span> from <span className="italic">{ipDetails.organization}</span></p>
@@ -534,12 +669,12 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
                             <p>No comments yet. Start the conversation!</p>
                         </div>
                     )}
-                    {comments.map((comment) => {
+                    {comments.map((comment, index) => {
                         const { canEdit, canDelete } = getCommentActions(comment);
                         const parentComment = comment.parent_id ? findParentComment(comment.parent_id) : null;
                         return (
                             <div
-                                key={comment.id}
+                                key={index}
                                 id={`comment-${comment.id}`}
                                 className={`p-3 rounded-lg border bg-card transition-all duration-300 z-[999] ${highlightedCommentId === comment.id
                                     ? 'ring-2 ring-yellow-500 bg-yellow-50 dark:bg-yellow-900/30'
@@ -551,10 +686,10 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
                                         {comment.name}{' '}
                                         <span className="text-xs text-muted-foreground ml-2">
                                             {(() => {
-                                                if (!comment.timestamp) return '—';
-                                                const d = new Date(comment.timestamp);
+                                                if (!comment.displayTimestamp) return '—';
+                                                const d = new Date(comment.displayTimestamp);
                                                 return isNaN(d.getTime())
-                                                    ? comment.timestamp
+                                                    ? comment.displayTimestamp
                                                     : d.toLocaleString();
                                             })()}
                                         </span>
@@ -658,28 +793,29 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
                     <div>
                         <div className="flex flex-col items-left mb-2">
                             <label htmlFor={textareaId} className="font-semibold text-sm mb-1">Add a comment</label>
+                            {replyingTo && (
+                                <div className="p-2 mb-2 border-l-4 border-green-500 bg-green-50 dark:bg-green-900/50 rounded-md flex justify-between items-center">
+                                    <div className='truncate pr-2'>
+                                        <p className="font-semibold text-green-700 dark:text-green-300 text-sm">Replying to {replyingTo.name}</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{replyingTo.comment || replyingTo.fileName || 'Attachment.'}</p>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleCancelReply}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
                             <Textarea
                                 id={textareaId}
                                 ref={newCommentTextareaRef}
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
-                                placeholder={`Write your comment here${replyingTo ? ` (Replying to ${replyingTo.name})` : ''} (Supports Markdown)`}
+                                placeholder={`Write your comment here${replyingTo ? ` (Replying to ${replyingTo.name})` : ''}`}
                                 rows={4}
                                 className='resize-y min-h-[80px]'
                             />
                         </div>
 
-                        {replyingTo && (
-                            <div className="p-2 mb-2 border-l-4 border-green-500 bg-green-50 dark:bg-green-900/50 rounded-md flex justify-between items-center">
-                                <div className='truncate pr-2'>
-                                    <p className="font-semibold text-green-700 dark:text-green-300 text-sm">Replying to {replyingTo.name}</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{replyingTo.comment || replyingTo.fileName || 'Attachment.'}</p>
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleCancelReply}>
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        )}
+
 
                         {attachedFile && (
                             <div className="mt-2 flex items-center gap-2 p-2 rounded-md border bg-muted text-sm">
@@ -710,7 +846,6 @@ export function CommentSection({ submissionId, onClose, highlightedComment, onMa
                             </Button>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" onClick={handleSaveDraft} disabled={!newComment.trim() && !attachedFile}>Save Draft</Button>
                             <Button onClick={handleAddComment} disabled={isLoading || (!newComment.trim() && !attachedFile)}>
                                 {isLoading ? (
                                     <>

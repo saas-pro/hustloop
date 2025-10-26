@@ -617,7 +617,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
       </div>
 
       {/* Start Your Journey Section with native scroll-based zoom */}
-      <div className='bg-background relative'>
+      <div className='bg-background rounded-t-2xl relative'>
         <section ref={journeyRef} className="relative py-14 z-10 w-screen flex cursor-default bg-background rounded-t-2xl" id='second-section'>
 
           <div className="journey-panel container m-auto flex justify-center items-center flex-col" ref={journeyPanelRef}>

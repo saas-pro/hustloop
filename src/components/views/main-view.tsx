@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from "@/components/layout/header";
 import HomeView from "@/components/views/home";
-import type { View, UserRole } from "@/app/types";
+import type { View, UserRole, DashboardTab } from "@/app/types";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,7 @@ import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import EventModal from './event-modal';
 import SubmitIPDashboard from "./submit-your-ip";
 import { CommentSection } from "../comment-section";
+import Unauthorized from "@/app/unauthorized";
 
 
 
@@ -85,6 +86,7 @@ function isValidAppliedPrograms(obj: any): obj is Record<string, string> {
 
 export default function MainView() {
   const [activeView, setActiveView] = useState<View>("home");
+  const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const [isLoggedIn, setLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -236,6 +238,45 @@ export default function MainView() {
       router.replace('/');
     }
   }, [searchParams, router, toast]);
+
+
+
+  const id = searchParams.get('id');
+  const [showUnauthorized, setShowUnauthorized] = useState(false);
+
+  const setActiveDashboardView = (tab: DashboardTab) => {
+    setActiveView("dashboard");
+    setActiveTab(tab);
+  };
+  useEffect(() => {
+    if (!id) return;
+    setActiveDashboardView("ip/technologies");
+    const userRole = localStorage.getItem('userRole');
+    if (!userRole) {
+      toast({
+        title: "Login Required",
+        description: "Please login to visit",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (userRole !== "admin") {
+      setShowUnauthorized(true);
+    }
+
+    const timeout = setTimeout(() => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.classList.add("highlight");
+        setTimeout(() => element.classList.remove("highlight"), 2000);
+      }
+    }, 600);
+
+    return () => clearTimeout(timeout);
+  }, [id,toast]);
+
 
   const handleModalOpenChange = (view: View) => (isOpen: boolean) => {
     if (!isOpen) {
@@ -400,7 +441,8 @@ export default function MainView() {
             hasSubscription={hasSubscription}
             setActiveView={setActiveView}
             setUser={setUser}
-
+            activateTab={activeTab}
+            id={id ?? undefined}
           />
         );
 
@@ -410,6 +452,7 @@ export default function MainView() {
   }
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  if (showUnauthorized) return <Unauthorized />;
   return (
 
     <div className="overflow-hidden relative flex flex-col min-h-screen bg-background text-foreground moz-container">
@@ -442,6 +485,9 @@ export default function MainView() {
         </section>
       </main>
 
+      {
+        showUnauthorized && <Unauthorized />
+      }
 
 
       {activeView === 'blog' && <BlogView isOpen={true} onOpenChange={handleModalOpenChange('blog')} />}

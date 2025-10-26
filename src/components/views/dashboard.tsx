@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from 'lucide-react';
@@ -37,6 +37,9 @@ import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, Pagi
 import { CommentSection } from "../comment-section";
 import { DeleteConfirmationDialog } from '../ui/DeleteConfirmationDialog'
 import MarkdownEditor from "../ui/markdown";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from "remark-gfm";
+import { useSearchParams } from "next/navigation";
 
 const settingsFormSchema = z.object({
     name: z
@@ -88,6 +91,8 @@ interface DashboardViewProps {
     hasSubscription: boolean;
     setActiveView: (view: View) => void;
     setUser: React.Dispatch<React.SetStateAction<User | null>>;
+    activateTab: string;
+    id?: string;
 }
 
 interface TechTransferIP {
@@ -101,6 +106,25 @@ interface TechTransferIP {
     supportingFile?: string;
     approvalStatus: string;
     created_by?: number;
+}
+
+type GroupedIPs = Record<string, TechTransferIP[]>;
+
+interface ChartDataItem {
+    year: string;
+    activity: number;
+}
+
+interface ipDataItem {
+    title: string;
+    description: string;
+    date: string;
+    approvalStatus: string;
+}
+
+interface ExistingFile {
+    url: string;
+    name: string;
 }
 
 const techTransferSchema = z.object({
@@ -145,7 +169,7 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
     </Card>
 );
 
-export default function DashboardView({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView }: DashboardViewProps) {
+export default function DashboardView({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: DashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
     const [adminContentTab, setAdminContentTab] = useState('blog');
@@ -175,6 +199,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [loadingChange, setLoadingChange] = useState(false)
     const [loadingResend, setLoadingResend] = useState(false)
 
+    const searchParams = useSearchParams()
+
     const settingsForm = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
         defaultValues: { name: user.name, email: user.email },
@@ -196,7 +222,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     const ttForm = useForm<TechTransferFormData>({
         resolver: zodResolver(techTransferSchema),
-        defaultValues:{
+        defaultValues: {
             description: ""
         }
     }
@@ -247,7 +273,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }
     }, [toast]);
 
-    // Dependency array ensures the fetch runs when these values change
 
     const handlePageChange = (page: number) => {
         fetchUsers(page, itemsPerPage);
@@ -441,6 +466,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             const data = await response.json();
             if (response.ok) {
                 setTechTransferIps(data.ips || []);
+                return data.ips
             } else {
                 toast({
                     variant: 'destructive',
@@ -561,6 +587,34 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             });
         }
     };
+    const token = localStorage.getItem("token")
+    useEffect(() => {
+        const fetchDraft = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/techtransfer/loadDraft`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.status === 404) {
+                    setHasDraft(false); 
+                    return;
+                }
+                const data = await res.json();
+                setHasDraft(true);
+
+            } catch (error) {
+                console.error("Error loading draft:", error);
+                toast({
+                    title: "Error",
+                    description: "Internal Server Error",
+                    variant: "destructive",
+                });
+            }
+        };
+
+        if (activeTab === "engagements") {
+            fetchDraft();
+        }
+    }, [activeTab, userRole, token, toast]);
 
 
     useEffect(() => {
@@ -869,7 +923,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const techTransferFile = useRef<HTMLInputElement>(null);
 
     const handleButtonClick = () => {
-        techTransferFile.current!.click(); // Trigger hidden input
+        techTransferFile.current!.click();
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -887,7 +941,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
             if (value) {
-                // handle File separately
                 if (key === "supportingFile" && value instanceof File) {
                     formData.append(key, value);
                 } else if (typeof value === "string") {
@@ -901,9 +954,9 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             const res = await fetch(`${API_BASE_URL}/api/techtransfer`, {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${token}`, // attach token
+                    Authorization: `Bearer ${token}`,
                 },
-                body: formData, // FormData for file uploads
+                body: formData,
             });
 
             if (res.ok) {
@@ -947,7 +1000,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     useEffect(() => {
         const fetchMySubmissions = async () => {
             setLoading(true);
-            setEmptyToastShown(false); // reset
+            setEmptyToastShown(false);
             try {
 
                 const token = localStorage.getItem("token");
@@ -971,7 +1024,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     });
                 }
             } catch (err: any) {
-
                 setMySubmissions([]);
                 toast({
                     title: "Error occurred",
@@ -999,8 +1051,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     if (!acc[orgName]) {
                         acc[orgName] = [];
                     }
-
-                    // Apply local status update if it exists
                     const updatedIp = {
                         ...ip,
                         approvalStatus: statusUpdates[ip.id] || ip.approvalStatus,
@@ -1016,7 +1066,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             }
         }, [techTransferIps, statusUpdates]);
 
-        // This function handles the local state change
         const handleActionClick = (ipId: string, newStatus: "approved" | "rejected" | "needInfo") => {
             setStatusUpdates((prev) => ({
                 ...prev,
@@ -1077,15 +1126,199 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             }
         };
 
-        return { groupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating };
+        return { groupedIps, setGroupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating };
+    };
+    const [chartData, setChartData] = useState<ChartDataItem[]>([]);
+    const [ipData, setIpData] = useState<ipDataItem[]>([]);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        fetch(`${API_BASE_URL}/api/techtransfer/myGraph`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.error) {
+                    toast({ title: "Error", description: data.error, variant: "destructive" })
+                    return
+                }
+                const formattedData = data.ips.map((item: any) => ({
+                    year: item.year.toString(),
+                    activity: item.total_submissions,
+                }));
+
+                const formatedIpsDetails = data.ips_details.map((item: any) => ({
+                    title: item.title,
+                    description: item.description,
+                    date: item.date,
+                    approvalStatus: item.approval_status
+                }))
+
+                setIpData(formatedIpsDetails)
+
+                const START_YEAR = 2023;
+                const TOTAL_YEARS = 5;
+
+                const baseData = Array.from({ length: TOTAL_YEARS }, (_, i) => {
+                    const year = (START_YEAR + i).toString();
+                    return {
+                        year: year,
+                        activity: 0
+                    };
+                });
+
+                const finalChartData = baseData.map((baseItem: ChartDataItem) => {
+                    const match = formattedData.find((item: ChartDataItem) => item.year === baseItem.year);
+
+                    if (match) {
+                        return {
+                            ...baseItem,
+                            activity: match.activity
+                        };
+                    }
+                    return baseItem;
+                });
+                setChartData(finalChartData);
+            });
+    }, [toast]);
+
+
+    const [expandedAccordion, setExpandedAccordion] = useState<string | undefined>(undefined);
+    const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const tabFromUrl = searchParams.get('id') as DashboardTab | null;
+        if (tabFromUrl && (userRole == "admin")) {
+            setActiveTab('ip/technologies');
+        }
+    }, [searchParams,userRole]);
+    const { groupedIps, setGroupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating } = useGroupedIps(techTransferIps)
+
+    useEffect(() => {
+        if (activateTab === 'ip/technologies') {
+            const role = localStorage.getItem("userRole")
+            if (role === "admin") {
+                fetchIps()
+                    .then((ips: any) => {
+                        if (!Array.isArray(ips)) {
+                            toast({title:"error", description:"Ips not found", variant:"destructive"});
+                            return;
+                        }
+                        const grouped: Record<string, any[]> = {};
+                        ips.forEach((ip: any) => {
+                            const orgName = ip.organization?.trim() || 'Unknown Organization';
+                            if (!grouped[orgName]) grouped[orgName] = [];
+                            grouped[orgName].push(ip);
+                        });
+                        setGroupedIps(grouped);
+                        if (id) {
+                            const orgName = Object.keys(grouped).find((org) =>
+
+                                grouped[org].some((ip) => ip.id === id)
+                            );
+
+                            if (orgName) {
+                                const accordionValue = `org-${orgName}`;
+                                setExpandedAccordion(accordionValue);
+
+                                setTimeout(() => {
+                                    const el = document.getElementById(id);
+                                    if (el) {
+                                        el.scrollIntoView({ behavior: "smooth", block: "center" });
+                                        setHighlightedId(id);
+                                    }
+
+                                }, 600);
+                            }
+                        }
+                    })
+                    .catch((err) => toast({title:"error", description:"Failed to fetch Ips", variant:"destructive"}));
+            }
+        }
+    }, [activateTab, id,fetchIps,toast,setGroupedIps]);
+
+    const [hasDraft, setHasDraft] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
+
+
+    const [existingFile, setExistingFile] = useState<ExistingFile | null>(null);
+
+
+    const handleLoadDraft = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/techtransfer/getDraft`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            const fileUrl = data.supportingFile;
+            const fileName = fileUrl ? fileUrl.split("/").pop().split("?")[0] : null;
+            if (res.ok) {
+                ttForm.setValue("ipTitle", data.ipTitle);
+                ttForm.setValue("description", data.description);
+                ttForm.setValue("inventorName", data.inventorName);
+                ttForm.setValue("organization", data.organization);
+                ttForm.setValue("firstName", data.firstName);
+                ttForm.setValue("lastName", data.lastName);
+                ttForm.setValue("supportingFile", data.supportingFile);
+                if (fileUrl && fileName) setExistingFile({ url: fileUrl, name: fileName });
+                setHasDraft(false)
+            } else {
+                toast({ title: "error", description: "No draft found", variant: "destructive" });
+            }
+        } catch (err) {
+            toast({ title: "Error", description: "Error loading draft", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const { groupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating } = useGroupedIps(techTransferIps)
+
+    const handleSaveDraft = async () => {
+        setLoading(true);
+        const formData = new FormData();
+
+        formData.append("ipTitle", ttForm.getValues("ipTitle"));
+        formData.append("description", ttForm.getValues("description"));
+        formData.append("inventorName", ttForm.getValues("inventorName"));
+        formData.append("organization", ttForm.getValues("organization"));
+        formData.append("firstName", ttForm.getValues("firstName"));
+        formData.append("lastName", ttForm.getValues("lastName"));
+        formData.append("contactEmail", user.email);
+        const file = ttForm.getValues("supportingFile");
+        if (file) {
+            formData.append("supportingFile", file);
+        }
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/techtransfer/saveDraft`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+            });
+            ttForm.reset()
+            if (res.ok) {
+                toast({ title: "Saved Successfully", description: "Draft saved successfully!" });
+                setHasDraft(true);
+            } else {
+                toast({ title: "Error", description: "Failed to save draft", variant: "destructive" });
+            }
+        } catch (err) {
+            toast({ title: "Error", description: "Error saving draft", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
-                {/* Header stays fixed */}
                 <DialogHeader className="p-6 shrink-0">
                     <DialogTitle className="text-3xl font-bold font-headline capitalize">
                         {userRole} Dashboard
@@ -1139,6 +1372,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     <TabsTrigger
                                         key={tab}
                                         value={tab}
+
                                         onClick={() => setActiveTab(tab as DashboardTab)}
                                         className="
                                     flex items-center justify-start md:justify-center gap-2 
@@ -1159,24 +1393,76 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                 <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                     <CardHeader>
                                         <CardTitle>Activity Overview</CardTitle>
-                                        <CardDescription>Your activity over the last 6 months.</CardDescription>
+
                                     </CardHeader>
                                     <CardContent>
                                         <ChartContainer config={chartConfig} className="h-[250px] w-full">
                                             <RechartsBarChart data={chartData}>
                                                 <CartesianGrid vertical={false} />
+
                                                 <XAxis
-                                                    dataKey="month"
+                                                    dataKey="year"
                                                     tickLine={false}
                                                     tickMargin={10}
                                                     axisLine={false}
                                                 />
-                                                <YAxis />
-                                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                                <Tooltip cursor={false} />
                                                 <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
                                             </RechartsBarChart>
                                         </ChartContainer>
                                     </CardContent>
+
+                                </Card>
+                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                    <CardHeader>
+                                        <CardTitle>Submissions</CardTitle>
+
+                                    </CardHeader>
+                                    <CardContent>
+                                        {loading ? (
+                                            <p>Loading...</p>
+                                        ) : ipData.length === 0 ? (
+                                            <p>You have no active submissions.</p>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                {ipData.map((submission, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="p-4 border rounded-lg flex justify-between items-center transition-all cursor-pointer hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-ring"
+                                                        tabIndex={0}
+                                                    >
+                                                        <div className="flex items-center space-x-4">
+                                                            <div className="flex flex-col items-center text-sm text-muted-foreground w-24 flex-shrink-0">
+                                                                <span className="font-medium text-xs capitalize tracking-wider">
+                                                                    {submission.date}
+                                                                </span>
+                                                                <span
+                                                                    className={`mt-1 px-2 py-0.5 rounded-full text-xs font-semibold 
+                            ${submission.approvalStatus === 'approved' ? 'bg-green-100 text-green-700' :
+                                                                            submission.approvalStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                                                'bg-red-100 text-red-700'
+                                                                        }`
+                                                                    }
+                                                                >
+                                                                    {submission.approvalStatus}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex-grow">
+                                                                <p className="font-semibold">{submission.title}</p>
+                                                                <p className="text-sm text-muted-foreground mt-1">Description:</p>
+                                                                <div className="line-clamp-2 text-sm">
+                                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                                        {submission.description}
+                                                                    </ReactMarkdown>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+
                                 </Card>
                             </TabsContent>
                             <TabsContent value="msmes" className="mt-0">
@@ -1232,7 +1518,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                     {mySubmissions.map((submission) => (
                                                         <div
                                                             key={submission.id}
-                                                            onClick={(e) =>{e.stopPropagation(); setCommentingSubmissionId(submission.id)}}
+                                                            onClick={(e) => { e.stopPropagation(); setCommentingSubmissionId(submission.id) }}
                                                             className="p-4 border rounded-lg flex justify-between items-center transition-all cursor-pointer hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-ring"
                                                             tabIndex={0}
                                                             onKeyDown={(e) => {
@@ -1246,7 +1532,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                 <p className="font-semibold">{submission.ipTitle}</p>
                                                                 <p className="text-sm text-muted-foreground">Status: {submission.approvalStatus}</p>
                                                             </div>
-
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1298,7 +1583,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 {/* Description */}
                                                 <div>
                                                     <label className="block text-sm font-medium mb-1">Description (Supports Markdown)</label>
-                                                    <MarkdownEditor ttForm={ttForm}/>
+                                                    <MarkdownEditor ttForm={ttForm} />
                                                 </div>
 
                                                 {/* Inventor & Organization */}
@@ -1343,26 +1628,50 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                             }
                                                         }}
                                                     />
-                                                    {ttForm.getValues("supportingFile") && (
-                                                        <p>Selected file: {ttForm.getValues("supportingFile")?.name}</p>
+                                                    {existingFile ? (
+                                                        <p>
+                                                            Existing file:{" "}
+                                                            <a href={existingFile.url} target="_blank" rel="noopener noreferrer">
+                                                                {existingFile.name}
+                                                            </a>
+                                                        </p>
+                                                    ) : (
+                                                        ttForm.getValues("supportingFile") && (
+                                                            <p>Selected file: {(ttForm.getValues("supportingFile") as any)?.name}</p>
+                                                        )
                                                     )}
-
+                                                </div>
+                                                <div className="flex justify-end items-center gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        className="w-full mt-2"
+                                                        onClick={hasDraft ? handleLoadDraft : handleSaveDraft}
+                                                        disabled={loading}
+                                                    >
+                                                        {loading ? (
+                                                            <>
+                                                                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                                                Processing...
+                                                            </>
+                                                        ) : hasDraft ? "Load Draft" : "Save Draft"}
+                                                    </Button>
+                                                    <Button
+                                                        type="submit"
+                                                        className="w-full mt-2"
+                                                        disabled={ttForm.formState.isSubmitting}
+                                                    >
+                                                        {ttForm.formState.isSubmitting ? (
+                                                            <>
+                                                                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                                                Submitting...
+                                                            </>
+                                                        ) : (
+                                                            'Submit IP'
+                                                        )}
+                                                    </Button>
                                                 </div>
 
-                                                <Button
-                                                    type="submit"
-                                                    className="w-full mt-4"
-                                                    disabled={ttForm.formState.isSubmitting}
-                                                >
-                                                    {ttForm.formState.isSubmitting ? (
-                                                        <>
-                                                            <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                                                            Submitting...
-                                                        </>
-                                                    ) : (
-                                                        'Submit IP'
-                                                    )}
-                                                </Button>
                                             </form>
                                         </CardContent>
                                     </Card>
@@ -1518,7 +1827,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 No IP submissions found.
                                             </p>
                                         ) : (
-                                            <Accordion type="single" collapsible className="w-full">
+                                            <Accordion type="single" collapsible className="w-full" value={expandedAccordion}
+                                                onValueChange={setExpandedAccordion}>
                                                 {Object.keys(groupedIps).map((organizationName) => (
                                                     <AccordionItem value={`org-${organizationName}`} key={organizationName} className="border-b">
                                                         <AccordionTrigger className="flex items-center justify-between gap-4 p-4 hover:no-underline data-[state=open]:bg-muted/50 rounded-md transition-colors">
@@ -1534,8 +1844,11 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                 {groupedIps[organizationName].map((ip) => (
                                                                     <div
                                                                         key={ip.id}
+                                                                        id={ip.id}
                                                                         onClick={(e) => setCommentingSubmissionId(ip.id)}
-                                                                        className="border rounded-md p-4 space-y-2 transition-all cursor-pointer hover:bg-accent/20 hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                                                        className={`border rounded-md p-4 space-y-2 transition-all cursor-pointer hover:bg-accent/20 hover:text-accent-foreground focus:outline-none focus:ring-2 
+                                                                        ${highlightedId === ip.id ? "highlight" : ""}
+                                                                        focus:ring-ring`}
                                                                         tabIndex={0}
                                                                         onKeyDown={(e) => {
                                                                             if (e.key === "Enter" || e.key === " ") {
@@ -1589,16 +1902,19 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                 onDelete={(id) => deleteSubmission(id, setMySubmissions)}
                                                                             />
                                                                         </div>
-
-
                                                                         <div className="text-sm text-muted-foreground space-y-1" >
                                                                             <p>
                                                                                 <strong>Inventor:</strong> {ip.firstName} {ip.lastName}
                                                                             </p>
                                                                             <div className="max-h-24 overflow-y-auto pr-2">
                                                                                 <p>
-                                                                                    <strong>Description:</strong> {ip.description}
+                                                                                    <strong>Description:</strong>
                                                                                 </p>
+                                                                                <div className="line-clamp-2 text-sm">
+                                                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                                                        {ip.description}
+                                                                                    </ReactMarkdown>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
 
@@ -2125,8 +2441,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 }
 
 const chartData = [
-    { month: "January", activity: 0 }, { month: "February", activity: 0 }, { month: "March", activity: 0 },
-    { month: "April", activity: 0 }, { month: "May", activity: 0 }, { month: "June", activity: 0 },
+    { year: 2025, activity: 1 }, { year: 2026, activity: 0 }, { year: 2027, activity: 0 },
+    { year: 2028, activity: 0 }, { year: 2029, activity: 0 }, { year: 2030, activity: 0 },
 ];
 
 const chartConfig = {

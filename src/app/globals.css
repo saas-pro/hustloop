@@ -663,10 +663,20 @@ body {
   transform: scale(0.9) translate(0, 30%);
 }
 
-.event-pointer{
-  pointer-events: auto !important;
-  
+[data-radix-dialog-close] {
+  display: none !important;
 }
+
+.highlight {
+  animation: highlightFlash 6s ease;
+}
+
+@keyframes highlightFlash {
+  0% { background-color: hsl(var(--accent));
+  opacity: 0.2; }
+  100% { background-color: transparent; }
+}
+
 
 
 /* Logo Hover Effect */
