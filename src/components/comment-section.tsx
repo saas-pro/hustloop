@@ -356,7 +356,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/tt_ip/comments/${editingCommentId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/tt_ip/${editingCommentId}/comments`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
