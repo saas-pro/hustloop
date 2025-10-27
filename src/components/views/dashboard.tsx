@@ -100,7 +100,8 @@ interface TechTransferIP {
     ipTitle: string;
     firstName: string;
     lastName: string;
-    description: string;
+    describetheTech: string;
+    summary: string;
     inventorName: string;
     organization: string;
     supportingFile?: string;
@@ -117,7 +118,7 @@ interface ChartDataItem {
 
 interface ipDataItem {
     title: string;
-    description: string;
+    summary: string;
     date: string;
     approvalStatus: string;
 }
@@ -131,7 +132,11 @@ const techTransferSchema = z.object({
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
     ipTitle: z.string().min(1, "IP title is required"),
-    description: z
+    summary: z
+        .string()
+        .min(10, "Description must be at least 10 characters")
+        .max(1000, "Description must not exceed 1000 characters"),
+    describetheTech: z
         .string()
         .min(10, "Description must be at least 10 characters")
         .max(5000, "Description must not exceed 5000 characters"),
@@ -146,7 +151,6 @@ const techTransferSchema = z.object({
         ),
 });
 
-// 2️⃣ Type inferred from Zod
 type TechTransferFormData = z.infer<typeof techTransferSchema>;
 
 type RegistrationAignite = {
@@ -227,7 +231,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const ttForm = useForm<TechTransferFormData>({
         resolver: zodResolver(techTransferSchema),
         defaultValues: {
-            description: ""
+            describetheTech: "",
+            summary: ""
         }
     }
     )
@@ -236,7 +241,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({ control: programForm.control, name: "features" });
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const itemsPerPage = 10; // Set your desired items per page
+    const itemsPerPage = 10;
     const [registrations, setRegistrations] = useState<RegistrationAignite[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingFormUsers, setIsLoadingFormUsers] = useState(false)
@@ -848,6 +853,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 throw new Error(data.error || "Failed to delete submission");
             }
             setMySubmissions((prev) => prev.filter((s) => s.id !== id));
+            fetchIps()
             toast({ title: "success", description: "Submission deleted successfully" });
         } catch (error: any) {
             toast({ title: "error", description: "Failed to delete submission" });
@@ -1102,6 +1108,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     };
     const [chartData, setChartData] = useState<ChartDataItem[]>([]);
     const [ipData, setIpData] = useState<ipDataItem[]>([]);
+    const [summary, setSummary] = useState("");
+    const maxChars = 1000;
+    const summaryValue = ttForm.watch("summary") || "";
+
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -1126,7 +1136,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                     const formatedIpsDetails = data.ips_details.map((item: any) => ({
                         title: item.title,
-                        description: item.description,
+                        summary: item.summary,
                         date: item.date,
                         approvalStatus: item.approval_status
                     }))
@@ -1181,7 +1191,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     .then((ips: any) => {
                         if (!Array.isArray(ips)) {
                             toast({ title: "error", description: "Ips not found", variant: "destructive" });
-                            return;
                         }
                         const grouped: Record<string, any[]> = {};
                         ips.forEach((ip: any) => {
@@ -1192,14 +1201,18 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         setGroupedIps(grouped);
                         if (id) {
                             const orgName = Object.keys(grouped).find((org) =>
-
                                 grouped[org].some((ip) => ip.id === id)
                             );
-
+                            if (!orgName) {
+                                toast({
+                                    title: "IP Not Found",
+                                    description: `No IP record found matching ID: ${id}`,
+                                    variant: "destructive",
+                                });
+                            }
                             if (orgName) {
                                 const accordionValue = `org-${orgName}`;
                                 setExpandedAccordion(accordionValue);
-
                                 setTimeout(() => {
                                     const el = document.getElementById(id);
                                     if (el) {
@@ -1234,7 +1247,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             const fileName = fileUrl ? fileUrl.split("/").pop().split("?")[0] : null;
             if (res.ok) {
                 ttForm.setValue("ipTitle", data.ipTitle);
-                ttForm.setValue("description", data.description);
+                ttForm.setValue("describetheTech", data.describetheTech);
+                ttForm.setValue("summary", data.summary);
                 ttForm.setValue("inventorName", data.inventorName);
                 ttForm.setValue("organization", data.organization);
                 ttForm.setValue("firstName", data.firstName);
@@ -1258,7 +1272,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         const formData = new FormData();
 
         formData.append("ipTitle", ttForm.getValues("ipTitle"));
-        formData.append("description", ttForm.getValues("description"));
+        formData.append("describetheTech", ttForm.getValues("describetheTech"));
+        formData.append("summary", ttForm.getValues("summary"));
         formData.append("inventorName", ttForm.getValues("inventorName"));
         formData.append("organization", ttForm.getValues("organization"));
         formData.append("firstName", ttForm.getValues("firstName"));
@@ -1421,10 +1436,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                 </div>
                                                                 <div className="flex-grow">
                                                                     <p className="font-semibold">{submission.title}</p>
-                                                                    <p className="text-sm text-muted-foreground mt-1">Description:</p>
+                                                                    <p className="text-sm text-muted-foreground mt-1">Summary:</p>
                                                                     <div className="line-clamp-2 text-sm">
                                                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                                            {submission.description}
+                                                                            {submission.summary}
                                                                         </ReactMarkdown>
                                                                     </div>
                                                                 </div>
@@ -1435,28 +1450,28 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             )}
                                         </CardContent>
                                     </Card>
-                                </div>) : 
-                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                    <CardHeader>
-                                        <CardTitle>Activity Overview</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                            <RechartsBarChart data={staticChartData}>
-                                                <CartesianGrid vertical={false} />
-                                                <XAxis
-                                                    dataKey="year"
-                                                    tickLine={false}
-                                                    tickMargin={10}
-                                                    axisLine={false}
-                                                />
-                                                <YAxis />
-                                                <Tooltip cursor={false} />
-                                                <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
-                                            </RechartsBarChart>
-                                        </ChartContainer>
-                                    </CardContent>
-                                </Card>}
+                                </div>) :
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader>
+                                            <CardTitle>Activity Overview</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                                                <RechartsBarChart data={staticChartData}>
+                                                    <CartesianGrid vertical={false} />
+                                                    <XAxis
+                                                        dataKey="year"
+                                                        tickLine={false}
+                                                        tickMargin={10}
+                                                        axisLine={false}
+                                                    />
+                                                    <YAxis />
+                                                    <Tooltip cursor={false} />
+                                                    <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
+                                                </RechartsBarChart>
+                                            </ChartContainer>
+                                        </CardContent>
+                                    </Card>}
                             </TabsContent>
                             <TabsContent value="msmes" className="mt-0">
                                 {hasSubscription || userRole === 'admin' ? (
@@ -1573,12 +1588,34 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                     )}
                                                 </div>
 
-                                                {/* Description */}
+                                                {/* Summary */}
                                                 <div>
-                                                    <label className="block text-sm font-medium mb-1">Description (Supports Markdown)</label>
+                                                    <label className="block text-sm font-medium mb-1">Summary</label>
+                                                    <Textarea
+                                                        {...ttForm.register("summary")}
+                                                        placeholder="Write a brief summary of your IP..."
+                                                        value={summaryValue}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value.slice(0, maxChars);
+                                                            ttForm.setValue("summary", value, { shouldValidate: true });
+                                                        }}
+                                                    />
+                                                    <div
+                                                        className={`text-right text-xs mt-1 ${summaryValue.length >= maxChars ? "text-red-500" : "text-gray-500"
+                                                            }`}
+                                                    >
+                                                        {summaryValue.length} / {maxChars} characters
+                                                    </div>
+
+
+                                                    {ttForm.formState.errors.summary && (
+                                                        <p className="text-red-500 text-sm">{ttForm.formState.errors.summary?.message}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium mb-1">Describe the technology (Supports Markdown)</label>
                                                     <MarkdownEditor ttForm={ttForm} />
                                                 </div>
-
                                                 {/* Inventor & Organization */}
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
@@ -1600,7 +1637,9 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                                                 {/* File Upload */}
                                                 <div>
-                                                    <label className="block text-sm font-medium mb-1">Upload Supporting Document</label>
+                                                    <label className="block text-sm font-medium mb-1">
+                                                        Upload Supporting Document <span className="text-gray-500">(multiple files supported)</span>
+                                                    </label>
                                                     <div className="relative w-full">
                                                         <button
                                                             type="button"
@@ -1614,6 +1653,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         ref={techTransferFile}
                                                         type="file"
                                                         accept=".pdf,.doc,.docx"
+                                                        multiple
                                                         style={{ display: "none" }}
                                                         onChange={(e) => {
                                                             if (e.target.files && e.target.files[0]) {
@@ -1854,15 +1894,15 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             <div className="flex items-center gap-2">
                                                                                 <p className="font-semibold text-lg text-foreground">{ip.ipTitle}</p>
                                                                                 <Badge
-                                                                                    variant={
-                                                                                        ip.approvalStatus === "pending"
-                                                                                            ? "secondary"
-                                                                                            : ip.approvalStatus === "approved"
-                                                                                                ? "default"
+                                                                                    className={`px-3 py-1 text-xs font-semibold border rounded-sm capitalize
+    ${ip.approvalStatus === "approved"
+                                                                                            ? "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300"
+                                                                                            : ip.approvalStatus === "rejected"
+                                                                                                ? "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300"
                                                                                                 : ip.approvalStatus === "needInfo"
-                                                                                                    ? "secondary"
-                                                                                                    : "destructive"
-                                                                                    }
+                                                                                                    ? "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300"
+                                                                                                    : "border-gray-400 text-gray-700 bg-gray-50 dark:border-gray-500 dark:text-gray-300"
+                                                                                        }`}
                                                                                 >
                                                                                     {ip.approvalStatus}
                                                                                 </Badge>
@@ -1900,14 +1940,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                 <strong>Inventor:</strong> {ip.firstName} {ip.lastName}
                                                                             </p>
                                                                             <div className="max-h-24 overflow-y-auto pr-2">
-                                                                                <p>
-                                                                                    <strong>Description:</strong>
+                                                                                <p className="line-clamp-3">
+                                                                                    <strong>Summary: </strong>
+                                                                                    {ip.summary}
                                                                                 </p>
-                                                                                <div className="line-clamp-2 text-sm">
-                                                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                                                        {ip.description}
-                                                                                    </ReactMarkdown>
-                                                                                </div>
                                                                             </div>
                                                                         </div>
 

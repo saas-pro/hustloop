@@ -23,6 +23,7 @@ export const IpActions: React.FC<IpActionsProps> = ({
     handleUpdateStatus,
     handleActionClick,
 }) => {
+    
     return (
         <div className="flex items-center gap-2 ml-auto">
             {statusUpdates[ipId] && (

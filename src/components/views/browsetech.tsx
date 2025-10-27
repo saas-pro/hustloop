@@ -19,7 +19,8 @@ interface TechTransferProfile {
     ipTitle: string;
     firstName: string;
     lastName: string;
-    description: string;
+    describetheTech: string;
+    summary:string;
     inventorName: string;
     organization: string;
     contactEmail: string;
@@ -39,8 +40,6 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                 setIsLoading(true);
 
                 const response = await fetch(`${API_BASE_URL}/api/getTechTransfer`);
-
-
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
@@ -62,7 +61,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6">
-                    <DialogTitle className="text-3xl font-bold text-center font-headline">Tech Transfer</DialogTitle>
+                    <DialogTitle className="text-3xl font-bold text-center font-headline">Technology Transfer</DialogTitle>
                     <DialogDescription className="text-center">
                         <span className="text-accent">
                             {"Hustloop is where innovation meets execution."}
@@ -80,7 +79,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                     )}
                     {!isLoading && profiles.length === 0 && (
                         <div className="py-10 text-center text-gray-500 flex items-center justify-center h-[50vh]">
-                            <p>No tech transfer profiles are currently available.</p>
+                            <p>No Technology Transfer profiles are currently available.</p>
                         </div>
                     )}
                     {!isLoading && profiles.length > 0 && (
@@ -89,14 +88,14 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                                 <div key={profile.id} className="border rounded-lg p-6 shadow-sm">
                                     <h3 className="text-xl font-bold text-primary">{profile.ipTitle}</h3>
                                     <p className="text-sm text-muted-foreground">{profile.organization}</p>
-                                    <p className="mt-2 text-gray-700">{profile.description}</p>
+                                    <p className="mt-2 text-gray-700">{profile.summary}</p>
 
                                     <Separator className="my-4" />
 
-                                    <div className="space-y-4">
+                                    <div className="space-y-4 ">
                                         <div>
                                             <h4 className="font-semibold text-lg">About</h4>
-                                            <p className="text-sm text-gray-600">{profile.description}</p>
+                                            <p className="text-sm text-gray-600 leading-4">{profile.summary}</p>
                                         </div>
                                         <div>
                                             <h4 className="font-semibold text-lg">Inventor</h4>
@@ -105,7 +104,6 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                                     </div>
 
                                     <div className="mt-4 flex justify-end">
-                                        {/* "View Document" button */}
                                         {profile.supportingFile && (
                                             <a
                                                 href={`${API_BASE_URL}/${profile.supportingFile.replace(/^app\//, "")}`}

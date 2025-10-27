@@ -18,11 +18,13 @@ import { jwtDecode } from 'jwt-decode';
 import remarkGfm from "remark-gfm";
 import { format } from 'date-fns';
 import { IpActions } from './ui/ip-actions';
+import { MarkdownViewer } from './ui/markdownViewer';
 
 interface IPDetails {
     id: string;
     title: string;
-    description: string;
+    describetheTech: string;
+    summary: string;
     approvalStatus: string;
     name: string;
     organization: string;
@@ -517,6 +519,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
         return { groupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating };
     };
     const { groupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating } = useGroupedIps(techTransferIps)
+
     useEffect(() => {
         const fetchIpDetails = async () => {
             setIsFetchingIpDetails(true);
@@ -599,9 +602,6 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
 
         fetchComments();
     }, [submissionId, shouldRefetchComments, toast]);
-
-    const currentRole = getCurrentUserRoles();
-    const isAdmin = currentRole.includes("admin");
     return (
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
             if (!open) {
@@ -617,17 +617,6 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                     <DialogTitle className="text-xl font-bold">
                         {ipDetails?.title}
                     </DialogTitle>
-                    {(ipDetails && isAdmin) && (
-                        <div >
-                            <IpActions
-                                ipId={ipDetails.id}
-                                statusUpdates={statusUpdates}
-                                isUpdating={isUpdating}
-                                handleUpdateStatus={handleUpdateStatus}
-                                handleActionClick={handleActionClick}
-                            />
-                        </div>
-                    )}
                 </div>
 
                 <div className="flex-grow overflow-y-auto p-4 space-y-4">
@@ -638,16 +627,36 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                                     <Info className="h-5 w-5 mr-2" />
                                     {ipDetails.title}
                                 </CardTitle>
-                                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${ipDetails.approvalStatus === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>
+
+                                <span
+                                    className={`px-3 py-2 text-xs font-semibold border rounded-sm 
+                                        ${ipDetails?.approvalStatus === "approved"
+                                            ? "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300"
+                                            : ipDetails?.approvalStatus === "rejected"
+                                                ? "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300"
+                                                : ipDetails?.approvalStatus === "needInfo"
+                                                    ? "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300"
+                                                    : "border-gray-400 text-gray-700 bg-gray-50 dark:border-gray-500 dark:text-gray-300"
+                                        }`}
+                                >
                                     {ipDetails.approvalStatus}
                                 </span>
                             </CardHeader>
                             <CardContent className="p-4 pt-0 text-sm">
-                                <p>
-                                    Description:
-                                </p>
-                                <div>
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{ipDetails.description}</ReactMarkdown>
+                                <div className='py-2 '>
+                                    <h1 className='text-lg'>
+                                        Summary:
+                                    </h1>
+                                    <div className='p-2'>
+                                        <p>{ipDetails.summary} </p>
+                                    </div>
+                                </div>
+
+                                <h1 className='text-lg'>
+                                    Described About the Technology:
+                                </h1>
+                                <div className='p-2'>
+                                    <MarkdownViewer content={ipDetails.describetheTech} />
                                 </div>
                                 <p className="mt-1 text-muted-foreground">Submitted By: <span className="font-semibold">{ipDetails.name}</span> from <span className="italic">{ipDetails.organization}</span></p>
 
@@ -815,8 +824,6 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                                 className='resize-y min-h-[80px]'
                             />
                         </div>
-
-
 
                         {attachedFile && (
                             <div className="mt-2 flex items-center gap-2 p-2 rounded-md border bg-muted text-sm">
