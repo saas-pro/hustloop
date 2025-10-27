@@ -400,43 +400,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setIsDeleting(false);
         }
     };
-    const handleDeleteRegistration = async () => {
-        const token = localStorage.getItem('token');
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/delete-all-aignite`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                toast({
-                    title: 'Success',
-                    description: `Successfully deleted ${data.deleted_count} registration(s).`,
-                    variant: 'default',
-                });
-                fetchRegistrations(0)
-            } else {
-                toast({
-                    title: 'Error',
-                    description: data.message || 'Something went wrong.',
-                    variant: 'destructive',
-                });
-                console.error(data.error);
-            }
-        } catch (error) {
-            toast({
-                title: 'Network Error',
-                description: 'Could not reach the server. Please try again later.',
-                variant: 'destructive',
-            });
-        }
-    };
 
 
     const fetchBlogPosts = useCallback(async () => {
@@ -631,6 +594,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             if (activeTab === 'subscribers') fetchSubscribers();
         }
     }, [activeTab, userRole, fetchUsers, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
+
+
 
     const handleApiResponse = async (response: Response, successMessage: string, errorMessage: string) => {
         if (response.ok) {
@@ -890,13 +855,16 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     };
 
     const [isTechTransfer, setIsTechTransfer] = useState(false)
+    const [isipOverview, setisipOverview] = useState(false)
 
     useEffect(() => {
         const founder_role = localStorage.getItem("founder_role");
         if (founder_role === "List a technology for licensing") {
             setIsTechTransfer(true);
+            setisipOverview(true)
         } else {
             setIsTechTransfer(false)
+            setisipOverview(false)
         }
     }, []);
     const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "aignite", "engagement", "settings"];
@@ -1137,58 +1105,61 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        fetch(`${API_BASE_URL}/api/techtransfer/myGraph`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-        })
-            .then((res) => res.json())
-            .then((data) => {
-                if (data.error) {
-                    toast({ title: "Error", description: data.error, variant: "destructive" })
-                    return
-                }
-                const formattedData = data.ips.map((item: any) => ({
-                    year: item.year.toString(),
-                    activity: item.total_submissions,
-                }));
-
-                const formatedIpsDetails = data.ips_details.map((item: any) => ({
-                    title: item.title,
-                    description: item.description,
-                    date: item.date,
-                    approvalStatus: item.approval_status
-                }))
-
-                setIpData(formatedIpsDetails)
-
-                const START_YEAR = 2023;
-                const TOTAL_YEARS = 5;
-
-                const baseData = Array.from({ length: TOTAL_YEARS }, (_, i) => {
-                    const year = (START_YEAR + i).toString();
-                    return {
-                        year: year,
-                        activity: 0
-                    };
-                });
-
-                const finalChartData = baseData.map((baseItem: ChartDataItem) => {
-                    const match = formattedData.find((item: ChartDataItem) => item.year === baseItem.year);
-
-                    if (match) {
-                        return {
-                            ...baseItem,
-                            activity: match.activity
-                        };
+        if (isipOverview) {
+            fetch(`${API_BASE_URL}/api/techtransfer/myGraph`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.error) {
+                        toast({ title: "Error", description: data.error, variant: "destructive" })
+                        return
                     }
-                    return baseItem;
+                    const formattedData = data.ips.map((item: any) => ({
+                        year: item.year.toString(),
+                        activity: item.total_submissions,
+                    }));
+
+                    const formatedIpsDetails = data.ips_details.map((item: any) => ({
+                        title: item.title,
+                        description: item.description,
+                        date: item.date,
+                        approvalStatus: item.approval_status
+                    }))
+
+                    setIpData(formatedIpsDetails)
+
+                    const START_YEAR = 2023;
+                    const TOTAL_YEARS = 5;
+
+                    const baseData = Array.from({ length: TOTAL_YEARS }, (_, i) => {
+                        const year = (START_YEAR + i).toString();
+                        return {
+                            year: year,
+                            activity: 0
+                        };
+                    });
+
+                    const finalChartData = baseData.map((baseItem: ChartDataItem) => {
+                        const match = formattedData.find((item: ChartDataItem) => item.year === baseItem.year);
+
+                        if (match) {
+                            return {
+                                ...baseItem,
+                                activity: match.activity
+                            };
+                        }
+                        return baseItem;
+                    });
+                    setChartData(finalChartData);
                 });
-                setChartData(finalChartData);
-            });
-    }, [toast]);
+        }
+
+    }, [toast, isipOverview]);
 
 
     const [expandedAccordion, setExpandedAccordion] = useState<string | undefined>(undefined);
@@ -1394,80 +1365,98 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         </TabsList>
                         <div className="flex-grow overflow-y-auto pb-6 w-full">
                             <TabsContent value="overview" className="mt-0 space-y-6">
+                                {isipOverview ? (<div>
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader>
+                                            <CardTitle>Activity Overview</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                                                <RechartsBarChart data={chartData}>
+                                                    <CartesianGrid vertical={false} />
+                                                    <XAxis
+                                                        dataKey="year"
+                                                        tickLine={false}
+                                                        tickMargin={10}
+                                                        axisLine={false}
+                                                    />
+                                                    <Tooltip cursor={false} />
+                                                    <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
+                                                </RechartsBarChart>
+                                            </ChartContainer>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader>
+                                            <CardTitle>Submissions</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {loading ? (
+                                                <p>Loading...</p>
+                                            ) : ipData.length === 0 ? (
+                                                <p>You have no active submissions.</p>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    {ipData.map((submission, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="p-4 border rounded-lg flex justify-between items-center transition-all cursor-pointer hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-ring"
+                                                            tabIndex={0}
+                                                        >
+                                                            <div className="flex items-center space-x-4">
+                                                                <div className="flex flex-col items-center text-sm text-muted-foreground w-24 flex-shrink-0">
+                                                                    <span className="font-medium text-xs capitalize tracking-wider">
+                                                                        {submission.date}
+                                                                    </span>
+                                                                    <span
+                                                                        className={`mt-1 px-2 py-0.5 rounded-full text-xs font-semibold 
+                            ${submission.approvalStatus === 'approved' ? 'bg-green-100 text-green-700' :
+                                                                                submission.approvalStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                                                    'bg-red-100 text-red-700'
+                                                                            }`
+                                                                        }
+                                                                    >
+                                                                        {submission.approvalStatus}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex-grow">
+                                                                    <p className="font-semibold">{submission.title}</p>
+                                                                    <p className="text-sm text-muted-foreground mt-1">Description:</p>
+                                                                    <div className="line-clamp-2 text-sm">
+                                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                                            {submission.description}
+                                                                        </ReactMarkdown>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </div>) : 
                                 <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                     <CardHeader>
                                         <CardTitle>Activity Overview</CardTitle>
-
                                     </CardHeader>
                                     <CardContent>
                                         <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                            <RechartsBarChart data={chartData}>
+                                            <RechartsBarChart data={staticChartData}>
                                                 <CartesianGrid vertical={false} />
-
                                                 <XAxis
                                                     dataKey="year"
                                                     tickLine={false}
                                                     tickMargin={10}
                                                     axisLine={false}
                                                 />
+                                                <YAxis />
                                                 <Tooltip cursor={false} />
                                                 <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
                                             </RechartsBarChart>
                                         </ChartContainer>
                                     </CardContent>
-
-                                </Card>
-                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                    <CardHeader>
-                                        <CardTitle>Submissions</CardTitle>
-
-                                    </CardHeader>
-                                    <CardContent>
-                                        {loading ? (
-                                            <p>Loading...</p>
-                                        ) : ipData.length === 0 ? (
-                                            <p>You have no active submissions.</p>
-                                        ) : (
-                                            <div className="space-y-4">
-                                                {ipData.map((submission, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="p-4 border rounded-lg flex justify-between items-center transition-all cursor-pointer hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-ring"
-                                                        tabIndex={0}
-                                                    >
-                                                        <div className="flex items-center space-x-4">
-                                                            <div className="flex flex-col items-center text-sm text-muted-foreground w-24 flex-shrink-0">
-                                                                <span className="font-medium text-xs capitalize tracking-wider">
-                                                                    {submission.date}
-                                                                </span>
-                                                                <span
-                                                                    className={`mt-1 px-2 py-0.5 rounded-full text-xs font-semibold 
-                            ${submission.approvalStatus === 'approved' ? 'bg-green-100 text-green-700' :
-                                                                            submission.approvalStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                                                'bg-red-100 text-red-700'
-                                                                        }`
-                                                                    }
-                                                                >
-                                                                    {submission.approvalStatus}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex-grow">
-                                                                <p className="font-semibold">{submission.title}</p>
-                                                                <p className="text-sm text-muted-foreground mt-1">Description:</p>
-                                                                <div className="line-clamp-2 text-sm">
-                                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                                        {submission.description}
-                                                                    </ReactMarkdown>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </CardContent>
-
-                                </Card>
+                                </Card>}
                             </TabsContent>
                             <TabsContent value="msmes" className="mt-0">
                                 {hasSubscription || userRole === 'admin' ? (
@@ -2419,12 +2408,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         </div>
                     </Tabs>
                 </div>
-                {commentingSubmissionId !== null && (
-                    <CommentSection
-                        submissionId={commentingSubmissionId}
-                        onClose={() => setCommentingSubmissionId(null)}
-                    />
-                )}
+                {
+                    commentingSubmissionId !== null && (
+                        <CommentSection
+                            submissionId={commentingSubmissionId}
+                            onClose={() => setCommentingSubmissionId(null)}
+                        />
+                    )
+                }
                 <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the user account and remove their data from our servers.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToDelete) { handleDeleteUser(userToDelete.uid); setUserToDelete(null); } }}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                 <AlertDialog open={!!userToBan} onOpenChange={(open) => !open && setUserToBan(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will {userToBan?.status === 'banned' ? "unban" : "ban"} the user, {userToBan?.status === 'banned' ? "allowing" : "preventing"} them from logging in. Do you want to continue?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToBan) { handleToggleBanUser(userToBan.uid); setUserToBan(null); } }}>{userToBan?.status === 'banned' ? "Unban User" : "Ban User"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                 <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
@@ -2444,8 +2435,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     );
 }
 
-const chartData = [
-    { year: 2025, activity: 1 }, { year: 2026, activity: 0 }, { year: 2027, activity: 0 },
+const staticChartData = [
+    { year: 2025, activity: 0 }, { year: 2026, activity: 0 }, { year: 2027, activity: 0 },
     { year: 2028, activity: 0 }, { year: 2029, activity: 0 }, { year: 2030, activity: 0 },
 ];
 
