@@ -180,7 +180,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
 
     useEffect(() => {
         const socket = io(API_BASE_URL, {
-            path: "socket.io",
+            path: "/socket.io",
             transports: ['websocket']
         });
 
