@@ -936,6 +936,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 },
                 body: formData,
             });
+            console.log(formData)
 
             if (res.ok) {
                 toast({
@@ -1950,7 +1951,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                         <div className="pt-4 flex justify-between items-center">
                                                                             {ip.supportingFile && (
                                                                                 <a
-                                                                                    href={`${API_BASE_URL}/${ip.supportingFile.replace(/^app\//, "")}`}
+                                                                                    href={`${ip.supportingFile}`}
                                                                                     target="_blank"
                                                                                     rel="noopener noreferrer"
                                                                                     onClick={(e) => e.stopPropagation()}

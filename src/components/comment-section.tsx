@@ -183,7 +183,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
     useEffect(() => {
         const socket = io(API_BASE_URL, {
             path: "/socket.io",
-            transports: ['websocket']
+            transports: ['websocket','polling']
         });
 
         socket.emit('join', `ip_${submissionId}`);
@@ -280,6 +280,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                 },
                 body: formData,
             });
+            console.log(formData)
 
             if (!response.ok) {
                 const errorData = await response.json();
