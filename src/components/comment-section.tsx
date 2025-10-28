@@ -168,7 +168,6 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 p-2 mt-2 border border-dashed rounded-md bg-accent/30 hover:bg-accent transition-colors"
-            onClick={(e) => e.stopPropagation()}
         >
             <Paperclip className="h-4 w-4 text-primary" />
             <span className="font-medium text-sm text-primary truncate">
@@ -183,7 +182,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
     useEffect(() => {
         const socket = io(API_BASE_URL, {
             path: "/socket.io",
-            transports: ['websocket','polling']
+            transports: ['websocket', 'polling']
         });
 
         socket.emit('join', `ip_${submissionId}`);
@@ -270,6 +269,8 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
             formData.append('supportingFile', attachedFile);
         }
 
+        console.log(formData)
+
         try {
             setIsLoading(true);
             const token = localStorage.getItem('token');
@@ -280,14 +281,14 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                 },
                 body: formData,
             });
-            console.log(formData)
+
+            const result = await response.json();
 
             if (!response.ok) {
-                const errorData = await response.json();
-                toast({ title: 'Error', description: errorData.error || 'Failed to add comment', variant: 'destructive' });
+                toast({ title: 'Error', description: result.error || 'Failed to add comment', variant: 'destructive' });
                 return;
             }
-            const newCommentData: Comment = await response.json();
+
             setNewComment('');
             setAttachedFile(null);
             setReplyingTo(null);
