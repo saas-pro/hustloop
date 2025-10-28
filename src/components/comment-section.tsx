@@ -269,7 +269,8 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
             formData.append('supportingFile', attachedFile);
         }
 
-        console.log(formData)
+        console.log("attachedFile:",attachedFile);
+        console.log("formData:",formData)
 
         try {
             setIsLoading(true);
