@@ -2,7 +2,7 @@ const plans = [
     {
         name: "Free",
         price: "₹0",
-        description: "For individuals getting started.",
+        description: "Kickstart with technology discovery and foundational support at no cost.",
         features: [
             "Technology/ IP (Intellectual Property)",
             "Basic support"
@@ -14,7 +14,7 @@ const plans = [
     {
         name: "Standard",
         price: "₹999",
-        description: "For growing teams that need more access and support.",
+        description: "Accelerate incubation with full access and priority support.",
         features: [
             "Access to all incubators",
             "Submit 1 Idea to Incubator",
@@ -29,7 +29,7 @@ const plans = [
         name: "Premium",
         tag: "Popular",
         price: "₹2999",
-        description: "For established businesses and enterprises.",
+        description: "Solve MSME challenges with submissions and 24/7 priority support.",
         features: [
             "Browse Challenges",
             "Submit 1 solution to MSME",

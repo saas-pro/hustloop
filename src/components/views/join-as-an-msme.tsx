@@ -430,10 +430,6 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
 
     const getUsersCollaboration = useCallback(async () => {
         const token = localStorage.getItem('token');
-        if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
-            return;
-        }
         try {
             const response = await fetch(`${API_BASE_URL}/api/get-users-collaboration`, {
                 method: 'GET',
@@ -445,8 +441,6 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
 
             const result = await response.json();
             setGetUserCollaborationData(result.collaborations);
-
-
         } catch (error) {
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
         }

@@ -127,11 +127,20 @@ interface ExistingFile {
     url: string;
     name: string;
 }
+
+interface RestoreIP {
+    id: string;
+    ipTitle: string;
+    ip_id: string;
+    action_by_user_name?: string;
+    organization: string;
+}
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const techTransferSchema = z.object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    ipTitle: z.string().min(1, "IP title is required"),
+    firstName: z.string().min(1, "First name is required").max(20, "First name must not exceed 20 characters"),
+    lastName: z.string().min(1, "Last name is required").max(20, "Last name must not exceed 20 characters"),
+    ipTitle: z.string().min(1, "IP title is required").max(35, "First name must not exceed 20 characters"),
     summary: z
         .string()
         .min(10, "Description must be at least 10 characters")
@@ -140,8 +149,8 @@ const techTransferSchema = z.object({
         .string()
         .min(10, "Description must be at least 10 characters")
         .max(5000, "Description must not exceed 5000 characters"),
-    inventorName: z.string().min(1, "Inventor name is required"),
-    organization: z.string().min(1, "Organization is required"),
+    inventorName: z.string().min(1, "Inventor name is required").max(20, "Inventor Name must not exceed 20 characters"),
+    organization: z.string().min(1, "Organization is required").max(20, "Organization Name must not exceed 20 characters"),
     supportingFile: z
         .any()
         .optional()
@@ -936,7 +945,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 },
                 body: formData,
             });
-            console.log(formData)
+
 
             if (res.ok) {
                 toast({
@@ -1232,8 +1241,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     const [hasDraft, setHasDraft] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
-
-
     const [existingFile, setExistingFile] = useState<ExistingFile | null>(null);
 
 
@@ -1306,6 +1313,97 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }
     };
 
+    const [activeSubTab, setActiveSubTab] = useState("ip/technologies");
+    const [restoreIps, setRestoreIps] = useState<RestoreIP[]>([]);
+    const [isLoadingRestoreIps, setIsLoadingRestoreIps] = useState(false);
+
+    const fetchRestoreIps = useCallback(async () => {
+            try {
+                setIsLoadingRestoreIps(true);
+                const res = await fetch(`${API_BASE_URL}/api/techtransfer/restore`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                });
+
+                const restoreIp = await res.json();
+                if (Array.isArray(restoreIp)) {
+                    setRestoreIps(restoreIp);
+                } else {
+                    setRestoreIps([]);
+                }
+                if (!res.ok) toast({
+                    title: "Fetch failed",
+                    description: "Failed to fetch restore IPs",
+                    variant: "destructive",
+                });
+            } catch (err) {
+                toast({
+                    title: "Failed",
+                    description: "Failed to load deleted IP submissions.",
+                    variant: "destructive",
+                });
+            } finally {
+                setIsLoadingRestoreIps(false);
+            }
+        },[toast,token]
+    )
+
+
+    const handleRestore = async (restoreId: any) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/techtransfer/restore/${restoreId}`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (res.ok) {
+                toast({
+                    title: "Restored successfully!",
+                    description: "The IP record has been restored and moved back to active submissions.",
+                });
+                setRestoreIps((prev) => prev.filter((ip: any) => ip.restore_id !== restoreId));
+                fetchRestoreIps()
+            } else {
+                toast({
+                    title: "Restore failed",
+                    description: "There was an issue restoring this IP. Please try again.",
+                    variant: "destructive",
+                });
+            }
+        } catch (err) {
+            console.error("Error restoring IP:", err);
+            toast({
+                title: "Server error",
+                description: "Failed to connect to the server.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (activeSubTab === "restoreips") {
+            fetchRestoreIps();
+        }
+    }, [activeSubTab,fetchRestoreIps]);
+
+    useEffect(() => {
+        if (activeSubTab === "ip/technologies" && userRole === "admin") {
+            fetchIps()
+        }
+    }, [activeSubTab, fetchIps, userRole])
+
+    useEffect(() => {
+        const pendingTab = localStorage.getItem("pendingTab");
+        if (pendingTab) {
+            setActiveTab(pendingTab as DashboardTab);
+            localStorage.removeItem("pendingTab");
+        }
+    }, []);
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -1320,6 +1418,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-4 pt-0">
                     <Tabs value={activeTab}
+
                         className="flex flex-col flex-grow min-h-0">
                         <TabsList
                             className={`
@@ -1363,7 +1462,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     <TabsTrigger
                                         key={tab}
                                         value={tab}
-
                                         onClick={() => setActiveTab(tab as DashboardTab)}
                                         className="
                                     flex items-center justify-start md:justify-center gap-2 
@@ -1379,7 +1477,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                 );
                             })}
                         </TabsList>
-                        <div className="flex-grow overflow-y-auto pb-6 w-full">
+                        <div className="flex-grow overflow-y-auto pb-6 w-full" >
                             <TabsContent value="overview" className="mt-0 space-y-6">
                                 {isipOverview ? (<div>
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -1565,7 +1663,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">First Name</label>
-                                                        <Input {...ttForm.register("firstName")} placeholder="First Name" />
+                                                        <Input {...ttForm.register("firstName")} placeholder="First Name" onChange={(e) => {
+                                                            const value = e.target.value.slice(0, 20);
+                                                            ttForm.setValue("firstName", value, { shouldValidate: true });
+                                                        }} />
                                                         {ttForm.formState.errors.firstName && (
                                                             <p className="text-red-500 text-sm">{ttForm.formState.errors.firstName.message}</p>
                                                         )}
@@ -1573,7 +1674,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">Last Name</label>
-                                                        <Input {...ttForm.register("lastName")} placeholder="Last Name" />
+                                                        <Input {...ttForm.register("lastName")} placeholder="Last Name" onChange={(e) => {
+                                                            const value = e.target.value.slice(0, 20);
+                                                            ttForm.setValue("lastName", value, { shouldValidate: true });
+                                                        }} />
                                                         {ttForm.formState.errors.lastName && (
                                                             <p className="text-red-500 text-sm">{ttForm.formState.errors.lastName.message}</p>
                                                         )}
@@ -1583,7 +1687,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 {/* IP Title */}
                                                 <div>
                                                     <label className="block text-sm font-medium mb-1">IP Title</label>
-                                                    <Input {...ttForm.register("ipTitle")} placeholder="Enter your IP title" />
+                                                    <Input {...ttForm.register("ipTitle")} placeholder="Enter your IP title" onChange={(e) => {
+                                                        const value = e.target.value.slice(0, 35);
+                                                        ttForm.setValue("ipTitle", value, { shouldValidate: true });
+                                                    }} />
                                                     {ttForm.formState.errors.ipTitle && (
                                                         <p className="text-red-500 text-sm">{ttForm.formState.errors.ipTitle.message}</p>
                                                     )}
@@ -1621,7 +1728,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">Inventor Name</label>
-                                                        <Input {...ttForm.register("inventorName")} placeholder="Inventor full name" />
+                                                        <Input {...ttForm.register("inventorName")} placeholder="Inventor full name" onChange={(e) => {
+                                                            const value = e.target.value.slice(0, 20);
+                                                            ttForm.setValue("inventorName", value, { shouldValidate: true });
+                                                        }} />
                                                         {ttForm.formState.errors.inventorName && (
                                                             <p className="text-red-500 text-sm">{ttForm.formState.errors.inventorName.message}</p>
                                                         )}
@@ -1629,7 +1739,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">Organization</label>
-                                                        <Input {...ttForm.register("organization")} placeholder="Organization / Institution" />
+                                                        <Input {...ttForm.register("organization")} placeholder="Organization / Institution" onChange={(e) => {
+                                                            const value = e.target.value.slice(0, 20);
+                                                            ttForm.setValue("organization", value, { shouldValidate: true });
+                                                        }} />
                                                         {ttForm.formState.errors.organization && (
                                                             <p className="text-red-500 text-sm">{ttForm.formState.errors.organization.message}</p>
                                                         )}
@@ -1852,195 +1965,266 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         </Card>
                                     </TabsContent>
                                     <TabsContent value="ip/technologies" className="mt-0">
-                                        {isLoadingIps ? (
-                                            <div className="flex justify-center items-center h-48">
-                                                <Loader2 className="h-8 w-8 animate-spin" />
-                                            </div>
-                                        ) : techTransferIps.length === 0 ? (
-                                            <p className="text-center text-muted-foreground py-8">
-                                                No IP submissions found.
-                                            </p>
-                                        ) : (
-                                            <Accordion type="single" collapsible className="w-full" value={expandedAccordion}
-                                                onValueChange={setExpandedAccordion}>
-                                                {Object.keys(groupedIps).map((organizationName) => (
-                                                    <AccordionItem value={`org-${organizationName}`} key={organizationName} className="border-b">
-                                                        <AccordionTrigger className="flex items-center justify-between gap-4 p-4 hover:no-underline data-[state=open]:bg-muted/50 rounded-md transition-colors">
-                                                            <p className="font-medium truncate">
-                                                                {organizationName}
-                                                                <span className="text-sm text-muted-foreground ml-2">
-                                                                    ({groupedIps[organizationName].length} submissions)
-                                                                </span>
-                                                            </p>
-                                                        </AccordionTrigger>
-                                                        <AccordionContent className="p-4">
-                                                            <div className="space-y-4">
-                                                                {groupedIps[organizationName].map((ip) => (
-                                                                    <div
-                                                                        key={ip.id}
-                                                                        id={ip.id}
-                                                                        onClick={(e) => setCommentingSubmissionId(ip.id)}
-                                                                        className={`border rounded-md p-4 space-y-2 transition-all cursor-pointer hover:bg-accent/20 hover:text-accent-foreground focus:outline-none focus:ring-2 
+                                        <Tabs defaultValue="ip/technologies" className="w-full " value={activeSubTab}
+                                            onValueChange={setActiveSubTab}
+                                        >
+                                            <TabsList className="grid w-full grid-cols-2 mb-3 mt-0">
+                                                <TabsTrigger value="ip/technologies">IP Submissions</TabsTrigger>
+                                                <TabsTrigger value="restoreips">Deleted IPs</TabsTrigger>
+                                            </TabsList>
+                                            <TabsContent value="ip/technologies" className="mt-0">
+                                                {isLoadingIps ? (
+                                                    <div className="flex justify-center items-center h-48">
+                                                        <Loader2 className="h-8 w-8 animate-spin" />
+                                                    </div>
+                                                ) : techTransferIps.length === 0 ? (
+                                                    <p className="text-center text-muted-foreground py-8">
+                                                        No IP submissions found.
+                                                    </p>
+                                                ) : (
+                                                    <Accordion type="single" collapsible className="w-full" value={expandedAccordion}
+                                                        onValueChange={setExpandedAccordion}>
+                                                        {Object.keys(groupedIps).map((organizationName) => (
+                                                            <AccordionItem value={`org-${organizationName}`} key={organizationName} className="border-b">
+                                                                <AccordionTrigger className="flex items-center justify-between gap-4 p-4 hover:no-underline data-[state=open]:bg-muted/50 rounded-md transition-colors">
+                                                                    <p className="font-medium truncate">
+                                                                        {organizationName}
+                                                                        <span className="text-sm text-muted-foreground ml-2">
+                                                                            ({groupedIps[organizationName].length} submissions)
+                                                                        </span>
+                                                                    </p>
+                                                                </AccordionTrigger>
+                                                                <AccordionContent className="p-4">
+                                                                    <div className="space-y-4">
+                                                                        {groupedIps[organizationName].map((ip) => (
+                                                                            <div
+                                                                                key={ip.id}
+                                                                                id={ip.id}
+                                                                                onClick={(e) => setCommentingSubmissionId(ip.id)}
+                                                                                className={`border rounded-md p-4 space-y-2 transition-all cursor-pointer hover:bg-accent/20 hover:text-accent-foreground focus:outline-none focus:ring-2 
                                                                         ${highlightedId === ip.id ? "highlight" : ""}
                                                                         focus:ring-ring`}
-                                                                        tabIndex={0}
-                                                                        onKeyDown={(e) => {
-                                                                            if (e.key === "Enter" || e.key === " ") {
-                                                                                e.preventDefault();
-                                                                                setCommentingSubmissionId(ip.id);
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <p className="font-semibold text-lg text-foreground">{ip.ipTitle}</p>
-                                                                                <Badge
-                                                                                    className={`px-3 py-1 text-xs font-semibold border rounded-sm capitalize
+                                                                                tabIndex={0}
+                                                                                onKeyDown={(e) => {
+                                                                                    if (e.key === "Enter" || e.key === " ") {
+                                                                                        e.preventDefault();
+                                                                                        setCommentingSubmissionId(ip.id);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <p className="font-semibold text-lg text-foreground">{ip.ipTitle}</p>
+                                                                                        <Badge
+                                                                                            className={`px-3 py-1 text-xs font-semibold border rounded-sm capitalize
     ${ip.approvalStatus === "approved"
-                                                                                            ? "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300"
-                                                                                            : ip.approvalStatus === "rejected"
-                                                                                                ? "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300"
-                                                                                                : ip.approvalStatus === "needInfo"
-                                                                                                    ? "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300"
-                                                                                                    : "border-gray-400 text-gray-700 bg-gray-50 dark:border-gray-500 dark:text-gray-300"
-                                                                                        }`}
-                                                                                >
-                                                                                    {ip.approvalStatus}
-                                                                                </Badge>
-                                                                            </div>
-                                                                            <DropdownMenu>
-                                                                                <DropdownMenuTrigger asChild>
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon"
-                                                                                        onClick={(e) => e.stopPropagation()}
-                                                                                    >
-                                                                                        <LucideIcons.MoreVertical className="h-5 w-5" />
-                                                                                    </Button>
-                                                                                </DropdownMenuTrigger>
-                                                                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                                                                    <DropdownMenuItem onClick={() => { return }}>
-                                                                                        <LucideIcons.ArchiveRestore className="mr-2 h-4 w-4" />
-                                                                                        Restore
-                                                                                    </DropdownMenuItem>
-                                                                                    <DropdownMenuItem onClick={() => setDialogOpen(true)}>
-                                                                                        <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
-                                                                                        Delete
-                                                                                    </DropdownMenuItem>
-                                                                                </DropdownMenuContent>
-                                                                            </DropdownMenu>
-                                                                            <DeleteConfirmationDialog
-                                                                                open={dialogOpen}
-                                                                                onOpenChange={setDialogOpen}
-                                                                                submissionId={ip.id}
-                                                                                onDelete={(id) => deleteSubmission(id, setMySubmissions)}
-                                                                            />
-                                                                        </div>
-                                                                        <div className="text-sm text-muted-foreground space-y-1" >
-                                                                            <p>
-                                                                                <strong>Inventor:</strong> {ip.firstName} {ip.lastName}
-                                                                            </p>
-                                                                            <div className="max-h-24 overflow-y-auto pr-2">
-                                                                                <p className="line-clamp-3">
-                                                                                    <strong>Summary: </strong>
-                                                                                    {ip.summary}
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        <div className="pt-4 flex justify-between items-center">
-                                                                            {ip.supportingFile && (
-                                                                                <a
-                                                                                    href={`${ip.supportingFile}`}
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
-                                                                                    onClick={(e) => e.stopPropagation()}
-                                                                                >
-                                                                                    <Button variant="outline" size="sm">
-                                                                                        <LucideIcons.Download className="mr-2 h-4 w-4" />
-                                                                                        View Document
-                                                                                    </Button>
-                                                                                </a>
-                                                                            )}
-
-                                                                            <div className="flex items-center gap-2 ml-auto">
-                                                                                {statusUpdates[ip.id] && (
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            handleUpdateStatus(ip.id);
-                                                                                        }}
-                                                                                        disabled={isUpdating[ip.id]}
-                                                                                    >
-                                                                                        {isUpdating[ip.id] ? (
-                                                                                            <LucideIcons.Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                                                        ) : (
-                                                                                            <LucideIcons.Save className="mr-2 h-4 w-4" />
-                                                                                        )}
-                                                                                        Update Status
-                                                                                    </Button>
-                                                                                )}
-
-                                                                                <DropdownMenu>
-                                                                                    <DropdownMenuTrigger asChild>
-                                                                                        <Button
-                                                                                            variant="outline"
-                                                                                            size="sm"
-                                                                                            onClick={(e) => e.stopPropagation()} // ✅ stop click bubbling when opening dropdown
+                                                                                                    ? "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300"
+                                                                                                    : ip.approvalStatus === "rejected"
+                                                                                                        ? "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300"
+                                                                                                        : ip.approvalStatus === "needInfo"
+                                                                                                            ? "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300"
+                                                                                                            : "border-gray-400 text-gray-700 bg-gray-50 dark:border-gray-500 dark:text-gray-300"
+                                                                                                }`}
                                                                                         >
-                                                                                            Actions
-                                                                                            <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
-                                                                                        </Button>
-                                                                                    </DropdownMenuTrigger>
-
-                                                                                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}> {/* ✅ Stop bubbling inside dropdown */}
-                                                                                        <>
-                                                                                            <DropdownMenuItem
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation(); // ✅ Prevent triggering parent div click
-                                                                                                    handleActionClick(ip.id, "approved");
-                                                                                                }}
+                                                                                            {ip.approvalStatus}
+                                                                                        </Badge>
+                                                                                    </div>
+                                                                                    <DropdownMenu>
+                                                                                        <DropdownMenuTrigger asChild>
+                                                                                            <Button
+                                                                                                variant="ghost"
+                                                                                                size="icon"
+                                                                                                onClick={(e) => e.stopPropagation()}
                                                                                             >
-                                                                                                <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
-                                                                                                <span>Approve</span>
+                                                                                                <LucideIcons.MoreVertical className="h-5 w-5" />
+                                                                                            </Button>
+                                                                                        </DropdownMenuTrigger>
+                                                                                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                                                                            <DropdownMenuItem onClick={() => setDialogOpen(true)}>
+                                                                                                <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
+                                                                                                Delete
                                                                                             </DropdownMenuItem>
+                                                                                        </DropdownMenuContent>
+                                                                                    </DropdownMenu>
+                                                                                    <DeleteConfirmationDialog
+                                                                                        open={dialogOpen}
+                                                                                        onOpenChange={setDialogOpen}
+                                                                                        submissionId={ip.id}
+                                                                                        onDelete={(id) => deleteSubmission(id, setMySubmissions)}
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="text-sm text-muted-foreground space-y-1" >
+                                                                                    <p>
+                                                                                        <strong>Inventor:</strong> {ip.firstName} {ip.lastName}
+                                                                                    </p>
+                                                                                    <div className="max-h-24 overflow-y-auto pr-2">
+                                                                                        <p className="line-clamp-3">
+                                                                                            <strong>Summary: </strong>
+                                                                                            {ip.summary}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                </div>
 
-                                                                                            <DropdownMenuItem
-                                                                                                className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                                                                                <div className="pt-4 flex justify-between items-center">
+                                                                                    {ip.supportingFile && (
+                                                                                        <a
+                                                                                            href={`${ip.supportingFile}`}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            onClick={(e) => e.stopPropagation()}
+                                                                                        >
+                                                                                            <Button variant="outline" size="sm">
+                                                                                                <LucideIcons.Download className="mr-2 h-4 w-4" />
+                                                                                                View Document
+                                                                                            </Button>
+                                                                                        </a>
+                                                                                    )}
+
+                                                                                    <div className="flex items-center gap-2 ml-auto">
+                                                                                        {statusUpdates[ip.id] && (
+                                                                                            <Button
+                                                                                                size="sm"
                                                                                                 onClick={(e) => {
                                                                                                     e.stopPropagation();
-                                                                                                    handleActionClick(ip.id, "rejected");
+                                                                                                    handleUpdateStatus(ip.id);
                                                                                                 }}
+                                                                                                disabled={isUpdating[ip.id]}
                                                                                             >
-                                                                                                <LucideIcons.XCircle className="mr-2 h-4 w-4" />
-                                                                                                <span>Reject</span>
-                                                                                            </DropdownMenuItem>
+                                                                                                {isUpdating[ip.id] ? (
+                                                                                                    <LucideIcons.Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                                                ) : (
+                                                                                                    <LucideIcons.Save className="mr-2 h-4 w-4" />
+                                                                                                )}
+                                                                                                Update Status
+                                                                                            </Button>
+                                                                                        )}
 
-                                                                                            <DropdownMenuItem
-                                                                                                className="focus:bg-muted"
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation();
-                                                                                                    handleActionClick(ip.id, "needInfo");
-                                                                                                }}
-                                                                                            >
-                                                                                                <LucideIcons.XCircle className="mr-2 h-4 w-4" />
-                                                                                                <span>Need Info</span>
-                                                                                            </DropdownMenuItem>
-                                                                                        </>
-                                                                                    </DropdownMenuContent>
-                                                                                </DropdownMenu>
+                                                                                        <DropdownMenu>
+                                                                                            <DropdownMenuTrigger asChild>
+                                                                                                <Button
+                                                                                                    variant="outline"
+                                                                                                    size="sm"
+                                                                                                    onClick={(e) => e.stopPropagation()} // ✅ stop click bubbling when opening dropdown
+                                                                                                >
+                                                                                                    Actions
+                                                                                                    <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
+                                                                                                </Button>
+                                                                                            </DropdownMenuTrigger>
 
+                                                                                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}> {/* ✅ Stop bubbling inside dropdown */}
+                                                                                                <>
+                                                                                                    <DropdownMenuItem
+                                                                                                        onClick={(e) => {
+                                                                                                            e.stopPropagation(); // ✅ Prevent triggering parent div click
+                                                                                                            handleActionClick(ip.id, "approved");
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
+                                                                                                        <span>Approve</span>
+                                                                                                    </DropdownMenuItem>
+
+                                                                                                    <DropdownMenuItem
+                                                                                                        className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                                                                                                        onClick={(e) => {
+                                                                                                            e.stopPropagation();
+                                                                                                            handleActionClick(ip.id, "rejected");
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        <LucideIcons.XCircle className="mr-2 h-4 w-4" />
+                                                                                                        <span>Reject</span>
+                                                                                                    </DropdownMenuItem>
+
+                                                                                                    <DropdownMenuItem
+                                                                                                        className="focus:bg-muted"
+                                                                                                        onClick={(e) => {
+                                                                                                            e.stopPropagation();
+                                                                                                            handleActionClick(ip.id, "needInfo");
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        <LucideIcons.XCircle className="mr-2 h-4 w-4" />
+                                                                                                        <span>Need Info</span>
+                                                                                                    </DropdownMenuItem>
+                                                                                                </>
+                                                                                            </DropdownMenuContent>
+                                                                                        </DropdownMenu>
+
+                                                                                    </div>
+                                                                                </div>
                                                                             </div>
-                                                                        </div>
+                                                                        ))}
                                                                     </div>
-                                                                ))}
+                                                                </AccordionContent>
+                                                            </AccordionItem>
+                                                        ))}
+                                                    </Accordion>
+                                                )}
+                                            </TabsContent>
+
+                                            <TabsContent value="restoreips" className="mt-0">
+                                                {isLoadingRestoreIps ? (
+                                                    <div className="flex justify-center items-center h-48">
+                                                        <Loader2 className="h-8 w-8 animate-spin" />
+                                                    </div>
+                                                ) : restoreIps.length === 0 ? (
+                                                    <p className="text-center text-muted-foreground py-8">
+                                                        No deleted or restorable IPs found.
+                                                    </p>
+                                                ) : (
+                                                    <div className="space-y-4">
+                                                        {restoreIps?.map((ip: any, index) => (
+                                                            <div
+                                                                key={index}
+                                                                className="border rounded-md p-4 space-y-2 hover:bg-muted/30 transition-all"
+                                                            >
+                                                                <div className="flex justify-between items-center">
+                                                                    <p className="font-semibold">{ip.ipTitle}</p>
+                                                                    <AlertDialog>
+                                                                        <AlertDialogTrigger asChild>
+                                                                            <Button size="sm" variant="outline">
+                                                                                <LucideIcons.RotateCcw className="mr-2 h-4 w-4" />
+                                                                                Restore
+                                                                            </Button>
+                                                                        </AlertDialogTrigger>
+
+                                                                        <AlertDialogContent>
+                                                                            <AlertDialogHeader>
+                                                                                <AlertDialogTitle>Restore this IP submission?</AlertDialogTitle>
+                                                                                <AlertDialogDescription>
+                                                                                    This action will restore <strong>{ip.ipTitle}</strong> back to the main IP list.
+                                                                                    Are you sure you want to continue?
+                                                                                </AlertDialogDescription>
+                                                                            </AlertDialogHeader>
+
+                                                                            <AlertDialogFooter>
+                                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                                <AlertDialogAction
+                                                                                    onClick={() => handleRestore(ip.id)}
+                                                                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                                                                >
+                                                                                    Yes, Restore
+                                                                                </AlertDialogAction>
+                                                                            </AlertDialogFooter>
+                                                                        </AlertDialogContent>
+                                                                    </AlertDialog>
+                                                                </div>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    <strong>Inventor:</strong> {ip.inventorName}
+                                                                </p>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    <strong>Summary:</strong> {ip.summary}
+                                                                </p>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    <strong>Organization:</strong> {ip.organization}
+                                                                </p>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    <strong>Deleted by:</strong> {ip.action_by_user_name}
+                                                                </p>
                                                             </div>
-                                                        </AccordionContent>
-                                                    </AccordionItem>
-                                                ))}
-                                            </Accordion>
-                                        )}
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </TabsContent>
+                                        </Tabs>
                                     </TabsContent>
                                     <TabsContent value="subscribers" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">

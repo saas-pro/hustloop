@@ -477,6 +477,7 @@ export default function MainView() {
         <section className={`min-h-screen`} ref={scrollContainerRef}>
           <HomeView
             setActiveView={setActiveView}
+            setActiveTab={setActiveTab}
             isLoggedIn={isLoggedIn}
             onLogout={handleLogout}
             navOpen={navOpen}

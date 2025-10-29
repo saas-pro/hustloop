@@ -19,6 +19,7 @@ import remarkGfm from "remark-gfm";
 import { format } from 'date-fns';
 import { IpActions } from './ui/ip-actions';
 import { MarkdownViewer } from './ui/markdownViewer';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 
 interface IPDetails {
     id: string;
@@ -40,6 +41,7 @@ interface Comment {
     fileURL?: string;
     fileName?: string;
     comment_user_id: string;
+    isUpdated: boolean;
     displayTimestamp: string;
 }
 
@@ -203,6 +205,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                     fileURL: data.fileURL || data.supportingFileUrl || data.file_url,
                     fileName: data.fileName || data.supportingFileKey || data.file_name,
                     comment_user_id: userId,
+                    isUpdated: data.isUpdated
                 };
 
                 return [...prev, newComment].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -269,8 +272,6 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
             formData.append('supportingFile', attachedFile);
         }
 
-        console.log("attachedFile:",attachedFile);
-        console.log("formData:",formData)
 
         try {
             setIsLoading(true);
@@ -391,6 +392,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                         ? {
                             ...comment,
                             comment: updatedCommentData.comment,
+                            isUpdated:updatedCommentData.isUpdated,
                             timestamp: updatedCommentData.timestamp
                         }
                         : comment
@@ -696,7 +698,14 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                             >
                                 <div className="flex justify-between items-start mb-2">
                                     <p className="font-semibold text-sm">
-                                        {comment.name}{' '}
+                                        {comment.name}{' '}{comment.isUpdated && (
+                                            <span
+                                                title="This comment was edited"
+                                                className="ml-1 text-xs italic text-muted-foreground"
+                                            >
+                                                (edited)
+                                            </span>
+                                        )}
                                         <span className="text-xs text-muted-foreground ml-2">
                                             {(() => {
                                                 if (!comment.displayTimestamp) return '—';
@@ -785,16 +794,39 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                                     {canEdit && canDelete && <span className="text-gray-400 dark:text-gray-600"> • </span>}
 
                                     {canDelete && (
-                                        <Button
-                                            variant="link"
-                                            size="sm"
-                                            onClick={() => handleDeleteComment(comment.id)}
-                                            className="h-auto p-0 font-normal text-muted-foreground hover:text-red-500"
-                                        >
-                                            <Trash2 className="h-3 w-3 mr-1" />
-                                            Delete
-                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="link"
+                                                    size="sm"
+                                                    className="h-auto p-0 font-normal text-muted-foreground hover:text-red-500"
+                                                >
+                                                    <Trash2 className="h-3 w-3 mr-1" />
+                                                    Delete
+                                                </Button>
+                                            </AlertDialogTrigger>
+
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Delete this comment?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This action cannot be undone. The comment will be permanently deleted.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        onClick={() => handleDeleteComment(comment.id)}
+                                                        className="bg-red-600 hover:bg-red-700 text-white"
+                                                    >
+                                                        Yes, Delete
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     )}
+
                                 </div>
                             </div>
                         );
@@ -866,7 +898,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                                 ) : attachedFile && !newComment.trim() ? (
                                     'Send Attachment'
                                 ) : (
-                                    'Add Comment'
+                                    'Post Comment'
                                 )}
                             </Button>
                         </div>

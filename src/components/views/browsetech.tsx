@@ -7,6 +7,7 @@ import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { View } from "@/app/types";
 import { API_BASE_URL } from "@/lib/api";
+import { toast } from "@/hooks/use-toast";
 
 interface TechTransferViewProps {
     isOpen: boolean;
@@ -24,7 +25,7 @@ interface TechTransferProfile {
     inventorName: string;
     organization: string;
     contactEmail: string;
-    supportingFile?: string;
+    supportingFileUrl?: string;
     approvalStatus: string;
     user_id?: number;
 }
@@ -41,7 +42,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
 
                 const response = await fetch(`${API_BASE_URL}/api/getTechTransfer`);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    toast({title:"Error",description:"Cannot fetch Intelectual Property",variant:"destructive"})
                 }
                 const data = await response.json();
                 setProfiles(data.ips || []);
@@ -88,14 +89,13 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                                 <div key={profile.id} className="border rounded-lg p-6 shadow-sm">
                                     <h3 className="text-xl font-bold text-primary">{profile.ipTitle}</h3>
                                     <p className="text-sm text-muted-foreground">{profile.organization}</p>
-                                    <p className="mt-2 text-gray-700">{profile.summary}</p>
 
                                     <Separator className="my-4" />
 
                                     <div className="space-y-4 ">
                                         <div>
                                             <h4 className="font-semibold text-lg">About</h4>
-                                            <p className="text-sm text-gray-600 leading-4">{profile.summary}</p>
+                                            <p className="text-sm text-gray-600 line-clamp-3">{profile.summary}</p>
                                         </div>
                                         <div>
                                             <h4 className="font-semibold text-lg">Inventor</h4>
@@ -104,9 +104,9 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                                     </div>
 
                                     <div className="mt-4 flex justify-end">
-                                        {profile.supportingFile && (
+                                        {profile.supportingFileUrl && (
                                             <a
-                                                href={`${API_BASE_URL}/${profile.supportingFile.replace(/^app\//, "")}`}
+                                                href={`${profile.supportingFileUrl}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="w-fit"

@@ -49,8 +49,8 @@ function MarkdownEditor<T extends { describetheTech: string }>({ ttForm }: Markd
                         placeholder="Explain how your technology works. You can use Markdown for formatting (e.g., **bold**, lists, links)."
                         {...ttForm.register(describetheTech, {
                             onChange: (e) => {
-                                const value = e.target.value.slice(0, 5000); // hard limit
-                                ttForm.setValue(describetheTech, value);
+                                const value = e.target.value.slice(0, 5000); 
+                                ttForm.setValue(describetheTech, value,{shouldValidate:true});
                             },
                         })}
                         value={ttForm.watch(describetheTech) || ""}

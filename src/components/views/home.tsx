@@ -31,6 +31,7 @@ import Lenis from '@studio-freight/lenis'
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import PricingData from '../BillingCard/billing-card';
+import { DashboardTab } from '@/app/types';
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters."),
@@ -68,6 +69,7 @@ const marqueeTabsRow3 = [
 
 
 interface HomeViewProps {
+  setActiveTab: (tab: DashboardTab) => void;
   setActiveView: (view: View) => void;
   isLoggedIn: boolean;
   onLogout: () => void;
@@ -214,53 +216,6 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
     return () => clearInterval(interval);
   }, []);
 
-  const { stage, icon: StageIcon, tags, users } = dynamicHeroStates[currentStateIndex];
-
-
-  const logoPositions = [
-    { top: '-4rem', left: '50%', transform: 'translateX(-50%)' }, // top center
-    { top: '20%', left: 'calc(100% + 2rem)', transform: 'translateY(-50%)' }, // right middle
-    { bottom: '-4rem', left: '50%', transform: 'translateX(-50%)' }, // bottom center
-    { top: '20%', right: 'calc(100% + 2rem)', transform: 'translateY(-50%)' }, // left middle
-    { top: '-2rem', right: '-2rem' }, // top right
-  ];
-
-
-  const floatingIcons = [
-    {
-      src: "/images/1.png",
-      size: 50,
-      top: 100,
-      left: 50,
-      delay: 0,
-      duration: 4,
-    },
-    {
-      src: "/images/5.png",
-      size: 75,
-      top: 200,
-      right: 60,
-      delay: 1,
-      duration: 3,
-    },
-    {
-      src: "/images/3.png",
-      size: 60,
-      bottom: 120,
-      left: 80,
-      delay: 0.5,
-      duration: 3.5,
-    },
-    {
-      src: "/images/4.png",
-      size: 60,
-      bottom: 80,
-      right: 40,
-      delay: 0.8,
-      duration: 2.5,
-    }
-  ];
-
 
   useEffect(() => {
     const hero = document.getElementById("hero-sentinel") as HTMLElement | null;
@@ -273,14 +228,10 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         video.style.opacity = entry.isIntersecting ? "1" : "0";
         video.style.transition = "opacity 0.5s ease";
       },
-      { threshold: 0.5 } // adjust when the effect triggers
+      { threshold: 0.5 }
     );
 
     observer.observe(hero);
-
-    return () => {
-      observer.disconnect();
-    };
   }, []);
 
 
@@ -302,7 +253,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         Your browser does not support the video tag.
       </video>
 
-      {/* Overlay */}
+
       <div className="hidden absolute inset-0 md:bg-black/40 z-10 md:block"></div>
 
       {/* Logo */}
@@ -408,7 +359,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
 
 
 
-export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout }: HomeViewProps) {
+export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout, setActiveTab }: HomeViewProps) {
   const { toast } = useToast();
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -598,7 +549,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
     return () => window.removeEventListener("resize", checkScreen);
   }, []);
 
-  
+
 
 
   return (
@@ -650,7 +601,10 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
                 </div>
                 {isFounderRole ? <Button
                   className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
-                  onClick={() => setActiveView("submitIP")}
+                  onClick={() => {
+                    localStorage.setItem("pendingTab", "engagements");
+                    setActiveView("dashboard");
+                  }}
                 >
                   Submit Your IP
                 </Button> :
@@ -779,7 +733,11 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
 
 
         <SolutionCard solutionSteps={solutionSteps}></SolutionCard>
-        <PricingData />
+
+        <section className='container'>
+          <PricingData />
+        </section>
+
 
 
 
@@ -1021,6 +979,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout 
       </div>
 
 
-    </div>
+    </div >
   );
 }
