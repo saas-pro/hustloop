@@ -149,8 +149,8 @@ const techTransferSchema = z.object({
         .string()
         .min(10, "Description must be at least 10 characters")
         .max(5000, "Description must not exceed 5000 characters"),
-    inventorName: z.string().min(1, "Inventor name is required").max(20, "Inventor Name must not exceed 20 characters"),
-    organization: z.string().min(1, "Organization is required").max(20, "Organization Name must not exceed 20 characters"),
+    inventorName: z.string().min(1, "Inventor name is required").max(35, "Inventor Name must not exceed 20 characters"),
+    organization: z.string().min(1, "Organization is required").max(100, "Organization Name must not exceed 20 characters"),
     supportingFile: z
         .any()
         .optional()
