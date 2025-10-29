@@ -1729,7 +1729,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">Inventor Name</label>
                                                         <Input {...ttForm.register("inventorName")} placeholder="Inventor full name" onChange={(e) => {
-                                                            const value = e.target.value.slice(0, 20);
+                                                            const value = e.target.value.slice(0, 35);
                                                             ttForm.setValue("inventorName", value, { shouldValidate: true });
                                                         }} />
                                                         {ttForm.formState.errors.inventorName && (
@@ -1740,7 +1740,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">Organization</label>
                                                         <Input {...ttForm.register("organization")} placeholder="Organization / Institution" onChange={(e) => {
-                                                            const value = e.target.value.slice(0, 20);
+                                                            const value = e.target.value.slice(0, 100);
                                                             ttForm.setValue("organization", value, { shouldValidate: true });
                                                         }} />
                                                         {ttForm.formState.errors.organization && (

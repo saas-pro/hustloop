@@ -739,8 +739,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
         </section>
 
 
-
-
         <section className="relative py-16 md:py-20 bg-background">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-4xl font-bold mb-4 relative font-headline flex items-center justify-center gap-1 text-center flex-wrap">
