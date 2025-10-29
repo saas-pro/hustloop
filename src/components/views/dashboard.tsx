@@ -1318,36 +1318,36 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [isLoadingRestoreIps, setIsLoadingRestoreIps] = useState(false);
 
     const fetchRestoreIps = useCallback(async () => {
-            try {
-                setIsLoadingRestoreIps(true);
-                const res = await fetch(`${API_BASE_URL}/api/techtransfer/restore`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                });
+        try {
+            setIsLoadingRestoreIps(true);
+            const res = await fetch(`${API_BASE_URL}/api/techtransfer/restore`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
 
-                const restoreIp = await res.json();
-                if (Array.isArray(restoreIp)) {
-                    setRestoreIps(restoreIp);
-                } else {
-                    setRestoreIps([]);
-                }
-                if (!res.ok) toast({
-                    title: "Fetch failed",
-                    description: "Failed to fetch restore IPs",
-                    variant: "destructive",
-                });
-            } catch (err) {
-                toast({
-                    title: "Failed",
-                    description: "Failed to load deleted IP submissions.",
-                    variant: "destructive",
-                });
-            } finally {
-                setIsLoadingRestoreIps(false);
+            const restoreIp = await res.json();
+            if (Array.isArray(restoreIp)) {
+                setRestoreIps(restoreIp);
+            } else {
+                setRestoreIps([]);
             }
-        },[toast,token]
+            if (!res.ok) toast({
+                title: "Fetch failed",
+                description: "Failed to fetch restore IPs",
+                variant: "destructive",
+            });
+        } catch (err) {
+            toast({
+                title: "Failed",
+                description: "Failed to load deleted IP submissions.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoadingRestoreIps(false);
+        }
+    }, [toast, token]
     )
 
 
@@ -1389,7 +1389,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         if (activeSubTab === "restoreips") {
             fetchRestoreIps();
         }
-    }, [activeSubTab,fetchRestoreIps]);
+    }, [activeSubTab, fetchRestoreIps]);
 
     useEffect(() => {
         if (activeSubTab === "ip/technologies" && userRole === "admin") {
@@ -1466,7 +1466,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         className="
                                     flex items-center justify-start md:justify-center gap-2 
                                     rounded-md bg-card 
-                                    text-sm sm:text-base
+                                    text-sm sm:text-base 
                                     data-[state=active]:bg-accent data-[state=active]:text-accent-foreground 
                                     hover:bg-accent/20 transition"
                                     >
@@ -1968,10 +1968,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         <Tabs defaultValue="ip/technologies" className="w-full " value={activeSubTab}
                                             onValueChange={setActiveSubTab}
                                         >
-                                            <TabsList className="grid w-full grid-cols-2 mb-3 mt-0">
-                                                <TabsTrigger value="ip/technologies">IP Submissions</TabsTrigger>
-                                                <TabsTrigger value="restoreips">Deleted IPs</TabsTrigger>
-                                            </TabsList>
                                             <TabsContent value="ip/technologies" className="mt-0">
                                                 {isLoadingIps ? (
                                                     <div className="flex justify-center items-center h-48">
@@ -2158,6 +2154,17 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         ))}
                                                     </Accordion>
                                                 )}
+                                                <div className="absolute bottom-4 right-4">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="default"
+                                                        className="px-12 py-6 rounded-full text-sm font-medium flex items-center gap-2 shadow-md"
+                                                        onClick={() => setActiveSubTab("restoreips")}
+                                                    >
+                                                        <LucideIcons.RotateCcw className="h-4 w-4" />
+                                                        Restore IPs
+                                                    </Button>
+                                                </div>
                                             </TabsContent>
 
                                             <TabsContent value="restoreips" className="mt-0">
@@ -2170,7 +2177,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         No deleted or restorable IPs found.
                                                     </p>
                                                 ) : (
-                                                    <div className="space-y-4">
+                                                    <div className="space-y-4 pb-20"> {/* Add bottom padding so button doesn’t overlap content */}
                                                         {restoreIps?.map((ip: any, index) => (
                                                             <div
                                                                 key={index}
@@ -2207,6 +2214,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                         </AlertDialogContent>
                                                                     </AlertDialog>
                                                                 </div>
+
                                                                 <p className="text-sm text-muted-foreground">
                                                                     <strong>Inventor:</strong> {ip.inventorName}
                                                                 </p>
@@ -2223,7 +2231,21 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         ))}
                                                     </div>
                                                 )}
+
+                                                {/* 🔙 Back button fixed to bottom-right */}
+                                                <div className="absolute bottom-4 right-4">
+                                                    <Button
+                                                        size="sm"
+                                                        className="px-12 py-6"
+                                                        onClick={() => setActiveSubTab("ip/technologies")}
+                                                    >
+                                                        <LucideIcons.ArrowLeft className="mr-2 h-4 w-4" />
+                                                        Back
+                                                    </Button>
+                                                </div>
                                             </TabsContent>
+
+
                                         </Tabs>
                                     </TabsContent>
                                     <TabsContent value="subscribers" className="mt-0">
