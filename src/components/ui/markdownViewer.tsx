@@ -53,7 +53,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ content }) => {
 
   return (
     <div
-      className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-bold prose-a:text-blue-600 hover:prose-a:underline"
+      className="prose-sm max-w-none dark:prose-invert prose-headings:font-bold prose-a:text-blue-600 hover:prose-a:underline"
       dangerouslySetInnerHTML={{ __html: cleanHTML }}
     />
   );

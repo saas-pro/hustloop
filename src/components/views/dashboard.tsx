@@ -310,7 +310,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingSubscribers(false); }
     }, [toast]);
 
-    const [selectedSubscribers, setSelectedSubscribers] = useState<number []>([]);
+    const [selectedSubscribers, setSelectedSubscribers] = useState<number[]>([]);
 
     const handleDeleteSubscribers = async () => {
         try {
@@ -327,14 +327,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             if (!response.ok) throw new Error('Failed to delete subscribers');
             const result = await response.json();
 
-            toast({title:"Success",description:result.message || 'Selected subscribers deleted successfully'});
+            toast({ title: "Success", description: result.message || 'Selected subscribers deleted successfully' });
 
-            setSubscribers((prev:any) =>
-                prev.filter((s:any) => !selectedSubscribers.includes(s.id))
+            setSubscribers((prev: any) =>
+                prev.filter((s: any) => !selectedSubscribers.includes(s.id))
             );
             setSelectedSubscribers([]);
         } catch (err) {
-            toast({title:"Failed to delete selected subscribers",variant:"destructive"});
+            toast({ title: "Failed to delete selected subscribers", variant: "destructive" });
         }
     };
 
@@ -2038,45 +2038,51 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                 }}
                                                                             >
                                                                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <p className="font-semibold text-lg text-foreground">{ip.ipTitle}</p>
-                                                                                        <Badge
-                                                                                            className={`px-3 py-1 text-xs font-semibold border rounded-sm capitalize
-    ${ip.approvalStatus === "approved"
-                                                                                                    ? "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300"
-                                                                                                    : ip.approvalStatus === "rejected"
-                                                                                                        ? "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300"
-                                                                                                        : ip.approvalStatus === "needInfo"
-                                                                                                            ? "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300"
-                                                                                                            : "border-gray-400 text-gray-700 bg-gray-50 dark:border-gray-500 dark:text-gray-300"
-                                                                                                }`}
-                                                                                        >
-                                                                                            {ip.approvalStatus}
-                                                                                        </Badge>
-                                                                                    </div>
-                                                                                    <DropdownMenu>
-                                                                                        <DropdownMenuTrigger asChild>
-                                                                                            <Button
-                                                                                                variant="ghost"
-                                                                                                size="icon"
-                                                                                                onClick={(e) => e.stopPropagation()}
+                                                                                    <div className="flex justify-between w-full items-center">
+                                                                                        <div className="flex gap-2">
+                                                                                            <p className="font-semibold text-lg text-foreground">{ip.ipTitle}</p>
+                                                                                            <Badge
+                                                                                                className={`px-3 py-1 text-xs font-semibold border rounded-sm capitalize
+                                                                                                        ${ip.approvalStatus === "approved"
+                                                                                                        ? "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300"
+                                                                                                        : ip.approvalStatus === "rejected"
+                                                                                                            ? "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300"
+                                                                                                            : ip.approvalStatus === "needInfo"
+                                                                                                                ? "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300"
+                                                                                                                : "border-gray-400 text-gray-700 bg-gray-50 dark:border-gray-500 dark:text-gray-300"
+                                                                                                    }`}
                                                                                             >
-                                                                                                <LucideIcons.MoreVertical className="h-5 w-5" />
-                                                                                            </Button>
-                                                                                        </DropdownMenuTrigger>
-                                                                                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                                                                            <DropdownMenuItem onClick={() => setDialogOpen(true)}>
-                                                                                                <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
-                                                                                                Delete
-                                                                                            </DropdownMenuItem>
-                                                                                        </DropdownMenuContent>
-                                                                                    </DropdownMenu>
-                                                                                    <DeleteConfirmationDialog
-                                                                                        open={dialogOpen}
-                                                                                        onOpenChange={setDialogOpen}
-                                                                                        submissionId={ip.id}
-                                                                                        onDelete={(id) => deleteSubmission(id, setMySubmissions)}
-                                                                                    />
+                                                                                                {ip.approvalStatus}
+                                                                                            </Badge>
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <DropdownMenu>
+                                                                                                <DropdownMenuTrigger asChild>
+                                                                                                    <Button
+                                                                                                        variant="ghost"
+                                                                                                        size="icon"
+                                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                                    >
+                                                                                                        <LucideIcons.MoreVertical className="h-5 w-5" />
+                                                                                                    </Button>
+                                                                                                </DropdownMenuTrigger>
+                                                                                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                                                                                    <DropdownMenuItem onClick={() => setDialogOpen(true)}>
+                                                                                                        <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
+                                                                                                        Delete
+                                                                                                    </DropdownMenuItem>
+                                                                                                </DropdownMenuContent>
+                                                                                            </DropdownMenu>
+                                                                                            <DeleteConfirmationDialog
+                                                                                                open={dialogOpen}
+                                                                                                onOpenChange={setDialogOpen}
+                                                                                                submissionId={ip.id}
+                                                                                                onDelete={(id) => deleteSubmission(id, setMySubmissions)}
+                                                                                            />
+                                                                                        </div>
+
+                                                                                    </div>
+
                                                                                 </div>
                                                                                 <div className="text-sm text-muted-foreground space-y-1" >
                                                                                     <p>
@@ -2347,10 +2353,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             type="checkbox"
                                                                             checked={selectedSubscribers.includes(sub.id)}
                                                                             onChange={(e) =>
-                                                                                setSelectedSubscribers((prev:any) =>
+                                                                                setSelectedSubscribers((prev: any) =>
                                                                                     e.target.checked
                                                                                         ? [...prev, sub.id]
-                                                                                        : prev.filter((id:any) => id !== sub.id)
+                                                                                        : prev.filter((id: any) => id !== sub.id)
                                                                                 )
                                                                             }
                                                                         />

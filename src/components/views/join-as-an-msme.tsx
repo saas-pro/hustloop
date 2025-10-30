@@ -126,7 +126,7 @@ const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: Vie
         <Lock className="h-16 w-16 text-accent mb-6" />
         <h3 className="text-2xl font-bold mb-2">Content Locked</h3>
         <p className="max-w-md mx-auto text-muted-foreground mb-6">
-            Please log in or sign up to view available {contentType}.
+            Please log in or sign up to view available Problem Statements.
         </p>
         <div className="flex gap-4">
             <Button onClick={() => setActiveView('login')}>Login</Button>
@@ -326,8 +326,8 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
         let method = "POST";
 
         if (isEditingCollaboration && currentEditingCollaborationId) {
-            url = `${API_BASE_URL}/api/collaborations/${currentEditingCollaborationId}`; // Assuming an update endpoint like /api/collaborations/:id
-            method = "PUT"; // Or 'PATCH' depending on your backend
+            url = `${API_BASE_URL}/api/collaborations/${currentEditingCollaborationId}`; 
+            method = "PUT"; 
         }
 
         try {

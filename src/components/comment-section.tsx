@@ -237,7 +237,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
 
         const canDeleteOverride = isAdmin;
         const canUpdateOverride = isAdmin
-        const canEdit = (isAuthor && canUpdateOverride)|| (isAuthor && diffMinutes <= 5);
+        const canEdit = (isAuthor && canUpdateOverride) || (isAuthor && diffMinutes <= 5);
         const canDelete = canDeleteOverride || (isAuthor && diffMinutes <= 30);
 
         return { canEdit, canDelete, isAuthor, isAdmin };
@@ -393,7 +393,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                         ? {
                             ...comment,
                             comment: updatedCommentData.comment,
-                            isUpdated:updatedCommentData.isUpdated,
+                            isUpdated: updatedCommentData.isUpdated,
                             timestamp: updatedCommentData.timestamp
                         }
                         : comment
@@ -402,7 +402,6 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
             setEditingCommentId(null);
             setEditingText('');
         } catch (error) {
-            console.error('Error updating comment:', error);
             toast({
                 title: 'Error',
                 description: 'Something went wrong while updating the comment.',
@@ -492,12 +491,9 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
 
                     toast({ title: "error", description: "Failed to get TechTransferIps" });
                 }
-                if (response.ok) {
 
-                    setTechTransferIps(prev => prev.map(ip => ip.id === ipId ? { ...ip, approvalStatus: newStatus } : ip));
-                    toast({ title: "Success", description: "IP status updated successfully." });
-
-                }
+                setTechTransferIps(prev => prev.map(ip => ip.id === ipId ? { ...ip, approvalStatus: newStatus } : ip));
+                toast({ title: "Success", description: "IP status updated successfully." });
                 setStatusUpdates((prev) => {
                     const newUpdates = { ...prev };
                     delete newUpdates[ipId];
