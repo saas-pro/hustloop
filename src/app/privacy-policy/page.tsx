@@ -30,13 +30,11 @@ export default function PrivacyPolicyPage() {
       // lock body scroll
       document.body.style.overflow = 'hidden';
 
-      // scroll to form section
       const cardSection = document.querySelector('[data-alt-id="card-anchor"]');
       if (cardSection) {
         cardSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     } else {
-      // unlock body scroll
       document.body.style.overflow = 'auto';
     }
 

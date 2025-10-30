@@ -211,7 +211,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentStateIndex((prevIndex) => (prevIndex + 1) % dynamicHeroStates.length);
-    }, 3500); // Change state every 3.5 seconds
+    }, 3500); 
 
     return () => clearInterval(interval);
   }, []);
@@ -458,6 +458,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
   // Scroll-based zoom for "Start your Journey" (native scroll listener)
   const journeyRef = useRef<HTMLDivElement | null>(null);
   const journeyPanelRef = useRef<HTMLDivElement | null>(null);
+  
   useEffect(() => {
     const panel = journeyPanelRef.current;
     if (!panel) return;

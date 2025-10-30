@@ -4,7 +4,7 @@ const plans = [
         price: "₹0",
         description: "Kickstart with technology discovery and foundational support at no cost.",
         features: [
-            "Technology/ IP (Intellectual Property)",
+            "Technology / IP (Intellectual Property)",
             "Basic support"
         ],
         cta: "Get Started",

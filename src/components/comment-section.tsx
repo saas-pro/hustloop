@@ -236,7 +236,8 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
         const isAdmin = currentUserRoles.includes('admin');
 
         const canDeleteOverride = isAdmin;
-        const canEdit = isAuthor && diffMinutes <= 5;
+        const canUpdateOverride = isAdmin
+        const canEdit = (isAuthor && canUpdateOverride)|| (isAuthor && diffMinutes <= 5);
         const canDelete = canDeleteOverride || (isAuthor && diffMinutes <= 30);
 
         return { canEdit, canDelete, isAuthor, isAdmin };

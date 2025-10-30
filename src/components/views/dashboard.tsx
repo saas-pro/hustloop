@@ -310,6 +310,35 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingSubscribers(false); }
     }, [toast]);
 
+    const [selectedSubscribers, setSelectedSubscribers] = useState<number []>([]);
+
+    const handleDeleteSubscribers = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/subscribers/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ ids: selectedSubscribers }),
+            });
+
+            if (!response.ok) throw new Error('Failed to delete subscribers');
+            const result = await response.json();
+
+            toast({title:"Success",description:result.message || 'Selected subscribers deleted successfully'});
+
+            setSubscribers((prev:any) =>
+                prev.filter((s:any) => !selectedSubscribers.includes(s.id))
+            );
+            setSelectedSubscribers([]);
+        } catch (err) {
+            toast({title:"Failed to delete selected subscribers",variant:"destructive"});
+        }
+    };
+
+
     const handleResetSubscribers = async () => {
         const token = localStorage.getItem('token');
         try {
@@ -2248,7 +2277,102 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                                         </Tabs>
                                     </TabsContent>
+
                                     <TabsContent value="subscribers" className="mt-0">
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <CardHeader>
+                                                <CardTitle>Newsletter Subscribers</CardTitle>
+                                                <CardDescription>List of all users subscribed to the newsletter.</CardDescription>
+
+                                                <div className="flex justify-end gap-2 pt-2">
+                                                    <Button variant="outline" onClick={handleExportCSV}>
+                                                        <LucideIcons.Download className="mr-2 h-4 w-4" /> Export CSV
+                                                    </Button>
+
+                                                    {selectedSubscribers.length > 0 && (
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="destructive">
+                                                                    <LucideIcons.Trash className="mr-2 h-4 w-4" /> Delete Selected ({selectedSubscribers.length})
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This action cannot be undone. It will permanently delete the selected subscriber(s).
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={handleDeleteSubscribers}>
+                                                                        Delete
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    )}
+                                                </div>
+                                            </CardHeader>
+
+                                            <CardContent>
+                                                {isLoadingSubscribers ? (
+                                                    <div className="flex justify-center items-center h-48">
+                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                    </div>
+                                                ) : subscribers.length > 0 ? (
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead className="w-4">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={selectedSubscribers.length === subscribers.length}
+                                                                        onChange={(e) =>
+                                                                            setSelectedSubscribers(
+                                                                                e.target.checked ? subscribers.map((s) => s.id) : []
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                </TableHead>
+                                                                <TableHead>Email</TableHead>
+                                                                <TableHead>Subscribed Date</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {subscribers.map((sub) => (
+                                                                <TableRow key={sub.id}>
+                                                                    <TableCell>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={selectedSubscribers.includes(sub.id)}
+                                                                            onChange={(e) =>
+                                                                                setSelectedSubscribers((prev:any) =>
+                                                                                    e.target.checked
+                                                                                        ? [...prev, sub.id]
+                                                                                        : prev.filter((id:any) => id !== sub.id)
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell className="font-medium">{sub.email}</TableCell>
+                                                                    <TableCell>
+                                                                        {new Date(sub.subscribed_at).toLocaleDateString()}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                ) : (
+                                                    <p className="text-center text-muted-foreground py-8">
+                                                        There are no newsletter subscribers yet.
+                                                    </p>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
+
+                                    {/* <TabsContent value="subscribers" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader>
                                                 <CardTitle>Newsletter Subscribers</CardTitle>
@@ -2291,7 +2415,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 )}
                                             </CardContent>
                                         </Card>
-                                    </TabsContent>
+                                    </TabsContent> */}
                                     <TabsContent value="aignite" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader>

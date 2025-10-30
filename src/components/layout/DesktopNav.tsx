@@ -118,7 +118,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                     document.body.classList.remove('nav-open');
                     setNavOpen(false);
                 }
-            }, 500); // Wait for page to potentially load
+            }, 500); 
         } else {
             const section = document.getElementById(sectionId);
             if (section) {

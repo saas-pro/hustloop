@@ -55,10 +55,7 @@ export default function PricingAccordion() {
                                                     <CardTitle>{plan.name}</CardTitle>
                                                     <CardDescription className="mt-2">{plan.description}</CardDescription>
                                                 </div>
-                                                <div>
-                                                    <span className="text-4xl font-bold">{plan.price}</span>
-
-                                                </div>
+                                                
                                             </CardHeader>
                                             <CardContent className="flex-grow">
                                                 <ul className="space-y-3">
@@ -71,6 +68,7 @@ export default function PricingAccordion() {
                                                 </ul>
                                             </CardContent>
                                             <CardFooter className="flex-col items-start mt-4">
+                                                <span className="text-4xl font-bold mb-3">{plan.price}</span>
                                                 <Button
                                                     onClick={handleGetStartedOnPricing}
                                                     className={cn(
