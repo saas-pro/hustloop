@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import TechTransfer from "../techtransfer_view";
 import { profile } from "console";
 import { Input } from "../ui/input";
+import Image from "next/image";
 
 interface TechTransferViewProps {
     isOpen: boolean;
@@ -120,65 +121,44 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                                     <div
                                         key={profile.id}
                                         onClick={() => setTechId(profile.id)}
-                                        className="group relative flex flex-col border  rounded-2xl overflow-hidden shadow-sm bg-background hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer"
+                                        className="group relative border rounded-tr-3xl overflow-hidden shadow-sm bg-white hover:shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-1"
                                     >
-                                        {/* Top Accent Bar */}
-                                        <div className="h-1 bg-gradient-to-r from-primary to-accent" />
+                                        
+                                        <div className="h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-500" />
 
-                                        {/* Card Body */}
-                                        <div className="flex-1 p-6">
-                                            {/* Optional Thumbnail / Icon */}
-                                            <div className="flex items-center justify-between mb-4">
-                                                <div className="flex items-center space-x-3">
-                                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                                        <span className="text-primary font-semibold text-lg">
-                                                            {profile.ipTitle[0] || "T"}
-                                                        </span>
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="text-lg font-bold text-primary line-clamp-1">
+                                        <div className="p-6 space-y-4">
+                                            
+                                            <div className="flex items-start justify-between">
+                                                <div>
+                                                    <div className="flex gap-2 items-center ">
+                                                        <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
                                                             {profile.ipTitle}
+
                                                         </h3>
-                                                        <p className="text-sm text-muted-foreground line-clamp-1">
-                                                            {profile.organization}
-                                                        </p>
+                                                        <Image src="/bluetick.png" alt="bluetick" height={20} width={20} />
                                                     </div>
+
+                                                    <p className="text-sm text-gray-500">{profile.organization}</p>
                                                 </div>
+
                                             </div>
 
-                                            {/* Summary Section */}
-                                            <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                                            {/* Summary */}
+                                            <p className="text-sm text-gray-600 line-clamp-3">
                                                 {profile.summary}
                                             </p>
 
-                                            {/* Inventor Info */}
-                                            <div className="text-xs text-gray-500">
-                                                <span className="font-semibold text-gray-700">Inventor:</span>{" "}
-                                                {profile.inventorName}
+                                            {/* Inventor info */}
+                                            <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t">
+                                                <span className="flex gap-2 justify-center items-center">
+                                                    <span className="font-semibold text-gray-700">Inventor:</span>{" "}
+                                                    {profile.inventorName}
+                                                </span>
+
                                             </div>
                                         </div>
-
-                                        {/* Footer / Button */}
-                                        {profile.supportingFileUrl && (
-                                            <div className="px-6 py-4 bg-background-50 border-t flex justify-end">
-                                                <a
-                                                    href={profile.supportingFileUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="sm"
-                                                        className="transition-colors group-hover:bg-primary group-hover:text-white"
-                                                    >
-                                                        <Download className="mr-2 h-4 w-4" />
-                                                        View Document
-                                                    </Button>
-                                                </a>
-                                            </div>
-                                        )}
                                     </div>
+
                                 ))
                             ) : (
                                 <div className="py-10 text-center text-gray-500 col-span-full">

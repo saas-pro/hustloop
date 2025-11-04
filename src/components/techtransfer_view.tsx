@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Check, Info, Paperclip } from 'lucide-react';
 import { MarkdownViewer } from './ui/markdownViewer';
+import Image from 'next/image';
 
 
 interface TechTransferViewProps {
@@ -72,7 +73,6 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
   const renderFileAttachment = (fileURL: string, fileName: string) => (
     <a
       href={fileURL}
-      target="_blank"
       rel="noopener noreferrer"
       className="flex items-center gap-2 p-2 mt-2 border border-dashed rounded-md bg-accent/30 hover:bg-accent transition-colors"
     >
@@ -113,17 +113,8 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
                   {ipDetails.ipTitle}
                 </CardTitle>
                 {ipDetails?.approvalStatus === "approved" && (
-                  <span className="flex items-center justify-center w-6 h-6 bg-blue-500 rounded-full">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={3}
-                      stroke="white"
-                      className="w-3 h-3"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+                  <span className="flex items-center justify-center w-6 h-6  rounded-full">
+                    <Image src="/bluetick.png" alt="bluetick" height={20} width={20} />
                   </span>
                 )}
               </CardHeader>

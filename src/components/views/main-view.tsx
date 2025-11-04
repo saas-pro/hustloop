@@ -18,6 +18,7 @@ import EventModal from './event-modal';
 import SubmitIPDashboard from "./submit-your-ip";
 import { CommentSection } from "../comment-section";
 import Unauthorized from "@/app/unauthorized";
+import { API_BASE_URL } from "@/lib/api";
 
 
 
@@ -43,7 +44,7 @@ const DashboardView = dynamic(() => import('@/components/views/dashboard'), { lo
 const MentorDashboardView = dynamic(() => import('@/components/views/mentor-dashboard'), { loading: () => <ModalSkeleton /> });
 const IncubatorDashboardView = dynamic(() => import('@/components/views/incubator-dashboard'), { loading: () => <ModalSkeleton /> });
 const MsmeDashboardView = dynamic(() => import('@/components/views/msme-dashboard'), { loading: () => <ModalSkeleton /> });
-const TechTransferView = dynamic(() => import('@/components/views/browsetech'), { loading: () => <ModalSkeleton /> });
+const TechTransferView = dynamic(() => import('@/components/browsetech/browsetech'), { loading: () => <ModalSkeleton /> });
 const MarketplaceView = dynamic(() => import('@/components/views/marketplace-view'), { loading: () => <ModalSkeleton /> });
 
 const LoginModal = dynamic(() => import('@/components/auth/login-modal'), { loading: () => <ModalSkeleton /> });
@@ -56,6 +57,12 @@ type User = {
   email: string;
 }
 type AuthProvider = 'local' | 'google';
+
+interface TokenStatus {
+  valid?: boolean;
+  expired?: boolean;
+  error?: string;
+}
 
 // Version for localStorage data
 const LOCAL_STORAGE_VERSION = '1.2'; // bump to invalidate old data
@@ -102,6 +109,8 @@ export default function MainView() {
   const [isEventModalOpen, setEventModalOpen] = useState(false);
   const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
   const [isCommentSectionMaximized, setIsCommentSectionMaximized] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
+
 
 
   const loadStateFromStorage = useCallback(() => {
@@ -226,6 +235,70 @@ export default function MainView() {
   const [navOpen, setNavOpen] = useState<boolean>(false);
 
   useEffect(() => {
+    const checkToken = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setTokenStatus({ valid: false, error: "No token found" });
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/check-token`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        const data: TokenStatus = await response.json();
+        if (!response.ok) {
+          if (data.expired) {
+            toast({
+              title: "Session expired",
+              description: "Your session has expired. Please log in again.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Invalid token",
+              description: "Your authentication token is invalid. Please log in again.",
+              variant: "destructive",
+            });
+          }
+          
+          setLoggedIn(false);
+          setUserRole(null);
+          setUser(null);
+          setHasSubscription(false);
+          setAppliedPrograms({});
+          setAuthProvider(null);
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('userRole');
+          localStorage.removeItem('user');
+          localStorage.removeItem('hasSubscription');
+          localStorage.removeItem('appliedPrograms');
+          localStorage.removeItem('token');
+          localStorage.removeItem('authProvider');
+          localStorage.removeItem('founder_role');
+          setActiveView('home');
+          router.push('/');
+          setTokenStatus(data);
+          return;
+        }
+        setTokenStatus(data);
+      } catch (error) {
+        console.error("Token check failed:", error);
+        toast({
+          title: "Network error",
+          description: "Unable to verify token. Please try again later.",
+          variant: "destructive",
+        });
+        localStorage.removeItem("access_token");
+      }
+    };
+    checkToken();
+  }, [toast,router]);
+
+  useEffect(() => {
     const from = searchParams.get('from');
     const action = searchParams.get('action');
 
@@ -275,7 +348,7 @@ export default function MainView() {
     }, 600);
 
     return () => clearTimeout(timeout);
-  }, [id,toast]);
+  }, [id, toast]);
 
 
   const handleModalOpenChange = (view: View) => (isOpen: boolean) => {
@@ -309,6 +382,8 @@ export default function MainView() {
       setActiveView('dashboard');
     }
   };
+
+
 
   const handleLogout = async () => {
     if (!auth) return;

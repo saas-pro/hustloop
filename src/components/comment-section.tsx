@@ -167,7 +167,6 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
     const renderFileAttachment = (fileURL: string, fileName: string) => (
         <a
             href={fileURL}
-            target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 p-2 mt-2 border border-dashed rounded-md bg-accent/30 hover:bg-accent transition-colors"
         >
