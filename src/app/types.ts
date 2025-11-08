@@ -3,7 +3,7 @@ export type View = "home" | "blog" | "mentors" | "incubators" | "submitIP" | "pr
 export type DashboardTab = "overview" | "msmes" |"ip/technologies"| "incubators" | "engagements" | "mentors"  | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" |"aignite";
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
 export type IncubatorDashboardTab = "overview" | "submissions" | "profile" | "settings";
-export type MsmeDashboardTab = "overview" | "submissions" | "profile" | "settings";
+export type MsmeDashboardTab = "overview" | "submissions" | "profile" |"engagement" |"settings";
 export type UserRole = "admin" | "mentor" | "incubator" | "msme" | "founder";
 export type founderRole = "Solve MSME's challenge" | "List a technology for licensing" | "Submit an innovative idea"
 export type UserStatus = "active" | "banned" | "pending";
@@ -19,7 +19,7 @@ export type Submission = {
   id: number;
   founder: string; 
   idea: string; 
-  status: 'New' | 'Under Review' | 'Valid' | 'Duplicate' | 'Rejected';
+  status: 'New' | 'Under Review' | 'Valid' | 'Duplicate' | 'Rejected' | 'Challenge Submitted';
   description: string;
   submittedDate: string;
   comments: Comment[];
@@ -71,6 +71,8 @@ export type EducationProgram = {
     features: EducationFeature[];
     created_at: string;
 };
+
+
 
 
     

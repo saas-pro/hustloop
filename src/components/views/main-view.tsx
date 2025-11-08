@@ -264,7 +264,6 @@ export default function MainView() {
               variant: "destructive",
             });
           }
-          
           setLoggedIn(false);
           setUserRole(null);
           setUser(null);
@@ -420,7 +419,7 @@ export default function MainView() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // if sentinel is visible, hero is visible
+        
         setIsHeroVisible(entry.isIntersecting);
       },
       { root: null, threshold: 0 }

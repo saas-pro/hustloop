@@ -17,22 +17,35 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "../ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { API_BASE_URL } from "@/lib/api";
+import { MarkdownViewer } from "../ui/markdownViewer";
+import { useChallengeProgress } from "../ui/useChallengeProgress";
+import { Progress } from "../ui/progress";
+import { CorporateChallengeCard } from "./CorporateChallengeCard";
 
 
 export type CorporateChallenge = {
-  id:number;
+  id: number;
   title: string;
+  company_description: string
+  company_sector: string
+  start_date: Date
+  end_date: Date
   description: string;
   looking_for: string;
   reward_amount: string;
   challenge_type: string;
-  duration_in_days: number;
   contact_name: string;
   contact_role: string;
   scope: [];
   company_name: string
   stage: number
-  end_date: number
+  logo_url: string
+  linkedin_url: string
+  x_url: string
+  website_url: string
+  reward_min: number
+  reward_max: number
+
 };
 
 export type MSMECollaboration = {
@@ -232,7 +245,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
       fetchMSMECollaboration();
       fetchGovernmentChallenge();
     }
-  }, [isOpen, isLoggedIn,toast]);
+  }, [isOpen, isLoggedIn, toast]);
 
   const handleViewDetails = (type: 'CorporateChallenges' | 'MSMECollaboration' | 'GovernmentChallenges', item: any) => {
     if (type === 'CorporateChallenges') setSelectedChallenge(item);
@@ -252,7 +265,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
     if (isLoading) {
       return (
         <Tabs defaultValue="CorporateChallenges" className="flex flex-col flex-grow min-h-0 px-6 pb-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="CorporateChallenges">Corporate Challenges</TabsTrigger>
             <TabsTrigger value="MSMECollaboration">MSME Collaboration</TabsTrigger>
             <TabsTrigger value="Governmentchallenges">Government Challenges</TabsTrigger>
@@ -301,34 +314,18 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                   Please check back later — new challenges will appear here soon.
                 </p>
               </div>
-            ) : corporateChallenges?.map((challenge, index) => (
-              <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
-                <CardHeader>
-                  <div className="flex items-center gap-4">
-                    <Image src={"https://api.hustloop.com/static/images/building.png"} alt={`${challenge.company_name} logo`} width={60} height={60} className="rounded-lg" />
-                    <div>
-                      <CardTitle className="text-base">{challenge.title}</CardTitle>
-                      <CardDescription>{challenge.company_name}</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground line-clamp-3">{challenge.description}</p>
-                </CardContent>
-                <CardFooter className="flex-col items-start space-y-2">
-                  <Badge variant="outline">Reward: {challenge.reward_amount}</Badge>
-                  <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => handleViewDetails('CorporateChallenges', challenge)}>
-                    View Challenge
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            ) : corporateChallenges?.map((challenge, index) =>
+              <CorporateChallengeCard
+                key={index}
+                challenge={challenge}
+                onViewDetails={handleViewDetails}
+              />
+            )}
           </div>
         </TabsContent>
         <TabsContent value="MSMECollaboration" className="mt-4 flex-1 overflow-y-auto pr-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {msmeCollaborations?.length === 0 ? (
-              // 🟡 Empty State
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                 <h2 className="text-2xl font-bold mb-2 font-headline">
@@ -365,7 +362,6 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
         <TabsContent value="Governmentchallenges" className="mt-4 flex-1 overflow-y-auto pr-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {Governmentchallenges?.length === 0 ? (
-              // 🟡 Empty State
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                 <h2 className="text-2xl font-bold mb-2 font-headline">
@@ -389,7 +385,6 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                 <CardContent className="flex-grow">
                   <p className="text-sm text-muted-foreground line-clamp-3">{gov.description}</p>
                 </CardContent>
-
                 <CardFooter className="flex-col items-start space-y-2">
                   <Badge variant="outline">Reward: {gov.reward_amount}</Badge>
                   <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => handleViewDetails('GovernmentChallenges', gov)}>

@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useForm, useFieldArray, useWatch } from "react-hook-form";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2 } from "lucide-react";
+import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2, Upload, CalendarIcon, Target, Handshake } from "lucide-react";
 import type { MsmeDashboardTab, Submission, Comment } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,26 @@ import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
 import Script from "next/script";
 import { format, addDays } from "date-fns";
+import SectorSearchWithDropdown from "../ui/SectorSearchWithDropdown";
+import Image from "next/image";
+import { Label } from "../ui/label";
+import ChallengeMarkdownEditor from "../ui/ChallengeMarkdown";
+import { Calendar } from "../ui/calendar";
+import { cn } from "@/lib/utils";
+import CollaborationView from "./collaboration-view";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import { ChevronsUpDown, Check } from "lucide-react";
 
 
 type User = {
@@ -33,36 +53,109 @@ type User = {
 }
 type AuthProvider = 'local' | 'google';
 
-// Profile form schema
+export interface SectorData {
+    id: number | string
+    name: string
+    children: string[]
+}
+
+
 const profileFormSchema = z.object({
     name: z.string().min(1, "Company name is required"),
     sector: z.string().min(1, "Sector is required"),
     short_description: z.string().min(1, "A short description is required"),
-
+    website_url: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
+    x_url: z.string().url("Please enter a valid URL for your X profile.").optional().or(z.literal('')),
+    linkedin_url: z.string().url("Please enter a valid URL for your LinkedIn profile.").optional().or(z.literal('')),
+    logo: z.any().optional()
 });
+
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const collaborationSchema = z.object({
-    title: z.string().min(3, { message: "Title is required." }),
-    description: z.string().min(10, { message: "Description is required." }).max(5000, { message: "Description must not exceed 5000 characters." }),
-    lookingFor: z.string().min(1, { message: "What you are looking for is required." }),
-    rewardAmount: z.number().min(0, { message: "Reward amount cannot be negative." }).default(0),
-    scope: z.array(z.object({ value: z.string().min(2, { message: "Scope cannot be empty." }) })),
-    contact: z.object({
-        name: z.string().min(2, { message: "Contact name is required." }),
-        role: z.string().min(2, { message: "Contact role is required." }),
-    }),
-    challengeType: z.enum(["corporate", "msme", "government"], {
-        errorMap: () => ({ message: "Please select a challenge type." }),
-    }),
-    durationInDays: z
-        .preprocess(
-            (val) => (val === "" ? null : Number(val)),
-            z.number().min(1, { message: "Duration must be at least 1 day." }).nullable()
-        )
-        .optional(),
-    dueDate: z.date().optional(),
-});
+        title: z.string().min(3, { message: "Title is required." }),
+        description: z
+            .string()
+            .min(10, { message: "Description is required." })
+            .max(5000, {
+                message: "Description must not exceed 5000 characters.",
+            }),
+
+        rewardType: z.enum(["fixed", "range"], {
+            errorMap: () => ({ message: "Reward type is required." }),
+        }),
+
+        rewardAmount: z.number().optional(),
+        rewardMin: z.number().optional(),
+        rewardMax: z.number().optional(),
+
+        contact: z.object({
+            name: z.string().min(2, { message: "Contact name is required." }),
+            role: z.string().min(2, { message: "Contact role is required." }),
+        }),
+
+        challengeType: z.enum(["corporate", "msme", "government"], {
+            errorMap: () => ({ message: "Please select a challenge type." }),
+        }),
+
+        technologyArea: z
+            .object({
+                sector: z.string().min(1, "Sector is required"),
+                techArea: z.string().min(1, "Technology area is required"),
+            })
+            .refine(
+                (val) => val.sector && val.techArea,
+                { message: "Please select a technology area", path: ["techArea"] }
+            ),
+
+        startDate: z.date({
+            required_error: "A start date is required.",
+        }),
+        endDate: z.date({
+            required_error: "An end date is required.",
+        }),
+    })
+    .refine((data) => data.endDate > data.startDate, {
+        message: "End date must be after the start date.",
+        path: ["endDate"],
+    })
+    .superRefine((data, ctx) => {
+        if (data.rewardType === "fixed") {
+            if (data.rewardAmount === undefined || isNaN(data.rewardAmount)) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Please enter a valid reward amount.",
+                    path: ["rewardAmount"],
+                });
+            }
+        } else if (data.rewardType === "range") {
+            if (data.rewardMin === undefined || isNaN(data.rewardMin)) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Please enter a valid minimum reward.",
+                    path: ["rewardMin"],
+                });
+            }
+            if (data.rewardMax === undefined || isNaN(data.rewardMax)) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Please enter a valid maximum reward.",
+                    path: ["rewardMax"],
+                });
+            }
+            if (
+                data.rewardMin !== undefined &&
+                data.rewardMax !== undefined &&
+                data.rewardMin > data.rewardMax
+            ) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Maximum reward should be greater than or equal to minimum reward.",
+                    path: ["rewardMax"],
+                });
+            }
+        }
+    });
 
 type collaborationFormValues = z.infer<typeof collaborationSchema>;
 
@@ -79,20 +172,33 @@ type UsersCollaborationData = z.infer<typeof collaborationSchema>
 
 const initialSubmissionsData: Submission[] = [];
 
+const rewardOptions = [
+    { value: "fixed", label: "Fixed" },
+    { value: "range", label: "Range" },
+];
 interface getUsersCollaborationSchema {
     id: number;
     title: string;
     description: string;
-    looking_for: string;
-    reward_amount: number | string;
+
+    reward_amount?: number;
+    reward_min?: number;
+    reward_max?: number;
+
     challenge_type: "corporate" | "msme" | "government";
-    duration_in_days: number;
-    stage: string;
+    start_date: Date | undefined;
+    end_date: Date | undefined;
+
+    sector: string;
+    technology_area: string;
+
     contact_name: string;
     contact_role: string;
-    scope: string[];
-    created_at: Date;
+
+    created_at: string;
+    user_id: number;
 }
+
 
 const statusIcons: { [key: string]: React.ReactNode } = {
     'New': <Clock className="h-4 w-4 text-blue-500" />,
@@ -105,7 +211,10 @@ const statusIcons: { [key: string]: React.ReactNode } = {
 const emptyProfile: ProfileFormValues = {
     name: "",
     sector: "",
-    short_description: ""
+    short_description: "",
+    website_url: "",
+    x_url: "",
+    linkedin_url: "",
 };
 
 interface MsmeDashboardViewProps {
@@ -118,11 +227,14 @@ interface MsmeDashboardViewProps {
 export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProvider }: MsmeDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<MsmeDashboardTab>("overview");
+    const [confirmText, setConfirmText] = useState("");
     const [submissions, setSubmissions] = useState(initialSubmissionsData);
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
     const [isEditingEmail, setIsEditingEmail] = useState(false);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [selectedCollabId, setSelectedCollabId] = useState<number | null>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    // Profile Form setup
     const profileForm = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema),
         defaultValues: emptyProfile,
@@ -132,32 +244,48 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
         resolver: zodResolver(collaborationSchema),
         defaultValues: {
             title: "",
-            description: "",
-            lookingFor: "",
+            description: `## Introduction  
+[Give a brief overview of the context and purpose of this challenge. What inspired it? Why does it matter?]
+
+## Objective  
+[What do you aim to achieve with this challenge? Clearly state the expected outcome or impact.]
+
+## Problem Statement  
+
+### Background  
+[Describe the core problem this challenge seeks to solve. Why does it exist? Who is impacted? Include background details, context, and motivations.]
+
+### What We Are Looking For  
+[Explain the type of solution you want participants to propose or build.]
+
+### Scope of Requirements  
+[Outline any requirements, functionalities, or constraints for the solution.]
+
+- Requirement 1  
+- Requirement 2  
+- Requirement 3  
+`,
+            rewardType: "fixed",
             rewardAmount: 0,
-            scope: [{ value: "" }],
-            contact: { name: "", role: "" },
+            rewardMin: undefined,
+            rewardMax: undefined,
+
+            contact: {
+                name: "",
+                role: ""
+            },
+
             challengeType: "corporate",
-            durationInDays: 0,
-            dueDate: new Date(),
+            technologyArea: {
+                sector: "",
+                techArea: ""
+            },
+
+            startDate: undefined,
+            endDate: undefined,
         },
     });
 
-    const durationInDays = useWatch({
-        control: collaborationForm.control,
-        name: "durationInDays",
-    });
-
-    const [dueDate, setDueDate] = useState<Date | null>(null);
-
-    useEffect(() => {
-        if (durationInDays && durationInDays > 0) {
-            const calculatedDate = addDays(new Date(), durationInDays);
-            setDueDate(calculatedDate);
-        } else {
-            setDueDate(null);
-        }
-    }, [durationInDays]);
 
     const settingsForm = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
@@ -167,9 +295,6 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
         },
     });
 
-    const { fields: scopeFields, append: appendScope, remove: removeScope } = useFieldArray({
-        control: collaborationForm.control, name: "scope"
-    });
 
     const [getUsersCollaborationData, setGetUserCollaborationData] = useState<getUsersCollaborationSchema[]>([]);
 
@@ -177,20 +302,32 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
     const [currentEditingCollaborationId, setCurrentEditingCollaborationId] = useState<number | null>(null);
     const [selectedCollaborationToEdit, setSelectedCollaborationToEdit] = useState<getUsersCollaborationSchema | null>(null);
 
+    const MAX_CHARS = 300;
 
     async function onProfileSubmit(data: ProfileFormValues) {
         const token = localStorage.getItem('token');
         const profileData = {
             ...data
         };
+
+        const formData = new FormData();
+        formData.append("company_name", profileData.name);
+        formData.append("sector", profileData.sector);
+        formData.append("short_description", profileData.short_description || "");
+        formData.append("website_url", profileData.website_url || "");
+        formData.append("linkedin_url", profileData.linkedin_url || "");
+        formData.append("x_url", profileData.x_url || "");
+
+        if (profileData.logo instanceof File) {
+            formData.append("logo", profileData.logo);
+        }
         try {
             const response = await fetch(`${API_BASE_URL}/api/msme-profiles`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(profileData)
+                body: formData
             });
 
             if (response.ok) {
@@ -214,8 +351,6 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
             });
         }
     }
-
-
 
     async function onSettingsSubmit(data: SettingsFormValues) {
         const token = localStorage.getItem('token');
@@ -253,7 +388,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
     };
 
     const handleAddComment = (submissionId: number, commentText: string) => {
-        const newComment: Comment = { id:0,author: 'MSME', text: commentText, timestamp: 'Just now' };
+        const newComment: Comment = { id: 0, author: 'MSME', text: commentText, timestamp: 'Just now' };
         const updatedSubmissions = submissions.map(sub =>
             sub.id === submissionId ? { ...sub, comments: [...sub.comments, newComment] } : sub
         );
@@ -261,11 +396,14 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
         setSelectedSubmission(updatedSubmissions.find(s => s.id === submissionId) || null);
     };
 
-    // Overview Stats
+
+    const [SubmissionsLength, setSubmissionsLength] = useState();
+
     const overviewStats = {
         new: submissions.filter(s => s.status === 'New').length,
         review: submissions.filter(s => s.status === 'Under Review').length,
         valid: submissions.filter(s => s.status === 'Valid').length,
+        challengeSubmitted: SubmissionsLength
     };
 
     const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
@@ -278,25 +416,36 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
             return;
         }
 
+        let rewardData;
+        if (data.rewardType === "fixed") {
+            rewardData = { reward_amount: data.rewardAmount };
+        } else {
+            rewardData = {
+                reward_min: data.rewardMin,
+                reward_max: data.rewardMax,
+            };
+        }
+
         const collaborationData = {
             title: data.title,
             description: data.description,
-            looking_for: data.lookingFor,
-            reward_amount: data.rewardAmount || 0,
             challenge_type: data.challengeType,
-            scopes: data.scope.map((item: { value: string }) => item.value),
             contact_name: data.contact.name,
             contact_role: data.contact.role,
-            durationInDays: data.durationInDays,
-            dueDate: data.dueDate,
+            startDate: data.startDate?.toISOString(),
+            endDate: data.endDate?.toISOString(),
+            sector: data.technologyArea?.sector,
+            technologyArea: data.technologyArea?.techArea,
+            ...rewardData,
         };
+
 
         let url = `${API_BASE_URL}/api/collaborations`;
         let method = "POST";
 
         if (isEditingCollaboration && currentEditingCollaborationId) {
-            url = `${API_BASE_URL}/api/collaborations/${currentEditingCollaborationId}`; // Assuming an update endpoint like /api/collaborations/:id
-            method = "PUT"; // Or 'PATCH' depending on your backend
+            url = `${API_BASE_URL}/api/collaborations/${currentEditingCollaborationId}`;
+            method = "PUT";
         }
 
         try {
@@ -311,24 +460,26 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
 
             if (response.ok) {
                 toast({
-                    title: isEditingCollaboration ? "Collaboration Updated" : "Collaboration Info Saved",
-                    description: isEditingCollaboration ? "Your collaboration details have been updated successfully." : "Your collaboration details have been saved successfully.",
+                    title: isEditingCollaboration ? "Collaboration Updated" : "Collaboration Saved",
+                    description: isEditingCollaboration ? "Your collaboration details have been updated." : "Your collaboration details have been saved.",
                 });
-                // After successful submission, reset form and editing state
-                getUsersCollaboration()
+
+                getUsersCollaboration();
+
                 collaborationForm.reset({
                     title: "",
                     description: "",
-                    lookingFor: "",
+                    rewardType: "fixed",
                     rewardAmount: 0,
-                    scope: [{ value: "" }],
+                    rewardMin: undefined,
+                    rewardMax: undefined,
+                    contact: { name: "", role: "" },
                     challengeType: "corporate",
-                    durationInDays: 0,
-                    contact: {
-                        name: "",
-                        role: ""
-                    },
+                    startDate: undefined,
+                    endDate: undefined,
+                    technologyArea: { sector: "", techArea: "" },
                 });
+
                 setIsEditingCollaboration(false);
                 setCurrentEditingCollaborationId(null);
                 setSelectedCollaborationToEdit(null);
@@ -348,53 +499,34 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
             });
         }
     }
+
+
     useEffect(() => {
         if (selectedCollaborationToEdit) {
-
-            // Prepare the scope array for react-hook-form
-            const formattedScope = selectedCollaborationToEdit.scope.map(s => ({ value: s }));
-
-            // Ensure durationInDays is a number or null/undefined for the input
-            const duration = selectedCollaborationToEdit.duration_in_days > 0 ? selectedCollaborationToEdit.duration_in_days : undefined;
-
-            // Calculate dueDate if duration is available
-            const calculatedDueDate = duration ? addDays(new Date(selectedCollaborationToEdit.created_at), duration) : undefined;
-
-
+            console.log(selectedCollaborationToEdit)
             collaborationForm.reset({
                 title: selectedCollaborationToEdit.title,
                 description: selectedCollaborationToEdit.description,
-                lookingFor: selectedCollaborationToEdit.looking_for,
-                rewardAmount: Number(selectedCollaborationToEdit.reward_amount),
-                scope: formattedScope.length > 0 ? formattedScope : [{ value: '' }], // Ensure at least one empty scope field if none exist
+                rewardType: selectedCollaborationToEdit.reward_min != null ? "range" : "fixed",
+                rewardAmount: selectedCollaborationToEdit.reward_amount || 0,
+                rewardMin: selectedCollaborationToEdit.reward_min ?? undefined,
+                rewardMax: selectedCollaborationToEdit.reward_max ?? undefined,
                 contact: {
                     name: selectedCollaborationToEdit.contact_name,
                     role: selectedCollaborationToEdit.contact_role,
                 },
                 challengeType: selectedCollaborationToEdit.challenge_type,
-                durationInDays: duration,
-                dueDate: calculatedDueDate,
+                startDate: selectedCollaborationToEdit.start_date ? new Date(selectedCollaborationToEdit.start_date) : undefined,
+                endDate: selectedCollaborationToEdit.end_date ? new Date(selectedCollaborationToEdit.end_date) : undefined,
+                technologyArea: {
+                    sector: selectedCollaborationToEdit.sector || '',
+                    techArea: selectedCollaborationToEdit.technology_area || ''
+                }
             });
-            setDueDate(calculatedDueDate || null);// Also update the local dueDate state
-        } else {
-            // If no collaboration is selected for edit, reset to default new collaboration values
-            collaborationForm.reset({
-                title: "",
-                description: "",
-                lookingFor: "",
-                rewardAmount: 0,
-                scope: [{ value: "" }],
-                challengeType: "corporate",
-                durationInDays: 0,
-                contact: {
-                    name: "",
-                    role: ""
-                },
-                dueDate: undefined,
-            });
-            setDueDate(null);
         }
     }, [selectedCollaborationToEdit, collaborationForm]);
+
+
 
     const getUsersCollaboration = useCallback(async () => {
         const token = localStorage.getItem('token');
@@ -412,11 +544,9 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
             });
 
             const result = await response.json();
-            setGetUserCollaborationData(result.collaborations);
 
-            if (!response.ok) {
-                toast({ variant: 'destructive', title: 'Update Failed', description: result.error || 'An unknown error occurred.' });
-            }
+            setGetUserCollaborationData(result.collaborations);
+            setSubmissionsLength(result.length);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
         }
@@ -435,7 +565,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                 console.error("Network error:", err);
             }
 
-            await getUsersCollaboration(); // call after profile check
+            await getUsersCollaboration();
         };
 
         checkProfile();
@@ -473,7 +603,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                     title: "Collaboration Deleted",
                     description: "The collaboration has been successfully removed.",
                 });
-                // Update the UI by removing the deleted item from the state
+
                 setGetUserCollaborationData(prev => prev.filter(collab => collab.id !== collaborationToDeleteId));
                 setIsDeleteDialogOpen(false);
                 setCollaborationToDeleteId(null);
@@ -495,6 +625,64 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
             setIsDeleting(false);
         }
     }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            profileForm.setValue('logo', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            profileForm.setValue('logo', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeLogo = () => {
+        profileForm.setValue('logo', null);
+        setLogoPreview(null);
+    };
+
+    const [sectors, setSectors] = useState<SectorData[]>([]);
+
+    const fetchSectors = async () => {
+        const res = await fetch(`${API_BASE_URL}/api/sectors`);
+        const data = await res.json();
+        setSectors(data);
+    };
+    useEffect(() => {
+        fetchSectors();
+    }, []);
+
+    const handleOpenDialog = async () => {
+        const isValid = await profileForm.trigger();
+
+        if (isValid) {
+            setOpen(true);
+        }
+    };
+
+    const [datePickerOpen, setDatePickerOpen] = useState(false);
+
 
     return (
         <>
@@ -533,16 +721,26 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                             <TabsList className="grid w-full grid-cols-5">
                                 <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
                                 <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
-                                <TabsTrigger value="engagement"><FileText className="mr-2 h-4 w-4" /> Engagement</TabsTrigger>
+                                <TabsTrigger value="engagement"><Handshake className="mr-2 h-4 w-4" /> Engagement</TabsTrigger>
                                 <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
                                 <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
                             </TabsList>
                             <ScrollArea className="flex-grow mt-4">
                                 <TabsContent value="overview" className="mt-0 space-y-6">
-                                    <div className="grid gap-6 md:grid-cols-3">
+                                    <div className="grid gap-6 md:grid-cols-4">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">New Submissions</CardTitle><FileText className="h-4 w-4 text-muted-foreground" /></CardHeader>
                                             <CardContent><div className="text-2xl font-bold">{overviewStats.new}</div><p className="text-xs text-muted-foreground">Awaiting review</p></CardContent>
+                                        </Card>
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50 cursor-pointer" onClick={() => setActiveTab("engagement")}>
+                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                <CardTitle className="text-sm font-medium">Incentive Challenges</CardTitle>
+                                                <Target className="h-4 w-4 text-muted-foreground" /> {/* Replaced FileText */}
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{overviewStats.challengeSubmitted}</div>
+                                                <p className="text-xs text-muted-foreground">Challenges submitted</p>
+                                            </CardContent>
                                         </Card>
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Under Review</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader>
@@ -598,35 +796,39 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                 </TabsContent>
                                 <TabsContent value="engagement" className="mt-0 space-y-4">
                                     {getUsersCollaborationData?.length > 0 ? getUsersCollaborationData.map((sub) => (
-                                        <Card key={sub.id} className="bg-card/50 backdrop-blur-sm border-border/50"> {/* Removed onClick from Card */}
+                                        <Card key={sub.id} onClick={() => setSelectedCollabId(sub.id)} className="
+    bg-card/50 backdrop-blur-sm border-border/50 cursor-pointer
+     hover:bg-accent/20
+  ">
                                             <CardHeader>
-                                                <div className="flex justify-between items-start">
+                                                <div className="flex justify-between items-start w-full">
                                                     <div>
                                                         <CardTitle className="text-lg">{sub.title}</CardTitle>
                                                         <CardDescription>Submitted by {sub.contact_name}</CardDescription>
                                                     </div>
-                                                    <div>
-                                                        {/* The new "Edit" button */}
+                                                    <div className="flex space-x-2">
                                                         <Button
-                                                            variant="ghost" // Make it look like a link or a subtle button
+                                                            variant="ghost"
                                                             size="sm"
-                                                            onClick={() => {
-                                                                setSelectedCollaborationToEdit(sub); // Store the collaboration data
-                                                                setIsEditingCollaboration(true); // Set edit mode to true
-                                                                setCurrentEditingCollaborationId(sub.id); // Store the ID for the update API call
-                                                                setActiveTab("profile"); // Switch to profile tab
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedCollaborationToEdit(sub);
+                                                                setIsEditingCollaboration(true);
+                                                                setCurrentEditingCollaborationId(sub.id);
+                                                                setActiveTab("profile");
                                                             }}
                                                         >
                                                             Edit
                                                         </Button>
                                                         <Button
-                                                            variant="destructive" // Use destructive variant for delete
+                                                            variant="destructive"
                                                             size="sm"
                                                             onClick={(e) => {
-                                                                e.stopPropagation(); // Prevent card's onClick from firing if it exists
+                                                                e.stopPropagation();
                                                                 setCollaborationToDeleteId(sub.id);
-                                                                setIsDeleteDialogOpen(true); // Open the delete confirmation dialog
+                                                                setIsDeleteDialogOpen(true);
                                                             }}
+                                                            className="flex items-center"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                             <span className="ml-2">Delete</span>
@@ -635,9 +837,12 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                 </div>
                                             </CardHeader>
                                             <CardFooter>
-                                                <p className="text-sm text-muted-foreground">Submitted on {new Date(sub.created_at).toLocaleString()}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Submitted on {new Date(sub.created_at).toLocaleString()}
+                                                </p>
                                             </CardFooter>
                                         </Card>
+
                                     )) : (
                                         <Card className="text-center text-muted-foreground py-16">
                                             <CardContent>You have not submit any Collaboration.</CardContent>
@@ -645,59 +850,248 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                     )}
                                 </TabsContent>
                                 <TabsContent value="profile" className="mt-0">
-                                    <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/50 backdrop-blur-sm border-border/50`}>
+                                    <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/25 backdrop-blur-sm border-border/50`}>
                                         <CardHeader>
                                             <CardTitle>Create MSME Profile</CardTitle>
                                             <CardDescription>
                                                 This information will be publicly visible to potential collaborators.
                                             </CardDescription>
                                         </CardHeader>
-
                                         <CardContent>
                                             <Form {...profileForm}>
                                                 <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
                                                     <FormField
                                                         control={profileForm.control}
                                                         name="name"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Company Name</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
+                                                        render={({ field }) => {
+                                                            const value = profileForm.watch("name") || "";
+                                                            return (
+                                                                <FormItem>
+                                                                    <FormLabel>Company Name <span className="text-red-600">*</span></FormLabel>
+                                                                    <FormControl>
+                                                                        <div className="relative">
+                                                                            <Input
+                                                                                {...field}
+                                                                                maxLength={MAX_CHARS}
+                                                                                placeholder="Enter company name"
+                                                                                className="pr-16"
+                                                                            />
+                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                {value.length}/{MAX_CHARS}
+                                                                            </span>
+                                                                        </div>
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            );
+                                                        }}
                                                     />
+
                                                     <FormField
                                                         control={profileForm.control}
                                                         name="sector"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Sector</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
+                                                        render={({ field }) => {
+                                                            const value = profileForm.watch("sector") || "";
+                                                            return (
+                                                                <FormItem>
+                                                                    <FormLabel>Sector <span className="text-red-600">*</span></FormLabel>
+                                                                    <FormControl>
+                                                                        <div className="relative">
+                                                                            <Input
+                                                                                {...field}
+                                                                                maxLength={MAX_CHARS}
+                                                                                placeholder="e.g., FinTech, Health, AI"
+                                                                                className="pr-16"
+                                                                            />
+                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                {value.length}/{MAX_CHARS}
+                                                                            </span>
+                                                                        </div>
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            );
+                                                        }}
                                                     />
+
                                                     <FormField
                                                         control={profileForm.control}
                                                         name="short_description"
+                                                        render={({ field }) => {
+                                                            const value = profileForm.watch("short_description") || "";
+                                                            return (
+                                                                <FormItem>
+                                                                    <FormLabel>Short Description <span className="text-red-600">*</span></FormLabel>
+                                                                    <FormControl>
+                                                                        <div className="relative">
+                                                                            <Textarea
+                                                                                {...field}
+                                                                                maxLength={MAX_CHARS}
+                                                                                placeholder="A brief one-sentence pitch for your company."
+                                                                                className="pr-16"
+                                                                            />
+                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                {value.length}/{MAX_CHARS}
+                                                                            </span>
+                                                                        </div>
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            );
+                                                        }}
+                                                    />
+
+                                                    <FormField
+                                                        control={profileForm.control}
+                                                        name="website_url"
+                                                        render={({ field }) => {
+                                                            const value = profileForm.watch("website_url") || "";
+                                                            return (
+                                                                <FormItem>
+                                                                    <FormLabel>Website URL</FormLabel>
+                                                                    <FormControl>
+                                                                        <div className="relative">
+                                                                            <Input
+                                                                                {...field}
+                                                                                maxLength={MAX_CHARS}
+                                                                                placeholder="https://example.com"
+                                                                                className="pr-20"
+                                                                            />
+                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                {value.length}/{MAX_CHARS}
+                                                                            </span>
+                                                                        </div>
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            );
+                                                        }}
+                                                    />
+
+                                                    <FormField
+                                                        control={profileForm.control}
+                                                        name="x_url"
+                                                        render={({ field }) => {
+                                                            const value = profileForm.watch("x_url") || "";
+                                                            return (
+                                                                <FormItem>
+                                                                    <FormLabel>X (Twitter) URL</FormLabel>
+                                                                    <FormControl>
+                                                                        <div className="relative">
+                                                                            <Input
+                                                                                {...field}
+                                                                                maxLength={MAX_CHARS}
+                                                                                placeholder="https://x.com/username"
+                                                                                className="pr-20"
+                                                                            />
+                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                {value.length}/{MAX_CHARS}
+                                                                            </span>
+                                                                        </div>
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            );
+                                                        }}
+                                                    />
+
+                                                    <FormField
+                                                        control={profileForm.control}
+                                                        name="linkedin_url"
+                                                        render={({ field }) => {
+                                                            const value = profileForm.watch("linkedin_url") || "";
+                                                            return (
+                                                                <FormItem>
+                                                                    <FormLabel>LinkedIn URL</FormLabel>
+                                                                    <FormControl>
+                                                                        <div className="relative">
+                                                                            <Input
+                                                                                {...field}
+                                                                                maxLength={MAX_CHARS}
+                                                                                placeholder="https://linkedin.com/in/username"
+                                                                                className="pr-20"
+                                                                            />
+                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                {value.length}/{MAX_CHARS}
+                                                                            </span>
+                                                                        </div>
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            );
+                                                        }}
+                                                    />
+
+                                                    <FormField
+                                                        control={profileForm.control}
+                                                        name="logo"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Short Description</FormLabel>
+                                                                <FormLabel>Company Logo</FormLabel>
                                                                 <FormControl>
-                                                                    <Textarea placeholder="A brief one-sentence pitch for your company." {...field} />
+                                                                    <div
+                                                                        onClick={() => fileInputRef.current?.click()}
+                                                                        onDragOver={handleDragOver}
+                                                                        onDrop={handleDrop}
+                                                                        className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
+                                                                    >
+                                                                        {logoPreview ? (
+                                                                            <>
+                                                                                <Image
+                                                                                    src={logoPreview}
+                                                                                    alt="Logo preview"
+                                                                                    layout="fill"
+                                                                                    objectFit="contain"
+                                                                                    className="rounded-lg"
+                                                                                />
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="destructive"
+                                                                                    size="icon"
+                                                                                    className="absolute top-2 right-2 z-10"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        removeLogo();
+                                                                                    }}
+                                                                                >
+                                                                                    <Trash2 className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </>
+                                                                        ) : (
+                                                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                                <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                                                                                <p className="mb-2 text-sm text-muted-foreground">
+                                                                                    <span className="font-semibold">Click to upload</span> or drag and drop
+                                                                                </p>
+                                                                                <p className="text-xs text-muted-foreground">
+                                                                                    PNG, JPG, or GIF (MAX. 800x400px)
+                                                                                </p>
+                                                                            </div>
+                                                                        )}
+                                                                        <Input
+                                                                            ref={fileInputRef}
+                                                                            id="dropzone-file"
+                                                                            type="file"
+                                                                            className="hidden"
+                                                                            accept="image/*"
+                                                                            onChange={handleFileChange}
+                                                                        />
+                                                                    </div>
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>
                                                         )}
                                                     />
+
                                                     <Dialog open={open} onOpenChange={setOpen}>
                                                         <DialogTrigger asChild>
-                                                            <Button>Save Profile</Button>
+                                                            <Button
+                                                                type="button"
+                                                                onClick={handleOpenDialog}
+                                                                disabled={isProfileSubmitted}
+                                                            >
+                                                                {isProfileSubmitted ? "Profile Already Submitted" : "Save Profile"}
+                                                            </Button>
                                                         </DialogTrigger>
 
                                                         <DialogContent>
@@ -705,20 +1099,34 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                                 <DialogTitle>Confirm Submission</DialogTitle>
                                                                 <DialogDescription>
                                                                     Are you sure you want to submit your profile? You can only submit once.
+                                                                    <br />
+                                                                    Please type <strong>{"confirm"}</strong> below to proceed.
                                                                 </DialogDescription>
                                                             </DialogHeader>
+
+                                                            <div className="py-4">
+                                                                <Input
+                                                                    placeholder='Type {"confirm"} to proceed'
+                                                                    value={confirmText}
+                                                                    onChange={(e) => setConfirmText(e.target.value)}
+                                                                />
+                                                            </div>
 
                                                             <DialogFooter className="flex justify-end gap-2">
                                                                 <Button variant="outline" onClick={() => setOpen(false)}>
                                                                     Cancel
                                                                 </Button>
+
                                                                 <Button
                                                                     onClick={() => {
                                                                         profileForm.handleSubmit(onProfileSubmit)();
-                                                                        setIsProfileSubmitted(true)
-                                                                        setOpen(false); // close dialog after submission
+                                                                        setIsProfileSubmitted(true);
+                                                                        setOpen(false);
                                                                     }}
-                                                                    disabled={profileForm.formState.isSubmitting}
+                                                                    disabled={
+                                                                        profileForm.formState.isSubmitting ||
+                                                                        confirmText.toLowerCase() !== "confirm"
+                                                                    }
                                                                 >
                                                                     {profileForm.formState.isSubmitting && (
                                                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -733,84 +1141,53 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                         </CardContent>
                                     </Card>
 
-                                    {/* Second Card: Collaboration and Contact Details with its own form and submit button */}
+
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50 mt-4">
                                         <CardHeader>
-                                            <CardTitle>Collaboration</CardTitle>
+                                            <CardTitle>Incentive Challenges</CardTitle>
                                             <CardDescription>
-                                                {"Tell us about the collaboration you're seeking and the contact person."}
+                                                {"Tell us about the Challenges you're seeking and the contact person."}
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent>
                                             <Form {...collaborationForm}>
                                                 <form onSubmit={collaborationForm.handleSubmit(onCollaborationSubmit)} className="space-y-4">
 
-                                                    {/* Title */}
                                                     <FormField
                                                         control={collaborationForm.control}
                                                         name="title"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Title</FormLabel>
-                                                                <FormControl>
-                                                                    <Input placeholder="Give your collaboration a title" {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
+                                                        render={({ field }) => {
+                                                            const titleValue = collaborationForm.watch("title") || "";
+                                                            return (
+                                                                <FormItem>
+                                                                    <FormLabel>Title <span className="text-red-500">*</span></FormLabel>
+                                                                    <FormControl>
+                                                                        <div className="relative">
+                                                                            <Input placeholder="Give your collaboration a title" {...field} />
+                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                {titleValue.length}/{MAX_CHARS}
+                                                                            </span>
+                                                                        </div>
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )
+                                                        }
+                                                        }
                                                     />
 
-                                                    {/* Description */}
                                                     <FormField
                                                         control={collaborationForm.control}
-                                                        name="description"
+                                                        name="technologyArea"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Description</FormLabel>
+                                                                <FormLabel>Sector & Technology Area <span className="text-red-500">*</span></FormLabel>
                                                                 <FormControl>
-                                                                    <Textarea rows={4} placeholder="Describe the collaboration or challenge" {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-
-                                                    {/* Looking For */}
-                                                    <FormField
-                                                        control={collaborationForm.control}
-                                                        name="lookingFor"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>{"What you're looking for"}</FormLabel>
-                                                                <FormControl>
-                                                                    <Textarea rows={3} placeholder="Describe the ideal partner or solution" {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-
-                                                    {/* Reward Amount */}
-                                                    <FormField
-                                                        control={collaborationForm.control}
-                                                        name="rewardAmount"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Reward Amount</FormLabel>
-                                                                <FormControl>
-                                                                    <Input
-                                                                        type="number"
-                                                                        placeholder="Enter reward amount"
-                                                                        {...field}
-                                                                        min={0}
-                                                                        onChange={(e) => {
-                                                                            const value = e.target.value;
-                                                                            if (value === "") {
-                                                                                field.onChange("");
-                                                                            } else {
-                                                                                field.onChange(Math.max(0, Number(value)));
-                                                                            }
-                                                                        }}
+                                                                    <SectorSearchWithDropdown
+                                                                        data={sectors}
+                                                                        defaultValue={field.value}
+                                                                        onSelect={(item: any) => field.onChange({ "sector": item.sector, "techArea": item.label })}
+                                                                        onDataAdded={fetchSectors}
                                                                     />
                                                                 </FormControl>
                                                                 <FormMessage />
@@ -818,38 +1195,125 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                         )}
                                                     />
 
-                                                    <h4 className="text-md font-medium mb-2">Scope of Requirement</h4>
-                                                    {scopeFields.map((field, index) => (
-                                                        <div key={field.id} className="flex items-center gap-2 mb-2">
-                                                            <FormField
-                                                                control={collaborationForm.control}
-                                                                name={`scope.${index}.value`}
-                                                                render={({ field }) => (
-                                                                    <FormItem className="flex-grow">
-                                                                        <FormControl>
-                                                                            <Input placeholder="e.g., E-commerce Strategy" {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeScope(index)}>
-                                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                                            </Button>
-                                                        </div>
-                                                    ))}
-                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendScope({ value: '' })}>
-                                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                                        Add Scope Item
-                                                    </Button>
+                                                    <div>
+                                                        <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+                                                        <ChallengeMarkdownEditor
+                                                            ttForm={collaborationForm}
+                                                            defaultDescription={`## Introduction
+[Give a brief overview of the context and purpose of this challenge.]
 
-                                                    {/* Challenge Type */}
+## Objective
+[What do you aim to achieve with this challenge? Clearly state the expected outcome or impact.]
+
+## Problem Statement
+[The current process of [describe the issue] is outdated and inefficient, affecting [who is impacted] with [specific negative consequence]]
+
+## Background
+[Describe the core problem this challenge seeks to solve. Why does it exist? Who is impacted?]
+
+## What We Are Looking For
+[Explain the type of solution you want participants to propose or build.]
+
+## Scope of Requirements
+1. Requirement 1
+2. Requirement 2
+3. Requirement 3
+
+`}
+                                                        />
+
+                                                    </div>
+                                                    <FormField
+                                                        control={collaborationForm.control}
+                                                        name="rewardType"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>
+                                                                    Reward <span className="text-red-500">*</span>
+                                                                </FormLabel>
+
+                                                                <FormControl>
+                                                                    <div className="flex items-center gap-4">
+
+                                                                        {/* ✅ CUSTOM DROPDOWN USING POPOVER */}
+                                                                        <Popover>
+                                                                            <PopoverTrigger asChild>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="w-[130px] h-10 flex items-center justify-between rounded-md border px-3 text-sm"
+                                                                                >
+                                                                                    {rewardOptions.find((opt) => opt.value === field.value)?.label ??
+                                                                                        "Select type"}
+                                                                                    <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                                                                                </button>
+                                                                            </PopoverTrigger>
+
+                                                                            <PopoverContent className="p-0 w-[130px]">
+                                                                                <Command>
+                                                                                    <CommandList>
+                                                                                        <CommandEmpty>No option found.</CommandEmpty>
+                                                                                        <CommandGroup>
+                                                                                            {rewardOptions.map((opt) => (
+                                                                                                <CommandItem
+                                                                                                    key={opt.value}
+                                                                                                    value={opt.value}
+                                                                                                    onSelect={() => field.onChange(opt.value)}
+                                                                                                >
+                                                                                                    <Check
+                                                                                                        className={cn(
+                                                                                                            "mr-2 h-4 w-4",
+                                                                                                            field.value === opt.value ? "opacity-100" : "opacity-0"
+                                                                                                        )}
+                                                                                                    />
+                                                                                                    {opt.label}
+                                                                                                </CommandItem>
+                                                                                            ))}
+                                                                                        </CommandGroup>
+                                                                                    </CommandList>
+                                                                                </Command>
+                                                                            </PopoverContent>
+                                                                        </Popover>
+
+                                                                        {/* ✅ CONDITIONAL INPUTS */}
+                                                                        {collaborationForm.watch("rewardType") === "fixed" ? (
+                                                                            <>
+                                                                                <Input
+                                                                                    type="number"
+                                                                                    placeholder="Enter amount"
+                                                                                    {...collaborationForm.register("rewardAmount", { valueAsNumber: true })}
+                                                                                    min={0}
+                                                                                    className="no-spin w-48"
+                                                                                />
+                                                                            </>
+                                                                        ) : (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Input
+                                                                                    type="number"
+                                                                                    placeholder="Min"
+                                                                                    {...collaborationForm.register("rewardMin", { valueAsNumber: true })}
+                                                                                    className="no-spin w-24"
+                                                                                />
+                                                                                <span>-</span>
+                                                                                <Input
+                                                                                    type="number"
+                                                                                    placeholder="Max"
+                                                                                    {...collaborationForm.register("rewardMax", { valueAsNumber: true })}
+                                                                                    className="no-spin w-24"
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
                                                     <FormField
                                                         control={collaborationForm.control}
                                                         name="challengeType"
                                                         render={({ field }) => (
                                                             <FormItem className="space-y-3">
-                                                                <FormLabel>Challenge Type</FormLabel>
+                                                                <FormLabel>Challenge Type <span className="text-red-500">*</span></FormLabel>
                                                                 <FormControl>
                                                                     <RadioGroup
                                                                         onValueChange={field.onChange}
@@ -883,36 +1347,71 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                     />
                                                     <FormField
                                                         control={collaborationForm.control}
-                                                        name="durationInDays"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Duration (in days)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input
-                                                                        type="number"
-                                                                        placeholder="e.g., 30"
-                                                                        {...field}
-                                                                        min={1}
-                                                                        value={field.value ?? undefined}
-                                                                        onChange={(e) => {
-                                                                            const value = e.target.value;
-                                                                            field.onChange(value === "" ? "" : Math.max(1, Number(value)));
-                                                                        }}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
+                                                        name="startDate"
+
+                                                        render={() => (
+                                                            <div className="w-[60%] py-4">
+                                                                <FormItem className="flex flex-col gap-2">
+                                                                    <FormLabel>Start / End Date <span className="text-red-500">*</span></FormLabel>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        className="pl-3 text-left font-normal"
+                                                                        onClick={() => setDatePickerOpen((prev) => !prev)}
+                                                                    >
+                                                                        {collaborationForm.watch("startDate") && collaborationForm.watch("endDate") ? (
+                                                                            <>
+                                                                                {format(collaborationForm.watch("startDate") as Date, "PPP")} →{" "}
+                                                                                {format(collaborationForm.watch("endDate") as Date, "PPP")}
+                                                                            </>
+                                                                        ) : (
+                                                                            <span>Pick date range</span>
+                                                                        )}
+                                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                                    </Button>
+
+                                                                    {datePickerOpen && (
+                                                                        <div className="mt-2 border rounded-md p-3 shadow-md z-50 w-fit">
+                                                                            <Calendar
+                                                                                mode="range"
+                                                                                numberOfMonths={2}
+                                                                                selected={{
+                                                                                    from: collaborationForm.watch("startDate"),
+                                                                                    to: collaborationForm.watch("endDate"),
+                                                                                }}
+                                                                                onSelect={(range: any) => {
+                                                                                    collaborationForm.setValue("startDate", range?.from);
+                                                                                    collaborationForm.setValue("endDate", range?.to);
+                                                                                    if (range?.from && range?.to) setDatePickerOpen(false);
+                                                                                }}
+
+
+                                                                                disabled={(date) => date < new Date()}
+                                                                            />
+                                                                            <div className="flex justify-end gap-2 mt-3">
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="ghost"
+                                                                                    onClick={() => {
+                                                                                        collaborationForm.setValue("startDate", new Date());
+                                                                                        collaborationForm.setValue("endDate", new Date());
+                                                                                    }}
+                                                                                >
+                                                                                    Reset
+                                                                                </Button>
+
+                                                                                <Button type="button" onClick={() => setDatePickerOpen(false)}>
+                                                                                    Confirm
+                                                                                </Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            </div>
+
                                                         )}
                                                     />
-
-                                                    {/* 💡 Display the calculated due date */}
-                                                    {dueDate && (
-                                                        <div>
-                                                            <FormLabel>Due Date</FormLabel>
-                                                            <p className="text-muted-foreground text-sm">{format(dueDate, "PPP")}</p>
-                                                        </div>
-                                                    )}
-
 
                                                     <Separator className="my-4" />
 
@@ -924,9 +1423,22 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                             name="contact.name"
                                                             render={({ field }) => (
                                                                 <FormItem>
-                                                                    <FormLabel>Name</FormLabel>
+                                                                    <FormLabel>Name <span className="text-red-500">*</span></FormLabel>
                                                                     <FormControl>
-                                                                        <Input {...field} />
+                                                                        <div className="relative">
+                                                                            <Input
+                                                                                {...field}
+                                                                                maxLength={300}
+                                                                                placeholder="Enter the Name"
+                                                                                onChange={(e) => {
+                                                                                    field.onChange(e);
+                                                                                }}
+                                                                            />
+                                                                            <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                                                                                {field.value?.length || 0}/300
+                                                                            </span>
+                                                                        </div>
+
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>
@@ -937,9 +1449,22 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                                                             name="contact.role"
                                                             render={({ field }) => (
                                                                 <FormItem>
-                                                                    <FormLabel>Role</FormLabel>
+                                                                    <FormLabel>Role <span className="text-red-500">*</span></FormLabel>
                                                                     <FormControl>
-                                                                        <Input {...field} />
+                                                                        <div className="relative">
+                                                                            <Input
+                                                                                {...field}
+                                                                                maxLength={300}
+                                                                                placeholder="Enter the Role"
+                                                                                onChange={(e) => {
+                                                                                    field.onChange(e);
+                                                                                }}
+                                                                            />
+                                                                            <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                                                                                {field.value?.length || 0}/300
+                                                                            </span>
+                                                                        </div>
+
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>
@@ -1009,6 +1534,12 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
                 onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
                 onAddComment={handleAddComment}
             />
+            {selectedCollabId !== null && (
+                <CollaborationView
+                    collaborationId={selectedCollabId}
+                    onClose={() => setSelectedCollabId(null)}
+                />
+            )}
             <Script
                 src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
                 strategy="afterInteractive"
