@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CorporateChallenge } from './msmes';
-import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award } from 'lucide-react';
+import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award, Lock } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -68,6 +68,16 @@ type Announcement = {
   attachments: string[];
   createdAt: string;
 }
+
+export function AccessMessage({ title, message }: { title: string; message: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+      <p className="max-w-xs text-sm">{message}</p>
+    </div>
+  );
+}
+
 
 export default function CorporateChallengeDetails({
   challenge,
@@ -382,215 +392,286 @@ export default function CorporateChallengeDetails({
               </ScrollArea>
             </TabsContent>
             <TabsContent value="timeline">
-              <Card className="p-6">
-                <CardHeader className="text-center">
-                  <CardTitle className="text-2xl font-bold">Challenge Timeline</CardTitle>
+              <Card className="p-4">
+                <CardHeader >
+                  <CardTitle>Challenge Timeline</CardTitle>
                   <CardDescription>
                     Track the progress of the challenge from start to finish.
                   </CardDescription>
                 </CardHeader>
 
                 <CardContent className="flex flex-col items-center mt-6">
-                  {events ? <VerticalTimeline timeline={events} /> : <p className="text-muted-foreground">Loading timeline...</p>}
+
+                  {!isLoggedIn ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                      <Lock size={"64"} />
+                      <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
+                      <p className="max-w-xs text-sm">
+                        You must be logged in to view the challenge timeline.
+                      </p>
+                    </div>
+                  ) : isOtherUsers ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                      <h3 className="text-lg font-semibold text-foreground">Access Restricted</h3>
+                      <p className="max-w-xs text-sm">
+                        Please log in as <strong>Founder</strong> to view the timeline.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {events ? (
+                        <VerticalTimeline timeline={events} />
+                      ) : (
+                        <p className="text-muted-foreground">Loading timeline...</p>
+                      )}
+                    </>
+                  )}
+
                 </CardContent>
               </Card>
             </TabsContent>
 
+
             <TabsContent value="announcement">
-              <Card className="border shadow-sm">
+              <Card className="border shadow-sm p-4">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Book className="h-6 w-6 text-primary" />
                     Announcements
                   </CardTitle>
+                  <CardDescription>
+                    Updates and important information for this challenge.
+                  </CardDescription>
                 </CardHeader>
 
                 <CardContent className="p-4">
-
-                  {(!announcements || announcements.length === 0) && (
+                  {!isLoggedIn ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                      <h3 className="text-lg font-semibold text-foreground">No Announcements Yet</h3>
+                      <Lock size={"64"} />
+                      <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
+                      <p className="max-w-xs text-sm">You must be logged in to view announcements.</p>
+                    </div>
+                  ) : isOtherUsers ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                      <h3 className="text-lg font-semibold text-foreground">Access Restricted</h3>
                       <p className="max-w-xs text-sm">
-                        Announcements related to this challenge will appear here.
+                        Please log in as <strong>Founder</strong> to view announcements.
                       </p>
                     </div>
-                  )}
-                  {announcements?.length > 0 && (
-                    <div className="space-y-4">
-                      {announcements.map((a) => (
-                        <Card
-                          key={a.id}
-                          className="
-          group p-5 border shadow-sm hover:shadow-lg 
-          transition-all duration-300 rounded-xl relative
-          hover:border-primary/40 hover:bg-primary/5
-        "
-                        >
-                          <div className="flex items-start justify-between mb-4">
-                            <div>
-                              <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
-                                {a.type === "alert" && (
-                                  <span className="text-red-500">⚠️</span>
-                                )}
-                                {a.type === "update" && (
-                                  <span className="text-blue-500">📢</span>
-                                )}
-                                {a.type === "deadline" && (
-                                  <span className="text-orange-500">⏳</span>
-                                )}
-                                {a.type === "result" && (
-                                  <span className="text-green-500">🏆</span>
-                                )}
-                                {a.type === "general" && (
-                                  <span className="text-primary">📝</span>
-                                )}
-                                {a.title}
-                              </h3>
-                            </div>
-
-                            <Badge
-                              variant="secondary"
-                              className="text-xs capitalize px-3 py-1 rounded-full"
-                            >
-                              {a.type}
-                            </Badge>
-                          </div>
-
-                          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                            {a.message}
+                  ) : (
+                    <>
+                      {(!announcements || announcements.length === 0) && (
+                        <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                          <h3 className="text-lg font-semibold text-foreground">No Announcements Yet</h3>
+                          <p className="max-w-xs text-sm">
+                            Announcements related to this challenge will appear here.
                           </p>
+                        </div>
+                      )}
 
-                          {a.attachments.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="text-xs font-semibold text-muted-foreground">
-                                Attachments: 
+                      {announcements?.length > 0 && (
+                        <div className="space-y-4">
+                          {announcements.map((a) => (
+                            <Card
+                              key={a.id}
+                              className="group p-5 border shadow-sm hover:shadow-lg 
+                  transition-all duration-300 rounded-xl relative
+                  hover:border-primary/40 hover:bg-primary/5"
+                            >
+                              <div className="flex items-start justify-between mb-4">
+                                <div>
+                                  <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
+                                    {a.type === "alert" && <span className="text-red-500">⚠️</span>}
+                                    {a.type === "update" && <span className="text-blue-500">📢</span>}
+                                    {a.type === "deadline" && <span className="text-orange-500">⏳</span>}
+                                    {a.type === "result" && <span className="text-green-500">🏆</span>}
+                                    {a.type === "general" && <span className="text-primary">📝</span>}
+                                    {a.title}
+                                  </h3>
+                                </div>
+
+                                <Badge
+                                  variant="secondary"
+                                  className="text-xs capitalize px-3 py-1 rounded-full"
+                                >
+                                  {a.type}
+                                </Badge>
+                              </div>
+
+                              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                                {a.message}
                               </p>
 
-                              <div className="flex gap-2">
-                                📎
-                                {a.attachments.map((url, i) => (
-                                  <a
-                                    key={i}
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="
-                    flex items-center gap-2 text-sm text-primary font-medium 
-                    underline underline-offset-2 transition-all hover:text-primary/70
-                  "
-                                  >
-                                     Attachment {i + 1}
-                                  </a>
-                                ))}
+                              {a.attachments.length > 0 && (
+                                <div className="space-y-2">
+                                  <p className="text-xs font-semibold text-muted-foreground">
+                                    Attachments:
+                                  </p>
+
+                                  <div className="flex gap-2">
+                                    📎
+                                    {a.attachments.map((url, i) => (
+                                      <a
+                                        key={i}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-sm text-primary font-medium 
+                              underline underline-offset-2 transition-all hover:text-primary/70"
+                                      >
+                                        Attachment {i + 1}
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              <Separator className="my-4" />
+
+                              <div className="flex items-center justify-between text-xs text-muted-foreground opacity-80">
+                                <span>Posted on {new Date(a.createdAt).toLocaleString()}</span>
                               </div>
-                            </div>
-                          )}
-
-                          <Separator className="my-4" />
-
-                          <div className="flex items-center justify-between text-xs text-muted-foreground opacity-80">
-                            <span>Posted on {new Date(a.createdAt).toLocaleString()}</span>
-
-
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
-
                 </CardContent>
               </Card>
             </TabsContent>
+
 
             <TabsContent value="hof">
               <Card className="p-4">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">Hall of Fame</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Hall of Fame
+                  </CardTitle>
+                  <CardDescription>
+                    Top performers and contributors of this challenge.
+                  </CardDescription>
                 </CardHeader>
-
-                <div className="px-4 mb-4">
-                  <Input
-                    placeholder="Search by name, points, district..."
-                    value={search}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-                    className="max-w-md mx-auto"
-                  />
-                </div>
-
-                <CardContent>
-                  <div className="w-full overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted text-left">
-                          <TableHead>Profile</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Points</TableHead>
-                          <TableHead>State</TableHead>
-                        </TableRow>
-                      </TableHeader>
-
-                      <TableBody>
-                        {filtered.length === 0 ? (
-                          <TableRow>
-                            <TableCell
-                              colSpan={4}
-                              className="text-center text-muted-foreground py-4"
-                            >
-                              No results found.
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          filtered.map((item, index) => (
-                            <TableRow key={index}>
-                              <TableCell>
-                                <div
-                                  className="h-10 w-10 rounded-full text-white flex items-center justify-center text-lg font-bold"
-                                  style={(() => {
-                                    const name = item.contactName || "?"
-                                    const hash = name
-                                      .split("")
-                                      .reduce((acc, c) => acc + c.charCodeAt(0), 0)
-                                    const color1 = `hsl(${hash % 360}, 70%, 50%)`
-                                    const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`
-                                    return {
-                                      background: `linear-gradient(135deg, ${color1}, ${color2})`,
-                                    }
-                                  })()}
-                                >
-                                  {item.contactName
-                                    ? item.contactName.charAt(0).toUpperCase()
-                                    : "?"}
-                                </div>
-                              </TableCell>
-
-                              <TableCell className="font-medium">{item.contactName}</TableCell>
-                              <TableCell className="font-semibold">{item.points}</TableCell>
-                              <TableCell className="font-medium">{item.district}</TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
+                {!isLoggedIn ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                    <Lock size={"64"} />
+                    <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
+                    <p className="max-w-xs text-sm">You must be logged in to view the Hall of Fame.</p>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="profile">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><UserCircle className="h-6 w-6" />Participant Profile</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center text-muted-foreground py-12">
-                  <p>Your participation profile and status will be shown here.</p>
-                </CardContent>
+
+                ) : isOtherUsers ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                    <h3 className="text-lg font-semibold text-foreground">Access Restricted</h3>
+                    <p className="max-w-xs text-sm">
+                      Please log in as <strong>Founder</strong> to view the Hall of Fame.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="px-4 mb-4">
+                      <Input
+                        placeholder="Search by name, points, district..."
+                        value={search}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                        className="max-w-md mx-auto"
+                      />
+                    </div>
+
+                    <CardContent>
+                      <div className="w-full overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted text-left">
+                              <TableHead>Profile</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Points</TableHead>
+                              <TableHead>State</TableHead>
+                            </TableRow>
+                          </TableHeader>
+
+                          <TableBody>
+                            {filtered.length === 0 ? (
+                              <TableRow>
+                                <TableCell
+                                  colSpan={4}
+                                  className="text-center text-muted-foreground py-4"
+                                >
+                                  No results found.
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              filtered.map((item, index) => (
+                                <TableRow key={index}>
+                                  <TableCell>
+                                    <div
+                                      className="h-10 w-10 rounded-full text-white flex items-center justify-center text-lg font-bold"
+                                      style={(() => {
+                                        const name = item.contactName || "?"
+                                        const hash = name
+                                          .split("")
+                                          .reduce((acc, c) => acc + c.charCodeAt(0), 0)
+                                        const color1 = `hsl(${hash % 360}, 70%, 50%)`
+                                        const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`
+                                        return {
+                                          background: `linear-gradient(135deg, ${color1}, ${color2})`,
+                                        }
+                                      })()}
+                                    >
+                                      {item.contactName
+                                        ? item.contactName.charAt(0).toUpperCase()
+                                        : "?"}
+                                    </div>
+                                  </TableCell>
+
+                                  <TableCell className="font-medium">{item.contactName}</TableCell>
+                                  <TableCell className="font-semibold">{item.points}</TableCell>
+                                  <TableCell className="font-medium">{item.district}</TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </>
+                )}
               </Card>
             </TabsContent>
             <TabsContent value="q/a">
+              {!isLoggedIn ? (
+                <Card className="p-4">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">Q/A Forum</CardTitle>
+                    <CardDescription>Ask questions and collaborate with others on this challenge.</CardDescription>
+                  </CardHeader>
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                    <Lock size={"64"} />
+                    <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
+                    <p className="max-w-xs text-sm">You must be logged in to view the Q/A forum.</p>
+                  </div>
+                  <CardContent>
+                  </CardContent>
+                </Card>
+              ) : isOtherUsers ? (
+                <Card className="p-4">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">Q/A Forum</CardTitle>
+                    <CardDescription>Ask questions and collaborate with others on this challenge.</CardDescription>
+                  </CardHeader>
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                    <h3 className="text-lg font-semibold text-foreground">Access Restricted</h3>
+                    <p className="max-w-xs text-sm">Please log in as <strong>Founder</strong> to participate in the Q/A forum.</p>
+                  </div>
+                  <CardContent>
+                  </CardContent>
+                </Card>
 
-              {isLoggedIn ? <QAForum collaborationId={challenge.id} /> : <p className="text-center text-muted-foreground py-12">Please log in to participate in the Q/A forum.</p>}
+              ) : (
+                <QAForum collaborationId={challenge?.id} />
+              )}
 
 
             </TabsContent>
+
           </ScrollArea>
         </Tabs >
       </DialogContent >

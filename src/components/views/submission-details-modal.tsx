@@ -305,6 +305,25 @@ export default function SubmissionDetailsModal({
             }, 3000);
         }
     };
+    
+    function formatTime(timestamp: Date) {
+        const now = new Date();
+        const time = new Date(timestamp);
+        const diffSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
+
+        if (diffSeconds < 60) {
+            return "just now";
+        } else if (diffSeconds < 3600) {
+            const minutes = Math.floor(diffSeconds / 60);
+            return `${minutes} m${minutes > 1 ? "s" : ""} ago`;
+        } else if (diffSeconds < 86400) {
+            const hours = Math.floor(diffSeconds / 3600);
+            return `${hours} h${hours > 1 ? "s" : ""} ago`;
+        } else {
+            return time.toLocaleString();
+        }
+    }
+
 
     const renderFileAttachment = (fileURL: string, fileName: string, key: string) => (
         <a
@@ -418,7 +437,7 @@ export default function SubmissionDetailsModal({
                                                 )}
                                             </p>
                                             <small className="text-xs text-muted-foreground">
-                                                {comment.timestamp}
+                                               {formatTime(new Date(comment.timestamp))}
                                             </small>
                                         </div>
                                         <div className='flex gap-2'>

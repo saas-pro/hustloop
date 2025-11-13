@@ -14,6 +14,8 @@ const plans = [
     {
         name: "Standard",
         price: "₹999",
+        originally: "₹1332",
+        offer: "25% OFF",
         description: "Accelerate incubation with full access and priority support.",
         features: [
             "Access to all incubators",
@@ -29,6 +31,8 @@ const plans = [
         name: "Premium",
         tag: "Popular",
         price: "₹2999",
+        originally: "₹3999",
+        offer: "25% OFF",
         description: "Solve MSME challenges with submissions and 24/7 priority support.",
         features: [
             "Browse Challenges",
@@ -40,6 +44,18 @@ const plans = [
         primary: true,
         note: "Payment integration coming soon. You will be notified before your plan ends."
     },
+    {
+        name: "Enterprise",
+        description: "Tailored solutions for large organizations with dedicated support.",
+        features: [
+            "Custom solutions",
+            "You can discuss your requirements with us",
+            "24/7 priority support"
+        ],
+        cta: "Contact Us",
+        primary: false,
+        note: "Payment integration coming soon. You will be notified before your plan ends."
+    }
 ];
 
 export default plans
