@@ -20,7 +20,7 @@ import * as LucideIcons from "lucide-react";
 import type { LucideProps } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber, Submission } from "@/app/types";
+import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -40,7 +40,6 @@ import MarkdownEditor from "../ui/markdown";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from "remark-gfm";
 import { useSearchParams } from "next/navigation";
-import SubmissionDetailsModal from "./submission-details-modal";
 
 const settingsFormSchema = z.object({
     name: z
@@ -83,7 +82,7 @@ type ProgramFormValues = z.infer<typeof programSchema>;
 type User = { name: string; email: string; }
 type AuthProvider = 'local' | 'google';
 
-interface DashboardViewProps {
+interface ListTechnologyDashboardViewProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     user: User;
@@ -111,14 +110,6 @@ interface TechTransferIP {
 }
 
 type GroupedIPs = Record<string, TechTransferIP[]>;
-
-const statusIcons: { [key: string]: React.ReactNode } = {
-    'new': <LucideIcons.Clock className="h-4 w-4 text-blue-500" />,
-    'under review': <LucideIcons.Clock className="h-4 w-4 text-yellow-500" />,
-    'valid': <LucideIcons.CheckCircle className="h-4 w-4 text-green-500" />,
-    'duplicate': <LucideIcons.Copy className="h-4 w-4 text-orange-500" />,
-    'rejected': <LucideIcons.XCircle className="h-4 w-4 text-red-500" />,
-};
 
 interface ChartDataItem {
     year: string;
@@ -203,7 +194,7 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
     </Card>
 );
 
-export default function DashboardView({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: DashboardViewProps) {
+export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: ListTechnologyDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
     const [adminContentTab, setAdminContentTab] = useState('blog');
@@ -219,7 +210,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
     const [userToBan, setUserToBan] = useState<AppUser | null>(null);
 
-    const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+
     const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
     const [isLoadingSubscribers, setIsLoadingSubscribers] = useState(false);
 
@@ -273,9 +264,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [isLoadingFormUsers, setIsLoadingFormUsers] = useState(false)
     const [perPage] = useState(10);
     const [totalRegistrations, setTotalRegistrations] = useState(0);
-    const [submissions, setSubmissions] = useState<Submission[]>([]);
 
-    console.log(submissions)
 
     const fetchUsers = useCallback(async (page: number, perPage: number) => {
         setIsLoadingUsers(true);
@@ -356,32 +345,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             toast({ title: "Failed to delete selected subscribers", variant: "destructive" });
         }
     };
-
-    const getSubmissions = useCallback(async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
-            return;
-        }
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/solutions`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const result = await response.json();
-            setSubmissions(result.solutions);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });
-        }
-    }, [toast])
-
-    useEffect(() => {
-        getSubmissions()
-    }, [getSubmissions])
 
 
     const handleResetSubscribers = async () => {
@@ -565,8 +528,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }
     }, [perPage, toast]);
 
-    const [connexRegistrations, setConnexRegistrations] = useState<connexRegistrations[]>([]);
-
+    const [connexRegistrations,setConnexRegistrations] = useState<connexRegistrations[]>([]);
+    
     const fetchConnex = useCallback(async (page: number) => {
         setIsLoadingFormUsers(true);
         const token = localStorage.getItem('token');
@@ -989,12 +952,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setisipOverview(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "connex", "engagement", "settings"];
-    const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
-    const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
-    const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];
-    const filteredTabs = isTechTransfer ? techTransferTabs : availableTabs
-    const tabsToRender = filteredTabs.filter(tab => tab !== "overview");
+    const TechTransferTabs = ["overview", "submission", "engagements", "settings"];
     const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
 
     const [techtransferData, setTechtransferData] = useState<{
@@ -1089,7 +1047,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     };
 
     const [mySubmissions, setMySubmissions] = useState<TechTransferIP[]>([]);
-
     const [loading, setLoading] = useState(false);
     const [emptyToastShown, setEmptyToastShown] = useState(false);
 
@@ -1538,8 +1495,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                 bg-muted/50 rounded-lg p-1
                                 mb-4 sm:mb-6 lg:mb-10 z-10`}
                         >
-
-                            {tabsToRender.map((tab) => {
+                            {TechTransferTabs.map((tab) => {
                                 const Icon = (
                                     LucideIcons[
                                     tab === "msmes"
@@ -1550,19 +1506,17 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 ? "FileSignature"
                                                 : tab === "engagements"
                                                     ? "Handshake"
-                                                    : tab === "engagement"
-                                                        ? "Handshake"
-                                                        : tab === "mentors"
-                                                            ? "Users"
-                                                            : tab === "submission"
-                                                                ? "FileText"
-                                                                : tab === "settings"
-                                                                    ? "Settings"
-                                                                    : tab === "users"
-                                                                        ? "User"
-                                                                        : tab === "subscribers"
-                                                                            ? "Mail"
-                                                                            : "BookOpen"
+                                                    : tab === "mentors"
+                                                        ? "Users"
+                                                        : tab === "submission"
+                                                            ? "FileText"
+                                                            : tab === "settings"
+                                                                ? "Settings"
+                                                                : tab === "users"
+                                                                    ? "User"
+                                                                    : tab === "subscribers"
+                                                                        ? "Mail"
+                                                                        : "BookOpen"
                                     ] || LucideIcons.HelpCircle
                                 ) as React.ComponentType<LucideProps>;
 
@@ -1755,78 +1709,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     </Card>
                                 )}
                             </TabsContent>
-                            <TabsContent value="engagement" className="mt-0 space-y-4">
-                                {submissions.length > 0 ? submissions.map((sub, id) => (
-                                    <Card
-                                        key={id}
-                                        onClick={() => setSelectedSubmission(sub)}
-                                        className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
-                                    >
-                                        <CardHeader>
-                                            <div className="flex justify-between items-start">
-                                                <div className="space-y-1">
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <CardTitle className="text-lg font-semibold">
-                                                            {sub.challenge?.title || "Untitled Challenge"}
-                                                        </CardTitle>
 
-                                                        {sub.challenge && (
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
-                                                            >
-                                                                {sub.challenge?.sector && sub.challenge?.technologyArea
-                                                                    ? `${sub.challenge.sector} / ${sub.challenge.technologyArea}`
-                                                                    : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"}
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-
-                                                    <CardDescription className="text-sm text-muted-foreground">
-                                                        Submitted by <span className="font-medium">{sub.contactName}</span>{" "}
-                                                        {sub.challenge?.postedBy?.companyName && (
-                                                            <>
-                                                                to <span className="font-medium">{sub.challenge.postedBy.companyName}</span>
-                                                            </>
-                                                        )}
-                                                    </CardDescription>
-                                                </div>
-
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    {statusIcons[sub.status as keyof typeof statusIcons]}
-                                                    <span className="capitalize">{sub.status}</span>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-
-                                        <CardFooter className="flex gap-2 items-center">
-                                            <p className="text-sm text-muted-foreground">
-                                                Submitted on {sub.createdAt}
-                                            </p>
-
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <span>Comments</span>
-                                                <div className="flex items-center gap-1">
-
-                                                    <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
-                                                        {sub.comments?.length || 0}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span>Points</span>
-                                                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                    {sub.points ?? 0}
-                                                </span>
-                                            </div>
-                                        </CardFooter>
-                                    </Card>
-                                )) : (
-                                    <Card className="text-center text-muted-foreground py-16">
-                                        <CardContent>You have not received any submissions yet.</CardContent>
-                                    </Card>
-                                )}
-                            </TabsContent>
                             <TabsContent value="engagements" className="mt-0">
                                 {(
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -2003,8 +1886,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     </Card>
                                 )}
                             </TabsContent>
-
-
 
                             {userRole === "admin" && (
                                 <>
@@ -3114,10 +2995,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         />
                     )
                 }
-                <SubmissionDetailsModal
-                    submission={selectedSubmission}
-                    onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
-                />
                 <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the user account and remove their data from our servers.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToDelete) { handleDeleteUser(userToDelete.uid); setUserToDelete(null); } }}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                 <AlertDialog open={!!userToBan} onOpenChange={(open) => !open && setUserToBan(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will {userToBan?.status === 'banned' ? "unban" : "ban"} the user, {userToBan?.status === 'banned' ? "allowing" : "preventing"} them from logging in. Do you want to continue?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToBan) { handleToggleBanUser(userToBan.uid); setUserToBan(null); } }}>{userToBan?.status === 'banned' ? "Unban User" : "Ban User"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                 <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>

@@ -6,11 +6,13 @@ import { Toaster } from "@/components/ui/toaster";
 import TwinklingStars from '@/components/layout/twinkling-stars';
 import Script from 'next/script';
 import { ThemeProvider } from '@/components/theme-provider';
+import GoogleAnalytics from "./metrics/GoogleAnalytics"
+import MicrosoftClarity from "./metrics/MicrosoftClarity"
 
 
 export const metadata: Metadata = {
   title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
-  description: 'Open talent, Real impact. An ecosystem for problem solving and tech transfer - founders, enablers, innovators and students.',
+  description: 'Open talent, Real impact. An ecosystem for problem solving and technology transfer - founders, enablers, innovators and students.',
   alternates: {
     canonical: 'https://hustloop.com/',
   },
@@ -25,22 +27,27 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet</title>
-        <meta name="description" content="Open talent, Real impact. An ecosystem for problem solving and tech transfer - founders, enablers, innovators and students."/>
-          <meta name="robots" content="index, follow"/>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-              <link rel="canonical" href="https://hustloop.com"/>
-                </head>
-                <body className="bg-background font-sans">
-                  <ThemeProvider>
-                    <div className="flex-grow ">
-                      <TwinklingStars />
-                      {children}
-                    </div>
-                    <Toaster />
-                  </ThemeProvider>
-
-                  <Script id="zoho-salesiq-script" strategy="lazyOnload">
-                    {`
+        <meta property="og:url" content="https://hustloop.com" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet" />
+        <meta property="og:description" content="Open talent, Real impact. An ecosystem for problem solving and tech transfer - founders, enablers, innovators and students." />
+        <meta property="og:image" content="https://hustloop.com/logo.png" />
+        <meta name="robots" content="index, follow" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="canonical" href="https://hustloop.com" />
+      </head>
+      <body className="bg-background font-sans">
+        <ThemeProvider>
+          <div className="flex-grow ">
+            <TwinklingStars />
+            {children}
+          </div>
+          <Toaster />
+        </ThemeProvider>
+        <GoogleAnalytics />
+        <MicrosoftClarity />
+        <Script id="zoho-salesiq-script" strategy="lazyOnload">
+          {`
             window.$zoho = window.$zoho || {};
             window.$zoho.salesiq = window.$zoho.salesiq || {
               widgetcode: "siq770fac757336897d739f9273d8f8f7b3aec5f63c512be52582e5f9e3440d863b",
@@ -67,8 +74,8 @@ export default function RootLayout({
             var t = d.getElementsByTagName("script")[0];
             t.parentNode.insertBefore(s, t);
           `}
-                  </Script>
-                </body>
-              </html>
-              );
+        </Script>
+      </body>
+    </html>
+  );
 }

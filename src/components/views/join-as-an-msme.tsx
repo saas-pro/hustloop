@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2, Lock, Terminal } from "lucide-react";
+import { LayoutDashboard, FileText, User, Settings, CheckCircle, Building2, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2, Lock, Terminal } from "lucide-react";
 import type { MsmeDashboardTab, Submission, Comment, View } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ const profileFormSchema = z.object({
 
 // Add the new challengeType field to your Zod schema
 const collaborationSchema = z.object({
-    title: z.string().min(3, { message: "Title is required." }).max(35,"Title must not exceed 35 characters."),
+    title: z.string().min(3, { message: "Title is required." }).max(35, "Title must not exceed 35 characters."),
     description: z.string().min(10, { message: "Description is required." }).max(5000, { message: "Description must not exceed 5000 characters." }),
     lookingFor: z.string().min(1, { message: "What you are looking for is required." }),
     rewardAmount: z.number().min(0, { message: "Reward amount cannot be negative." }).default(0),
@@ -278,18 +278,18 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
     }
 
     // Submission handling
-    const handleStatusChange = (id: number, status: string) => {
-        setSubmissions(subs => subs.map(s => s.id === id ? { ...s, status: status as Submission['status'] } : s));
-    };
+    // const handleStatusChange = (id: number, status: string) => {
+    //     setSubmissions(subs => subs.map(s => s.id === id ? { ...s, status: status as Submission['status'] } : s));
+    // };
 
-    const handleAddComment = (submissionId: number, commentText: string) => {
-        const newComment: Comment = { id:0,author: 'MSME', text: commentText, timestamp: 'Just now' };
-        const updatedSubmissions = submissions.map(sub =>
-            sub.id === submissionId ? { ...sub, comments: [...sub.comments, newComment] } : sub
-        );
-        setSubmissions(updatedSubmissions);
-        setSelectedSubmission(updatedSubmissions.find(s => s.id === submissionId) || null);
-    };
+    // const handleAddComment = (submissionId: number, commentText: string) => {
+    //     const newComment: Comment = { id:0,author: 'MSME', text: commentText, timestamp: 'Just now' };
+    //     const updatedSubmissions = submissions.map(sub =>
+    //         sub.id === submissionId ? { ...sub, comments: [...sub.comments, newComment] } : sub
+    //     );
+    //     setSubmissions(updatedSubmissions);
+    //     setSelectedSubmission(updatedSubmissions.find(s => s.id === submissionId) || null);
+    // };
 
 
     const overviewStats = {
@@ -326,8 +326,8 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
         let method = "POST";
 
         if (isEditingCollaboration && currentEditingCollaborationId) {
-            url = `${API_BASE_URL}/api/collaborations/${currentEditingCollaborationId}`; 
-            method = "PUT"; 
+            url = `${API_BASE_URL}/api/collaborations/${currentEditingCollaborationId}`;
+            method = "PUT";
         }
 
         try {
@@ -548,8 +548,9 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
 
                                 </DialogDescription>
                             </DialogHeader>
-                            <div className="h-screen flex flex-col justify-center items-center">
-                                <p>You do not have MSME access.</p>
+                            <div className="h-screen flex flex-col justify-center items-center gap-4">
+                                {/* <Lock className="w-16 h-16 text-muted-foreground" /> */}
+                                <p className="text-lg text-muted-foreground">You do not have MSME access.</p>
                             </div>
                         </>
                     ) : (
@@ -603,12 +604,12 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                         </TabsContent>
                                         <TabsContent value="submissions" className="mt-0 space-y-4">
                                             {submissions.length > 0 ? submissions.map((sub) => (
-                                                <Card key={sub.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 cursor-pointer transition-colors" onClick={() => setSelectedSubmission(sub)}>
+                                                <Card key={sub.challengeId} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 cursor-pointer transition-colors" onClick={() => setSelectedSubmission(sub)}>
                                                     <CardHeader>
                                                         <div className="flex justify-between items-start">
                                                             <div>
-                                                                <CardTitle className="text-lg">{sub.idea}</CardTitle>
-                                                                <CardDescription>Submitted by {sub.founder}</CardDescription>
+                                                                <CardTitle className="text-lg">{sub.challenge?.title}</CardTitle>
+                                                                <CardDescription>Submitted by {sub.contactName}</CardDescription>
                                                             </div>
                                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                                 {statusIcons[sub.status as keyof typeof statusIcons]}
@@ -617,7 +618,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                                         </div>
                                                     </CardHeader>
                                                     <CardFooter>
-                                                        <p className="text-sm text-muted-foreground">Submitted on {sub.submittedDate}</p>
+                                                        <p className="text-sm text-muted-foreground">Submitted on {sub.createdAt}</p>
                                                     </CardFooter>
                                                 </Card>
                                             )) : (
@@ -1044,7 +1045,6 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
             <SubmissionDetailsModal
                 submission={selectedSubmission}
                 onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
-                onAddComment={handleAddComment}
             />
             <Script
                 src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"

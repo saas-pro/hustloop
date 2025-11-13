@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CorporateChallengeDetails from "./corporate-challenge-details";
 import MSMECollaborationDetails from "./msme-collaboration-details";
-import GovernmentChallengeDetails from "./government-challenge-details";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, Lock, Terminal } from "lucide-react";
 import type { View } from "@/app/types";
@@ -21,10 +20,12 @@ import { MarkdownViewer } from "../ui/markdownViewer";
 import { useChallengeProgress } from "../ui/useChallengeProgress";
 import { Progress } from "../ui/progress";
 import { CorporateChallengeCard } from "./CorporateChallengeCard";
+import { MSMEChallengeCard } from "./MSMEChallengeCard";
+import { GovermentChallengeCard } from "./GovernmentChallengeCard";
 
 
 export type CorporateChallenge = {
-  id: number;
+  id: string;
   title: string;
   company_description: string
   company_sector: string
@@ -48,33 +49,51 @@ export type CorporateChallenge = {
 
 };
 
-export type MSMECollaboration = {
+export type MSMEChallenge = {
+  id: number;
   title: string;
+  company_description: string
+  company_sector: string
+  start_date: Date
+  end_date: Date
   description: string;
   looking_for: string;
   reward_amount: string;
   challenge_type: string;
-  duration_in_days: number;
   contact_name: string;
   contact_role: string;
   scope: [];
   company_name: string
   stage: number
-  end_date: number
+  logo_url: string
+  linkedin_url: string
+  x_url: string
+  website_url: string
+  reward_min: number
+  reward_max: number
 };
 export type Governmentchallenges = {
+  id: string;
   title: string;
+  company_description: string
+  company_sector: string
+  start_date: Date
+  end_date: Date
   description: string;
   looking_for: string;
   reward_amount: string;
   challenge_type: string;
-  duration_in_days: number;
   contact_name: string;
   contact_role: string;
   scope: [];
   company_name: string
   stage: number
-  end_date: number
+  logo_url: string
+  linkedin_url: string
+  x_url: string
+  website_url: string
+  reward_min: number
+  reward_max: number
 };
 
 interface MsmesViewProps {
@@ -85,21 +104,6 @@ interface MsmesViewProps {
   setActiveView: (view: View) => void;
 }
 
-const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: View) => void, contentType: string }) => (
-  <div className="flex flex-col items-center justify-center h-full text-center p-8">
-    <Lock className="h-16 w-16 text-accent mb-6" />
-    <h3 className="text-2xl font-bold mb-2">Content Locked</h3>
-    <p className="max-w-md mx-auto text-muted-foreground mb-6">
-      Please log in or sign up to view available {contentType}.
-    </p>
-    <div className="flex gap-4">
-      <Button onClick={() => setActiveView('login')}>Login</Button>
-      <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-        Sign Up
-      </Button>
-    </div>
-  </div>
-);
 
 const LoadingSkeleton = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -130,18 +134,18 @@ const LoadingSkeleton = () => (
 
 export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscription, setActiveView }: MsmesViewProps) {
   const [selectedChallenge, setSelectedChallenge] = useState<CorporateChallenge | null>(null);
-  const [selectedCollaboration, setSelectedCollaboration] = useState<MSMECollaboration | null>(null);
+  const [selectedCollaboration, setSelectedCollaboration] = useState<MSMEChallenge | null>(null);
   const [selectedGovernmentchallenges, setSelectedGovernmentchallenges] = useState<Governmentchallenges | null>(null);
   const { toast } = useToast();
 
   const [corporateChallenges, setCorporateChallenges] = useState<CorporateChallenge[]>([]);
-  const [msmeCollaborations, setMsmeCollaborations] = useState<MSMECollaboration[]>([]);
+  const [msmeCollaborations, setMsmeCollaborations] = useState<MSMEChallenge[]>([]);
   const [Governmentchallenges, setGovernmentchallenges] = useState<Governmentchallenges[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isLoggedIn && isOpen) {
+    if (isOpen) {
       const fetchCorporateMsmeData = async () => {
         setIsLoading(true);
         setError(null);
@@ -150,7 +154,6 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
           const apiBaseUrl = API_BASE_URL;
           const response = await fetch(`${apiBaseUrl}/api/get-collaboration?challenge_type=corporate`, {
             headers: {
-              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });
@@ -254,13 +257,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
   };
 
   const renderContent = () => {
-    if (!isLoggedIn) {
-      return (
-        <div className="flex-grow flex items-center justify-center px-6 pb-6">
-          <LoginPrompt setActiveView={setActiveView} contentType="challenges and collaborations" />
-        </div>
-      );
-    }
+  
 
     if (isLoading) {
       return (
@@ -319,6 +316,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                 key={index}
                 challenge={challenge}
                 onViewDetails={handleViewDetails}
+                
               />
             )}
           </div>
@@ -335,28 +333,13 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                   Please check back later — new challenges will appear here soon.
                 </p>
               </div>
-            ) : msmeCollaborations?.map((msme, index) => (
-              <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
-                <CardHeader>
-                  <div className="flex items-center gap-4">
-                    <Image src={"https://api.hustloop.com/static/images/building.png"} alt={`${msme.company_name} logo`} width={60} height={60} className="rounded-full" />
-                    <div>
-                      <CardTitle className="text-base">{msme.title}</CardTitle>
-                      <CardDescription>{msme.company_name}</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground line-clamp-3">{msme.description}</p>
-                </CardContent>
-                <CardFooter className="flex-col items-start space-y-2">
-                  <Badge variant="outline">Reward: {msme.reward_amount}</Badge>
-                  <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => handleViewDetails('MSMECollaboration', msme)}>
-                    View Challenge
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            ) : msmeCollaborations?.map((challenge, index) =>
+              <MSMEChallengeCard
+                key={index}
+                challenge={challenge}
+                onViewDetails={handleViewDetails}
+              />
+            )}
           </div>
         </TabsContent>
         <TabsContent value="Governmentchallenges" className="mt-4 flex-1 overflow-y-auto pr-4">
@@ -371,28 +354,13 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                   Please check back later — new challenges will appear here soon.
                 </p>
               </div>
-            ) : Governmentchallenges?.map((gov, index) => (
-              <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
-                <CardHeader>
-                  <div className="flex items-center gap-4">
-                    <Image src={"https://api.hustloop.com/static/images/building.png"} alt={gov.company_name} width={60} height={60} className="rounded-lg" />
-                    <div>
-                      <CardTitle className="text-base">{gov.title}</CardTitle>
-                      <CardDescription>{gov.company_name}</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground line-clamp-3">{gov.description}</p>
-                </CardContent>
-                <CardFooter className="flex-col items-start space-y-2">
-                  <Badge variant="outline">Reward: {gov.reward_amount}</Badge>
-                  <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => handleViewDetails('GovernmentChallenges', gov)}>
-                    View Challenge
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            ) : Governmentchallenges?.map((challenge, index) =>
+              <GovermentChallengeCard
+                key={index}
+                challenge={challenge}
+                onViewDetails={handleViewDetails}
+              />
+            )}
           </div>
         </TabsContent>
       </Tabs>
@@ -422,16 +390,11 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
         onOpenChange={(isOpen) => !isOpen && setSelectedChallenge(null)}
         isLoggedIn={isLoggedIn}
         hasSubscription={hasSubscription}
+        setActiveView={setActiveView}
       />
       <MSMECollaborationDetails
         collaboration={selectedCollaboration}
         onOpenChange={(isOpen) => !isOpen && setSelectedCollaboration(null)}
-        isLoggedIn={isLoggedIn}
-        hasSubscription={hasSubscription}
-      />
-      <GovernmentChallengeDetails
-        collaboration={selectedGovernmentchallenges}
-        onOpenChange={(isOpen) => !isOpen && setSelectedGovernmentchallenges(null)}
         isLoggedIn={isLoggedIn}
         hasSubscription={hasSubscription}
       />

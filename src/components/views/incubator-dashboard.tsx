@@ -226,11 +226,11 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
         }
     }
 
-    const handleStatusChange = (id: number, status: string) => {
-        setSubmissions(subs => subs.map(s => s.id === id ? { ...s, status: status as Submission['status'] } : s));
+    const handleStatusChange = (id: string, status: string) => {
+        setSubmissions(subs => subs.map(s => s.solutionId === id ? { ...s, status: status as Submission['status'] } : s));
     };
 
-    const handleAddComment = (submissionId: number, commentText: string) => {
+    const handleAddComment = (submissionId: string, commentText: string) => {
         const newComment: Comment = {
             id:1,
             author: 'Incubator',
@@ -239,14 +239,14 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
         };
 
         const updatedSubmissions = submissions.map(sub => {
-            if (sub.id === submissionId) {
+            if (sub.solutionId === submissionId) {
                 return { ...sub, comments: [...sub.comments, newComment] };
             }
             return sub;
         });
 
         setSubmissions(updatedSubmissions);
-        setSelectedSubmission(updatedSubmissions.find(s => s.id === submissionId) || null);
+        setSelectedSubmission(updatedSubmissions.find(s => s.solutionId === submissionId) || null);
     };
 
     const overviewStats = {
@@ -325,12 +325,12 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
                                 </TabsContent>
                                 <TabsContent value="submissions" className="mt-0 space-y-4">
                                     {submissions.length > 0 ? submissions.map((sub) => (
-                                        <Card key={sub.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 cursor-pointer transition-colors" onClick={() => setSelectedSubmission(sub)}>
+                                        <Card key={sub.challengeId} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 cursor-pointer transition-colors" onClick={() => setSelectedSubmission(sub)}>
                                             <CardHeader>
                                                 <div className="flex justify-between items-start">
                                                     <div>
-                                                        <CardTitle className="text-lg">{sub.idea}</CardTitle>
-                                                        <CardDescription>Submitted by {sub.founder}</CardDescription>
+                                                        <CardTitle className="text-lg">{sub.challenge?.title}</CardTitle>
+                                                        <CardDescription>Submitted by {sub.contactName}</CardDescription>
                                                     </div>
                                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                         {statusIcons[sub.status as keyof typeof statusIcons]}
@@ -340,7 +340,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
                                             </CardHeader>
                                             <CardFooter className="flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
-                                                    <Select value={sub.status} onValueChange={(value) => handleStatusChange(sub.id, value)}>
+                                                    <Select value={sub.status} onValueChange={(value) => handleStatusChange(sub.status, value)}>
                                                         <SelectTrigger className="w-[180px]" onClick={(e) => e.stopPropagation()}>
                                                             <SelectValue placeholder="Change status" />
                                                         </SelectTrigger>
@@ -353,7 +353,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                                <p className="text-sm text-muted-foreground">Submitted on {sub.submittedDate}</p>
+                                                <p className="text-sm text-muted-foreground">Submitted on {sub.createdAt}</p>
                                             </CardFooter>
                                         </Card>
                                     )) : (
@@ -541,7 +541,6 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
             <SubmissionDetailsModal 
                 submission={selectedSubmission} 
                 onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
-                onAddComment={handleAddComment}
             />
         </>
     );

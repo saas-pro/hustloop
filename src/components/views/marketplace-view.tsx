@@ -38,7 +38,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView }:
         <Tabs defaultValue="challenges" className="w-full mt-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="challenges">Solve Challenges</TabsTrigger>
-            <TabsTrigger value="tech">Tech Transfer</TabsTrigger>
+            <TabsTrigger value="tech">Technology Transfer</TabsTrigger>
             <TabsTrigger value="incubators">Incubators</TabsTrigger>
           </TabsList>
           <TabsContent value="challenges">

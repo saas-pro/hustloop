@@ -1,28 +1,51 @@
 
-export type View = "home" | "blog" | "mentors" | "incubators" | "submitIP" | "pricing" | "msmes" | "solveChallenges" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile" | "joinasanMSME" |"browseTech" | "marketplace";
-export type DashboardTab = "overview" | "msmes" |"ip/technologies"| "incubators" | "engagements" | "mentors"  | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" |"aignite";
+export type View = "home" | "blog" | "mentors" | "incubators" | "submitIP" | "pricing" | "msmes" | "solveChallenges" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile" | "joinasanMSME" | "browseTech" | "marketplace" | "browseMSME";
+export type DashboardTab = "overview" | "msmes" | "ip/technologies" | "incubators" | "engagements" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" | "aignite" | "connex";
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
+export type SolveChallengeTab = "overview" | "submission" | "team" | "settings"
+export type TechTransferTab = "overview" | "submission" | "engagements" | "settings"
+export type InnovativeIdeaTab = "overview" | "incubators" | "mentors" | "submission" | "settings"
 export type IncubatorDashboardTab = "overview" | "submissions" | "profile" | "settings";
-export type MsmeDashboardTab = "overview" | "submissions" | "profile" |"engagement" |"settings";
+export type MsmeDashboardTab = "overview" | "submissions" | "profile" | "engagement" | "settings";
 export type UserRole = "admin" | "mentor" | "incubator" | "msme" | "founder";
-export type founderRole = "Solve MSME's challenge" | "List a technology for licensing" | "Submit an innovative idea"
+export type founderRole = "Solve MSME&#39;s challenge" | "List a technology for licensing" | "Submit an innovative idea"
 export type UserStatus = "active" | "banned" | "pending";
 
 export type Comment = {
-  id:number;
+  id: number;
   author: 'Founder' | 'Incubator' | 'Triage Team' | 'MSME';
   text: string;
   timestamp: string;
 };
+export interface FileData {
+  name: string;
+  path: string;
+  previewUrl: string;
+  size?: number;
+}
+export interface ChallengeInfo {
+  title: string | null;
+  sector: string | null;
+  technologyArea: string | null;
+  postedBy?: {
+    companyName: string | null;
+  } | null;
+}
 
 export type Submission = {
-  id: number;
-  founder: string; 
-  idea: string; 
-  status: 'New' | 'Under Review' | 'Valid' | 'Duplicate' | 'Rejected' | 'Challenge Submitted';
+  solutionId: string
+  challengeId: string;
+  contactName: string;
+  status: 'New' | 'Under Review' | 'Valid' | 'Duplicate' | 'Rejected' | 'Solution Accepted' | 'Triaged' | 'Triaged_Points';
+  points: number;
   description: string;
-  submittedDate: string;
+  createdAt: string;
+  district: string;
+  placeOfResidence: string;
+  mobileNumber: string;
   comments: Comment[];
+  files?: FileData[];
+  challenge?: ChallengeInfo | null;
 };
 
 export type AppUser = {
@@ -53,26 +76,26 @@ export type BlogPost = {
 };
 
 export type EducationSession = {
-    language: string;
-    date: string;
-    time: string;
+  language: string;
+  date: string;
+  time: string;
 };
 
 export type EducationFeature = {
-    name: string;
-    icon: string;
+  name: string;
+  icon: string;
 };
 
 export type EducationProgram = {
-    id: number;
-    title: string;
-    sessions: EducationSession[];
-    description: string;
-    features: EducationFeature[];
-    created_at: string;
+  id: number;
+  title: string;
+  sessions: EducationSession[];
+  description: string;
+  features: EducationFeature[];
+  created_at: string;
 };
 
 
 
 
-    
+

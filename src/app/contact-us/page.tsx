@@ -230,7 +230,7 @@ export default function ContactUs() {
                               <SelectItem value="incubation">Incubation Support</SelectItem>
                               <SelectItem value="msme">MSME Partnerships</SelectItem>
                               <SelectItem value="support">Support</SelectItem>
-                              <SelectItem value="tech-transfer">Tech Transfer</SelectItem>
+                              <SelectItem value="tech-transfer">Technology Transfer</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

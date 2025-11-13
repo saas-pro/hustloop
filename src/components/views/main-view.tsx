@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from "@/components/layout/header";
 import HomeView from "@/components/views/home";
-import type { View, UserRole, DashboardTab } from "@/app/types";
+import type { View, UserRole, DashboardTab, founderRole } from "@/app/types";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -19,6 +19,10 @@ import SubmitIPDashboard from "./submit-your-ip";
 import { CommentSection } from "../comment-section";
 import Unauthorized from "@/app/unauthorized";
 import { API_BASE_URL } from "@/lib/api";
+import BrowseMSME from "./browseMSME";
+import SolveChallengeDashboard from "./solve-challenge-dashboard";
+import ListTechnologyDashboard from "./list-a-tech-dashboard";
+import InnovativeIdeaDashboard from "./innovative-dashboard";
 
 
 
@@ -110,6 +114,7 @@ export default function MainView() {
   const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
   const [isCommentSectionMaximized, setIsCommentSectionMaximized] = useState(false);
   const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
+  const [founderRole, setFounderRole] = useState<founderRole | null>(null);
 
 
 
@@ -133,7 +138,7 @@ export default function MainView() {
     const savedSubscription = localStorage.getItem('hasSubscription');
     const savedAppliedPrograms = localStorage.getItem('appliedPrograms');
     const savedAuthProvider = localStorage.getItem('authProvider') as AuthProvider | null;
-
+    const savedFounderRole = localStorage.getItem('founder_role') as founderRole | null;
     const parsedUser = safeParse<User | null>(savedUser, null, 'user', isValidUser);
     const parsedAppliedPrograms = safeParse<Record<string, string>>(savedAppliedPrograms, {}, 'appliedPrograms', isValidAppliedPrograms);
 
@@ -142,6 +147,7 @@ export default function MainView() {
       setLoggedIn(true);
       setUserRole(savedUserRole);
       setUser(parsedUser);
+      setFounderRole(savedFounderRole)
       setHasSubscription(savedSubscription === 'true');
       setHasUsedFreeSession(false);
       setAppliedPrograms(parsedAppliedPrograms);
@@ -295,7 +301,7 @@ export default function MainView() {
       }
     };
     checkToken();
-  }, [toast,router]);
+  }, [toast, router]);
 
   useEffect(() => {
     const from = searchParams.get('from');
@@ -419,7 +425,7 @@ export default function MainView() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        
+
         setIsHeroVisible(entry.isIntersecting);
       },
       { root: null, threshold: 0 }
@@ -470,16 +476,26 @@ export default function MainView() {
   };
 
   const renderDashboard = () => {
-    if (!isLoggedIn || activeView !== 'dashboard' || !userRole || !user || !authProvider) {
+    if (activeView !== 'dashboard' || !userRole || !authProvider || !isLoggedIn || !user) {
       return null;
     }
-
     switch (userRole) {
       case 'mentor':
         return (
           <MentorDashboardView
             isOpen={true}
             onOpenChange={() => setActiveView('home')}
+            setActiveView={setActiveView}
+            user={user}
+            authProvider={authProvider}
+          />
+        );
+      case 'msme':
+        return (
+          <MsmeDashboardView
+            isOpen={true}
+            onOpenChange={() => setActiveView('home')}
+            isLoggedIn={isLoggedIn}
             setActiveView={setActiveView}
             user={user}
             authProvider={authProvider}
@@ -494,16 +510,6 @@ export default function MainView() {
             authProvider={authProvider}
           />
         );
-      case 'msme':
-        return (
-          <MsmeDashboardView
-            isOpen={true}
-            onOpenChange={() => setActiveView('home')}
-            user={user}
-            authProvider={authProvider}
-          />
-        );
-      case 'founder':
       case 'admin':
         return (
           <DashboardView
@@ -519,6 +525,59 @@ export default function MainView() {
             id={id ?? undefined}
           />
         );
+      case 'founder':
+        switch (founderRole) {
+          case "Solve MSME&#39;s challenge":
+            return (
+              <SolveChallengeDashboard
+                isOpen={true}
+                onOpenChange={() => setActiveView('home')}
+                user={user}
+                authProvider={authProvider}
+                userRole={userRole}
+                hasSubscription={hasSubscription}
+                setActiveView={setActiveView}
+                setUser={setUser}
+                activateTab={activeTab}
+                id={id ?? undefined}
+              />
+            );
+
+          case 'List a technology for licensing':
+            return (
+              <ListTechnologyDashboard
+                isOpen={true}
+                onOpenChange={() => setActiveView('home')}
+                user={user}
+                authProvider={authProvider}
+                userRole={userRole}
+                hasSubscription={hasSubscription}
+                setActiveView={setActiveView}
+                setUser={setUser}
+                activateTab={activeTab}
+                id={id ?? undefined}
+              />
+            );
+
+          case 'Submit an innovative idea':
+            return (
+              <InnovativeIdeaDashboard
+                isOpen={true}
+                onOpenChange={() => setActiveView('home')}
+                user={user}
+                authProvider={authProvider}
+                userRole={userRole}
+                hasSubscription={hasSubscription}
+                setActiveView={setActiveView}
+                setUser={setUser}
+                activateTab={activeTab}
+                id={id ?? undefined}
+              />
+            );
+
+          default:
+            return null;
+        }
 
       default:
         return null;
@@ -553,6 +612,7 @@ export default function MainView() {
             setActiveView={setActiveView}
             setActiveTab={setActiveTab}
             isLoggedIn={isLoggedIn}
+            userRole={userRole}
             onLogout={handleLogout}
             navOpen={navOpen}
             scrollContainerRef={scrollContainerRef}
@@ -603,7 +663,9 @@ export default function MainView() {
         onOpenChange={handleModalOpenChange('pricing')}
         onGetStartedClick={handleGetStartedOnPricing}
       />}
-
+      {
+        activeView === 'browseMSME' && <BrowseMSME isOpen={true} onOpenChange={handleModalOpenChange('browseMSME')} />
+      }
       {activeView === 'msmes' && <MsmesView
         isOpen={true}
         onOpenChange={handleModalOpenChange('msmes')}
@@ -680,10 +742,10 @@ export default function MainView() {
         />
       )}
 
-      <EventModal
+      {/* <EventModal
         isOpen={isEventModalOpen}
         onOpenChange={setEventModalOpen}
-      />
+      /> */}
     </div>
   );
 }

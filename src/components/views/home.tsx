@@ -73,6 +73,7 @@ interface HomeViewProps {
   setActiveView: (view: View) => void;
   isLoggedIn: boolean;
   onLogout: () => void;
+  userRole: string | null;
   navOpen?: boolean;
   scrollContainerRef: React.RefObject<HTMLDivElement>;
 }
@@ -144,7 +145,7 @@ export const solutionSteps = {
   },
 
   'tech-transfer': {
-    title: 'Tech Transfer',
+    title: 'Technology Transfer',
     steps: [
       { icon: Microscope, title: "Tech Discovery", description: "Explore cutting-edge university & industry innovations" },
       { icon: FileSearch, title: "IP & Licensing", description: "Review intellectual property and licensing terms" },
@@ -211,7 +212,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentStateIndex((prevIndex) => (prevIndex + 1) % dynamicHeroStates.length);
-    }, 3500); 
+    }, 3500);
 
     return () => clearInterval(interval);
   }, []);
@@ -359,7 +360,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
 
 
 
-export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout, setActiveTab }: HomeViewProps) {
+export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout, setActiveTab, userRole }: HomeViewProps) {
   const { toast } = useToast();
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -424,7 +425,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
     },
     {
       icon: <Link className="h-8 w-8" />,
-      title: "Tech Transfer",
+      title: "Technology Transfer",
       description: "Access a curated portfolio of innovative technologies from top research institutions, universities, and industry partners. Easily browse, select, and license solutions through Hustloop to accelerate your growth."
     },
     {
@@ -458,7 +459,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
   // Scroll-based zoom for "Start your Journey" (native scroll listener)
   const journeyRef = useRef<HTMLDivElement | null>(null);
   const journeyPanelRef = useRef<HTMLDivElement | null>(null);
-  
+
   useEffect(() => {
     const panel = journeyPanelRef.current;
     if (!panel) return;
@@ -639,10 +640,23 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                 </div>
                 <Button
                   className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
-                  onClick={() => setActiveView("joinasanMSME")}
+                  onClick={() => {
+                    if (isLoggedIn && userRole === 'msme') {
+                      localStorage.setItem("msmeTabPending", "profile");
+                      setActiveView("dashboard");
+                    } else if (userRole === 'admin') {
+                      setActiveView("browseMSME");
+                      
+                    } else {
+                      setActiveView("joinasanMSME");
+                    }
+                  }}
                 >
-                  Join as an MSME
+                  {(userRole === 'msme' || userRole === 'founder' || userRole === 'incubator' || userRole === 'mentor')
+                    ? "Join as an MSME"
+                    : "Browse MSME"}
                 </Button>
+
               </Card>
 
               {/* Card 3 (Problem Solvers (Innovators) */}
@@ -674,7 +688,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                 </Button>
               </Card>
 
-              {/* Card 4 (Tech Transfer) */}
+
               <Card data-journey-card className="journey-card group text-center p-6 md:p-8 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20">
                 <div className="mx-auto bg-primary/10 text-primary 
               w-24 h-24 md:w-28 md:h-28 flex items-center justify-center 
@@ -689,7 +703,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                   />
                 </div>
                 <div className='flex-grow'>
-                  <h3 className="text-xl font-bold">Tech Transfer</h3>
+                  <h3 className="text-xl font-bold">Technology Transfer</h3>
                   <p className="text-muted-foreground mt-2 mb-4">
                     Browse and license innovative technologies from universities and industry partners.
                   </p>
@@ -940,7 +954,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                               <SelectItem value="incubation">Incubation Support</SelectItem>
                               <SelectItem value="msme">MSME Partnerships</SelectItem>
                               <SelectItem value="support">Support</SelectItem>
-                              <SelectItem value="tech-transfer">Tech Transfer</SelectItem>
+                              <SelectItem value="tech-transfer">Technology Transfer</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

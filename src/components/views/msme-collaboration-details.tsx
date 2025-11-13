@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { MSMECollaboration } from './msmes';
+import type { MSMEChallenge } from './msmes';
 import { Handshake, Target, Check, User, Workflow, IndianRupee, Timer, AlertCircle } from 'lucide-react';
 import {
   Tooltip,
@@ -23,7 +23,7 @@ import {
 import Image from 'next/image';
 
 interface MSMECollaborationDetailsProps {
-  collaboration: MSMECollaboration | null;
+  collaboration: MSMEChallenge | null;
   onOpenChange: (isOpen: boolean) => void;
   isLoggedIn: boolean;
   hasSubscription: boolean;

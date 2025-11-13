@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react'; // Import useState
+import { useEffect, useRef, useState } from 'react'; // Import useState
 import {
   Dialog,
   DialogContent,
@@ -20,56 +20,141 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import Image from 'next/image';
-import { SolutionSubmissionForm } from './solution-submission-form'; // Import the new component
+import { SolutionSubmissionForm } from './solution-submission-form';
 import { MarkdownViewer } from '../ui/markdownViewer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Progress } from '../ui/progress';
+import VerticalTimeline from '../ui/verticalTimeLine';
+import { useChallengeProgress } from '../ui/useChallengeProgress';
+import { QAForum } from '../ui/QAForum';
+import { View } from '@/app/types';
+import { API_BASE_URL } from '@/lib/api';
+import { Input } from '../ui/input';
+import { Table } from '../ui/table';
+import { Badge } from '../ui/badge';
 
 interface CorporateChallengeDetailsProps {
   challenge: CorporateChallenge | null;
   onOpenChange: (isOpen: boolean) => void;
   isLoggedIn: boolean;
   hasSubscription: boolean;
+  setActiveView: (view: View) => void;
+}
+
+type hallOfFame = {
+  contactName: string;
+  points: number;
+  district: string;
+}
+
+type TimelineData = {
+  startDate: string;
+  underReview: string;
+  verification: string;
+};
+
+type Announcement = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  attachments: string[];
+  createdAt: string;
 }
 
 export default function CorporateChallengeDetails({
   challenge,
   onOpenChange,
   isLoggedIn,
-  hasSubscription
+  hasSubscription,
+  setActiveView
 }: CorporateChallengeDetailsProps) {
+  const { progress, daysRemaining } = useChallengeProgress(challenge);
+  const [challengeId, setChallengeId] = useState()
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
-
-  const [progress, setProgress] = useState(0);
-  const [daysRemaining, setDaysRemaining] = useState<number | string>('N/A');
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [agreeChecked, setAgreeChecked] = useState(false);
+  const [scrolledToEnd, setScrolledToEnd] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [events, setEvents] = useState<TimelineData | null>(null);
+  const [data, setData] = useState<hallOfFame[]>([]);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (challenge?.end_date && challenge.start_date) {
-      const startDate = new Date(challenge.start_date);
-      const endDate = new Date(challenge.end_date);
-      const now = new Date();
+    if (!challenge) return;
 
-      const totalDuration = endDate.getTime() - startDate.getTime();
-      const elapsedDuration = now.getTime() - startDate.getTime();
+    const getHallOfFame = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/hall-of-fame/${challenge.id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
 
-      let currentProgress = 0;
-      if (totalDuration > 0) {
-        currentProgress = Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100));
-      } else if (now >= endDate) {
-        currentProgress = 100;
+        const data = await res.json();
+        setData(data.hallOfFame || []);
+      } catch (err) {
+        console.error("Failed to fetch hall of fame:", err);
       }
-      setProgress(currentProgress);
+    };
 
-      if (now > endDate) {
-        setDaysRemaining('Ended');
-      } else {
-        const remaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        setDaysRemaining(remaining > 0 ? remaining : 0);
-      }
-    }
+    getHallOfFame();
   }, [challenge]);
 
+
+  useEffect(() => {
+    const getEvents = async () => {
+      if (!challenge) return;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/collaborations/${challenge.id}/timeline`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      setEvents(data.message?.timeline || data.timeline);
+    };
+
+    getEvents();
+  }, [challenge]);
+
+
+
+  useEffect(() => {
+    if (!challenge?.id) return;
+
+    fetch(`${API_BASE_URL}/api/announcements/${challenge.id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    })
+      .then((res) => res.json())
+      .then((data) => setAnnouncements(data.announcements || []));
+  }, [challenge]);
+
+
+  const filtered = data.filter((item: any) => {
+    const s = search.toLowerCase();
+    return (
+      item.contactName.toLowerCase().includes(s) ||
+      String(item.points).includes(s) ||
+      item.district.toLowerCase().includes(s)
+    );
+  });
+
+  const termsRef = useRef<HTMLDivElement>(null);
 
   if (!challenge) return null;
   const isOtherUsers = ["msme", "incubator", "mentor"].some(role =>
@@ -90,10 +175,10 @@ export default function CorporateChallengeDetails({
     )
   }
 
-
-  const handleApplyClick = () => {
+  const handleApplyClick = (id: any) => {
     if (!isDisabled) {
-      setShowSubmissionForm(true);
+      setShowTermsDialog(true);
+      setChallengeId(id)
     }
   };
 
@@ -106,16 +191,22 @@ export default function CorporateChallengeDetails({
     setShowSubmissionForm(false);
   };
 
-  const applyButton = (
-    <Button
-      size="lg"
-      className="bg-accent hover:bg-accent/90 text-accent-foreground"
-      onClick={handleApplyClick}
-      disabled={!!isDisabled}
-    >
-      <Rocket className="mr-2 h-5 w-5" /> Apply Now
-    </Button>
-  );
+  const handleAgreeAndProceed = () => {
+    setShowTermsDialog(false);
+    setShowSubmissionForm(true);
+  };
+
+  const handleScroll = () => {
+    if (!termsRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = termsRef.current;
+    if (scrollTop + clientHeight >= scrollHeight - 20) {
+      setScrolledToEnd(true);
+    }
+  };
+
+
+
+
 
   return (
     <Dialog open={!!challenge} onOpenChange={onOpenChange}>
@@ -145,235 +236,342 @@ export default function CorporateChallengeDetails({
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="blog">Blog</TabsTrigger>
-            <TabsTrigger value="forum">Forum</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="announcement">Announcements</TabsTrigger>
+            <TabsTrigger value="hof">Hall of Fame</TabsTrigger>
             <TabsTrigger value="q/a">Q/A</TabsTrigger>
+            <TabsTrigger value="faq">FAQ</TabsTrigger>
           </TabsList>
 
           <ScrollArea className="flex-grow mt-4 h-[calc(90vh-200px)]">
             <TabsContent value="summary">
-
-
-              {showSubmissionForm ? (
-                <ScrollArea className="flex-grow mt-4 px-6">
-                  <SolutionSubmissionForm
-                    challengeId={challenge.id}
-                    onSubmissionSuccess={handleSubmissionSuccess}
-                    onCancel={handleCancelSubmission}
-                  />
-                </ScrollArea>
-              ) : (
-                <ScrollArea className="flex-grow mt-4 px-6">
-                  <div className="space-y-12">
-                    {/* Title */}
-                    <div className="mb-8 flex items-start gap-4">
-                      <Award className="h-10 w-10 text-primary mt-1" />
-                      <div>
-                        <h2 className="text-xl font-bold text-muted-foreground tracking-wide uppercase mb-1">
-                          Challenge Title
-                        </h2>
-                        <h1 className="text-4xl font-extrabold leading-tight text-foreground">
-                          {challenge.title}
-                        </h1>
-                      </div>
-                    </div>
-
-                    {/* About Challenge */}
+              <ScrollArea className="flex-grow mt-4 px-6">
+                <div className="space-y-12">
+                  {/* Title */}
+                  <div className="mb-8 flex items-start gap-4">
+                    <Award className="h-10 w-10 text-primary mt-1" />
                     <div>
-                      <h3 className="text-2xl font-bold mb-4 font-headline">About The Challenge</h3>
-                      <MarkdownViewer content={challenge.description} />
+                      <h2 className="text-xl font-bold text-muted-foreground tracking-wide uppercase mb-1">
+                        Challenge Title
+                      </h2>
+                      <h1 className="text-4xl font-extrabold leading-tight text-foreground">
+                        {challenge.title}
+                      </h1>
                     </div>
-
-                    {/* Key Info Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                      {/* Stage */}
-                      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                        <CardHeader className="items-center">
-                          <Workflow className="h-8 w-8 text-primary mb-2" />
-                          <CardTitle className="text-4xl font-bold">{challenge.stage}</CardTitle>
-                          <p className="text-sm text-muted-foreground">Challenge Stage</p>
-                        </CardHeader>
-                      </Card>
-
-                      {/* End Date */}
-                      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                        <CardHeader className="items-center">
-                          <Timer className="h-8 w-8 text-primary mb-2" />
-                          <CardTitle className="text-4xl font-bold">
-                            {new Date(challenge.end_date).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground">End Date</p>
-                        </CardHeader>
-                      </Card>
-
-                      {/* Reward */}
-                      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                        <CardHeader className="items-center">
-                          <IndianRupee className="h-8 w-8 text-primary mb-2" />
-                          <CardTitle className="text-2xl font-bold">
-                            {challenge.reward_amount
-                              ? challenge.reward_amount
-                              : `${challenge.reward_min} - ${challenge.reward_max}`}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground">Reward Amount</p>
-                        </CardHeader>
-                      </Card>
-                    </div>
-
-                    <Separator />
-
-                    {/* Mission & Participants */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div>
-                        <h3 className="text-2xl font-bold mb-4 font-headline">Mission</h3>
-                        <ul className="space-y-2">
-                          {Array.isArray(challenge.scope) && challenge.scope.map((s, i) => (
-                            <li key={i} className="flex items-start gap-3">
-                              <Check className="h-5 w-5 text-green-500 mt-1 shrink-0" />
-                              <span>{s}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="text-2xl font-bold mb-4 font-headline">Who Can Participate</h3>
-                        <p className="text-muted-foreground">{challenge.looking_for}</p>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Contact */}
-                    <div>
-                      <h3 className="text-2xl font-bold mb-4 font-headline">Primary Contact</h3>
-                      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                        <CardContent className="p-6 flex items-center justify-between gap-4">
-                          {/* Left: Contact Info */}
-                          <div className="flex items-center gap-4">
-                            <User className="h-8 w-8 text-primary" />
-                            <div>
-                              <p className="font-semibold">{challenge.contact_name}</p>
-                              <p className="text-sm text-muted-foreground">{challenge.contact_role}</p>
-                            </div>
-                          </div>
-
-                          {/* Right: Social Links */}
-                          <div className="flex flex-col items-start gap-3">
-                            {challenge?.website_url && (
-                              <a
-                                href={challenge.website_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 hover:text-primary/80"
-                              >
-                                <Globe className="h-5 w-5 text-primary" />
-                                <span className="text-sm font-medium">Website</span>
-                              </a>
-                            )}
-                            {challenge?.x_url && (
-                              <a
-                                href={challenge.x_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 hover:text-primary/80"
-                              >
-                                <Twitter className="h-5 w-5 text-primary" />
-                                <span className="text-sm font-medium">X (Twitter)</span>
-                              </a>
-                            )}
-                            {challenge?.linkedin_url && (
-                              <a
-                                href={challenge.linkedin_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 hover:text-primary/80"
-                              >
-                                <Linkedin className="h-5 w-5 text-primary" />
-                                <span className="text-sm font-medium">LinkedIn</span>
-                              </a>
-                            )}
-                          </div>
-
-                        </CardContent>
-                      </Card>
-                    </div>
-
-
-                    {/* Apply Section */}
-                    {isOtherUsers ?
-                      <div className="text-center bg-card/50 rounded-lg my-12 py-10">
-                        <h2 className="text-3xl font-bold mb-4 font-headline">
-                          Ready to Solve This Challenge?
-                        </h2>
-                        <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
-                          Login as Founder to Solve this Problem
-                        </p>
-                      </div>
-
-                      : <div className="text-center bg-card/50 rounded-lg my-12 py-10">
-                        <h2 className="text-3xl font-bold mb-4 font-headline">
-                          Ready to Solve This Challenge?
-                        </h2>
-                        <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
-                          Submit your innovative solution and get a chance to win exciting rewards and partnerships.
-                        </p>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span>{applyButton}</span>
-                            </TooltipTrigger>
-                            {isDisabled && <TooltipContent>{tooltipContent}</TooltipContent>}
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>}
                   </div>
-                </ScrollArea>
-              )}
+
+                  <div>
+                    <h3 className="text-2xl font-bold mb-4 font-headline">About The Challenge</h3>
+                    <MarkdownViewer content={challenge.description} />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                      <CardHeader className="items-center">
+                        <Workflow className="h-8 w-8 text-primary mb-2" />
+                        <CardTitle className="text-4xl font-bold">{challenge.stage}</CardTitle>
+                        <p className="text-sm text-muted-foreground">Challenge Stage</p>
+                      </CardHeader>
+                    </Card>
+
+                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                      <CardHeader className="items-center">
+                        <Timer className="h-8 w-8 text-primary mb-2" />
+                        <CardTitle className="text-4xl font-bold">
+                          {new Date(challenge.end_date).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">End Date</p>
+                      </CardHeader>
+                    </Card>
+
+                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                      <CardHeader className="items-center">
+                        <IndianRupee className="h-8 w-8 text-primary mb-2" />
+                        <CardTitle className="text-2xl font-bold">
+                          {challenge.reward_amount
+                            ? challenge.reward_amount
+                            : `${challenge.reward_min} - ${challenge.reward_max}`}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">Reward Amount</p>
+                      </CardHeader>
+                    </Card>
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <h3 className="text-2xl font-bold mb-4 font-headline">Mission</h3>
+                      <ul className="space-y-2">
+                        {Array.isArray(challenge.scope) && challenge.scope.map((s, i) => (
+                          <li key={i} className="flex items-start gap-3">
+                            <Check className="h-5 w-5 text-green-500 mt-1 shrink-0" />
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h3 className="text-2xl font-bold mb-4 font-headline">Who Can Participate</h3>
+                      <p className="text-muted-foreground">{challenge.looking_for}</p>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h3 className="text-2xl font-bold mb-4 font-headline">Primary Contact</h3>
+                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                      <CardContent className="p-6 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <User className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="font-semibold">{challenge.contact_name}</p>
+                            <p className="text-sm text-muted-foreground">{challenge.contact_role}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+
+                  {/* Apply Section */}
+                  {isOtherUsers ?
+                    <div className="text-center bg-card/50 rounded-lg my-12 py-10">
+                      <h2 className="text-3xl font-bold mb-4 font-headline">
+                        Ready to Solve This Challenge?
+                      </h2>
+                      <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
+                        Login as Founder to Solve this Problem
+                      </p>
+                    </div>
+
+                    : <div className="text-center bg-card/50 rounded-lg my-12 py-10">
+                      <h2 className="text-3xl font-bold mb-4 font-headline">
+                        Ready to Solve This Challenge?
+                      </h2>
+                      <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
+                        Submit your innovative solution and get a chance to win exciting rewards and partnerships.
+                      </p>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            {isLoggedIn ? <Button
+                              size="lg"
+                              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                              onClick={() => handleApplyClick(challenge.id)}
+                              disabled={!!isDisabled}
+                            >
+                              <Rocket className="mr-2 h-5 w-5" /> Solve This Challenge
+                            </Button> : <div className="flex gap-4 w-full justify-center">
+                              <Button onClick={() => setActiveView('login')}>Login</Button>
+                              <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                                Sign Up
+                              </Button>
+                            </div>}
+                          </TooltipTrigger>
+                          {isDisabled && <TooltipContent>{tooltipContent}</TooltipContent>}
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>}
+                </div>
+              </ScrollArea>
             </TabsContent>
             <TabsContent value="timeline">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Challenge Timeline</CardTitle>
-                  <CardDescription>Track the progress of the challenge from start to finish.</CardDescription>
+              <Card className="p-6">
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl font-bold">Challenge Timeline</CardTitle>
+                  <CardDescription>
+                    Track the progress of the challenge from start to finish.
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <Progress value={progress} className="w-full" />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Start: {new Date(challenge.start_date).toLocaleDateString()}</span>
-                    <span>End: {new Date(challenge.end_date).toLocaleDateString()}</span>
-                  </div>
-                  <div className="text-center mt-4">
-                    <p className="text-lg font-semibold">
-                      {typeof daysRemaining === 'number' ? `${daysRemaining} days remaining` : daysRemaining}
-                    </p>
-                  </div>
+
+                <CardContent className="flex flex-col items-center mt-6">
+                  {events ? <VerticalTimeline timeline={events} /> : <p className="text-muted-foreground">Loading timeline...</p>}
                 </CardContent>
               </Card>
             </TabsContent>
-            <TabsContent value="blog">
-              <Card>
+
+            <TabsContent value="announcement">
+              <Card className="border shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Book className="h-6 w-6" />Blog</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Book className="h-6 w-6 text-primary" />
+                    Announcements
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="text-center text-muted-foreground py-12">
-                  <p>Blogs related to this challenge will appear here.</p>
-                  <p className="text-sm">Coming soon!</p>
+
+                <CardContent className="p-4">
+
+                  {(!announcements || announcements.length === 0) && (
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                      <h3 className="text-lg font-semibold text-foreground">No Announcements Yet</h3>
+                      <p className="max-w-xs text-sm">
+                        Announcements related to this challenge will appear here.
+                      </p>
+                    </div>
+                  )}
+                  {announcements?.length > 0 && (
+                    <div className="space-y-4">
+                      {announcements.map((a) => (
+                        <Card
+                          key={a.id}
+                          className="
+          group p-5 border shadow-sm hover:shadow-lg 
+          transition-all duration-300 rounded-xl relative
+          hover:border-primary/40 hover:bg-primary/5
+        "
+                        >
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
+                                {a.type === "alert" && (
+                                  <span className="text-red-500">⚠️</span>
+                                )}
+                                {a.type === "update" && (
+                                  <span className="text-blue-500">📢</span>
+                                )}
+                                {a.type === "deadline" && (
+                                  <span className="text-orange-500">⏳</span>
+                                )}
+                                {a.type === "result" && (
+                                  <span className="text-green-500">🏆</span>
+                                )}
+                                {a.type === "general" && (
+                                  <span className="text-primary">📝</span>
+                                )}
+                                {a.title}
+                              </h3>
+                            </div>
+
+                            <Badge
+                              variant="secondary"
+                              className="text-xs capitalize px-3 py-1 rounded-full"
+                            >
+                              {a.type}
+                            </Badge>
+                          </div>
+
+                          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                            {a.message}
+                          </p>
+
+                          {a.attachments.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-muted-foreground">
+                                Attachments: 
+                              </p>
+
+                              <div className="flex gap-2">
+                                📎
+                                {a.attachments.map((url, i) => (
+                                  <a
+                                    key={i}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="
+                    flex items-center gap-2 text-sm text-primary font-medium 
+                    underline underline-offset-2 transition-all hover:text-primary/70
+                  "
+                                  >
+                                     Attachment {i + 1}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <Separator className="my-4" />
+
+                          <div className="flex items-center justify-between text-xs text-muted-foreground opacity-80">
+                            <span>Posted on {new Date(a.createdAt).toLocaleString()}</span>
+
+
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
                 </CardContent>
               </Card>
             </TabsContent>
-            <TabsContent value="forum">
-              <Card>
+
+            <TabsContent value="hof">
+              <Card className="p-4">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><MessageSquare className="h-6 w-6" />Forum</CardTitle>
+                  <CardTitle className="flex items-center gap-2">Hall of Fame</CardTitle>
                 </CardHeader>
-                <CardContent className="text-center text-muted-foreground py-12">
-                  <p>A discussion forum for this challenge will be available soon.</p>
+
+                <div className="px-4 mb-4">
+                  <Input
+                    placeholder="Search by name, points, district..."
+                    value={search}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                    className="max-w-md mx-auto"
+                  />
+                </div>
+
+                <CardContent>
+                  <div className="w-full overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted text-left">
+                          <TableHead>Profile</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Points</TableHead>
+                          <TableHead>State</TableHead>
+                        </TableRow>
+                      </TableHeader>
+
+                      <TableBody>
+                        {filtered.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={4}
+                              className="text-center text-muted-foreground py-4"
+                            >
+                              No results found.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          filtered.map((item, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <div
+                                  className="h-10 w-10 rounded-full text-white flex items-center justify-center text-lg font-bold"
+                                  style={(() => {
+                                    const name = item.contactName || "?"
+                                    const hash = name
+                                      .split("")
+                                      .reduce((acc, c) => acc + c.charCodeAt(0), 0)
+                                    const color1 = `hsl(${hash % 360}, 70%, 50%)`
+                                    const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`
+                                    return {
+                                      background: `linear-gradient(135deg, ${color1}, ${color2})`,
+                                    }
+                                  })()}
+                                >
+                                  {item.contactName
+                                    ? item.contactName.charAt(0).toUpperCase()
+                                    : "?"}
+                                </div>
+                              </TableCell>
+
+                              <TableCell className="font-medium">{item.contactName}</TableCell>
+                              <TableCell className="font-semibold">{item.points}</TableCell>
+                              <TableCell className="font-medium">{item.district}</TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -388,19 +586,122 @@ export default function CorporateChallengeDetails({
               </Card>
             </TabsContent>
             <TabsContent value="q/a">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><HelpCircle className="h-6 w-6" />Q/A Section</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center text-muted-foreground py-12">
-                  <p>Have questions? Ask the organizers directly in the Q/A section.</p>
-                  <p className="text-sm">This feature is coming soon!</p>
-                </CardContent>
-              </Card>
+
+              {isLoggedIn ? <QAForum collaborationId={challenge.id} /> : <p className="text-center text-muted-foreground py-12">Please log in to participate in the Q/A forum.</p>}
+
+
             </TabsContent>
           </ScrollArea>
-        </Tabs>
-      </DialogContent>
+        </Tabs >
+      </DialogContent >
+
+      <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
+        <DialogContent className="max-w-[600px] max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Terms & Conditions</DialogTitle>
+            <DialogDescription>
+              Please review the following terms before submitting your solution.
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea
+            ref={termsRef}
+            onScrollCapture={handleScroll}
+            className="max-h-[40vh] border rounded-md p-4 text-sm text-muted-foreground"
+          >
+            <div className="pr-4 space-y-4">
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg">Originality & Ownership</h3>
+                <p>
+                  All submissions must be original work, free of plagiarism, and not infringe on third-party
+                  intellectual property. The organizer may request evidence of ownership if required.
+                </p>
+                <h3 className="font-semibold text-lg">Submission Rights</h3>
+                <p>
+                  By submitting a solution, the participant grants the organizer the non-exclusive right to
+                  review, evaluate, and use the submission for challenge purposes (such as judging and display
+                  during the event).
+                </p>
+
+                <h3 className="font-semibold text-lg">Confidentiality</h3>
+                <p>
+                  The organizer will treat submissions as confidential, but cannot guarantee absolute
+                  confidentiality due to online review processes or public events.
+                </p>
+
+                <h3 className="font-semibold text-lg">Disqualification</h3>
+                <p>
+                  Submissions that violate the platform’s code of conduct, include prohibited content, or do
+                  not comply with stated rules may be disqualified.
+                </p>
+
+                <h3 className="font-semibold text-lg">Liability</h3>
+                <p>
+                  The organizer is not responsible for any technical malfunctions, lost data, or issues
+                  arising from the submission process.
+                </p>
+
+                <h3 className="font-semibold text-lg">Acceptance of Terms</h3>
+                <p>
+                  Participants must accept these terms to proceed with submission.
+                </p>
+              </div>
+
+              <p>
+                By checking the box below, you acknowledge that you have read and agree to these
+                terms.
+              </p>
+            </div>
+          </ScrollArea>
+
+
+          {/* Agree section */}
+          <div className="flex items-center mt-4 gap-2">
+            <input
+              type="checkbox"
+              disabled={!scrolledToEnd}
+              checked={agreeChecked}
+              onChange={(e) => setAgreeChecked(e.target.checked)}
+              className="w-4 h-4 accent-primary cursor-pointer"
+            />
+            <span
+              className={`text-sm ${!scrolledToEnd ? 'text-gray-400' : 'text-muted-foreground'}`}
+            >
+              I agree to the Terms & Conditions
+            </span>
+          </div>
+
+          {/* Proceed button */}
+          <div className="flex justify-end mt-6">
+            <Button
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+              onClick={handleAgreeAndProceed}
+              disabled={!agreeChecked}
+            >
+              Proceed to Submission
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
+        <DialogContent className="max-w-[90vw] w-[90vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold font-headline">Submit Your Solution</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to submit your idea for this challenge.
+            </DialogDescription>
+          </DialogHeader>
+
+          {challengeId && (
+            <SolutionSubmissionForm
+              challengeId={challengeId || challenge.id}
+              onSubmissionSuccess={handleSubmissionSuccess}
+              onCancel={handleCancelSubmission}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog >
   );
 }

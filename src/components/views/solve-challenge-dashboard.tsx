@@ -20,7 +20,7 @@ import * as LucideIcons from "lucide-react";
 import type { LucideProps } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber, Submission } from "@/app/types";
+import type { View, SolveChallengeTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber, Submission } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -37,8 +37,7 @@ import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, Pagi
 import { CommentSection } from "../comment-section";
 import { DeleteConfirmationDialog } from '../ui/DeleteConfirmationDialog'
 import MarkdownEditor from "../ui/markdown";
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from "remark-gfm";
+import { MoreVertical, Trash2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import SubmissionDetailsModal from "./submission-details-modal";
 
@@ -83,7 +82,7 @@ type ProgramFormValues = z.infer<typeof programSchema>;
 type User = { name: string; email: string; }
 type AuthProvider = 'local' | 'google';
 
-interface DashboardViewProps {
+interface SolveChallengeDashboardViewProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     user: User;
@@ -112,14 +111,6 @@ interface TechTransferIP {
 
 type GroupedIPs = Record<string, TechTransferIP[]>;
 
-const statusIcons: { [key: string]: React.ReactNode } = {
-    'new': <LucideIcons.Clock className="h-4 w-4 text-blue-500" />,
-    'under review': <LucideIcons.Clock className="h-4 w-4 text-yellow-500" />,
-    'valid': <LucideIcons.CheckCircle className="h-4 w-4 text-green-500" />,
-    'duplicate': <LucideIcons.Copy className="h-4 w-4 text-orange-500" />,
-    'rejected': <LucideIcons.XCircle className="h-4 w-4 text-red-500" />,
-};
-
 interface ChartDataItem {
     year: string;
     activity: number;
@@ -144,6 +135,14 @@ interface RestoreIP {
     action_by_user_name?: string;
     organization: string;
 }
+
+const statusIcons: { [key: string]: React.ReactNode } = {
+    'new': <LucideIcons.Clock className="h-4 w-4 text-blue-500" />,
+    'under review': <LucideIcons.Clock className="h-4 w-4 text-yellow-500" />,
+    'valid': <LucideIcons.CheckCircle className="h-4 w-4 text-green-500" />,
+    'duplicate': <LucideIcons.Copy className="h-4 w-4 text-orange-500" />,
+    'rejected': <LucideIcons.XCircle className="h-4 w-4 text-red-500" />,
+};
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const techTransferSchema = z.object({
@@ -203,9 +202,9 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
     </Card>
 );
 
-export default function DashboardView({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: DashboardViewProps) {
+export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: SolveChallengeDashboardViewProps) {
     const { toast } = useToast();
-    const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+    const [activeTab, setActiveTab] = useState<SolveChallengeTab>("overview");
     const [adminContentTab, setAdminContentTab] = useState('blog');
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [emailChangeRequested, setEmailChangeRequested] = useState(false);
@@ -218,8 +217,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
     const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
     const [userToBan, setUserToBan] = useState<AppUser | null>(null);
-
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+
     const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
     const [isLoadingSubscribers, setIsLoadingSubscribers] = useState(false);
 
@@ -232,7 +231,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [itemToDelete, setItemToDelete] = useState<{ type: 'blog' | 'program'; id: number } | null>(null);
     const [loadingChange, setLoadingChange] = useState(false)
     const [loadingResend, setLoadingResend] = useState(false)
-
+    const [submissions, setSubmissions] = useState<Submission[]>([]);
     const searchParams = useSearchParams()
 
     const settingsForm = useForm<SettingsFormValues>({
@@ -273,9 +272,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [isLoadingFormUsers, setIsLoadingFormUsers] = useState(false)
     const [perPage] = useState(10);
     const [totalRegistrations, setTotalRegistrations] = useState(0);
-    const [submissions, setSubmissions] = useState<Submission[]>([]);
 
-    console.log(submissions)
 
     const fetchUsers = useCallback(async (page: number, perPage: number) => {
         setIsLoadingUsers(true);
@@ -329,6 +326,33 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         } catch (error) { toast({ variant: 'destructive', title: 'Network Error' }); } finally { setIsLoadingSubscribers(false); }
     }, [toast]);
 
+    const getSubmissions = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/solutions`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const result = await response.json();
+            console.log(result)
+            setSubmissions(result.solutions);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });
+        }
+    }, [toast])
+
+    useEffect(() => {
+        getSubmissions()
+    }, [getSubmissions])
+
     const [selectedSubscribers, setSelectedSubscribers] = useState<number[]>([]);
 
     const handleDeleteSubscribers = async () => {
@@ -356,32 +380,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             toast({ title: "Failed to delete selected subscribers", variant: "destructive" });
         }
     };
-
-    const getSubmissions = useCallback(async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
-            return;
-        }
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/solutions`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const result = await response.json();
-            setSubmissions(result.solutions);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });
-        }
-    }, [toast])
-
-    useEffect(() => {
-        getSubmissions()
-    }, [getSubmissions])
 
 
     const handleResetSubscribers = async () => {
@@ -698,23 +696,9 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             }
         };
 
-        if (activeTab === "engagements") {
-            fetchDraft();
-        }
+
     }, [activeTab, userRole, token, toast]);
 
-
-    useEffect(() => {
-        if (userRole === 'admin') {
-            if (activeTab === 'users') fetchUsers(1, 10);
-            if (activeTab === 'aignite') fetchRegistrations(1);
-            if (activeTab === 'connex') fetchConnex(1);
-            // if (activeTab === 'blog') fetchBlogPosts();
-            // if (activeTab === 'sessions') fetchEducationPrograms();
-            if (activeTab === 'ip/technologies') fetchIps();
-            if (activeTab === 'subscribers') fetchSubscribers();
-        }
-    }, [activeTab, userRole, fetchUsers,fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
 
 
 
@@ -989,12 +973,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setisipOverview(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "connex", "engagement", "settings"];
-    const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
-    const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
-    const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];
-    const filteredTabs = isTechTransfer ? techTransferTabs : availableTabs
-    const tabsToRender = filteredTabs.filter(tab => tab !== "overview");
+    const solveChallenge = ["overview", "submission", "team", "settings"];
     const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
 
     const [techtransferData, setTechtransferData] = useState<{
@@ -1089,51 +1068,12 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     };
 
     const [mySubmissions, setMySubmissions] = useState<TechTransferIP[]>([]);
-
     const [loading, setLoading] = useState(false);
     const [emptyToastShown, setEmptyToastShown] = useState(false);
 
-    useEffect(() => {
-        const fetchMySubmissions = async () => {
-            setLoading(true);
-            setEmptyToastShown(false);
-            try {
 
-                const token = localStorage.getItem("token");
-                const res = await fetch(`${API_BASE_URL}/api/techtransfer/my-ips`, {
-                    headers: {
-                        Authorization: `Bearer ${token || ""}`,
-                    },
-                });
 
-                const data = await res.json();
 
-                if (res.ok) {
-                    setMySubmissions(data.ips);
-
-                } else {
-                    setMySubmissions([]);
-                    toast({
-                        title: "Failed to load submissions",
-                        description: data.error || "Please try again later.",
-                        variant: "destructive",
-                    });
-                }
-            } catch (err: any) {
-                setMySubmissions([]);
-                toast({
-                    title: "Error occurred",
-                    description: err.message || "Unable to fetch submissions.",
-                    variant: "destructive",
-                });
-            } finally {
-                setLoading(false);
-            }
-        };
-        if (activeTab === "submission") {
-            fetchMySubmissions();
-        }
-    }, [activeTab, toast]);
 
     const useGroupedIps = (techTransferIps: TechTransferIP[]) => {
         const [groupedIps, setGroupedIps] = useState<Record<string, TechTransferIP[]>>({});
@@ -1293,12 +1233,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [expandedAccordion, setExpandedAccordion] = useState<string | undefined>(undefined);
     const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
-    useEffect(() => {
-        const tabFromUrl = searchParams.get('id') as DashboardTab | null;
-        if (tabFromUrl && (userRole == "admin")) {
-            setActiveTab('ip/technologies');
-        }
-    }, [searchParams, userRole]);
+
     const { groupedIps, setGroupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating } = useGroupedIps(techTransferIps)
 
     useEffect(() => {
@@ -1350,6 +1285,51 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [hasDraft, setHasDraft] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [existingFile, setExistingFile] = useState<ExistingFile | null>(null);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [confirmText, setConfirmText] = useState("");
+
+    const handleDelete = async (solutionId: string) => {
+        if (confirmText !== "delete") {
+            toast({
+                variant: "destructive",
+                title: "Confirmation required",
+                description: "Type 'delete' to confirm deletion.",
+            });
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_BASE_URL}/api/solutions/${solutionId}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                toast({
+                    title: "Deleted successfully",
+                    description: "The submission has been removed.",
+                });
+                setSubmissions((prev: any[]) => prev.filter((s) => s.solutionId !== solutionId));
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Delete failed",
+                    description: data.error || "Something went wrong.",
+                });
+            }
+        } catch (err) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to delete submission.",
+            });
+        }
+    };
 
 
     const handleLoadDraft = async () => {
@@ -1508,7 +1488,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     useEffect(() => {
         const pendingTab = localStorage.getItem("pendingTab");
         if (pendingTab) {
-            setActiveTab(pendingTab as DashboardTab);
+            setActiveTab(pendingTab as SolveChallengeTab);
             localStorage.removeItem("pendingTab");
         }
     }, []);
@@ -1532,14 +1512,13 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                 grid-cols-3       
                                 sm:grid-cols-3    
                                 md:grid-cols-4     
-                                ${isTechTransfer ? "lg:grid-cols-4" : (userRole === 'admin' ? "lg:grid-cols-6" : "lg:grid-cols-5")}
+                                ${isTechTransfer ? "lg:grid-cols-4" : (userRole === 'admin' ? "lg:grid-cols-6" : "lg:grid-cols-4")}
                                 gap-2 h-fit
                                 items-stretch       
                                 bg-muted/50 rounded-lg p-1
                                 mb-4 sm:mb-6 lg:mb-10 z-10`}
                         >
-
-                            {tabsToRender.map((tab) => {
+                            {solveChallenge.map((tab) => {
                                 const Icon = (
                                     LucideIcons[
                                     tab === "msmes"
@@ -1550,19 +1529,17 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 ? "FileSignature"
                                                 : tab === "engagements"
                                                     ? "Handshake"
-                                                    : tab === "engagement"
-                                                        ? "Handshake"
-                                                        : tab === "mentors"
-                                                            ? "Users"
-                                                            : tab === "submission"
-                                                                ? "FileText"
-                                                                : tab === "settings"
-                                                                    ? "Settings"
-                                                                    : tab === "users"
-                                                                        ? "User"
-                                                                        : tab === "subscribers"
-                                                                            ? "Mail"
-                                                                            : "BookOpen"
+                                                    : tab === "mentors"
+                                                        ? "Users"
+                                                        : tab === "submission"
+                                                            ? "FileText"
+                                                            : tab === "settings"
+                                                                ? "Settings"
+                                                                : tab === "users"
+                                                                    ? "User"
+                                                                    : tab === "subscribers"
+                                                                        ? "Mail"
+                                                                        : "BookOpen"
                                     ] || LucideIcons.HelpCircle
                                 ) as React.ComponentType<LucideProps>;
 
@@ -1570,7 +1547,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     <TabsTrigger
                                         key={tab}
                                         value={tab}
-                                        onClick={() => setActiveTab(tab as DashboardTab)}
+                                        onClick={() => setActiveTab(tab as SolveChallengeTab)}
                                         className="
                                     flex items-center justify-start md:justify-center gap-2 
                                     rounded-md bg-card 
@@ -1587,98 +1564,27 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         </TabsList>
                         <div className="flex-grow overflow-y-auto pb-6 w-full" >
                             <TabsContent value="overview" className="mt-0 space-y-6">
-                                {isipOverview ? (<div>
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>Activity Overview</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                                <RechartsBarChart data={chartData}>
-                                                    <CartesianGrid vertical={false} />
-                                                    <XAxis
-                                                        dataKey="year"
-                                                        tickLine={false}
-                                                        tickMargin={10}
-                                                        axisLine={false}
-                                                    />
-                                                    <Tooltip cursor={false} />
-                                                    <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
-                                                </RechartsBarChart>
-                                            </ChartContainer>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>Submissions</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            {loading ? (
-                                                <p>Loading...</p>
-                                            ) : ipData.length === 0 ? (
-                                                <p>You have no active submissions.</p>
-                                            ) : (
-                                                <div className="space-y-4">
-                                                    {ipData.map((submission, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className="p-4 border rounded-lg flex justify-between items-center transition-all cursor-pointer hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-ring"
-                                                            tabIndex={0}
-                                                        >
-                                                            <div className="flex items-center space-x-4">
-                                                                <div className="flex flex-col items-center text-sm text-muted-foreground w-24 flex-shrink-0">
-                                                                    <span className="font-medium text-xs capitalize tracking-wider">
-                                                                        {submission.date}
-                                                                    </span>
-                                                                    <span
-                                                                        className={`mt-1 px-2 py-0.5 rounded-full text-xs font-semibold 
-                            ${submission.approvalStatus === 'approved' ? 'bg-green-100 text-green-700' :
-                                                                                submission.approvalStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                                                    'bg-red-100 text-red-700'
-                                                                            }`
-                                                                        }
-                                                                    >
-                                                                        {submission.approvalStatus}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex-grow">
-                                                                    <p className="font-semibold">{submission.title}</p>
-                                                                    <p className="text-sm text-muted-foreground mt-1">Summary:</p>
-                                                                    <div className="line-clamp-2 text-sm">
-                                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                                            {submission.summary}
-                                                                        </ReactMarkdown>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                </div>) :
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>Activity Overview</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                                <RechartsBarChart data={staticChartData}>
-                                                    <CartesianGrid vertical={false} />
-                                                    <XAxis
-                                                        dataKey="year"
-                                                        tickLine={false}
-                                                        tickMargin={10}
-                                                        axisLine={false}
-                                                    />
-                                                    <YAxis />
-                                                    <Tooltip cursor={false} />
-                                                    <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
-                                                </RechartsBarChart>
-                                            </ChartContainer>
-                                        </CardContent>
-                                    </Card>}
+                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                    <CardHeader>
+                                        <CardTitle>Activity Overview</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                                            <RechartsBarChart data={staticChartData}>
+                                                <CartesianGrid vertical={false} />
+                                                <XAxis
+                                                    dataKey="year"
+                                                    tickLine={false}
+                                                    tickMargin={10}
+                                                    axisLine={false}
+                                                />
+                                                <YAxis />
+                                                <Tooltip cursor={false} />
+                                                <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
+                                            </RechartsBarChart>
+                                        </ChartContainer>
+                                    </CardContent>
+                                </Card>
                             </TabsContent>
                             <TabsContent value="msmes" className="mt-0">
                                 {hasSubscription || userRole === 'admin' ? (
@@ -1716,112 +1622,118 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     <Button variant="link" onClick={() => setActiveView('mentors')}>Book a session</Button>
                                 </div>
                             </TabsContent>
-                            <TabsContent value="submission" className="mt-0">
-                                {userRole === 'admin' || (
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>My Submissions</CardTitle>
-                                            <CardDescription>Your submissions for corporate challenges.</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            {loading ? (
-                                                <p>Loading...</p>
-                                            ) : mySubmissions.length === 0 ? (
-                                                <p>You have no active submissions.</p>
-                                            ) : (
-                                                <div className="space-y-4">
-                                                    {mySubmissions.map((submission) => (
-                                                        <div
-                                                            key={submission.id}
-                                                            onClick={(e) => { e.stopPropagation(); setCommentingSubmissionId(submission.id) }}
-                                                            className="p-4 border rounded-lg flex justify-between items-center transition-all cursor-pointer hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-ring"
-                                                            tabIndex={0}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === "Enter" || e.key === " ") {
-                                                                    e.preventDefault()
-                                                                    setCommentingSubmissionId(submission.id);
-                                                                }
-                                                            }}
-                                                        >
-                                                            <div>
-                                                                <p className="font-semibold">{submission.ipTitle}</p>
-                                                                <p className="text-sm text-muted-foreground">Status: {submission.approvalStatus}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </TabsContent>
-                            <TabsContent value="engagement" className="mt-0 space-y-4">
-                                {submissions.length > 0 ? submissions.map((sub, id) => (
-                                    <Card
-                                        key={id}
-                                        onClick={() => setSelectedSubmission(sub)}
-                                        className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
-                                    >
-                                        <CardHeader>
-                                            <div className="flex justify-between items-start">
-                                                <div className="space-y-1">
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <CardTitle className="text-lg font-semibold">
-                                                            {sub.challenge?.title || "Untitled Challenge"}
-                                                        </CardTitle>
+                            <TabsContent value="submission" className="mt-0 space-y-4">
+                                {submissions.length > 0 ? (
+                                    submissions.map((sub, id) => {
 
-                                                        {sub.challenge && (
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
+                                        return (
+                                            <Card
+                                                key={id}
+                                                onClick={() => setSelectedSubmission(sub)}
+                                                className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors relative"
+                                            >
+                                                {/* ⋯ Menu */}
+                                                <div className="absolute top-3 right-3">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                                <MoreVertical className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem
+                                                                className="text-red-500 cursor-pointer"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setShowConfirm((prev) => !prev);
+                                                                }}
                                                             >
-                                                                {sub.challenge?.sector && sub.challenge?.technologyArea
-                                                                    ? `${sub.challenge.sector} / ${sub.challenge.technologyArea}`
-                                                                    : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"}
-                                                            </Badge>
-                                                        )}
+                                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+
+                                                <CardHeader>
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="space-y-1">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <CardTitle className="text-lg font-semibold">
+                                                                    {sub.challenge?.title || "Untitled Challenge"}
+                                                                </CardTitle>
+
+                                                                {sub.challenge && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
+                                                                    >
+                                                                        {sub.challenge?.sector && sub.challenge?.technologyArea
+                                                                            ? `${sub.challenge.sector} / ${sub.challenge.technologyArea}`
+                                                                            : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+
+                                                            <CardDescription className="text-sm text-muted-foreground">
+                                                                Submitted For{" "}
+                                                                {sub.challenge?.postedBy?.companyName && (
+                                                                    <span className="font-medium">{sub.challenge.postedBy.companyName}</span>
+                                                                )}
+                                                            </CardDescription>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                            {statusIcons[sub.status as keyof typeof statusIcons]}
+                                                            <span className="capitalize">{sub.status}</span>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+
+                                                <CardFooter className="flex gap-2 items-center flex-wrap">
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Submitted on {sub.createdAt}
+                                                    </p>
+
+                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                        <span>Comments</span>
+                                                        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
+                                                            {sub.comments?.length || 0}
+                                                        </span>
                                                     </div>
 
-                                                    <CardDescription className="text-sm text-muted-foreground">
-                                                        Submitted by <span className="font-medium">{sub.contactName}</span>{" "}
-                                                        {sub.challenge?.postedBy?.companyName && (
-                                                            <>
-                                                                to <span className="font-medium">{sub.challenge.postedBy.companyName}</span>
-                                                            </>
-                                                        )}
-                                                    </CardDescription>
-                                                </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span>Points</span>
+                                                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                            {sub.points ?? 0}
+                                                        </span>
+                                                    </div>
+                                                </CardFooter>
 
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    {statusIcons[sub.status as keyof typeof statusIcons]}
-                                                    <span className="capitalize">{sub.status}</span>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-
-                                        <CardFooter className="flex gap-2 items-center">
-                                            <p className="text-sm text-muted-foreground">
-                                                Submitted on {sub.createdAt}
-                                            </p>
-
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <span>Comments</span>
-                                                <div className="flex items-center gap-1">
-
-                                                    <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
-                                                        {sub.comments?.length || 0}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span>Points</span>
-                                                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                    {sub.points ?? 0}
-                                                </span>
-                                            </div>
-                                        </CardFooter>
-                                    </Card>
-                                )) : (
+                                                {/* Delete confirmation input */}
+                                                {showConfirm && (
+                                                    <div
+                                                        className="p-4 border-t border-border bg-muted/30 flex flex-col sm:flex-row sm:items-center gap-2"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <Input
+                                                            placeholder="Type 'delete' to confirm"
+                                                            value={confirmText}
+                                                            onChange={(e) => setConfirmText(e.target.value)}
+                                                            className="text-sm"
+                                                        />
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(sub.solutionId)}
+                                                        >
+                                                            Confirm Delete
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </Card>
+                                        );
+                                    })
+                                ) : (
                                     <Card className="text-center text-muted-foreground py-16">
                                         <CardContent>You have not received any submissions yet.</CardContent>
                                     </Card>
@@ -2003,8 +1915,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     </Card>
                                 )}
                             </TabsContent>
-
-
 
                             {userRole === "admin" && (
                                 <>

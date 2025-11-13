@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Info } from 'lucide-react';
 import { MarkdownViewer } from '../ui/markdownViewer';
+import { Button } from '../ui/button';
+import { AnnouncementDialog } from './AnnouncementDialog';
 
 interface CollaborationViewProps {
     collaborationId: number;
@@ -16,8 +18,8 @@ interface GetUsersCollaborationSchema {
     title: string;
     description: string;
     reward_amount: number;
-    reward_min:number;
-    reward_max:number;
+    reward_min: number;
+    reward_max: number;
     challenge_type: 'corporate' | 'msme' | 'government';
     start_date: Date | undefined;
     end_date: Date | undefined;
@@ -33,6 +35,7 @@ const CollaborationView = ({ collaborationId, onClose }: CollaborationViewProps)
     const [collabDetails, setCollabDetails] = useState<GetUsersCollaborationSchema | null>(null);
     const [isFetching, setIsFetching] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(true);
+    const [announcementOpen, setAnnouncementOpen] = useState(false);
 
     const handleCloseDialog = useCallback(() => {
         setIsDialogOpen(false);
@@ -51,7 +54,7 @@ const CollaborationView = ({ collaborationId, onClose }: CollaborationViewProps)
                 if (res.ok) {
                     const data = await res.json();
                     setCollabDetails(data.collaborations[0]);
-                    
+
                 } else {
                     toast({
                         title: 'Failed to load Collaboration',
@@ -84,8 +87,8 @@ const CollaborationView = ({ collaborationId, onClose }: CollaborationViewProps)
         >
             <DialogContent
                 className={`
-          flex flex-col border bg-background transition-all duration-500 p-0 
-          w-[90vw] max-w-[90vw] shadow-lg text-base fixed h-[90vh] 
+          relative flex flex-col border bg-background transition-all duration-500 p-0 
+          w-[90vw] max-w-[90vw] shadow-lg text-base h-[90vh]  fixed
           rounded-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
         `}
             >
@@ -129,11 +132,29 @@ const CollaborationView = ({ collaborationId, onClose }: CollaborationViewProps)
                                 <p className="mt-4 text-xs text-muted-foreground">
                                     Created on: {new Date(collabDetails.created_at).toLocaleString()}
                                 </p>
+
                             </CardContent>
                         </Card>
                     )}
+                    {/* Floating Button */}
+                    <Button
+                        onClick={() => setAnnouncementOpen(true)}
+                        className="
+    bg-primary text-white px-4 py-2 rounded-md 
+    absolute bottom-4 right-4 shadow-lg z-50
+  "
+                    >
+                        + Create Announcement
+                    </Button>
+
                 </div>
             </DialogContent>
+            <AnnouncementDialog
+                open={announcementOpen}
+                onOpenChange={setAnnouncementOpen}
+                collaborationId={collaborationId}
+            />
+
         </Dialog>
     );
 };

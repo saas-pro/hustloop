@@ -10,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2, Upload, CalendarIcon, Target, Handshake } from "lucide-react";
-import type { MsmeDashboardTab, Submission, Comment } from "@/app/types";
+import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2, Upload, CalendarIcon, Target, Handshake, Lock } from "lucide-react";
+import type { MsmeDashboardTab, Submission, Comment, View } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -45,6 +45,7 @@ import {
     CommandList,
 } from "@/components/ui/command";
 import { ChevronsUpDown, Check } from "lucide-react";
+import { Badge } from "../ui/badge";
 
 
 type User = {
@@ -73,48 +74,48 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const collaborationSchema = z.object({
-        title: z.string().min(3, { message: "Title is required." }),
-        description: z
-            .string()
-            .min(10, { message: "Description is required." })
-            .max(5000, {
-                message: "Description must not exceed 5000 characters.",
-            }),
-
-        rewardType: z.enum(["fixed", "range"], {
-            errorMap: () => ({ message: "Reward type is required." }),
+    title: z.string().min(3, { message: "Title is required." }),
+    description: z
+        .string()
+        .min(10, { message: "Description is required." })
+        .max(5000, {
+            message: "Description must not exceed 5000 characters.",
         }),
 
-        rewardAmount: z.number().optional(),
-        rewardMin: z.number().optional(),
-        rewardMax: z.number().optional(),
+    rewardType: z.enum(["fixed", "range"], {
+        errorMap: () => ({ message: "Reward type is required." }),
+    }),
 
-        contact: z.object({
-            name: z.string().min(2, { message: "Contact name is required." }),
-            role: z.string().min(2, { message: "Contact role is required." }),
-        }),
+    rewardAmount: z.number().optional(),
+    rewardMin: z.number().optional(),
+    rewardMax: z.number().optional(),
 
-        challengeType: z.enum(["corporate", "msme", "government"], {
-            errorMap: () => ({ message: "Please select a challenge type." }),
-        }),
+    contact: z.object({
+        name: z.string().min(2, { message: "Contact name is required." }),
+        role: z.string().min(2, { message: "Contact role is required." }),
+    }),
 
-        technologyArea: z
-            .object({
-                sector: z.string().min(1, "Sector is required"),
-                techArea: z.string().min(1, "Technology area is required"),
-            })
-            .refine(
-                (val) => val.sector && val.techArea,
-                { message: "Please select a technology area", path: ["techArea"] }
-            ),
+    challengeType: z.enum(["corporate", "msme", "government"], {
+        errorMap: () => ({ message: "Please select a challenge type." }),
+    }),
 
-        startDate: z.date({
-            required_error: "A start date is required.",
-        }),
-        endDate: z.date({
-            required_error: "An end date is required.",
-        }),
-    })
+    technologyArea: z
+        .object({
+            sector: z.string().min(1, "Sector is required"),
+            techArea: z.string().min(1, "Technology area is required"),
+        })
+        .refine(
+            (val) => val.sector && val.techArea,
+            { message: "Please select a technology area", path: ["techArea"] }
+        ),
+
+    startDate: z.date({
+        required_error: "A start date is required.",
+    }),
+    endDate: z.date({
+        required_error: "An end date is required.",
+    }),
+})
     .refine((data) => data.endDate > data.startDate, {
         message: "End date must be after the start date.",
         path: ["endDate"],
@@ -201,11 +202,11 @@ interface getUsersCollaborationSchema {
 
 
 const statusIcons: { [key: string]: React.ReactNode } = {
-    'New': <Clock className="h-4 w-4 text-blue-500" />,
-    'Under Review': <Clock className="h-4 w-4 text-yellow-500" />,
-    'Valid': <CheckCircle className="h-4 w-4 text-green-500" />,
-    'Duplicate': <Copy className="h-4 w-4 text-orange-500" />,
-    'Rejected': <XCircle className="h-4 w-4 text-red-500" />,
+    'new': <Clock className="h-4 w-4 text-blue-500" />,
+    'under review': <Clock className="h-4 w-4 text-yellow-500" />,
+    'valid': <CheckCircle className="h-4 w-4 text-green-500" />,
+    'duplicate': <Copy className="h-4 w-4 text-orange-500" />,
+    'rejected': <XCircle className="h-4 w-4 text-red-500" />,
 };
 
 const emptyProfile: ProfileFormValues = {
@@ -220,20 +221,48 @@ const emptyProfile: ProfileFormValues = {
 interface MsmeDashboardViewProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+    isLoggedIn: boolean;
+    setActiveView: (view: View) => void;
     user: User;
     authProvider: AuthProvider;
 }
 
-export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProvider }: MsmeDashboardViewProps) {
+const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: View) => void, contentType: string }) => (
+    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+        <Lock className="h-16 w-16 text-accent mb-6" />
+        <h3 className="text-2xl font-bold mb-2">Content Locked</h3>
+        <p className="max-w-md mx-auto text-muted-foreground mb-6">
+            Please log in or sign up to view available Problem Statements.
+        </p>
+        <div className="flex gap-4">
+            <Button onClick={() => setActiveView('login')}>Login</Button>
+            <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                Sign Up
+            </Button>
+        </div>
+    </div>
+);
+
+export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, onOpenChange, user, authProvider }: MsmeDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<MsmeDashboardTab>("overview");
     const [confirmText, setConfirmText] = useState("");
-    const [submissions, setSubmissions] = useState(initialSubmissionsData);
+    const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [selectedCollabId, setSelectedCollabId] = useState<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [isMsmerole, setisMsmeRole] = useState(false)
+    const isMsmeRole = localStorage.getItem("userRole");
+
+
+
+    useEffect(() => {
+        if (isMsmeRole === "msme") {
+            setisMsmeRole(true)
+        }
+    }, [isMsmeRole])
 
     const profileForm = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema),
@@ -244,9 +273,7 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
         resolver: zodResolver(collaborationSchema),
         defaultValues: {
             title: "",
-            description: `## Introduction  
-[Give a brief overview of the context and purpose of this challenge. What inspired it? Why does it matter?]
-
+            description: `[Give a brief overview of the context and purpose of this challenge. What inspired it? Why does it matter?]
 ## Objective  
 [What do you aim to achieve with this challenge? Clearly state the expected outcome or impact.]
 
@@ -382,19 +409,12 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
         }
     }
 
-    // Submission handling
-    const handleStatusChange = (id: number, status: string) => {
-        setSubmissions(subs => subs.map(s => s.id === id ? { ...s, status: status as Submission['status'] } : s));
-    };
 
-    const handleAddComment = (submissionId: number, commentText: string) => {
-        const newComment: Comment = { id: 0, author: 'MSME', text: commentText, timestamp: 'Just now' };
-        const updatedSubmissions = submissions.map(sub =>
-            sub.id === submissionId ? { ...sub, comments: [...sub.comments, newComment] } : sub
-        );
-        setSubmissions(updatedSubmissions);
-        setSelectedSubmission(updatedSubmissions.find(s => s.id === submissionId) || null);
-    };
+    // const handleStatusChange = (id: number, status: string) => {
+    //     setSubmissions(subs => subs.map(s => s.challengeId === id ? { ...s, status: status as Submission['status'] } : s));
+    // };
+
+
 
 
     const [SubmissionsLength, setSubmissionsLength] = useState();
@@ -407,7 +427,6 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
     };
 
     const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
-
 
     async function onCollaborationSubmit(data: collaborationFormValues) {
         const token = localStorage.getItem('token');
@@ -552,6 +571,32 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
         }
     }, [setGetUserCollaborationData, toast]);
 
+    const getSubmissions = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/solutions`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const result = await response.json();
+            setSubmissions(result.solutions);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });
+        }
+    }, [toast])
+
+    useEffect(() => {
+        getSubmissions()
+    }, [getSubmissions])
+
     useEffect(() => {
         const checkProfile = async () => {
             const token = localStorage.getItem("token");
@@ -683,6 +728,14 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
 
     const [datePickerOpen, setDatePickerOpen] = useState(false);
 
+    useEffect(() => {
+        const pendingTab = localStorage.getItem("msmeTabPending");
+        if (pendingTab) {
+            setActiveTab(pendingTab as MsmeDashboardTab);
+            localStorage.removeItem("msmeTabPending");
+        }
+    }, []);
+
 
     return (
         <>
@@ -712,496 +765,572 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
 
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
                 <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
-                    <DialogHeader className="p-6">
-                        <DialogTitle className="text-3xl font-bold font-headline">MSME Dashboard</DialogTitle>
-                        <DialogDescription>Welcome, {user.name}. Manage your challenges, submissions, and profile.</DialogDescription>
-                    </DialogHeader>
-                    <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
-                        <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as MsmeDashboardTab)} className="flex flex-col flex-grow min-h-0">
-                            <TabsList className="grid w-full grid-cols-5">
-                                <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
-                                <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
-                                <TabsTrigger value="engagement"><Handshake className="mr-2 h-4 w-4" /> Engagement</TabsTrigger>
-                                <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
-                                <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
-                            </TabsList>
-                            <ScrollArea className="flex-grow mt-4">
-                                <TabsContent value="overview" className="mt-0 space-y-6">
-                                    <div className="grid gap-6 md:grid-cols-4">
+                    {!isLoggedIn ? (
+                        <>
+                            <DialogHeader className="p-6">
+                                <DialogTitle className="text-3xl font-bold text-center  font-headline">Join as an MSME</DialogTitle>
+                                <DialogDescription className="text-center">
+                                    <span className="text-accent">{"Your business, your potential."}</span><br />
+                                    Browse technology profiles from various organizations seeking collaboration.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="h-[90vh] flex flex-col justify-center items-center">
+                                <LoginPrompt setActiveView={setActiveView} contentType="Join as an MSME" />
+                            </div>
+                        </>
+                    ) : !isMsmeRole ? (<>
+                        <DialogHeader className="p-6 m-auto flex items-center">
+                            <DialogTitle className="text-3xl font-bold font-headline">Join as an MSME</DialogTitle>
+                            <DialogDescription className="text-center">
+                                <span className="text-accent">{"Your business, your potential."}</span><br />
+                                Browse technology profiles from various organizations seeking collaboration.
+
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="h-screen flex flex-col justify-center items-center">
+                            <p>You do not have MSME access.</p>
+                        </div>
+                    </>
+
+                    ) : (<>
+                        <DialogHeader className="p-6">
+                            <DialogTitle className="text-3xl font-bold font-headline">MSME Dashboard</DialogTitle>
+                            <DialogDescription>Welcome, {user.name}. Manage your challenges, submissions, and profile.</DialogDescription>
+                        </DialogHeader>
+                        <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
+                            <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as MsmeDashboardTab)} className="flex flex-col flex-grow min-h-0">
+                                <TabsList className="grid w-full grid-cols-5">
+                                    <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
+                                    <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
+                                    <TabsTrigger value="engagement"><Handshake className="mr-2 h-4 w-4" /> Engagement</TabsTrigger>
+                                    <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
+                                    <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
+                                </TabsList>
+                                <ScrollArea className="flex-grow mt-4">
+                                    <TabsContent value="overview" className="mt-0 space-y-6">
+                                        <div className="grid gap-6 md:grid-cols-4">
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">New Submissions</CardTitle><FileText className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                                                <CardContent><div className="text-2xl font-bold">{overviewStats.new}</div><p className="text-xs text-muted-foreground">Awaiting review</p></CardContent>
+                                            </Card>
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50 cursor-pointer" onClick={() => setActiveTab("engagement")}>
+                                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                    <CardTitle className="text-sm font-medium">Incentive Challenges</CardTitle>
+                                                    <Target className="h-4 w-4 text-muted-foreground" />
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="text-2xl font-bold">
+                                                        {overviewStats.challengeSubmitted === 0 ? "0" : overviewStats.challengeSubmitted}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">Challenges submitted</p>
+                                                </CardContent>
+
+                                            </Card>
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Under Review</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                                                <CardContent><div className="text-2xl font-bold">{overviewStats.review}</div><p className="text-xs text-muted-foreground">Currently being evaluated</p></CardContent>
+                                            </Card>
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Accepted Solutions</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                                                <CardContent><div className="text-2xl font-bold">{overviewStats.valid}</div><p className="text-xs text-muted-foreground">Marked as valid for collaboration</p></CardContent>
+                                            </Card>
+                                        </div>
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">New Submissions</CardTitle><FileText className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold">{overviewStats.new}</div><p className="text-xs text-muted-foreground">Awaiting review</p></CardContent>
-                                        </Card>
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50 cursor-pointer" onClick={() => setActiveTab("engagement")}>
-                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                                <CardTitle className="text-sm font-medium">Incentive Challenges</CardTitle>
-                                                <Target className="h-4 w-4 text-muted-foreground" /> {/* Replaced FileText */}
+                                            <CardHeader>
+                                                <CardTitle>Solutions Overview</CardTitle>
+                                                <CardDescription>Accepted solutions over the last 6 months.</CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="text-2xl font-bold">{overviewStats.challengeSubmitted}</div>
-                                                <p className="text-xs text-muted-foreground">Challenges submitted</p>
+                                                <ChartContainer config={msmeChartConfig} className="h-[250px] w-full">
+                                                    <RechartsBarChart data={msmeChartData}>
+                                                        <CartesianGrid vertical={false} />
+                                                        <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
+                                                        <YAxis />
+                                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                                        <Bar dataKey="solutions" fill="var(--color-solutions)" radius={4} />
+                                                    </RechartsBarChart>
+                                                </ChartContainer>
                                             </CardContent>
                                         </Card>
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Under Review</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold">{overviewStats.review}</div><p className="text-xs text-muted-foreground">Currently being evaluated</p></CardContent>
-                                        </Card>
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Accepted Solutions</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold">{overviewStats.valid}</div><p className="text-xs text-muted-foreground">Marked as valid for collaboration</p></CardContent>
-                                        </Card>
-                                    </div>
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>Solutions Overview</CardTitle>
-                                            <CardDescription>Accepted solutions over the last 6 months.</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <ChartContainer config={msmeChartConfig} className="h-[250px] w-full">
-                                                <RechartsBarChart data={msmeChartData}>
-                                                    <CartesianGrid vertical={false} />
-                                                    <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
-                                                    <YAxis />
-                                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                                    <Bar dataKey="solutions" fill="var(--color-solutions)" radius={4} />
-                                                </RechartsBarChart>
-                                            </ChartContainer>
-                                        </CardContent>
-                                    </Card>
-                                </TabsContent>
-                                <TabsContent value="submissions" className="mt-0 space-y-4">
-                                    {submissions.length > 0 ? submissions.map((sub) => (
-                                        <Card key={sub.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 cursor-pointer transition-colors" onClick={() => setSelectedSubmission(sub)}>
-                                            <CardHeader>
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <CardTitle className="text-lg">{sub.idea}</CardTitle>
-                                                        <CardDescription>Submitted by {sub.founder}</CardDescription>
+                                    </TabsContent>
+                                    <TabsContent value="submissions" className="mt-0 space-y-4">
+                                        {submissions.length > 0 ? submissions.map((sub, id) => (
+                                            <Card
+                                                key={id}
+                                                onClick={() => setSelectedSubmission(sub)}
+                                                className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
+                                            >
+                                                <CardHeader>
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="space-y-1">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <CardTitle className="text-lg font-semibold">
+                                                                    {sub.challenge?.title || "Untitled Challenge"}
+                                                                </CardTitle>
+
+                                                                {sub.challenge && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
+                                                                    >
+                                                                        {sub.challenge?.sector && sub.challenge?.technologyArea
+                                                                            ? `${sub.challenge.sector} / ${sub.challenge.technologyArea}`
+                                                                            : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+
+                                                            <CardDescription className="text-sm text-muted-foreground">
+                                                                Submitted By {" "}
+                                                                {sub.contactName && (
+                                                                    <>
+                                                                        <span className="font-medium">{sub.contactName}</span>
+                                                                    </>
+                                                                )}
+                                                            </CardDescription>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                            {statusIcons[sub.status as keyof typeof statusIcons]}
+                                                            <span className="capitalize">{sub.status}</span>
+                                                        </div>
                                                     </div>
+                                                </CardHeader>
+
+                                                <CardFooter className="flex gap-2 items-center">
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Submitted on {sub.createdAt}
+                                                    </p>
+
                                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                        {statusIcons[sub.status as keyof typeof statusIcons]}
-                                                        <span>{sub.status}</span>
+                                                        <span>Comments</span>
+                                                        <div className="flex items-center gap-1">
+
+                                                            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
+                                                                {sub.comments?.length || 0}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </CardHeader>
-                                            <CardFooter>
-                                                <p className="text-sm text-muted-foreground">Submitted on {sub.submittedDate}</p>
-                                            </CardFooter>
-                                        </Card>
-                                    )) : (
-                                        <Card className="text-center text-muted-foreground py-16">
-                                            <CardContent>You have not received any submissions yet.</CardContent>
-                                        </Card>
-                                    )}
-                                </TabsContent>
-                                <TabsContent value="engagement" className="mt-0 space-y-4">
-                                    {getUsersCollaborationData?.length > 0 ? getUsersCollaborationData.map((sub) => (
-                                        <Card key={sub.id} onClick={() => setSelectedCollabId(sub.id)} className="
+                                                    <div className="flex items-center gap-2">
+                                                        <span>Points</span>
+                                                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                            {sub.points ?? 0}
+                                                        </span>
+                                                    </div>
+                                                </CardFooter>
+                                            </Card>
+                                        )) : (
+                                            <Card className="text-center text-muted-foreground py-16">
+                                                <CardContent>You have not received any submissions yet.</CardContent>
+                                            </Card>
+                                        )}
+                                    </TabsContent>
+                                    <TabsContent value="engagement" className="mt-0 space-y-4">
+                                        {getUsersCollaborationData?.length > 0 ? getUsersCollaborationData.map((sub) => (
+                                            <Card key={sub.id} onClick={() => setSelectedCollabId(sub.id)} className="
     bg-card/50 backdrop-blur-sm border-border/50 cursor-pointer
      hover:bg-accent/20
   ">
-                                            <CardHeader>
-                                                <div className="flex justify-between items-start w-full">
-                                                    <div>
-                                                        <CardTitle className="text-lg">{sub.title}</CardTitle>
-                                                        <CardDescription>Submitted by {sub.contact_name}</CardDescription>
-                                                    </div>
-                                                    <div className="flex space-x-2">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSelectedCollaborationToEdit(sub);
-                                                                setIsEditingCollaboration(true);
-                                                                setCurrentEditingCollaborationId(sub.id);
-                                                                setActiveTab("profile");
-                                                            }}
-                                                        >
-                                                            Edit
-                                                        </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setCollaborationToDeleteId(sub.id);
-                                                                setIsDeleteDialogOpen(true);
-                                                            }}
-                                                            className="flex items-center"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                            <span className="ml-2">Delete</span>
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </CardHeader>
-                                            <CardFooter>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Submitted on {new Date(sub.created_at).toLocaleString()}
-                                                </p>
-                                            </CardFooter>
-                                        </Card>
-
-                                    )) : (
-                                        <Card className="text-center text-muted-foreground py-16">
-                                            <CardContent>You have not submit any Collaboration.</CardContent>
-                                        </Card>
-                                    )}
-                                </TabsContent>
-                                <TabsContent value="profile" className="mt-0">
-                                    <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/25 backdrop-blur-sm border-border/50`}>
-                                        <CardHeader>
-                                            <CardTitle>Create MSME Profile</CardTitle>
-                                            <CardDescription>
-                                                This information will be publicly visible to potential collaborators.
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Form {...profileForm}>
-                                                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
-                                                    <FormField
-                                                        control={profileForm.control}
-                                                        name="name"
-                                                        render={({ field }) => {
-                                                            const value = profileForm.watch("name") || "";
-                                                            return (
-                                                                <FormItem>
-                                                                    <FormLabel>Company Name <span className="text-red-600">*</span></FormLabel>
-                                                                    <FormControl>
-                                                                        <div className="relative">
-                                                                            <Input
-                                                                                {...field}
-                                                                                maxLength={MAX_CHARS}
-                                                                                placeholder="Enter company name"
-                                                                                className="pr-16"
-                                                                            />
-                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                {value.length}/{MAX_CHARS}
-                                                                            </span>
-                                                                        </div>
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            );
-                                                        }}
-                                                    />
-
-                                                    <FormField
-                                                        control={profileForm.control}
-                                                        name="sector"
-                                                        render={({ field }) => {
-                                                            const value = profileForm.watch("sector") || "";
-                                                            return (
-                                                                <FormItem>
-                                                                    <FormLabel>Sector <span className="text-red-600">*</span></FormLabel>
-                                                                    <FormControl>
-                                                                        <div className="relative">
-                                                                            <Input
-                                                                                {...field}
-                                                                                maxLength={MAX_CHARS}
-                                                                                placeholder="e.g., FinTech, Health, AI"
-                                                                                className="pr-16"
-                                                                            />
-                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                {value.length}/{MAX_CHARS}
-                                                                            </span>
-                                                                        </div>
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            );
-                                                        }}
-                                                    />
-
-                                                    <FormField
-                                                        control={profileForm.control}
-                                                        name="short_description"
-                                                        render={({ field }) => {
-                                                            const value = profileForm.watch("short_description") || "";
-                                                            return (
-                                                                <FormItem>
-                                                                    <FormLabel>Short Description <span className="text-red-600">*</span></FormLabel>
-                                                                    <FormControl>
-                                                                        <div className="relative">
-                                                                            <Textarea
-                                                                                {...field}
-                                                                                maxLength={MAX_CHARS}
-                                                                                placeholder="A brief one-sentence pitch for your company."
-                                                                                className="pr-16"
-                                                                            />
-                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                {value.length}/{MAX_CHARS}
-                                                                            </span>
-                                                                        </div>
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            );
-                                                        }}
-                                                    />
-
-                                                    <FormField
-                                                        control={profileForm.control}
-                                                        name="website_url"
-                                                        render={({ field }) => {
-                                                            const value = profileForm.watch("website_url") || "";
-                                                            return (
-                                                                <FormItem>
-                                                                    <FormLabel>Website URL</FormLabel>
-                                                                    <FormControl>
-                                                                        <div className="relative">
-                                                                            <Input
-                                                                                {...field}
-                                                                                maxLength={MAX_CHARS}
-                                                                                placeholder="https://example.com"
-                                                                                className="pr-20"
-                                                                            />
-                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                {value.length}/{MAX_CHARS}
-                                                                            </span>
-                                                                        </div>
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            );
-                                                        }}
-                                                    />
-
-                                                    <FormField
-                                                        control={profileForm.control}
-                                                        name="x_url"
-                                                        render={({ field }) => {
-                                                            const value = profileForm.watch("x_url") || "";
-                                                            return (
-                                                                <FormItem>
-                                                                    <FormLabel>X (Twitter) URL</FormLabel>
-                                                                    <FormControl>
-                                                                        <div className="relative">
-                                                                            <Input
-                                                                                {...field}
-                                                                                maxLength={MAX_CHARS}
-                                                                                placeholder="https://x.com/username"
-                                                                                className="pr-20"
-                                                                            />
-                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                {value.length}/{MAX_CHARS}
-                                                                            </span>
-                                                                        </div>
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            );
-                                                        }}
-                                                    />
-
-                                                    <FormField
-                                                        control={profileForm.control}
-                                                        name="linkedin_url"
-                                                        render={({ field }) => {
-                                                            const value = profileForm.watch("linkedin_url") || "";
-                                                            return (
-                                                                <FormItem>
-                                                                    <FormLabel>LinkedIn URL</FormLabel>
-                                                                    <FormControl>
-                                                                        <div className="relative">
-                                                                            <Input
-                                                                                {...field}
-                                                                                maxLength={MAX_CHARS}
-                                                                                placeholder="https://linkedin.com/in/username"
-                                                                                className="pr-20"
-                                                                            />
-                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                {value.length}/{MAX_CHARS}
-                                                                            </span>
-                                                                        </div>
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            );
-                                                        }}
-                                                    />
-
-                                                    <FormField
-                                                        control={profileForm.control}
-                                                        name="logo"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Company Logo</FormLabel>
-                                                                <FormControl>
-                                                                    <div
-                                                                        onClick={() => fileInputRef.current?.click()}
-                                                                        onDragOver={handleDragOver}
-                                                                        onDrop={handleDrop}
-                                                                        className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
-                                                                    >
-                                                                        {logoPreview ? (
-                                                                            <>
-                                                                                <Image
-                                                                                    src={logoPreview}
-                                                                                    alt="Logo preview"
-                                                                                    layout="fill"
-                                                                                    objectFit="contain"
-                                                                                    className="rounded-lg"
-                                                                                />
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="destructive"
-                                                                                    size="icon"
-                                                                                    className="absolute top-2 right-2 z-10"
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        removeLogo();
-                                                                                    }}
-                                                                                >
-                                                                                    <Trash2 className="h-4 w-4" />
-                                                                                </Button>
-                                                                            </>
-                                                                        ) : (
-                                                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                                                <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                                                                                <p className="mb-2 text-sm text-muted-foreground">
-                                                                                    <span className="font-semibold">Click to upload</span> or drag and drop
-                                                                                </p>
-                                                                                <p className="text-xs text-muted-foreground">
-                                                                                    PNG, JPG, or GIF (MAX. 800x400px)
-                                                                                </p>
-                                                                            </div>
-                                                                        )}
-                                                                        <Input
-                                                                            ref={fileInputRef}
-                                                                            id="dropzone-file"
-                                                                            type="file"
-                                                                            className="hidden"
-                                                                            accept="image/*"
-                                                                            onChange={handleFileChange}
-                                                                        />
-                                                                    </div>
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-
-                                                    <Dialog open={open} onOpenChange={setOpen}>
-                                                        <DialogTrigger asChild>
+                                                <CardHeader>
+                                                    <div className="flex justify-between items-start w-full">
+                                                        <div>
+                                                            <CardTitle className="text-lg">{sub.title}</CardTitle>
+                                                            <CardDescription>Submitted by {sub.contact_name}</CardDescription>
+                                                        </div>
+                                                        <div className="flex space-x-2">
                                                             <Button
-                                                                type="button"
-                                                                onClick={handleOpenDialog}
-                                                                disabled={isProfileSubmitted}
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedCollaborationToEdit(sub);
+                                                                    setIsEditingCollaboration(true);
+                                                                    setCurrentEditingCollaborationId(sub.id);
+                                                                    setActiveTab("profile");
+                                                                }}
                                                             >
-                                                                {isProfileSubmitted ? "Profile Already Submitted" : "Save Profile"}
+                                                                Edit
                                                             </Button>
-                                                        </DialogTrigger>
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setCollaborationToDeleteId(sub.id);
+                                                                    setIsDeleteDialogOpen(true);
+                                                                }}
+                                                                className="flex items-center"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                                <span className="ml-2">Delete</span>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardFooter>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Submitted on {new Date(sub.created_at).toLocaleString()}
+                                                    </p>
+                                                </CardFooter>
+                                            </Card>
 
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>Confirm Submission</DialogTitle>
-                                                                <DialogDescription>
-                                                                    Are you sure you want to submit your profile? You can only submit once.
-                                                                    <br />
-                                                                    Please type <strong>{"confirm"}</strong> below to proceed.
-                                                                </DialogDescription>
-                                                            </DialogHeader>
+                                        )) : (
+                                            <Card className="text-center text-muted-foreground py-16">
+                                                <CardContent>You have not submit any Collaboration.</CardContent>
+                                            </Card>
+                                        )}
+                                    </TabsContent>
+                                    <TabsContent value="profile" className="mt-0">
+                                        <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/25 backdrop-blur-sm border-border/50`}>
+                                            <CardHeader>
+                                                <CardTitle>Create MSME Profile</CardTitle>
+                                                <CardDescription>
+                                                    This information will be publicly visible to potential collaborators.
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <Form {...profileForm}>
+                                                    <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                                                        <FormField
+                                                            control={profileForm.control}
+                                                            name="name"
+                                                            render={({ field }) => {
+                                                                const value = profileForm.watch("name") || "";
+                                                                return (
+                                                                    <FormItem>
+                                                                        <FormLabel>Company Name <span className="text-red-600">*</span></FormLabel>
+                                                                        <FormControl>
+                                                                            <div className="relative">
+                                                                                <Input
+                                                                                    {...field}
+                                                                                    maxLength={MAX_CHARS}
+                                                                                    placeholder="Enter company name"
+                                                                                    className="pr-16"
+                                                                                />
+                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                    {value.length}/{MAX_CHARS}
+                                                                                </span>
+                                                                            </div>
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                );
+                                                            }}
+                                                        />
 
-                                                            <div className="py-4">
-                                                                <Input
-                                                                    placeholder='Type {"confirm"} to proceed'
-                                                                    value={confirmText}
-                                                                    onChange={(e) => setConfirmText(e.target.value)}
-                                                                />
-                                                            </div>
+                                                        <FormField
+                                                            control={profileForm.control}
+                                                            name="sector"
+                                                            render={({ field }) => {
+                                                                const value = profileForm.watch("sector") || "";
+                                                                return (
+                                                                    <FormItem>
+                                                                        <FormLabel>Sector <span className="text-red-600">*</span></FormLabel>
+                                                                        <FormControl>
+                                                                            <div className="relative">
+                                                                                <Input
+                                                                                    {...field}
+                                                                                    maxLength={MAX_CHARS}
+                                                                                    placeholder="e.g., FinTech, Health, AI"
+                                                                                    className="pr-16"
+                                                                                />
+                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                    {value.length}/{MAX_CHARS}
+                                                                                </span>
+                                                                            </div>
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                );
+                                                            }}
+                                                        />
 
-                                                            <DialogFooter className="flex justify-end gap-2">
-                                                                <Button variant="outline" onClick={() => setOpen(false)}>
-                                                                    Cancel
-                                                                </Button>
+                                                        <FormField
+                                                            control={profileForm.control}
+                                                            name="short_description"
+                                                            render={({ field }) => {
+                                                                const value = profileForm.watch("short_description") || "";
+                                                                return (
+                                                                    <FormItem>
+                                                                        <FormLabel>Short Description <span className="text-red-600">*</span></FormLabel>
+                                                                        <FormControl>
+                                                                            <div className="relative">
+                                                                                <Textarea
+                                                                                    {...field}
+                                                                                    maxLength={MAX_CHARS}
+                                                                                    placeholder="A brief one-sentence pitch for your company."
+                                                                                    className="pr-16"
+                                                                                />
+                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                    {value.length}/{MAX_CHARS}
+                                                                                </span>
+                                                                            </div>
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                );
+                                                            }}
+                                                        />
 
-                                                                <Button
-                                                                    onClick={() => {
-                                                                        profileForm.handleSubmit(onProfileSubmit)();
-                                                                        setIsProfileSubmitted(true);
-                                                                        setOpen(false);
-                                                                    }}
-                                                                    disabled={
-                                                                        profileForm.formState.isSubmitting ||
-                                                                        confirmText.toLowerCase() !== "confirm"
-                                                                    }
-                                                                >
-                                                                    {profileForm.formState.isSubmitting && (
-                                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                                    )}
-                                                                    Confirm
-                                                                </Button>
-                                                            </DialogFooter>
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                </form>
-                                            </Form>
-                                        </CardContent>
-                                    </Card>
+                                                        <FormField
+                                                            control={profileForm.control}
+                                                            name="website_url"
+                                                            render={({ field }) => {
+                                                                const value = profileForm.watch("website_url") || "";
+                                                                return (
+                                                                    <FormItem>
+                                                                        <FormLabel>Website URL</FormLabel>
+                                                                        <FormControl>
+                                                                            <div className="relative">
+                                                                                <Input
+                                                                                    {...field}
+                                                                                    maxLength={MAX_CHARS}
+                                                                                    placeholder="https://example.com"
+                                                                                    className="pr-20"
+                                                                                />
+                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                    {value.length}/{MAX_CHARS}
+                                                                                </span>
+                                                                            </div>
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                );
+                                                            }}
+                                                        />
 
+                                                        <FormField
+                                                            control={profileForm.control}
+                                                            name="x_url"
+                                                            render={({ field }) => {
+                                                                const value = profileForm.watch("x_url") || "";
+                                                                return (
+                                                                    <FormItem>
+                                                                        <FormLabel>X (Twitter) URL</FormLabel>
+                                                                        <FormControl>
+                                                                            <div className="relative">
+                                                                                <Input
+                                                                                    {...field}
+                                                                                    maxLength={MAX_CHARS}
+                                                                                    placeholder="https://x.com/username"
+                                                                                    className="pr-20"
+                                                                                />
+                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                    {value.length}/{MAX_CHARS}
+                                                                                </span>
+                                                                            </div>
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                );
+                                                            }}
+                                                        />
 
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50 mt-4">
-                                        <CardHeader>
-                                            <CardTitle>Incentive Challenges</CardTitle>
-                                            <CardDescription>
-                                                {"Tell us about the Challenges you're seeking and the contact person."}
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Form {...collaborationForm}>
-                                                <form onSubmit={collaborationForm.handleSubmit(onCollaborationSubmit)} className="space-y-4">
+                                                        <FormField
+                                                            control={profileForm.control}
+                                                            name="linkedin_url"
+                                                            render={({ field }) => {
+                                                                const value = profileForm.watch("linkedin_url") || "";
+                                                                return (
+                                                                    <FormItem>
+                                                                        <FormLabel>LinkedIn URL</FormLabel>
+                                                                        <FormControl>
+                                                                            <div className="relative">
+                                                                                <Input
+                                                                                    {...field}
+                                                                                    maxLength={MAX_CHARS}
+                                                                                    placeholder="https://linkedin.com/in/username"
+                                                                                    className="pr-20"
+                                                                                />
+                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                    {value.length}/{MAX_CHARS}
+                                                                                </span>
+                                                                            </div>
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                );
+                                                            }}
+                                                        />
 
-                                                    <FormField
-                                                        control={collaborationForm.control}
-                                                        name="title"
-                                                        render={({ field }) => {
-                                                            const titleValue = collaborationForm.watch("title") || "";
-                                                            return (
+                                                        <FormField
+                                                            control={profileForm.control}
+                                                            name="logo"
+                                                            render={({ field }) => (
                                                                 <FormItem>
-                                                                    <FormLabel>Title <span className="text-red-500">*</span></FormLabel>
+                                                                    <FormLabel>Company Logo</FormLabel>
                                                                     <FormControl>
-                                                                        <div className="relative">
-                                                                            <Input placeholder="Give your collaboration a title" {...field} />
-                                                                            <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                {titleValue.length}/{MAX_CHARS}
-                                                                            </span>
+                                                                        <div
+                                                                            onClick={() => fileInputRef.current?.click()}
+                                                                            onDragOver={handleDragOver}
+                                                                            onDrop={handleDrop}
+                                                                            className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
+                                                                        >
+                                                                            {logoPreview ? (
+                                                                                <>
+                                                                                    <Image
+                                                                                        src={logoPreview}
+                                                                                        alt="Logo preview"
+                                                                                        layout="fill"
+                                                                                        objectFit="contain"
+                                                                                        className="rounded-lg"
+                                                                                    />
+                                                                                    <Button
+                                                                                        type="button"
+                                                                                        variant="destructive"
+                                                                                        size="icon"
+                                                                                        className="absolute top-2 right-2 z-10"
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            removeLogo();
+                                                                                        }}
+                                                                                    >
+                                                                                        <Trash2 className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                </>
+                                                                            ) : (
+                                                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                                    <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                                                                                    <p className="mb-2 text-sm text-muted-foreground">
+                                                                                        <span className="font-semibold">Click to upload</span> or drag and drop
+                                                                                    </p>
+                                                                                    <p className="text-xs text-muted-foreground">
+                                                                                        PNG, JPG, or GIF (MAX. 800x400px)
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+                                                                            <Input
+                                                                                ref={fileInputRef}
+                                                                                id="dropzone-file"
+                                                                                type="file"
+                                                                                className="hidden"
+                                                                                accept="image/*"
+                                                                                onChange={handleFileChange}
+                                                                            />
                                                                         </div>
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>
-                                                            )
-                                                        }
-                                                        }
-                                                    />
+                                                            )}
+                                                        />
 
-                                                    <FormField
-                                                        control={collaborationForm.control}
-                                                        name="technologyArea"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Sector & Technology Area <span className="text-red-500">*</span></FormLabel>
-                                                                <FormControl>
-                                                                    <SectorSearchWithDropdown
-                                                                        data={sectors}
-                                                                        defaultValue={field.value}
-                                                                        onSelect={(item: any) => field.onChange({ "sector": item.sector, "techArea": item.label })}
-                                                                        onDataAdded={fetchSectors}
+                                                        <Dialog open={open} onOpenChange={setOpen}>
+                                                            <DialogTrigger asChild>
+                                                                <Button
+                                                                    type="button"
+                                                                    onClick={handleOpenDialog}
+                                                                    disabled={isProfileSubmitted}
+                                                                >
+                                                                    {isProfileSubmitted ? "Profile Already Submitted" : "Save Profile"}
+                                                                </Button>
+                                                            </DialogTrigger>
+
+                                                            <DialogContent>
+                                                                <DialogHeader>
+                                                                    <DialogTitle>Confirm Submission</DialogTitle>
+                                                                    <DialogDescription>
+                                                                        Are you sure you want to submit your profile? You can only submit once.
+                                                                        <br />
+                                                                        <span className="text-red-500">Please type <strong>{"confirm"}</strong> below to proceed.</span>
+                                                                    </DialogDescription>
+                                                                </DialogHeader>
+
+                                                                <div className="py-4">
+                                                                    <Input
+                                                                        placeholder='Type "confirm" to proceed'
+                                                                        value={confirmText}
+                                                                        onChange={(e) => setConfirmText(e.target.value)}
                                                                     />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
+                                                                </div>
 
-                                                    <div>
-                                                        <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
-                                                        <ChallengeMarkdownEditor
-                                                            ttForm={collaborationForm}
-                                                            defaultDescription={`## Introduction
-[Give a brief overview of the context and purpose of this challenge.]
+                                                                <DialogFooter className="flex justify-end gap-2">
+                                                                    <Button variant="outline" onClick={() => setOpen(false)}>
+                                                                        Cancel
+                                                                    </Button>
 
+                                                                    <Button
+                                                                        onClick={() => {
+                                                                            profileForm.handleSubmit(onProfileSubmit)();
+                                                                            setIsProfileSubmitted(true);
+                                                                            setOpen(false);
+                                                                        }}
+                                                                        disabled={
+                                                                            profileForm.formState.isSubmitting ||
+                                                                            confirmText.toLowerCase() !== "confirm"
+                                                                        }
+                                                                    >
+                                                                        {profileForm.formState.isSubmitting && (
+                                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                        )}
+                                                                        Confirm
+                                                                    </Button>
+                                                                </DialogFooter>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    </form>
+                                                </Form>
+                                            </CardContent>
+                                        </Card>
+
+
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50 mt-4">
+                                            <CardHeader>
+                                                <CardTitle>Incentive Challenges</CardTitle>
+                                                <CardDescription>
+                                                    {"Tell us about the Challenges you're seeking and the contact person."}
+                                                </CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <Form {...collaborationForm}>
+                                                    <form onSubmit={collaborationForm.handleSubmit(onCollaborationSubmit)} className="space-y-4">
+
+                                                        <FormField
+                                                            control={collaborationForm.control}
+                                                            name="title"
+                                                            render={({ field }) => {
+                                                                const titleValue = collaborationForm.watch("title") || "";
+                                                                return (
+                                                                    <FormItem>
+                                                                        <FormLabel>Title <span className="text-red-500">*</span></FormLabel>
+                                                                        <FormControl>
+                                                                            <div className="relative">
+                                                                                <Input placeholder="Give your collaboration a title" {...field} />
+                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                    {titleValue.length}/{MAX_CHARS}
+                                                                                </span>
+                                                                            </div>
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )
+                                                            }
+                                                            }
+                                                        />
+
+                                                        <FormField
+                                                            control={collaborationForm.control}
+                                                            name="technologyArea"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Sector & Technology Area <span className="text-red-500">*</span></FormLabel>
+                                                                    <FormControl>
+                                                                        <SectorSearchWithDropdown
+                                                                            data={sectors}
+                                                                            defaultValue={field.value}
+                                                                            onSelect={(item: any) => field.onChange({ "sector": item.sector, "techArea": item.label })}
+                                                                            onDataAdded={fetchSectors}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
+                                                        <div>
+                                                            <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+                                                            <ChallengeMarkdownEditor
+                                                                ttForm={collaborationForm}
+                                                                defaultDescription={`[Give a brief overview of the context and purpose of this challenge.]
 ## Objective
 [What do you aim to achieve with this challenge? Clearly state the expected outcome or impact.]
 
@@ -1220,319 +1349,320 @@ export default function MsmeDashboardView({ isOpen, onOpenChange, user, authProv
 3. Requirement 3
 
 `}
-                                                        />
+                                                            />
 
-                                                    </div>
-                                                    <FormField
-                                                        control={collaborationForm.control}
-                                                        name="rewardType"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>
-                                                                    Reward <span className="text-red-500">*</span>
-                                                                </FormLabel>
-
-                                                                <FormControl>
-                                                                    <div className="flex items-center gap-4">
-
-                                                                        {/* ✅ CUSTOM DROPDOWN USING POPOVER */}
-                                                                        <Popover>
-                                                                            <PopoverTrigger asChild>
-                                                                                <button
-                                                                                    type="button"
-                                                                                    className="w-[130px] h-10 flex items-center justify-between rounded-md border px-3 text-sm"
-                                                                                >
-                                                                                    {rewardOptions.find((opt) => opt.value === field.value)?.label ??
-                                                                                        "Select type"}
-                                                                                    <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                                                                                </button>
-                                                                            </PopoverTrigger>
-
-                                                                            <PopoverContent className="p-0 w-[130px]">
-                                                                                <Command>
-                                                                                    <CommandList>
-                                                                                        <CommandEmpty>No option found.</CommandEmpty>
-                                                                                        <CommandGroup>
-                                                                                            {rewardOptions.map((opt) => (
-                                                                                                <CommandItem
-                                                                                                    key={opt.value}
-                                                                                                    value={opt.value}
-                                                                                                    onSelect={() => field.onChange(opt.value)}
-                                                                                                >
-                                                                                                    <Check
-                                                                                                        className={cn(
-                                                                                                            "mr-2 h-4 w-4",
-                                                                                                            field.value === opt.value ? "opacity-100" : "opacity-0"
-                                                                                                        )}
-                                                                                                    />
-                                                                                                    {opt.label}
-                                                                                                </CommandItem>
-                                                                                            ))}
-                                                                                        </CommandGroup>
-                                                                                    </CommandList>
-                                                                                </Command>
-                                                                            </PopoverContent>
-                                                                        </Popover>
-
-                                                                        {/* ✅ CONDITIONAL INPUTS */}
-                                                                        {collaborationForm.watch("rewardType") === "fixed" ? (
-                                                                            <>
-                                                                                <Input
-                                                                                    type="number"
-                                                                                    placeholder="Enter amount"
-                                                                                    {...collaborationForm.register("rewardAmount", { valueAsNumber: true })}
-                                                                                    min={0}
-                                                                                    className="no-spin w-48"
-                                                                                />
-                                                                            </>
-                                                                        ) : (
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Input
-                                                                                    type="number"
-                                                                                    placeholder="Min"
-                                                                                    {...collaborationForm.register("rewardMin", { valueAsNumber: true })}
-                                                                                    className="no-spin w-24"
-                                                                                />
-                                                                                <span>-</span>
-                                                                                <Input
-                                                                                    type="number"
-                                                                                    placeholder="Max"
-                                                                                    {...collaborationForm.register("rewardMax", { valueAsNumber: true })}
-                                                                                    className="no-spin w-24"
-                                                                                />
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={collaborationForm.control}
-                                                        name="challengeType"
-                                                        render={({ field }) => (
-                                                            <FormItem className="space-y-3">
-                                                                <FormLabel>Challenge Type <span className="text-red-500">*</span></FormLabel>
-                                                                <FormControl>
-                                                                    <RadioGroup
-                                                                        onValueChange={field.onChange}
-                                                                        defaultValue={field.value}
-                                                                        value={field.value}
-                                                                        className="flex gap-5"
-                                                                    >
-                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                                                            <FormControl>
-                                                                                <RadioGroupItem value="corporate" />
-                                                                            </FormControl>
-                                                                            <FormLabel className="font-normal">Corporate Challenges</FormLabel>
-                                                                        </FormItem>
-                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                                                            <FormControl>
-                                                                                <RadioGroupItem value="msme" />
-                                                                            </FormControl>
-                                                                            <FormLabel className="font-normal">MSME Challenges</FormLabel>
-                                                                        </FormItem>
-                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                                                            <FormControl>
-                                                                                <RadioGroupItem value="government" />
-                                                                            </FormControl>
-                                                                            <FormLabel className="font-normal">Government Challenges</FormLabel>
-                                                                        </FormItem>
-                                                                    </RadioGroup>
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={collaborationForm.control}
-                                                        name="startDate"
-
-                                                        render={() => (
-                                                            <div className="w-[60%] py-4">
-                                                                <FormItem className="flex flex-col gap-2">
-                                                                    <FormLabel>Start / End Date <span className="text-red-500">*</span></FormLabel>
-                                                                    <Button
-                                                                        type="button"
-                                                                        variant="outline"
-                                                                        className="pl-3 text-left font-normal"
-                                                                        onClick={() => setDatePickerOpen((prev) => !prev)}
-                                                                    >
-                                                                        {collaborationForm.watch("startDate") && collaborationForm.watch("endDate") ? (
-                                                                            <>
-                                                                                {format(collaborationForm.watch("startDate") as Date, "PPP")} →{" "}
-                                                                                {format(collaborationForm.watch("endDate") as Date, "PPP")}
-                                                                            </>
-                                                                        ) : (
-                                                                            <span>Pick date range</span>
-                                                                        )}
-                                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                                    </Button>
-
-                                                                    {datePickerOpen && (
-                                                                        <div className="mt-2 border rounded-md p-3 shadow-md z-50 w-fit">
-                                                                            <Calendar
-                                                                                mode="range"
-                                                                                numberOfMonths={2}
-                                                                                selected={{
-                                                                                    from: collaborationForm.watch("startDate"),
-                                                                                    to: collaborationForm.watch("endDate"),
-                                                                                }}
-                                                                                onSelect={(range: any) => {
-                                                                                    collaborationForm.setValue("startDate", range?.from);
-                                                                                    collaborationForm.setValue("endDate", range?.to);
-                                                                                    if (range?.from && range?.to) setDatePickerOpen(false);
-                                                                                }}
-
-
-                                                                                disabled={(date) => date < new Date()}
-                                                                            />
-                                                                            <div className="flex justify-end gap-2 mt-3">
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="ghost"
-                                                                                    onClick={() => {
-                                                                                        collaborationForm.setValue("startDate", new Date());
-                                                                                        collaborationForm.setValue("endDate", new Date());
-                                                                                    }}
-                                                                                >
-                                                                                    Reset
-                                                                                </Button>
-
-                                                                                <Button type="button" onClick={() => setDatePickerOpen(false)}>
-                                                                                    Confirm
-                                                                                </Button>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            </div>
-
-                                                        )}
-                                                    />
-
-                                                    <Separator className="my-4" />
-
-                                                    {/* Contact Person */}
-                                                    <h3 className="text-lg font-medium">Contact Person</h3>
-                                                    <div className="grid grid-cols-2 gap-4">
+                                                        </div>
                                                         <FormField
                                                             control={collaborationForm.control}
-                                                            name="contact.name"
+                                                            name="rewardType"
                                                             render={({ field }) => (
                                                                 <FormItem>
-                                                                    <FormLabel>Name <span className="text-red-500">*</span></FormLabel>
+                                                                    <FormLabel>
+                                                                        Reward <span className="text-red-500">*</span>
+                                                                    </FormLabel>
+
                                                                     <FormControl>
-                                                                        <div className="relative">
-                                                                            <Input
-                                                                                {...field}
-                                                                                maxLength={300}
-                                                                                placeholder="Enter the Name"
-                                                                                onChange={(e) => {
-                                                                                    field.onChange(e);
-                                                                                }}
-                                                                            />
-                                                                            <span className="absolute right-2 bottom-2 text-xs text-gray-500">
-                                                                                {field.value?.length || 0}/300
-                                                                            </span>
-                                                                        </div>
+                                                                        <div className="flex items-center gap-4">
 
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                        <FormField
-                                                            control={collaborationForm.control}
-                                                            name="contact.role"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Role <span className="text-red-500">*</span></FormLabel>
-                                                                    <FormControl>
-                                                                        <div className="relative">
-                                                                            <Input
-                                                                                {...field}
-                                                                                maxLength={300}
-                                                                                placeholder="Enter the Role"
-                                                                                onChange={(e) => {
-                                                                                    field.onChange(e);
-                                                                                }}
-                                                                            />
-                                                                            <span className="absolute right-2 bottom-2 text-xs text-gray-500">
-                                                                                {field.value?.length || 0}/300
-                                                                            </span>
-                                                                        </div>
+                                                                            {/* ✅ CUSTOM DROPDOWN USING POPOVER */}
+                                                                            <Popover>
+                                                                                <PopoverTrigger asChild>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="w-[130px] h-10 flex items-center justify-between rounded-md border px-3 text-sm"
+                                                                                    >
+                                                                                        {rewardOptions.find((opt) => opt.value === field.value)?.label ??
+                                                                                            "Select type"}
+                                                                                        <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                                                                                    </button>
+                                                                                </PopoverTrigger>
 
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </div>
+                                                                                <PopoverContent className="p-0 w-[130px]">
+                                                                                    <Command>
+                                                                                        <CommandList>
+                                                                                            <CommandEmpty>No option found.</CommandEmpty>
+                                                                                            <CommandGroup>
+                                                                                                {rewardOptions.map((opt) => (
+                                                                                                    <CommandItem
+                                                                                                        key={opt.value}
+                                                                                                        value={opt.value}
+                                                                                                        onSelect={() => field.onChange(opt.value)}
+                                                                                                    >
+                                                                                                        <Check
+                                                                                                            className={cn(
+                                                                                                                "mr-2 h-4 w-4",
+                                                                                                                field.value === opt.value ? "opacity-100" : "opacity-0"
+                                                                                                            )}
+                                                                                                        />
+                                                                                                        {opt.label}
+                                                                                                    </CommandItem>
+                                                                                                ))}
+                                                                                            </CommandGroup>
+                                                                                        </CommandList>
+                                                                                    </Command>
+                                                                                </PopoverContent>
+                                                                            </Popover>
 
-                                                    <Button type="submit" disabled={collaborationForm.formState.isSubmitting}>
-                                                        {collaborationForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                        {isEditingCollaboration ? "Update Collaboration" : "Save Collaboration Info"}
-                                                    </Button>
-                                                </form>
-                                            </Form>
-                                        </CardContent>
-                                    </Card>
-                                </TabsContent>
-                                <TabsContent value="settings" className="mt-0">
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader><CardTitle>Account Settings</CardTitle><CardDescription>Manage your account settings.</CardDescription></CardHeader>
-                                        <CardContent className="space-y-8">
-                                            <Form {...settingsForm}>
-                                                <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-4">
-                                                    <div>
-                                                        <h3 className="text-lg font-medium mb-4">Profile</h3>
-                                                        <div className="space-y-4">
-                                                            <FormField control={settingsForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                                            <FormField
-                                                                control={settingsForm.control}
-                                                                name="email"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <div className="flex justify-between items-center">
-                                                                            <FormLabel>Email</FormLabel>
-                                                                            {!isEditingEmail && (
-                                                                                <Button type="button" variant="link" className="p-0 h-auto text-sm" onClick={() => setIsEditingEmail(true)}>
-                                                                                    Edit
-                                                                                </Button>
+                                                                            {/* ✅ CONDITIONAL INPUTS */}
+                                                                            {collaborationForm.watch("rewardType") === "fixed" ? (
+                                                                                <>
+                                                                                    <Input
+                                                                                        type="number"
+                                                                                        placeholder="Enter amount"
+                                                                                        {...collaborationForm.register("rewardAmount", { valueAsNumber: true })}
+                                                                                        min={0}
+                                                                                        className="no-spin w-48"
+                                                                                    />
+                                                                                </>
+                                                                            ) : (
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <Input
+                                                                                        type="number"
+                                                                                        placeholder="Min"
+                                                                                        {...collaborationForm.register("rewardMin", { valueAsNumber: true })}
+                                                                                        className="no-spin w-24"
+                                                                                    />
+                                                                                    <span>-</span>
+                                                                                    <Input
+                                                                                        type="number"
+                                                                                        placeholder="Max"
+                                                                                        {...collaborationForm.register("rewardMax", { valueAsNumber: true })}
+                                                                                        className="no-spin w-24"
+                                                                                    />
+                                                                                </div>
                                                                             )}
                                                                         </div>
-                                                                        <FormControl><Input type="email" placeholder="your@email.com" {...field} readOnly={!isEditingEmail} /></FormControl>
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={collaborationForm.control}
+                                                            name="challengeType"
+                                                            render={({ field }) => (
+                                                                <FormItem className="space-y-3">
+                                                                    <FormLabel>Challenge Type <span className="text-red-500">*</span></FormLabel>
+                                                                    <FormControl>
+                                                                        <RadioGroup
+                                                                            onValueChange={field.onChange}
+                                                                            defaultValue={field.value}
+                                                                            value={field.value}
+                                                                            className="flex gap-5"
+                                                                        >
+                                                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                                <FormControl>
+                                                                                    <RadioGroupItem value="corporate" />
+                                                                                </FormControl>
+                                                                                <FormLabel className="font-normal">Corporate Challenges</FormLabel>
+                                                                            </FormItem>
+                                                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                                <FormControl>
+                                                                                    <RadioGroupItem value="msme" />
+                                                                                </FormControl>
+                                                                                <FormLabel className="font-normal">MSME Challenges</FormLabel>
+                                                                            </FormItem>
+                                                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                                <FormControl>
+                                                                                    <RadioGroupItem value="government" />
+                                                                                </FormControl>
+                                                                                <FormLabel className="font-normal">Government Challenges</FormLabel>
+                                                                            </FormItem>
+                                                                        </RadioGroup>
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={collaborationForm.control}
+                                                            name="startDate"
+
+                                                            render={() => (
+                                                                <div className="w-[60%] py-4">
+                                                                    <FormItem className="flex flex-col gap-2">
+                                                                        <FormLabel>Start / End Date <span className="text-red-500">*</span></FormLabel>
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            className="pl-3 text-left font-normal"
+                                                                            onClick={() => setDatePickerOpen((prev) => !prev)}
+                                                                        >
+                                                                            {collaborationForm.watch("startDate") && collaborationForm.watch("endDate") ? (
+                                                                                <>
+                                                                                    {format(collaborationForm.watch("startDate") as Date, "PPP")} →{" "}
+                                                                                    {format(collaborationForm.watch("endDate") as Date, "PPP")}
+                                                                                </>
+                                                                            ) : (
+                                                                                <span>Pick date range</span>
+                                                                            )}
+                                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                                        </Button>
+
+                                                                        {datePickerOpen && (
+                                                                            <div className="mt-2 border rounded-md p-3 shadow-md z-50 w-fit">
+                                                                                <Calendar
+                                                                                    mode="range"
+                                                                                    numberOfMonths={2}
+                                                                                    selected={{
+                                                                                        from: collaborationForm.watch("startDate"),
+                                                                                        to: collaborationForm.watch("endDate"),
+                                                                                    }}
+                                                                                    onSelect={(range: any) => {
+                                                                                        collaborationForm.setValue("startDate", range?.from);
+                                                                                        collaborationForm.setValue("endDate", range?.to);
+                                                                                        if (range?.from && range?.to) setDatePickerOpen(false);
+                                                                                    }}
+
+
+                                                                                    disabled={(date) => date < new Date()}
+                                                                                />
+                                                                                <div className="flex justify-end gap-2 mt-3">
+                                                                                    <Button
+                                                                                        type="button"
+                                                                                        variant="ghost"
+                                                                                        onClick={() => {
+                                                                                            collaborationForm.setValue("startDate", new Date());
+                                                                                            collaborationForm.setValue("endDate", new Date());
+                                                                                        }}
+                                                                                    >
+                                                                                        Reset
+                                                                                    </Button>
+
+                                                                                    <Button type="button" onClick={() => setDatePickerOpen(false)}>
+                                                                                        Confirm
+                                                                                    </Button>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                </div>
+
+                                                            )}
+                                                        />
+
+                                                        <Separator className="my-4" />
+
+                                                        {/* Contact Person */}
+                                                        <h3 className="text-lg font-medium">Contact Person</h3>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <FormField
+                                                                control={collaborationForm.control}
+                                                                name="contact.name"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>Name <span className="text-red-500">*</span></FormLabel>
+                                                                        <FormControl>
+                                                                            <div className="relative">
+                                                                                <Input
+                                                                                    {...field}
+                                                                                    maxLength={300}
+                                                                                    placeholder="Enter the Name"
+                                                                                    onChange={(e) => {
+                                                                                        field.onChange(e);
+                                                                                    }}
+                                                                                />
+                                                                                <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                                                                                    {field.value?.length || 0}/300
+                                                                                </span>
+                                                                            </div>
+
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            <FormField
+                                                                control={collaborationForm.control}
+                                                                name="contact.role"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>Role <span className="text-red-500">*</span></FormLabel>
+                                                                        <FormControl>
+                                                                            <div className="relative">
+                                                                                <Input
+                                                                                    {...field}
+                                                                                    maxLength={300}
+                                                                                    placeholder="Enter the Role"
+                                                                                    onChange={(e) => {
+                                                                                        field.onChange(e);
+                                                                                    }}
+                                                                                />
+                                                                                <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                                                                                    {field.value?.length || 0}/300
+                                                                                </span>
+                                                                            </div>
+
+                                                                        </FormControl>
                                                                         <FormMessage />
                                                                     </FormItem>
                                                                 )}
                                                             />
                                                         </div>
-                                                    </div>
 
-                                                    <Button type="submit">Save Changes</Button>
-                                                </form>
-                                            </Form>
-                                            {authProvider === 'local' && (
-                                                <>
-                                                    <Separator />
-                                                    <PasswordChangeForm />
-                                                </>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                </TabsContent>
-                            </ScrollArea>
-                        </Tabs>
-                    </div>
+                                                        <Button type="submit" disabled={collaborationForm.formState.isSubmitting}>
+                                                            {collaborationForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                            {isEditingCollaboration ? "Update Collaboration" : "Save Collaboration Info"}
+                                                        </Button>
+                                                    </form>
+                                                </Form>
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
+                                    <TabsContent value="settings" className="mt-0">
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <CardHeader><CardTitle>Account Settings</CardTitle><CardDescription>Manage your account settings.</CardDescription></CardHeader>
+                                            <CardContent className="space-y-8">
+                                                <Form {...settingsForm}>
+                                                    <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-4">
+                                                        <div>
+                                                            <h3 className="text-lg font-medium mb-4">Profile</h3>
+                                                            <div className="space-y-4">
+                                                                <FormField control={settingsForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                                                <FormField
+                                                                    control={settingsForm.control}
+                                                                    name="email"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <div className="flex justify-between items-center">
+                                                                                <FormLabel>Email</FormLabel>
+                                                                                {!isEditingEmail && (
+                                                                                    <Button type="button" variant="link" className="p-0 h-auto text-sm" onClick={() => setIsEditingEmail(true)}>
+                                                                                        Edit
+                                                                                    </Button>
+                                                                                )}
+                                                                            </div>
+                                                                            <FormControl><Input type="email" placeholder="your@email.com" {...field} readOnly={!isEditingEmail} /></FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <Button type="submit">Save Changes</Button>
+                                                    </form>
+                                                </Form>
+                                                {authProvider === 'local' && (
+                                                    <>
+                                                        <Separator />
+                                                        <PasswordChangeForm />
+                                                    </>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
+                                </ScrollArea>
+                            </Tabs>
+                        </div>
+                    </>)
+                    }
                 </DialogContent>
             </Dialog>
             <SubmissionDetailsModal
                 submission={selectedSubmission}
                 onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
-                onAddComment={handleAddComment}
             />
             {selectedCollabId !== null && (
                 <CollaborationView
