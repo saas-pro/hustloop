@@ -66,7 +66,6 @@ export default function QuillEditor({
     }
   }, [value])
 
-  console.log(value);
 
   return (
     <div className="flex flex-col w-full rounded-md bg-background shadow-sm">

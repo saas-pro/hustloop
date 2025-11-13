@@ -275,8 +275,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [totalRegistrations, setTotalRegistrations] = useState(0);
     const [submissions, setSubmissions] = useState<Submission[]>([]);
 
-    console.log(submissions)
-
     const fetchUsers = useCallback(async (page: number, perPage: number) => {
         setIsLoadingUsers(true);
         const token = localStorage.getItem('token');

@@ -342,7 +342,6 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
             });
 
             const result = await response.json();
-            console.log(result)
             setSubmissions(result.solutions);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });

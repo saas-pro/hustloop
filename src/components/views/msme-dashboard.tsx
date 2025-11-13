@@ -522,7 +522,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
     useEffect(() => {
         if (selectedCollaborationToEdit) {
-            console.log(selectedCollaborationToEdit)
             collaborationForm.reset({
                 title: selectedCollaborationToEdit.title,
                 description: selectedCollaborationToEdit.description,
