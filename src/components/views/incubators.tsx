@@ -208,7 +208,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
             </DialogDescription>
           </DialogHeader>
           <div className="flex-grow overflow-y-auto px-6">
-            { !allowAccess  ? (
+            { !allowAccess && !isLoggedIn ? (
               <LoginPrompt setActiveView={setActiveView} contentType="incubators" />
             ) : isLoading ? (
               <LoadingSkeleton />

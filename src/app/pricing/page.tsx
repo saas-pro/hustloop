@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     robots: 'index, follow',
     openGraph: {
         siteName: 'Hustloop',
-        title: 'Pricing — Hustloop',
+        title: 'Pricing — Hustloop' ,
         description: 'Explore Hustloop plans: Free, Standard, Premium and Enterprise.',
         type: 'website',
         url: 'https://hustloop.com/pricing',

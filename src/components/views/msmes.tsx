@@ -286,14 +286,13 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
 
   const renderContent = () => {
 
-    if (!allowAccess) {
+    if (!allowAccess && !isLoggedIn) {
       return (
         <div className="flex-grow flex items-center justify-center px-6 pb-6">
           <LoginPrompt setActiveView={setActiveView} contentType="challenges and collaborations" />
         </div>
       );
     }
-
 
     if (isLoading) {
       return (
