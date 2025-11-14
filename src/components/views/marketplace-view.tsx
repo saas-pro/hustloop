@@ -53,7 +53,10 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView }:
                 <p className="text-muted-foreground mb-4">
                   Apply your skills to solve real-world problems posted by companies and MSMEs. Get rewarded and gain valuable experience.
                 </p>
-                <Button onClick={() => handleNavigation('msmes')}>
+                <Button onClick={() => {
+                  localStorage.setItem("fromMarketplace", "true");
+                  handleNavigation('msmes');
+                }}>
                   Browse Challenges <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
@@ -89,7 +92,12 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView }:
                 <p className="text-muted-foreground mb-4">
                   Find the perfect incubator to nurture your idea. Get access to mentorship, funding, and resources to grow your startup.
                 </p>
-                <Button onClick={() => handleNavigation('incubators')}>
+                <Button
+                  onClick={() => {
+                    localStorage.setItem("fromMarketplace", "true");
+                    handleNavigation("incubators");
+                  }}
+                >
                   Find an Incubator <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>

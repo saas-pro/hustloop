@@ -105,6 +105,23 @@ interface MsmesViewProps {
 }
 
 
+const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: View) => void, contentType: string }) => (
+  <div className="flex flex-col items-center justify-center h-full text-center p-8">
+    <Lock className="h-16 w-16 text-accent mb-6" />
+    <h3 className="text-2xl font-bold mb-2">Content Locked</h3>
+    <p className="max-w-md mx-auto text-muted-foreground mb-6">
+      Please log in or sign up to view available {contentType}.
+    </p>
+    <div className="flex gap-4">
+      <Button onClick={() => setActiveView('login')}>Login</Button>
+      <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+        Sign Up
+      </Button>
+    </div>
+  </div>
+);
+
+
 const LoadingSkeleton = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
     {[...Array(6)].map((_, index) => (
@@ -143,6 +160,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
   const [Governmentchallenges, setGovernmentchallenges] = useState<Governmentchallenges[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (isOpen) {
@@ -256,8 +274,26 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
     if (type === 'GovernmentChallenges') setSelectedGovernmentchallenges(item);
   };
 
+  const [allowAccess, setAllowAccess] = useState(false);
+
+  useEffect(() => {
+    const fromMarketplace = localStorage.getItem("fromMarketplace");
+    if (fromMarketplace === "true") {
+      setAllowAccess(true);
+      localStorage.removeItem("fromMarketplace");
+    }
+  }, []);
+
   const renderContent = () => {
-  
+
+    if (!allowAccess) {
+      return (
+        <div className="flex-grow flex items-center justify-center px-6 pb-6">
+          <LoginPrompt setActiveView={setActiveView} contentType="challenges and collaborations" />
+        </div>
+      );
+    }
+
 
     if (isLoading) {
       return (
@@ -316,7 +352,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                 key={index}
                 challenge={challenge}
                 onViewDetails={handleViewDetails}
-                
+
               />
             )}
           </div>
