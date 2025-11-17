@@ -12,7 +12,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Separator } from '@radix-ui/react-separator';
 import Image from 'next/image';
-
+import Link from "next/link";
 
 interface MobileNavProps {
     activeView: View;
@@ -21,7 +21,7 @@ interface MobileNavProps {
     onLogout: () => void;
     isLoading: boolean;
     isStaticPage?: boolean;
-    heroVisible?:boolean
+    heroVisible?: boolean
 
 }
 
@@ -32,12 +32,13 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
     { id: "education", label: "Education" },
     { id: "pricing", label: "Pricing" },
     { id: "blog", label: "Blog" },
+    { id: "marketplace", label: "Marketplace" },
 ];
 
 
 
 
-export function ThemeToggleDropdown({heroVisible}:MobileNavProps) {
+export function ThemeToggleDropdown({ heroVisible }: MobileNavProps) {
     const { theme, setTheme } = useTheme();
     const themeOptions = [
         { value: 'light', label: 'Light', icon: Sun },
@@ -69,7 +70,7 @@ export function ThemeToggleDropdown({heroVisible}:MobileNavProps) {
         </DropdownMenu>)
 }
 
-const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false ,heroVisible}: MobileNavProps) => {
+const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false, heroVisible }: MobileNavProps) => {
     const router = useRouter();
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
@@ -159,16 +160,16 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                 <div>
                     <ThemeToggleDropdown heroVisible={heroVisible} activeView={"home"} setActiveView={function (view: View): void {
                         throw new Error("Function not implemented.");
-                    } } isLoggedIn={false} onLogout={function (): void {
+                    }} isLoggedIn={false} onLogout={function (): void {
                         throw new Error("Function not implemented.");
-                    } } isLoading={false}/>
+                    }} isLoading={false} />
                 </div>
                 {!isStaticPage ? (
 
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon">
-                                <Menu className={`h-6 w-6 text-current`}  />
+                                <Menu className={`h-6 w-6 text-current`} />
                                 <span className="sr-only">Open menu</span>
                             </Button>
                         </SheetTrigger>
@@ -188,20 +189,42 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                             <nav className="flex flex-col space-y-2">
                                 {navItems
                                     .filter((item) => !item.loggedIn || isLoggedIn)
-                                    .map((item) => (
-                                        <SheetClose key={item.id} asChild>
-                                            <Button
-                                                variant="ghost"
-                                                onClick={() => setActiveView(item.id)}
-                                                className={cn(
-                                                    "justify-start text-lg",
-                                                    activeView === item.id ? "text-primary" : "text-muted-foreground"
-                                                )}
-                                            >
-                                                {item.label}
-                                            </Button>
-                                        </SheetClose>
-                                    ))}
+                                    .map((item) => {
+                                        const isActive = activeView === item.id;
+
+                                        const className = cn(
+                                            "justify-start text-lg",
+                                            isActive ? "text-primary" : "text-muted-foreground"
+                                        );
+
+                                        if (item.label === "Pricing") {
+                                            return (
+                                                <SheetClose key={item.id} asChild>
+                                                    <Button
+                                                        asChild
+                                                        variant="ghost"
+                                                        className={`w-full text-left ${className}`}
+                                                    >
+                                                        <Link href="/pricing">
+                                                            {item.label}
+                                                        </Link>
+                                                    </Button>
+                                                </SheetClose>
+                                            );
+                                        }
+                                        return (
+                                            <SheetClose key={item.id} asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    onClick={() => setActiveView(item.id)}
+                                                    className={className}
+                                                >
+                                                    {item.label}
+                                                </Button>
+                                            </SheetClose>
+                                        );
+                                    })}
+
                                 <Separator className="ms-3 w-[42%] h-0.5 bg-border"></Separator>
 
                                 <SheetClose asChild >

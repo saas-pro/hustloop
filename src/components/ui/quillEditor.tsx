@@ -17,61 +17,59 @@ export default function QuillEditor({
 }: QuillEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const quillRef = useRef<any>(null);
-  
+  const hasInitRef = useRef(false); 
 
   useEffect(() => {
-    async function initQuill() {
-      if (!editorRef.current) return;
+    async function init() {
+      if (hasInitRef.current) return;
+      hasInitRef.current = true;
 
+      if (!editorRef.current) return;
       const Quill = (await import("quill")).default;
 
-      if (!quillRef.current) {
-        quillRef.current = new Quill(editorRef.current, {
-          theme: "snow",
-          placeholder,
-          modules: {
-            toolbar: [
-              [{ header: [1, 2, 3, false] }],
-              ["bold", "italic", "underline", "strike"],
-              [{ list: "ordered" }],
-              ["link", "image"],
-              ["blockquote", "code-block"],
-              [{ align: [] }],
-              ["clean"],
-            ],
-          },
-        });
+      quillRef.current = new Quill(editorRef.current, {
+        theme: "snow",
+        placeholder,
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, 3, false] }],
+            ["bold", "italic", "underline", "strike"],
+            [{ list: "ordered" }],
+            ["link", "image"],
+            ["blockquote", "code-block"],
+            [{ align: [] }],
+            ["clean"],
+          ],
+        },
+      });
 
-        quillRef.current.on("text-change", () => {
-          const html = quillRef.current.root.innerHTML;
-          onChange(html === "<p><br></p>" ? "" : html);
-        });
+      quillRef.current.on("text-change", () => {
+        const html = quillRef.current.root.innerHTML;
+        onChange(html === "<p><br></p>" ? "" : html);
+      });
+
+      if (value) {
+        quillRef.current.clipboard.dangerouslyPasteHTML(value);
       }
     }
 
-    initQuill();
-  }, [onChange, placeholder]);
+    init();
+  }, [onChange,placeholder,value]);
 
   useEffect(() => {
-    if (quillRef.current) {
-      const currentContent = quillRef.current.root.innerHTML;
-      if (currentContent !== value && value !== undefined) {
-        if (value === "") {
-          quillRef.current.setContents([], "silent");
-        } else {
-          const delta = quillRef.current.clipboard.convert(value);
-          quillRef.current.setContents(delta, "silent");
-        }
-      }
-    }
-  }, [value])
+    if (!quillRef.current) return;
 
+    const editorHTML = quillRef.current.root.innerHTML;
+    if (editorHTML !== value) {
+      quillRef.current.clipboard.dangerouslyPasteHTML(value || "");
+    }
+  }, [value]);
 
   return (
-    <div className="flex flex-col w-full rounded-md bg-background shadow-sm">
+    <div className="quill-wrapper flex flex-col w-full  rounded-md bg-background shadow-sm">
       <div
         ref={editorRef}
-        className="rounded-b-md p-2"
+        className="rounded-b-md p-2 h-full"
         style={{ minHeight: height }}
       />
     </div>

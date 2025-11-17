@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, InputEventHandler } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,14 +13,13 @@ import { API_BASE_URL } from '@/lib/api';
 import QuillEditor from './quillEditor';
 import QAItemViewer from './QAItemViewer';
 import { toast } from '@/hooks/use-toast';
-import { set } from 'date-fns';
 import { jwtDecode } from "jwt-decode";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './dialog';
 
 interface QAItem {
     id: string;
     author: string;
-    parent_id:string|null
+    parent_id: string | null
     author_id: string;
     user_id: string;
     isOrganizer?: boolean;
@@ -38,10 +37,12 @@ const QAReplyForm = ({
     parentId,
     onAddReply,
     onCancel,
+    isPostingReply
 }: {
     parentId: string;
     onAddReply: (text: string, file: File | null) => void;
     onCancel: () => void;
+    isPostingReply: boolean
 }) => {
     const [text, setText] = useState('');
     const [file, setFile] = useState<File | null>(null);
@@ -81,12 +82,16 @@ const QAReplyForm = ({
                 />
                 <div className='flex items-center gap-2'>
                     <Button
-                        variant="outline"
-                        size="icon"
+                        className='flex gap-2'
                         onClick={() => fileInputRef.current?.click()}
+                        disabled={!!newFile}
                     >
                         <Paperclip className="h-4 w-4" />
+                        <p>Attachment</p>
                     </Button>
+                    <span className="text-xs text-muted-foreground">
+                        Supported file types: PDF, DOC, DOCX, JPG, PNG
+                    </span>
                     {newFile && <p className="text-xs text-muted-foreground">Selected: {newFile.name}</p>}
                     {newFile && (
                         <Button
@@ -103,14 +108,16 @@ const QAReplyForm = ({
                     <Button variant="ghost" size="sm" onClick={onCancel}>
                         Cancel
                     </Button>
-                    <Button size="sm" onClick={handleSubmit}>
-                        Reply
+                    <Button disabled={isPostingReply} size="sm" onClick={handleSubmit}>
+                        {isPostingReply ? "Posting..." : "Reply"}
                     </Button>
                 </div>
             </div>
         </div>
     );
 };
+
+
 
 const QAItemView = ({
     item,
@@ -120,6 +127,8 @@ const QAItemView = ({
     onAddReply,
     onDelete,
     onUpdate,
+    isPostingReply,
+    isUpdating
 
 }: {
     item: QAItem;
@@ -129,6 +138,8 @@ const QAItemView = ({
     onAddReply: (parentId: string, text: string, file: File | null) => void;
     onDelete: (id: string) => void;
     onUpdate: (itemId: string, updatedText: string, newFile: File | null, removeExistingAttachment: boolean) => void;
+    isPostingReply: boolean
+    isUpdating: boolean
 }) => {
 
     const [isAuthor, setIsAuthorOrAdmin] = useState(false);
@@ -138,36 +149,52 @@ const QAItemView = ({
     const [removeAttachment, setRemoveAttachment] = useState(false);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    const getCurrentUserInfo = (): { userId: string | null; roles: string[] } => {
-        const token = localStorage.getItem("token");
+    const getCurrentUserId = (): string | null => {
+        const token = localStorage.getItem('token');
         if (token) {
             try {
-                const payload: { user_id: string; role: string[] } = jwtDecode(token);
-                return {
-                    userId: payload.user_id || null,
-                    roles: payload.role || [],
-                };
+                const payload: { user_id: string } = jwtDecode(token);
+                return payload.user_id;
             } catch (e) {
-                console.error("Failed to decode token:", e);
+                console.error("Failed to decode token for user ID:", e);
+                return null;
             }
         }
-        return { userId: null, roles: [] };
+        return null;
     };
 
-    useEffect(() => {
-        const { userId, roles } = getCurrentUserInfo();
-
-        if (!userId) {
-            setIsAuthorOrAdmin(false);
-            return;
+    const getCurrentUserRole = (): string[] => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const payload: { user_id: string, role: string[] } = jwtDecode(token);
+                return payload.role || [];
+            } catch (e) {
+                console.error("Failed to decode token for roles:", e);
+                return [];
+            }
         }
+        return [];
+    };
 
-        if (item.author_id === userId || roles.includes("admin")) {
-            setIsAuthorOrAdmin(true);
-        } else {
-            setIsAuthorOrAdmin(false);
-        }
-    }, [item.author_id]);
+    const getQAactions = (item: QAItem) => {
+        const authorId = item.author_id;
+        const currentUserId = getCurrentUserId();
+        const currentUserRoles = getCurrentUserRole();
+
+        const isAuthor = currentUserId !== null && currentUserId === authorId;
+        const isAdmin = currentUserRoles.includes('admin');
+
+        const createdAt = new Date(item.timestamp);
+
+        const now = new Date();
+        const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+
+        const canEdit = (isAdmin) || (isAuthor && diffMinutes < 5);
+        const canDelete = (isAdmin) || (isAuthor && diffMinutes < 30);
+
+        return { canEdit, canDelete, isAuthor, isAdmin };
+    };
 
     useEffect(() => {
         if (isEditing) {
@@ -209,23 +236,58 @@ const QAItemView = ({
         }
     };
 
+    function formatRelativeTime(dateString: string): string {
+        const now = new Date();
+        const past = new Date(dateString);
+
+        const diff = (now.getTime() - past.getTime()) / 1000;
+
+        const minutes = Math.floor(diff / 60);
+        const hours = Math.floor(diff / 3600);
+        const days = Math.floor(diff / 86400);
+        const months = Math.floor(diff / 2592000);
+        const years = Math.floor(diff / 31536000);
+
+        if (diff < 5) return "just now";
+        if (diff < 60) return `${Math.floor(diff)}s`;
+        if (minutes < 60) return `${minutes}m`;
+        if (hours < 24) return `${hours}h`;
+        if (days < 30) return `${days}d`;
+        if (months < 12) return `${months}mo`;
+        return `${years}y`;
+    }
+
+
+    const { canEdit, canDelete } = getQAactions(item);
     return (
-        <div className="flex gap-3">
+        <div className="flex gap-3 text-base ">
             <div className="flex-1">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                     <Avatar className="h-6 w-6">
                         <AvatarFallback>{item.author.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <span
-                        className={`font-semibold ${item.isOrganizer ? 'text-primary' : 'text-foreground'}`}
+                        className={`font-semibold  ${item.isOrganizer ? 'text-primary' : 'text-foreground'}`}
                     >
                         {item.author}
                     </span>
-                    {item.isOrganizer && <Badge variant="secondary">Organizer</Badge>}
-                    <span>• {item.timestamp}</span>
+                    {/* {item.isOrganizer && <Badge variant="secondary">Organizer</Badge>} */}
+                    <span>• {formatRelativeTime(item.timestamp)}</span>
                 </div>
-                <QAItemViewer html={item.text} />
-
+                <div className='ml-2'>
+                    <QAItemViewer html={item.text} />
+                    {item.attachment && (
+                        <a
+                            href={item.attachment.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 ml-2 flex items-center gap-2 text-sm text-blue-500 hover:underline"
+                        >
+                            <Paperclip className="h-4 w-4" />
+                            {item.attachment.name}
+                        </a>
+                    )}
+                </div>
                 {isEditing ? (
                     <div className="space-y-2">
                         <QuillEditor
@@ -244,12 +306,15 @@ const QAItemView = ({
                             />
                             <div className='flex items-center gap-2'>
                                 <Button
-                                    variant="outline"
-                                    size="icon"
+                                    className='flex gap-2'
                                     onClick={() => fileInputRef.current?.click()}
+                                    disabled={!!editFile}
                                 >
+                                    <p>Attachment</p>
                                     <Paperclip className="h-4 w-4" />
+
                                 </Button>
+                                <span className="text-xs text-muted-foreground">Supported Files: PDF, DOC, DOCX, Images (JPG, PNG)</span>
                                 {editFile && <p className="text-xs text-muted-foreground">New: {editFile.name}</p>}
                                 {item.attachment && !editFile && !removeAttachment && (
                                     <p className="text-xs text-muted-foreground">Current: {item.attachment.name}</p>
@@ -281,26 +346,14 @@ const QAItemView = ({
                                 <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
                                     Cancel
                                 </Button>
-                                <Button size="sm" onClick={handleSaveEdit}>
-                                    Save
+                                <Button size="sm" onClick={handleSaveEdit} disabled={isUpdating}>
+                                    {isUpdating ? "Saving..." : "Save"}
                                 </Button>
                             </div>
                         </div>
                     </div>
                 ) : (
                     <>
-                        {item.attachment && (
-                            <a
-                                href={item.attachment.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mt-2 ml-2 flex items-center gap-2 text-sm text-blue-500 hover:underline"
-                            >
-                                <Paperclip className="h-4 w-4" />
-                                {item.attachment.name}
-                            </a>
-                        )}
-
                         <div className="flex items-center gap-2 mt-1">
                             <Button
                                 variant="ghost"
@@ -312,8 +365,8 @@ const QAItemView = ({
                                 Reply
                             </Button>
 
-                            {isAuthor && (
-                                <>
+                            <>
+                                {canEdit && (
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -322,6 +375,8 @@ const QAItemView = ({
                                     >
                                         Edit
                                     </Button>
+                                )}
+                                {canDelete && (
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -330,8 +385,8 @@ const QAItemView = ({
                                     >
                                         Delete
                                     </Button>
-                                </>
-                            )}
+                                )}
+                            </>
                         </div>
                     </>
                 )}
@@ -342,6 +397,7 @@ const QAItemView = ({
                         parentId={item.id}
                         onCancel={() => setReplyingTo(null)}
                         onAddReply={(text, file) => onAddReply(item.id, text, file)}
+                        isPostingReply={isPostingReply}
                     />
                 )}
 
@@ -356,6 +412,8 @@ const QAItemView = ({
                             onAddReply={onAddReply}
                             onDelete={onDelete}
                             onUpdate={onUpdate}
+                            isPostingReply={isPostingReply}
+                            isUpdating={isUpdating}
                         />
                     ))}
                 </div>
@@ -373,10 +431,14 @@ export function QAForum({ collaborationId }: QAForumProps) {
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isPostingQuestion, setIsPostingQuestion] = useState(false);
+    const [isPostingReply, setIsPostingReply] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     const openDeleteDialog = (id: string) => {
         setDeleteId(id);
     };
+
 
     useEffect(() => {
         if (!collaborationId) return;
@@ -393,7 +455,6 @@ export function QAForum({ collaborationId }: QAForumProps) {
                     },
                 });
                 const data = await res.json();
-
                 setQaData(data);
             } catch (err) {
                 console.error(err);
@@ -419,47 +480,89 @@ export function QAForum({ collaborationId }: QAForumProps) {
     const handlePostQuestion = async () => {
         if (!newQuestion.trim() && !newFile) return;
 
+        setIsPostingQuestion(true);
+
         const formData = new FormData();
         formData.append('text', newQuestion);
         formData.append('collaboration_id', String(collaborationId));
         if (newFile) formData.append('attachment', newFile);
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/qa`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`
-            },
-            body: formData,
-        });
 
-        if (!res.ok) return console.error('Failed to post question');
+        try {
+            const token = localStorage.getItem("token");
 
-        const newItem = await res.json();
-        setQaData((prev) => [newItem, ...prev]);
-        setNewQuestion('');
-        setNewFile(null);
+            const res = await fetch(`${API_BASE_URL}/api/qa`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            });
+
+            if (!res.ok) {
+                toast({ title: 'Failed to post question', variant: "destructive" });
+                return;
+            }
+
+            const newItem = await res.json();
+            setQaData((prev) => [newItem, ...prev]);
+            setNewQuestion('');
+            setNewFile(null);
+        } finally {
+            setIsPostingQuestion(false);
+        }
     };
+
 
     const handleAddReply = async (parentId: string, text: string, file: File | null) => {
-        if (!text.trim() && !file) return;
+        if (!text.trim() && !file) {
+            toast({
+                variant: "destructive",
+                title: "Reply cannot be empty",
+            });
+            return;
+        }
 
-        const formData = new FormData();
-        formData.append('text', text);
-        formData.append('collaboration_id', String(collaborationId));
-        formData.append('parent_id', String(parentId));
-        if (file) formData.append('attachment', file);
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/qa`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`
-            },
-            body: formData,
-        });
+        try {
+            const formData = new FormData();
+            setIsPostingReply(true)
+            formData.append('text', text);
+            formData.append('collaboration_id', String(collaborationId));
+            formData.append('parent_id', String(parentId));
+            if (file) formData.append('attachment', file);
 
-        const newReply = await res.json();
-        setQaData((prev) => addReplyToItem(prev, parentId, newReply));
+            const token = localStorage.getItem("token");
+
+            const res = await fetch(`${API_BASE_URL}/api/qa`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                toast({
+                    variant: "destructive",
+                    title: "Failed to post reply",
+                    description: error.error || "Something went wrong.",
+                });
+                return;
+            }
+
+            const newReply = await res.json();
+            setQaData(prev => addReplyToItem(prev, parentId, newReply));
+
+        } catch (err) {
+            console.error("Reply error:", err);
+            toast({
+                variant: "destructive",
+                title: "Network error",
+                description: "Unable to post your reply. Please try again.",
+            });
+        } finally {
+            setIsPostingReply(false)
+        }
     };
+
 
     const confirmDelete = async () => {
         if (!deleteId) return;
@@ -539,6 +642,7 @@ export function QAForum({ collaborationId }: QAForumProps) {
         removeExistingAttachment: boolean
     ) => {
         const formData = new FormData();
+        setIsUpdating(true)
         formData.append('text', updatedText);
         formData.append('collaboration_id', String(collaborationId));
         if (newFile) {
@@ -580,6 +684,8 @@ export function QAForum({ collaborationId }: QAForumProps) {
                 title: "Error",
                 description: "Failed to update the item. Please try again later.",
             });
+        } finally {
+            setIsUpdating(false)
         }
     };
 
@@ -614,12 +720,17 @@ export function QAForum({ collaborationId }: QAForumProps) {
                             />
 
                             <Button
-                                variant="outline"
-                                size="icon"
+                                className='flex gap-2 '
+                                disabled={!!newFile}
                                 onClick={() => fileInputRef.current?.click()}
                             >
                                 <Paperclip className="h-4 w-4" />
+                                <p>Attachment</p>
+
                             </Button>
+                            <span className="text-xs text-muted-foreground">
+                                Supported file types: PDF, DOC, DOCX, JPG, PNG
+                            </span>
 
                             {newFile && (
                                 <Button
@@ -633,9 +744,10 @@ export function QAForum({ collaborationId }: QAForumProps) {
                         </div>
 
                         <div className="flex-grow" />
-                        <Button onClick={handlePostQuestion}>
-                            Post Question
+                        <Button onClick={handlePostQuestion} disabled={isPostingQuestion}>
+                            {isPostingQuestion ? "Posting..." : "Post Question"}
                         </Button>
+
                     </div>
 
                 </div>
@@ -659,6 +771,8 @@ export function QAForum({ collaborationId }: QAForumProps) {
                                 onAddReply={handleAddReply}
                                 onDelete={openDeleteDialog}
                                 onUpdate={handleUpdateItem}
+                                isPostingReply={isPostingReply}
+                                isUpdating={isUpdating}
                             />
                         ))}
                     </div>

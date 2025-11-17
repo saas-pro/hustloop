@@ -6,11 +6,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2, Upload, CalendarIcon, Target, Handshake, Lock } from "lucide-react";
+import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2, Upload, CalendarIcon, Target, Handshake, Lock, ChevronDown, Save } from "lucide-react";
 import type { MsmeDashboardTab, Submission, Comment, View } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -201,13 +208,19 @@ interface getUsersCollaborationSchema {
 }
 
 
-const statusIcons: { [key: string]: React.ReactNode } = {
-    'new': <Clock className="h-4 w-4 text-blue-500" />,
-    'under review': <Clock className="h-4 w-4 text-yellow-500" />,
-    'valid': <CheckCircle className="h-4 w-4 text-green-500" />,
-    'duplicate': <Copy className="h-4 w-4 text-orange-500" />,
-    'rejected': <XCircle className="h-4 w-4 text-red-500" />,
+
+const statusBadgeClasses: Record<SolutionStatus, string> = {
+    new: "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300",
+    under_review: "border-yellow-500 text-yellow-700 bg-yellow-50 dark:border-yellow-400 dark:text-yellow-300",
+    valid: "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300",
+    duplicate: "border-purple-500 text-purple-700 bg-purple-50 dark:border-purple-400 dark:text-purple-300",
+    rejected: "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300",
+    solution_accepted: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
+    triaged: "border-orange-500 text-orange-700 bg-orange-50 dark:border-orange-400 dark:text-orange-300",
+    triaged_points: "border-orange-600 text-orange-800 bg-orange-100 dark:border-orange-500 dark:text-orange-400",
+    need_info: "border-blue-600 text-blue-800 bg-blue-100 dark:border-blue-500 dark:text-blue-400",
 };
+
 
 const emptyProfile: ProfileFormValues = {
     name: "",
@@ -217,6 +230,33 @@ const emptyProfile: ProfileFormValues = {
     x_url: "",
     linkedin_url: "",
 };
+
+export enum SolutionStatus {
+    new = "new",
+    under_review = "under_review",
+    valid = "valid",
+    duplicate = "duplicate",
+    rejected = "rejected",
+    solution_accepted = "solution_accepted",
+    triaged = "triaged",
+    triaged_points = "triaged_points",
+    need_info = "need_info",
+}
+
+
+export const statusLabels: Record<SolutionStatus, string> = {
+    new: "New",
+    under_review: "Under Review",
+    valid: "Valid",
+    duplicate: "Duplicate",
+    rejected: "Rejected",
+    solution_accepted: "Solution Accepted",
+    triaged: "Triaged",
+    triaged_points: "Triaged + Points",
+    need_info: "Need Info",
+};
+
+
 
 interface MsmeDashboardViewProps {
     isOpen: boolean;
@@ -255,8 +295,25 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [isMsmerole, setisMsmeRole] = useState(false)
     const isMsmeRole = localStorage.getItem("userRole");
+    const [statusUpdates, setStatusUpdates] = useState<Record<string, SolutionStatus>>({});
+    const [isUpdating, setIsUpdating] = useState<Record<string, boolean>>({});
+    function formatPrettyDate(date: Date) {
+        const months = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
 
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        const year = date.getFullYear();
 
+        const suffix =
+            day % 10 === 1 && day !== 11 ? "st" :
+                day % 10 === 2 && day !== 12 ? "nd" :
+                    day % 10 === 3 && day !== 13 ? "rd" : "th";
+
+        return `${month} ${day}${suffix} ${year}`;
+    }
 
     useEffect(() => {
         if (isMsmeRole === "msme") {
@@ -410,19 +467,71 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     }
 
 
-    // const handleStatusChange = (id: number, status: string) => {
-    //     setSubmissions(subs => subs.map(s => s.challengeId === id ? { ...s, status: status as Submission['status'] } : s));
-    // };
+    const handleStatusChange = (id: string, newStatus: SolutionStatus) => {
+        setStatusUpdates((prev) => ({ ...prev, [id]: newStatus }));
+        setSubmissions((prev) =>
+            prev.map((item) =>
+                item.solutionId === id ? { ...item, status: newStatus } : item
+            )
+        );
+    };
 
+    const handleUpdateStatus = async (id: string) => {
+        const newStatus = statusUpdates[id];
+        if (!newStatus) return;
 
+        setIsUpdating((prev) => ({ ...prev, [id]: true }));
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/solutions/${id}/status`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            const data = await response.json();
+
+            setSubmissions((prev) =>
+                prev.map((sub) =>
+                    sub.solutionId === id
+                        ? {
+                            ...sub,
+                            status: newStatus,
+                            points: newStatus === "triaged_points" ? 50 : sub.points,
+                        }
+                        : sub
+                )
+            );
+
+            toast({
+                title: "Status Updated",
+                description:
+                    newStatus === "triaged_points"
+                        ? `Submission triaged with points. Awarded 50 points.`
+                        : `Submission status updated to ${statusLabels[newStatus]}.`,
+            });
+
+            setStatusUpdates((prev) => {
+                const copy = { ...prev };
+                delete copy[id];
+                return copy;
+            });
+
+        } finally {
+            setIsUpdating((prev) => ({ ...prev, [id]: false }));
+        }
+    };
 
 
     const [SubmissionsLength, setSubmissionsLength] = useState();
 
     const overviewStats = {
-        new: submissions.filter(s => s.status === 'New').length,
-        review: submissions.filter(s => s.status === 'Under Review').length,
-        valid: submissions.filter(s => s.status === 'Valid').length,
+        new: submissions.filter(s => s.status === 'new').length,
+        review: submissions.filter(s => s.status === 'under_review').length,
+        valid: submissions.filter(s => s.status === 'valid').length,
         challengeSubmitted: SubmissionsLength
     };
 
@@ -808,11 +917,26 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                 <ScrollArea className="flex-grow mt-4">
                                     <TabsContent value="overview" className="mt-0 space-y-6">
                                         <div className="grid gap-6 md:grid-cols-4">
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <Card className="
+                                                    bg-card/50 
+                                                    backdrop-blur-sm 
+                                                    border-border/50 
+                                                    cursor-pointer 
+                                                    hover:border-primary 
+                                                    transition-colors
+                                                "
+                                                onClick={() => setActiveTab("submissions")} >
                                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">New Submissions</CardTitle><FileText className="h-4 w-4 text-muted-foreground" /></CardHeader>
                                                 <CardContent><div className="text-2xl font-bold">{overviewStats.new}</div><p className="text-xs text-muted-foreground">Awaiting review</p></CardContent>
                                             </Card>
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50 cursor-pointer" onClick={() => setActiveTab("engagement")}>
+                                            <Card className="
+                                                    bg-card/50 
+                                                    backdrop-blur-sm 
+                                                    border-border/50 
+                                                    cursor-pointer 
+                                                    hover:border-primary 
+                                                    transition-colors
+                                                " onClick={() => setActiveTab("engagement")}>
                                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                                     <CardTitle className="text-sm font-medium">Incentive Challenges</CardTitle>
                                                     <Target className="h-4 w-4 text-muted-foreground" />
@@ -825,11 +949,37 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                 </CardContent>
 
                                             </Card>
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Under Review</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                                                <CardContent><div className="text-2xl font-bold">{overviewStats.review}</div><p className="text-xs text-muted-foreground">Currently being evaluated</p></CardContent>
+                                            <Card
+                                                className="
+                                                    bg-card/50 
+                                                    backdrop-blur-sm 
+                                                    border-border/50 
+                                                    cursor-pointer 
+                                                    hover:border-primary 
+                                                    transition-colors
+                                                "
+                                                onClick={() => setActiveTab("submissions")}
+                                            >
+                                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                    <CardTitle className="text-sm font-medium">Under Review</CardTitle>
+                                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                                </CardHeader>
+
+                                                <CardContent>
+                                                    <div className="text-2xl font-bold">{overviewStats.review}</div>
+                                                    <p className="text-xs text-muted-foreground">Currently being evaluated</p>
+                                                </CardContent>
                                             </Card>
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+
+                                            <Card className="
+                                                    bg-card/50 
+                                                    backdrop-blur-sm 
+                                                    border-border/50 
+                                                    cursor-pointer 
+                                                    hover:border-primary 
+                                                    transition-colors
+                                                "
+                                                onClick={() => setActiveTab("submissions")} >
                                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Accepted Solutions</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader>
                                                 <CardContent><div className="text-2xl font-bold">{overviewStats.valid}</div><p className="text-xs text-muted-foreground">Marked as valid for collaboration</p></CardContent>
                                             </Card>
@@ -867,7 +1017,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     {sub.challenge?.title || "Untitled Challenge"}
                                                                 </CardTitle>
 
-                                                                {sub.challenge && (
+                                                                {/* {sub.challenge && (
                                                                     <Badge
                                                                         variant="outline"
                                                                         className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
@@ -876,46 +1026,107 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                             ? `${sub.challenge.sector} / ${sub.challenge.technologyArea}`
                                                                             : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"}
                                                                     </Badge>
-                                                                )}
+                                                                )} */}
                                                             </div>
 
-                                                            <CardDescription className="text-sm text-muted-foreground">
-                                                                Submitted By {" "}
-                                                                {sub.contactName && (
-                                                                    <>
-                                                                        <span className="font-medium">{sub.contactName}</span>
-                                                                    </>
-                                                                )}
-                                                            </CardDescription>
-                                                        </div>
+                                                            <CardDescription className="flex gap-2 items-center text-sm text-muted-foreground">
 
-                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                            {statusIcons[sub.status as keyof typeof statusIcons]}
-                                                            <span className="capitalize">{sub.status}</span>
+                                                                <div>
+                                                                    Submitted By {" "}
+                                                                    {sub.contactName && (
+                                                                        <>
+                                                                            <span className="font-medium">{sub.contactName}</span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                                <Badge
+                                                                    className={`px-3 py-1 text-xs font-semibold border rounded-sm 
+                                                                    ${statusBadgeClasses[sub.status]}`}
+                                                                >
+                                                                    {statusLabels[sub.status]}
+                                                                </Badge>
+
+                                                            </CardDescription>
                                                         </div>
                                                     </div>
                                                 </CardHeader>
 
                                                 <CardFooter className="flex gap-2 items-center">
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Submitted on {sub.createdAt}
-                                                    </p>
+                                                    <div className="flex gap-2 w-full items-center">
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Submitted on {formatPrettyDate(new Date(sub.createdAt))}
+                                                        </p>
 
-                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                        <span>Comments</span>
-                                                        <div className="flex items-center gap-1">
+                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                            <span>Comments</span>
+                                                            <div className="flex items-center gap-1">
 
-                                                            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
-                                                                {sub.comments?.length || 0}
+                                                                <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
+                                                                    {sub.comments?.length || 0}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span>Points</span>
+                                                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                                {sub.points ?? 0}
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span>Points</span>
-                                                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                            {sub.points ?? 0}
-                                                        </span>
+
+                                                    <div className="flex items-center gap-2 ml-auto">
+                                                        {statusUpdates[sub.solutionId] && (
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleUpdateStatus(sub.solutionId);
+                                                                }}
+                                                                disabled={isUpdating[sub.solutionId]}
+                                                            >
+                                                                {isUpdating[sub.solutionId] ? (
+                                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <Save className="mr-2 h-4 w-4" />
+                                                                )}
+                                                                Update Status
+                                                            </Button>
+                                                        )}
+
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    className="flex items-center gap-2"
+                                                                >
+                                                                    {statusUpdates[sub.status]}
+                                                                    <span>{statusLabels[sub.status]}</span>
+                                                                    <ChevronDown className="ml-2 h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+
+                                                            <DropdownMenuContent>
+                                                                {Object.values(SolutionStatus).map((status) => (
+                                                                    <DropdownMenuItem
+                                                                        key={status}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleStatusChange(sub.solutionId, status);
+                                                                        }}
+                                                                    >
+                                                                        <span>{statusLabels[status]}</span>
+                                                                    </DropdownMenuItem>
+                                                                ))}
+                                                            </DropdownMenuContent>
+
+                                                        </DropdownMenu>
+
                                                     </div>
+
+
+
                                                 </CardFooter>
                                             </Card>
                                         )) : (

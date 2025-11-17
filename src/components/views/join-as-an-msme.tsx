@@ -293,9 +293,9 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
 
 
     const overviewStats = {
-        new: submissions.filter(s => s.status === 'New').length,
-        review: submissions.filter(s => s.status === 'Under Review').length,
-        valid: submissions.filter(s => s.status === 'Valid').length,
+        new: submissions.filter(s => s.status === 'new').length,
+        review: submissions.filter(s => s.status === 'under_review').length,
+        valid: submissions.filter(s => s.status === 'valid').length,
     };
 
     const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);

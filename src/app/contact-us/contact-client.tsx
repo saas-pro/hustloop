@@ -108,12 +108,10 @@ export default function ContactClient() {
 
       <Header {...headerProps} />
 
-      {/* CONTACT FORM SECTION */}
-      <main className="flex-grow container relative z-40 ultrawide-fix m-auto px-4 py-12 md:pt-14">
+
+      <main className="flex-grow container relative z-40 ultrawide-fix m-auto px-4 py-12 md:pt-14 mt-16">
         <section className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12">
-          
-          {/* LEFT CARD */}
-          <Card className="p-8 lg:p-12 flex flex-col justify-center">
+          <Card className="p-8 lg:p-12 flex-col justify-center flex">
             <CardHeader className="p-0">
               <CardTitle className="text-4xl font-bold font-headline">
                 Ready to build the Future?
@@ -131,7 +129,6 @@ export default function ContactClient() {
 
               <div className="flex gap-4 mt-4">
                 <a href="#" className="text-muted-foreground hover:text-primary">
-                  {/* X icon */}
                   <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.41l-5.8-7.58-6.64 7.58H.47l8.6-9.83L0 1.15h7.59l5.24 6.93 6.07-6.93ZM17.25 20.72h2.6L6.86 2.6H4.06l13.19 18.12Z"/></svg>
                 </a>
                 <a href="https://www.linkedin.com/company/hustloop/" target="_blank">
@@ -144,12 +141,9 @@ export default function ContactClient() {
             </CardContent>
           </Card>
 
-          {/* RIGHT FORM */}
           <Card className="p-8 lg:p-12">
             <Form {...contactForm}>
               <form onSubmit={contactForm.handleSubmit(onContactSubmit)} className="space-y-6">
-
-                {/* Full Name */}
                 <FormField
                   control={contactForm.control}
                   name="fullName"

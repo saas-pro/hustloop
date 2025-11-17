@@ -19,6 +19,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
         headline: ['Quicksand', 'sans-serif'],
+        epic: ['Epic Pro', 'sans-serif']
       },
       colors: {
         border: 'hsl(var(--border))',

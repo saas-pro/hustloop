@@ -97,7 +97,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                         <DialogDescription className="text-center">
                             <span className="text-accent">{"Your business, your potential."}</span><br />
                             Browse MSME profiles from various organizations seeking collaboration.
-                            
+
                         </DialogDescription>
                     </DialogHeader>
 
@@ -150,7 +150,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                         <div className="flex-1">
                                             <CardTitle className="flex items-center justify-between">
                                                 <span>{p.company_name}</span>
-                                                
+
                                             </CardTitle>
                                             <p className="text-sm text-muted-foreground">
                                                 {p.sector}
@@ -168,7 +168,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                     )}
                 </DialogContent>
             </Dialog >
-            
+
             <Dialog open={!!selectedProfile} onOpenChange={() => setSelectedProfile(null)}>
                 {selectedProfile && (
                     <DialogContent className="max-w-lg">
@@ -179,6 +179,8 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                         <div className="space-y-4">
                             {selectedProfile.logo_url && (
                                 <Image
+                                    width={25}
+                                    height={25}
                                     src={selectedProfile.logo_url}
                                     alt={selectedProfile.company_name}
                                     className="w-24 h-24 rounded-full mx-auto object-cover"

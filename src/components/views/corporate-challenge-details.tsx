@@ -167,7 +167,7 @@ export default function CorporateChallengeDetails({
   const termsRef = useRef<HTMLDivElement>(null);
 
   if (!challenge) return null;
-  const isOtherUsers = ["msme", "incubator", "mentor"].some(role =>
+  const isOtherUsers = ["incubator", "mentor"].some(role =>
     localStorage.getItem('userRole')?.includes(role)
   );
 

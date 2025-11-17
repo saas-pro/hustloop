@@ -27,10 +27,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet</title>
-        <meta property="og:url" content="https://hustloop.com" />
-        <meta property="og:type" content="website" />
+        <meta name="description" content="Open talent, Real impact. An ecosystem for problem solving and technology transfer - founders, enablers, innovators and students." />
         <meta property="og:title" content="Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet" />
         <meta property="og:description" content="Open talent, Real impact. An ecosystem for problem solving and tech transfer - founders, enablers, innovators and students." />
+        <meta property="og:url" content="https://hustloop.com" />
+        <meta property="og:type" content="website" />
         <meta property="og:image" content="https://hustloop.com/logo.png" />
         <meta name="robots" content="index, follow" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -39,7 +40,7 @@ export default function RootLayout({
       <body className="bg-background font-sans">
         <ThemeProvider>
           <div className="flex-grow ">
-            <TwinklingStars />
+            {/* <TwinklingStars /> */}
             {children}
           </div>
           <Toaster />

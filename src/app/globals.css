@@ -1,6 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
 
+
+@font-face {
+  font-family: 'Epic Pro';
+  src: url('/font/epic-pro.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -1304,6 +1312,94 @@ body {
 .ql-toolbar button:hover svg {
   color: #2563eb !important;
 } */
-.ql-toolbar{
-  border-radius:12px 12px 0 0!important;
-} 
+.ql-toolbar {
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.quill-wrapper .ql-editor {
+  font-size: 15px;
+  letter-spacing: 5;
+  min-height: 150px;
+  line-height: 1.6;
+}
+
+.inverted {
+  clip-path: path("M11,0H341A11,11 0,0,1 352,11V111A11,11 0,0,1 341,122H261A9,9 0,0,0 252,131V141A11,11 0,0,1 241,152H11A11,11 0,0,1 0,141V51A11,11 0,0,1 11,40H31A9,9 0,0,0 40,31V11A11,11 0,0,1 51,0");
+  height: 152px;
+  background-color: hsl(var(--bg-card)) !important;
+  aspect-ratio: 7 / 3;
+  background-image: url('/curved.svg');
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  letter-spacing: 3px;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Epic Pro', sans-serif;
+  color: white;
+}
+
+.container-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.main-container {
+  position: relative;
+  width: fit-content;
+}
+
+.verified-symbol {
+  height: 44px;
+  width: 44px;
+  background: linear-gradient(90deg, #2A7B9B 0%, #8AA827 100%) !important;
+
+  display: flex;
+  top: -3.5%;
+  left: -2%;
+  border-radius: 10px;
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999 !important;
+  border: 2px solid white !important;
+  color: #ffff !important;
+}
+
+.inverted-text {
+  text-align: left;
+
+}
+
+.verifed-symbol p {
+  margin: 0;
+  line-height: 1;
+  font-family: 'Epic Pro', sans-serif !important;
+}
+
+.author-name {
+  height: fit-content;
+  width: 100px;
+  padding: 10px;
+  background: linear-gradient(90deg, #2A7B9B 0%, #8AA827 100%) !important;
+  display: flex;
+  bottom: -9%;
+  border-radius: 10px;
+  right: 0%;
+    font-weight: bold;
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+  border: 2px solid white !important;
+  color: #ffff !important;
+  font-family: 'poppins', sans-serif;
+}
+
+.author-name>p {
+  font-size: small;
+}

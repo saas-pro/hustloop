@@ -12,6 +12,7 @@ import TechTransfer from "../techtransfer_view";
 import { profile } from "console";
 import { Input } from "../ui/input";
 import Image from "next/image";
+import TechCard from "../tech-card/tech-card";
 
 interface TechTransferViewProps {
     isOpen: boolean;
@@ -115,68 +116,38 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                         </div>
 
                         {/* Profiles Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mx-14">
                             {filteredProfiles.length > 0 ? (
                                 filteredProfiles.map((profile) => (
                                     <div
                                         key={profile.id}
                                         onClick={() => setTechId(profile.id)}
-                                        className="group relative border rounded-tr-3xl overflow-hidden shadow-sm bg-white hover:shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-1"
+                                        className="relative cursor-pointer"
                                     >
-                                        
-                                        <div className="h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-500" />
-
-                                        <div className="p-6 space-y-4">
-                                            
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <div className="flex gap-2 items-center ">
-                                                        <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
-                                                            {profile.ipTitle}
-
-                                                        </h3>
-                                                        <Image src="/bluetick.png" alt="bluetick" height={20} width={20} />
-                                                    </div>
-
-                                                    <p className="text-sm text-gray-500">{profile.organization}</p>
-                                                </div>
-
-                                            </div>
-
-                                            {/* Summary */}
-                                            <p className="text-sm text-gray-600 line-clamp-3">
-                                                {profile.summary}
-                                            </p>
-
-                                            {/* Inventor info */}
-                                            <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t">
-                                                <span className="flex gap-2 justify-center items-center">
-                                                    <span className="font-semibold text-gray-700">Inventor:</span>{" "}
-                                                    {profile.inventorName}
-                                                </span>
-
-                                            </div>
-                                        </div>
+                                        <TechCard
+                                            title={profile.ipTitle}
+                                            author={profile.firstName +" "+ profile.lastName}
+                                        />
                                     </div>
 
-                                ))
-                            ) : (
-                                <div className="py-10 text-center text-gray-500 col-span-full">
-                                    No profiles match your search.
-                                </div>
+                                        ))
+                                        ) : (
+                                        <div className="py-10 text-center text-gray-500 col-span-full">
+                                            No profiles match your search.
+                                        </div>
                             )}
-                        </div>
+                                    </div>
 
                     </div>)}
-                </div>
+                    </div>
                 {
-                    techId !== null && (
-                        <TechTransfer
-                            techId={techId}
-                            onClose={() => setTechId(null)}
-                        />
-                    )
-                }
+                        techId !== null && (
+                            <TechTransfer
+                                techId={techId}
+                                onClose={() => setTechId(null)}
+                            />
+                        )
+                    }
             </DialogContent>
         </Dialog>
     );

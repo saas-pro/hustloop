@@ -3,7 +3,7 @@ import ContactClient from "./contact-client";
 
 export const metadata: Metadata = {
   title: 'Contact Us — Hustloop',
-  description: "Contact Hustloop for support, partnerships and general inquiries.",
+  description: "Contact Hustloop for support, partnerships, collaborations, and general inquiries. Our team is here to help startups, innovators, and organizations connect with the right solutions.",
   alternates: {
     canonical: 'https://hustloop.com/contact-us',
   },
@@ -29,7 +29,6 @@ export default function Page() {
     <>
       <ContactClient />
 
-      {/* JSON-LD Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

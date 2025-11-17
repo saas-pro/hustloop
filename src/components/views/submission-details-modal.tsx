@@ -118,7 +118,6 @@ export default function SubmissionDetailsModal({
         return [];
     };
 
-
     useEffect(() => {
         if (!submission) return;
         const fetchComments = async () => {
@@ -148,12 +147,19 @@ export default function SubmissionDetailsModal({
 
         socket.emit('join_solution', { solutionId });
 
-        socket.on('new_comment', (comment: Comment) => {
-            if (comment.solutionId === solutionId) {
-                setComments((prev) => [...prev, comment]);
-                setTimeout(scrollToBottom, 150);
-            }
+        socket.on("new_comment", (comment: Comment) => {
+            if (comment.solutionId !== solutionId) return;
+
+            setComments((prev) => {
+                if (prev.some((c) => c.id === comment.id)) {
+                    return prev;
+                }
+                return [...prev, comment];
+            });
+
+            setTimeout(scrollToBottom, 150);
         });
+
 
         return () => {
             socket.emit('leave_solution', { solutionId });
@@ -184,6 +190,14 @@ export default function SubmissionDetailsModal({
             });
 
             if (!res.ok) throw new Error('Failed to add comment');
+
+
+            const data = await res.json();
+            const newCommentObj = data.comment;
+            setComments((prev) => {
+                if (prev.some((c) => c.id === newCommentObj.id)) return prev;
+                return [...prev, newCommentObj];
+            });
             setNewComment('');
             setAttachedFile(null);
             setReplyingTo(null);
@@ -305,7 +319,7 @@ export default function SubmissionDetailsModal({
             }, 3000);
         }
     };
-    
+
     function formatTime(timestamp: Date) {
         const now = new Date();
         const time = new Date(timestamp);
@@ -315,15 +329,15 @@ export default function SubmissionDetailsModal({
             return "just now";
         } else if (diffSeconds < 3600) {
             const minutes = Math.floor(diffSeconds / 60);
-            return `${minutes} m${minutes > 1 ? "s" : ""} ago`;
+            return `${minutes} m${minutes > 1 ? "" : ""} ago`;
         } else if (diffSeconds < 86400) {
             const hours = Math.floor(diffSeconds / 3600);
-            return `${hours} h${hours > 1 ? "s" : ""} ago`;
+            return `${hours} h${hours > 1 ? "" : ""} ago`;
         } else {
-            return time.toLocaleString();
+            const days = Math.floor(diffSeconds / 86400);
+            return `${days} d${days > 1 ? "" : ""} ago`;
         }
     }
-
 
     const renderFileAttachment = (fileURL: string, fileName: string, key: string) => (
         <a
@@ -355,8 +369,8 @@ export default function SubmissionDetailsModal({
         const now = new Date();
         const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
 
-        const canEdit = (isAdmin && isAuthor) || (isAuthor && diffMinutes < 5);
-        const canDelete = (isAdmin && isAuthor) || (isAuthor && diffMinutes < 30);
+        const canEdit = (isAdmin) || (isAuthor && diffMinutes < 5);
+        const canDelete = (isAdmin) || (isAuthor && diffMinutes < 30);
 
         return { canEdit, canDelete, isAuthor, isAdmin };
     };
@@ -429,15 +443,21 @@ export default function SubmissionDetailsModal({
                                                 <span className="text-foreground">{comment.authorName}</span>
                                                 {comment.authorRole && (
                                                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                                                        {comment.authorRole}
+                                                        {comment.authorRole.toLowerCase() === "msme"
+                                                            ? `${submission.challenge?.postedBy?.companyName || "Unknown Company"} - MSME`
+                                                            : comment.authorRole.toLowerCase() === "admin"
+                                                                ? "Triagger"
+                                                                : comment.authorRole}
                                                     </span>
                                                 )}
+
+
                                                 {comment.isUpdated && (
                                                     <span className="text-xs italic text-muted-foreground">(edited)</span>
                                                 )}
                                             </p>
                                             <small className="text-xs text-muted-foreground">
-                                               {formatTime(new Date(comment.timestamp))}
+                                                {formatTime(new Date(comment.timestamp))}
                                             </small>
                                         </div>
                                         <div className='flex gap-2'>

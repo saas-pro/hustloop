@@ -188,6 +188,42 @@ type connexRegistrations = {
     created_at: string;
 };
 
+export enum SolutionStatus {
+    new = "new",
+    under_review = "under_review",
+    valid = "valid",
+    duplicate = "duplicate",
+    rejected = "rejected",
+    solution_accepted = "solution_accepted",
+    triaged = "triaged",
+    triaged_points = "triaged_points",
+    need_info = "need_info",
+}
+
+export const statusLabels: Record<SolutionStatus, string> = {
+    new: "New",
+    under_review: "Under Review",
+    valid: "Valid",
+    duplicate: "Duplicate",
+    rejected: "Rejected",
+    solution_accepted: "Solution Accepted",
+    triaged: "Triaged",
+    triaged_points: "Triaged + Points",
+    need_info: "Need Info",
+};
+
+const statusBadgeClasses: Record<SolutionStatus, string> = {
+    new: "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300",
+    under_review: "border-yellow-500 text-yellow-700 bg-yellow-50 dark:border-yellow-400 dark:text-yellow-300",
+    valid: "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300",
+    duplicate: "border-purple-500 text-purple-700 bg-purple-50 dark:border-purple-400 dark:text-purple-300",
+    rejected: "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300",
+    solution_accepted: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
+    triaged: "border-orange-500 text-orange-700 bg-orange-50 dark:border-orange-400 dark:text-orange-300",
+    triaged_points: "border-orange-600 text-orange-800 bg-orange-100 dark:border-orange-500 dark:text-orange-400",
+    need_info: "border-blue-600 text-blue-800 bg-blue-100 dark:border-blue-500 dark:text-blue-400",
+};
+
 
 const iconNames = Object.keys(LucideIcons).filter(k => k !== 'createLucideIcon' && k !== 'icons' && k !== 'default');
 
@@ -274,6 +310,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [perPage] = useState(10);
     const [totalRegistrations, setTotalRegistrations] = useState(0);
     const [submissions, setSubmissions] = useState<Submission[]>([]);
+    const [statusUpdates1, setStatusUpdates1] = useState<Record<string, SolutionStatus>>({});
+    const [isUpdating1, setIsUpdating1] = useState<Record<string, boolean>>({});
 
     const fetchUsers = useCallback(async (page: number, perPage: number) => {
         setIsLoadingUsers(true);
@@ -312,6 +350,24 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const handlePageChange = (page: number) => {
         fetchUsers(page, itemsPerPage);
     };
+
+    function formatPrettyDate(date: Date) {
+        const months = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        const year = date.getFullYear();
+
+        const suffix =
+            day % 10 === 1 && day !== 11 ? "st" :
+                day % 10 === 2 && day !== 12 ? "nd" :
+                    day % 10 === 3 && day !== 13 ? "rd" : "th";
+
+        return `${month} ${day}${suffix} ${year}`;
+    }
 
 
     const fetchSubscribers = useCallback(async () => {
@@ -712,7 +768,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             if (activeTab === 'ip/technologies') fetchIps();
             if (activeTab === 'subscribers') fetchSubscribers();
         }
-    }, [activeTab, userRole, fetchUsers,fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
+    }, [activeTab, userRole, fetchUsers, fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
 
 
 
@@ -1132,6 +1188,65 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             fetchMySubmissions();
         }
     }, [activeTab, toast]);
+
+    const handleStatusChange = (id: string, newStatus: SolutionStatus) => {
+        setStatusUpdates1((prev) => ({ ...prev, [id]: newStatus }));
+        setSubmissions((prev) =>
+            prev.map((item) =>
+                item.solutionId === id ? { ...item, status: newStatus } : item
+            )
+        );
+    };
+
+    const handleSolutionUpdateStatus = async (id: string) => {
+        const newStatus = statusUpdates1[id];
+        if (!newStatus) return;
+
+        setIsUpdating1((prev) => ({ ...prev, [id]: true }));
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/solutions/${id}/status`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            const data = await response.json();
+
+            setSubmissions((prev) =>
+                prev.map((sub) =>
+                    sub.solutionId === id
+                        ? {
+                            ...sub,
+                            status: newStatus,
+                            points: newStatus === "triaged_points" ? 50 : 0,
+                        }
+                        : sub
+                )
+            );
+
+            toast({
+                title: "Status Updated",
+                description:
+                    newStatus === "triaged_points"
+                        ? `Submission triaged with points. Awarded 50 points.`
+                        : `Submission status updated to ${statusLabels[newStatus]}.`,
+            });
+
+            setStatusUpdates1((prev) => {
+                const copy = { ...prev };
+                delete copy[id];
+                return copy;
+            });
+
+        } finally {
+            setIsUpdating1((prev) => ({ ...prev, [id]: false }));
+        }
+    };
+
 
     const useGroupedIps = (techTransferIps: TechTransferIP[]) => {
         const [groupedIps, setGroupedIps] = useState<Record<string, TechTransferIP[]>>({});
@@ -1768,7 +1883,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                             {sub.challenge?.title || "Untitled Challenge"}
                                                         </CardTitle>
 
-                                                        {sub.challenge && (
+                                                        {/* {sub.challenge && (
                                                             <Badge
                                                                 variant="outline"
                                                                 className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
@@ -1777,45 +1892,104 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                     ? `${sub.challenge.sector} / ${sub.challenge.technologyArea}`
                                                                     : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"}
                                                             </Badge>
-                                                        )}
+                                                        )} */}
                                                     </div>
 
-                                                    <CardDescription className="text-sm text-muted-foreground">
-                                                        Submitted by <span className="font-medium">{sub.contactName}</span>{" "}
-                                                        {sub.challenge?.postedBy?.companyName && (
-                                                            <>
-                                                                to <span className="font-medium">{sub.challenge.postedBy.companyName}</span>
-                                                            </>
-                                                        )}
-                                                    </CardDescription>
-                                                </div>
+                                                    <CardDescription className="flex gap-2 items-center text-sm text-muted-foreground">
 
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    {statusIcons[sub.status as keyof typeof statusIcons]}
-                                                    <span className="capitalize">{sub.status}</span>
+                                                        <div>
+                                                            Submitted By {" "}
+                                                            {sub.contactName && (
+                                                                <>
+                                                                    <span className="font-medium">{sub.contactName}</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                        <Badge
+                                                            className={`px-3 py-1 text-xs font-semibold border rounded-sm 
+                                                                    ${statusBadgeClasses[sub.status]}`}
+                                                        >
+                                                            {statusLabels[sub.status]}
+                                                        </Badge>
+
+                                                    </CardDescription>
                                                 </div>
                                             </div>
                                         </CardHeader>
 
                                         <CardFooter className="flex gap-2 items-center">
-                                            <p className="text-sm text-muted-foreground">
-                                                Submitted on {sub.createdAt}
-                                            </p>
+                                            <div className="flex gap-2 w-full items-center">
+                                                <p className="text-sm text-muted-foreground">
+                                                    Submitted on {formatPrettyDate(new Date(sub.createdAt))}
+                                                </p>
 
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <span>Comments</span>
-                                                <div className="flex items-center gap-1">
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <span>Comments</span>
+                                                    <div className="flex items-center gap-1">
 
-                                                    <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
-                                                        {sub.comments?.length || 0}
+                                                        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
+                                                            {sub.comments?.length || 0}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span>Points</span>
+                                                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                        {sub.points ?? 0}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <span>Points</span>
-                                                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                    {sub.points ?? 0}
-                                                </span>
+
+                                            <div className="flex items-center gap-2 ml-auto">
+
+                                                {statusUpdates1[sub.solutionId] && (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleSolutionUpdateStatus(sub.solutionId);
+                                                        }}
+                                                        disabled={isUpdating1[sub.solutionId]}
+                                                    >
+                                                        {isUpdating1[sub.solutionId] ? (
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <LucideIcons.Save className="mr-2 h-4 w-4" />
+                                                        )}
+                                                        Update Status
+                                                    </Button>
+                                                )}
+
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="flex items-center gap-2"
+                                                        >
+                                                            {statusUpdates1[sub.status]}
+                                                            <span>{statusLabels[sub.status]}</span>
+                                                            <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+
+                                                    <DropdownMenuContent>
+                                                        {Object.values(SolutionStatus).map((status) => (
+                                                            <DropdownMenuItem
+                                                                key={status}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleStatusChange(sub.solutionId, status);
+                                                                }}
+                                                            >
+                                                                <span>{statusLabels[status]}</span>
+                                                            </DropdownMenuItem>
+                                                        ))}
+                                                    </DropdownMenuContent>
+
+                                                </DropdownMenu>
+
                                             </div>
                                         </CardFooter>
                                     </Card>

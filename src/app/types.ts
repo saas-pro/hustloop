@@ -36,7 +36,7 @@ export type Submission = {
   solutionId: string
   challengeId: string;
   contactName: string;
-  status: 'New' | 'Under Review' | 'Valid' | 'Duplicate' | 'Rejected' | 'Solution Accepted' | 'Triaged' | 'Triaged_Points';
+  status: 'new' | 'under_review' | 'valid' | 'duplicate' | 'rejected' | 'solution_accepted' | 'triaged' | 'triaged_points' | 'need_info';
   points: number;
   description: string;
   createdAt: string;

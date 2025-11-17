@@ -14,8 +14,8 @@ const plans = [
     {
         name: "Standard",
         price: "₹999",
-        originally: "₹1332",
-        offer: "25% OFF",
+        originally: "₹1499",
+        offer: "33% OFF",
         description: "Accelerate incubation with full access and priority support.",
         features: [
             "Access to all incubators",
@@ -46,9 +46,8 @@ const plans = [
     },
     {
         name: "Enterprise",
-        description: "Tailored solutions for large organizations with dedicated support.",
+        description: "High-touch support with fully customizable MSME problem-solving solutions and dedicated expert assistance.",
         features: [
-            "Custom solutions",
             "You can discuss your requirements with us",
             "24/7 priority support"
         ],

@@ -10,12 +10,23 @@ import { toast } from "@/hooks/use-toast";
 
 export default function PricingAccordion() {
 
-    const handleGetStartedOnPricing = () => {
-        toast({
-            title: "Payment Integrated Soon!",
-            description: "You will be notified before your plan ends.",
-        });
-    }
+    const handlePlanClick = (idx: number) => {
+        if (idx === 0) {
+            return;
+        }
+
+        if (idx === 1 || idx === 2) {
+            toast({
+                title: "Payment Integrated Soon!",
+                description: "You will be notified before your plan ends.",
+            });
+            return;
+        }
+
+        if (idx === 3) {
+            window.location.href = "/contact-us";
+        }
+    };
     return (
         <div className="flex flex-col items-center relative py-16 md:py-20 bg-background">
             <div className="text-center mb-8">
@@ -81,12 +92,14 @@ export default function PricingAccordion() {
                                                 <div className="flex flex-col">
                                                     <span className="text-4xl font-bold">{plan.price}</span>
                                                     {(idx === 1 || idx === 2) && (
-                                                        <span className="text-xs text-muted-foreground">INR (including GST)</span>
+                                                        <span className="text-xs text-muted-foreground">INR + GST Applicable</span>
                                                     )}
                                                 </div>
                                             </div>
 
                                             <Button
+                                                onClick={() => handlePlanClick(idx)}
+                                                disabled={idx === 0}
                                                 className={cn(
                                                     "w-full",
                                                     plan.primary

@@ -186,7 +186,42 @@ type connexRegistrations = {
     who_you_are: string;
     created_at: string;
 };
+export enum SolutionStatus {
+    new = "new",
+    under_review = "under_review",
+    valid = "valid",
+    duplicate = "duplicate",
+    rejected = "rejected",
+    solution_accepted = "solution_accepted",
+    triaged = "triaged",
+    triaged_points = "triaged_points",
+    need_info = "need_info",
+}
 
+
+export const statusLabels: Record<SolutionStatus, string> = {
+    new: "New",
+    under_review: "Under Review",
+    valid: "Valid",
+    duplicate: "Duplicate",
+    rejected: "Rejected",
+    solution_accepted: "Solution Accepted",
+    triaged: "Triaged",
+    triaged_points: "Triaged + Points",
+    need_info: "Need Info",
+};
+
+const statusBadgeClasses: Record<SolutionStatus, string> = {
+    new: "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300",
+    under_review: "border-yellow-500 text-yellow-700 bg-yellow-50 dark:border-yellow-400 dark:text-yellow-300",
+    valid: "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300",
+    duplicate: "border-purple-500 text-purple-700 bg-purple-50 dark:border-purple-400 dark:text-purple-300",
+    rejected: "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300",
+    solution_accepted: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
+    triaged: "border-orange-500 text-orange-700 bg-orange-50 dark:border-orange-400 dark:text-orange-300",
+    triaged_points: "border-orange-600 text-orange-800 bg-orange-100 dark:border-orange-500 dark:text-orange-400",
+    need_info: "border-blue-600 text-blue-800 bg-blue-100 dark:border-blue-500 dark:text-blue-400",
+};
 
 const iconNames = Object.keys(LucideIcons).filter(k => k !== 'createLucideIcon' && k !== 'icons' && k !== 'default');
 
@@ -311,6 +346,24 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
     const handlePageChange = (page: number) => {
         fetchUsers(page, itemsPerPage);
     };
+
+    function formatPrettyDate(date: Date) {
+        const months = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        const year = date.getFullYear();
+
+        const suffix =
+            day % 10 === 1 && day !== 11 ? "st" :
+                day % 10 === 2 && day !== 12 ? "nd" :
+                    day % 10 === 3 && day !== 13 ? "rd" : "th";
+
+        return `${month} ${day}${suffix} ${year}`;
+    }
 
 
     const fetchSubscribers = useCallback(async () => {
@@ -1660,8 +1713,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                                 <CardTitle className="text-lg font-semibold">
                                                                     {sub.challenge?.title || "Untitled Challenge"}
                                                                 </CardTitle>
-
-                                                                {sub.challenge && (
+                                                                {/* {sub.challenge && (
                                                                     <Badge
                                                                         variant="outline"
                                                                         className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
@@ -1670,20 +1722,25 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                                             ? `${sub.challenge.sector} / ${sub.challenge.technologyArea}`
                                                                             : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"}
                                                                     </Badge>
-                                                                )}
+                                                                )} */}
                                                             </div>
 
-                                                            <CardDescription className="text-sm text-muted-foreground">
-                                                                Submitted For{" "}
-                                                                {sub.challenge?.postedBy?.companyName && (
-                                                                    <span className="font-medium">{sub.challenge.postedBy.companyName}</span>
-                                                                )}
-                                                            </CardDescription>
-                                                        </div>
+                                                            <CardDescription className="flex gap-2 items-center text-sm text-muted-foreground">
 
-                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                            {statusIcons[sub.status as keyof typeof statusIcons]}
-                                                            <span className="capitalize">{sub.status}</span>
+                                                                <div>
+                                                                    Submitted For{" "}
+                                                                    {sub.challenge?.postedBy?.companyName && (
+                                                                        <span className="font-medium">{sub.challenge.postedBy.companyName}</span>
+                                                                    )}
+                                                                </div>
+
+                                                                <Badge
+                                                                    className={`px-3 py-1 text-xs font-semibold border rounded-sm 
+                                                                    ${statusBadgeClasses[sub.status]}`}
+                                                                >
+                                                                    {statusLabels[sub.status]}
+                                                                </Badge>
+                                                            </CardDescription>
                                                         </div>
                                                     </div>
                                                 </CardHeader>

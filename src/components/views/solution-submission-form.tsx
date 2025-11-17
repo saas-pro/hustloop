@@ -412,7 +412,7 @@ Briefly describe your solution and how it addresses the identified challenge.
                     <Label htmlFor="terms" className="text-sm text-muted-foreground">
                         I agree to the{" "}
                         <a
-                            href="/terms-and-conditions"
+                            href="/terms-of-service"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-primary hover:underline"

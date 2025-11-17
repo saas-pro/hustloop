@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useRouter, usePathname } from "next/navigation";
 import { Separator } from '@radix-ui/react-separator';
 import gsap from 'gsap';
+import Link from 'next/link';
 
 
 
@@ -118,7 +119,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                     document.body.classList.remove('nav-open');
                     setNavOpen(false);
                 }
-            }, 500); 
+            }, 500);
         } else {
             const section = document.getElementById(sectionId);
             if (section) {
@@ -402,23 +403,38 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                 >
                     {navItems
                         .filter((item) => !item.loggedIn || isLoggedIn)
-                        .map((item, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setActiveView(item.id)}
-                                className={cn(
-                                    "text-[18px] font-medium pb-1 border-b-2 transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary",
-                                    activeView == item.id
-                                        ? "text-foreground border-primary"
-                                        : "text-muted-foreground border-transparent"
-                                )}
-                            >
-                                {item.label}
-                            </button>
-                        ))}
+                        .map((item, index) => {
+                            const isActive = activeView === item.id;
+
+                            const className = cn(
+                                "text-[18px] font-medium pb-1 border-b-2 transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary",
+                                isActive
+                                    ? "text-foreground border-primary"
+                                    : "text-muted-foreground border-transparent"
+                            );
+
+                            if (item.label === "Pricing") {
+
+                                return (
+                                    <Link key={index} href="/pricing" className={className} onClick={() => { document.body.classList.remove('nav-open'); setNavOpen(false) }}>
+                                        {item.label}
+                                    </Link>
+                                );
+                            }
+
+                            return (
+                                <button
+                                    key={index}
+                                    onClick={() => setActiveView(item.id)}
+                                    className={className}
+                                >
+                                    {item.label}
+                                </button>
+                            );
+                        })
+                    }
+
                 </div>
-
-
             )}
 
 
