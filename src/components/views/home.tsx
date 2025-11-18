@@ -646,13 +646,12 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                       setActiveView("dashboard");
                     } else if (userRole === 'admin') {
                       setActiveView("browseMSME");
-                      
-                    } else {
+                    } else if (!isLoggedIn) {
                       setActiveView("joinasanMSME");
                     }
                   }}
                 >
-                  {(userRole === 'msme' || userRole === 'founder' || userRole === 'incubator' || userRole === 'mentor')
+                  {(userRole === 'msme' || userRole === 'founder' || userRole === 'incubator' || userRole === 'mentor' || userRole === null)
                     ? "Join as an MSME"
                     : "Browse MSME"}
                 </Button>

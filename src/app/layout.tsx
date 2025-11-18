@@ -10,13 +10,13 @@ import GoogleAnalytics from "./metrics/GoogleAnalytics"
 import MicrosoftClarity from "./metrics/MicrosoftClarity"
 
 
-export const metadata: Metadata = {
-  title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
-  description: 'Open talent, Real impact. An ecosystem for problem solving and technology transfer - founders, enablers, innovators and students.',
-  alternates: {
-    canonical: 'https://hustloop.com/',
-  },
-};
+// export const metadata: Metadata = {
+//   title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
+//   description: 'Open talent, Real impact. An ecosystem for problem solving and technology transfer - founders, enablers, innovators and students.',
+//   alternates: {
+//     canonical: 'https://hustloop.com/',
+//   },
+// };
 
 export default function RootLayout({
   children,
@@ -28,8 +28,6 @@ export default function RootLayout({
       <head>
         <title>Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet</title>
         <meta name="description" content="Open talent, Real impact. An ecosystem for problem solving and technology transfer - founders, enablers, innovators and students." />
-        <meta property="og:title" content="Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet" />
-        <meta property="og:description" content="Open talent, Real impact. An ecosystem for problem solving and tech transfer - founders, enablers, innovators and students." />
         <meta property="og:url" content="https://hustloop.com" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://hustloop.com/logo.png" />
