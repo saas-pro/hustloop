@@ -60,7 +60,7 @@ interface IncubatorsViewProps {
 const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: View) => void, contentType: string }) => (
   <div className="flex flex-col items-center justify-center h-full text-center p-8">
     <Lock className="h-16 w-16 text-accent mb-6" />
-    <h3 className="text-2xl font-bold mb-2">Content Locked</h3>
+    <h3 className="text-2xl font-bold mb-2">Access required</h3>
     <p className="max-w-md mx-auto text-muted-foreground mb-6">
       Please log in or sign up to view available {contentType}.
     </p>

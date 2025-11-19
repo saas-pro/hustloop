@@ -99,7 +99,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                     )}
                     {!isLoading && profiles.length === 0 && (
                         <div className="py-10 text-center text-gray-500 flex items-center justify-center h-[50vh]">
-                            <p>No Technology Transfer profiles are currently available.</p>
+                            <p>No Technologies are currently available.</p>
                         </div>
                     )}
                     {!isLoading && profiles.length > 0 && (<div className="space-y-6">

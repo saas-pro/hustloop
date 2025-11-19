@@ -108,7 +108,7 @@ interface MsmesViewProps {
 const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: View) => void, contentType: string }) => (
   <div className="flex flex-col items-center justify-center h-full text-center p-8">
     <Lock className="h-16 w-16 text-accent mb-6" />
-    <h3 className="text-2xl font-bold mb-2">Content Locked</h3>
+    <h3 className="text-2xl font-bold mb-2">Access required</h3>
     <p className="max-w-md mx-auto text-muted-foreground mb-6">
       Please log in or sign up to view available {contentType}.
     </p>
@@ -329,7 +329,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
 
     return (
       <Tabs defaultValue="challenges" className="flex flex-col flex-grow min-h-0 px-6 pb-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full h-fit grid-cols-2 md:grid-cols-3">
           <TabsTrigger value="CorporateChallenges">Corporate Challenges</TabsTrigger>
           <TabsTrigger value="MSMECollaboration">MSME Challenges</TabsTrigger>
           <TabsTrigger value="Governmentchallenges">Government Challenges</TabsTrigger>
@@ -410,8 +410,8 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
             <DialogTitle className="text-3xl font-bold text-center font-headline">Innovation &amp; Growth Opportunities</DialogTitle>
             <DialogDescription className="text-center">
               <span className="text-accent">&quot;Empowering MSMEs for Success&quot;</span>
-              <span className="block mt-2">
-                Join our platform to solve corporate challenges for rewards or collaborate with MSMEs for growth opportunities. Whether you&apos;re an innovator, entrepreneur, or business expert, find your perfect match here.
+              <span className="block text-center mx-auto">
+               Collaborate on MSME, corporate and government incentive challenges for rewards and growth. Innovators, entrepreneurs, and experts - find your match.
               </span>
             </DialogDescription>
           </DialogHeader>

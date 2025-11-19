@@ -8,7 +8,7 @@ interface QAItemViewerProps {
 const QAItemViewer: React.FC<QAItemViewerProps> = ({ html }) => {
   return (
     <div
-      className="text-sm text-foreground ml-2 prose prose-sm max-w-none"
+      className="text-sm ml-2 ql-editor !py-1  max-w-none"
       dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
     />
   );

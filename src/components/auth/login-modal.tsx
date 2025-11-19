@@ -36,8 +36,8 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z
-  .string()
-  .min(10, { message: "Password must be at least 10 characters long." }),
+    .string()
+    .min(10, { message: "Password must be at least 10 characters long." }),
 });
 
 type LoginSchema = z.infer<typeof loginSchema>;
@@ -125,7 +125,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const firebaseUser = userCredential.user;
-     
+
       if (!firebaseUser.emailVerified) {
         await handleResendVerification(values.email);
         toast({
@@ -209,7 +209,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       let description = error.message || 'An error occurred while signing in.';
       toast({ variant: 'destructive', title: 'Social Login Failed', description });
     } finally {
-        setIsSocialLoading(false);
+      setIsSocialLoading(false);
     }
   };
 
@@ -238,7 +238,7 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
         description:
           "If this email is registered, a reset link has been sent.",
       });
-    }, 1000); 
+    }, 1000);
 
     try {
       // Fire the request in background

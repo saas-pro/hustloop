@@ -17,8 +17,7 @@ export default function PricingAccordion() {
 
         if (idx === 1 || idx === 2) {
             toast({
-                title: "Payment Integrated Soon!",
-                description: "You will be notified before your plan ends.",
+                title: "Payment Integrated Coming Soon!"
             });
             return;
         }
@@ -30,7 +29,7 @@ export default function PricingAccordion() {
     return (
         <div className="flex flex-col items-center relative py-16 md:py-20 bg-background">
             <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold font-headline">Our Pricing</h1>
+                <h2 className="text-3xl font-bold font-headline">Our Pricing</h2>
                 <p className="text-muted-foreground max-w-xl mx-auto mt-2">
                     Choose a plan that&apos;s right for your startup. All plans are designed to help you succeed.
                 </p>

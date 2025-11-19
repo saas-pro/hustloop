@@ -24,8 +24,7 @@ export default function PricingPageClient() {
 
         if (idx === 1 || idx === 2) {
             toast({
-                title: "Payment Integrated Soon!",
-                description: "You will be notified before your plan ends.",
+                title: "Payment Integrated Coming Soon!"
             });
             return;
         }

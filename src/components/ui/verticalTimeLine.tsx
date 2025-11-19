@@ -1,5 +1,9 @@
 import React from "react";
 import { format } from "date-fns";
+import {
+  Timeline,
+  TimelineItem
+} from './timeline';
 
 type EventItem = {
   id: string;
@@ -57,56 +61,17 @@ export default function VerticalTimeline({
   }));
 
   return (
-    <div className="relative w-full px-4 py-6">
-      <div className="absolute left-[50px] bottom-0 top-0 w-px bg-primary/30" />
-      <div className="space-y-8">
-        {finalEvents.map((ev, idx) => {
-          const isLast = idx === finalEvents.length - 1;
-
-          return (
-            <div
-              key={ev.id}
-              className="grid grid-cols-[72px_1fr] gap-x-4 items-center h-full"
-            >
-              {/* DOT COLUMN */}
-              <div className="relative flex flex-col items-center">
-
-                {/* DOT */}
-                <div
-                  className={`relative z-10 w-3.5 h-3.5 rounded-full ${ev.isCurrent ? "bg-white border-2 border-primary" : "bg-primary"
-                    }`}
-                />
-
-
-                {!isLast && (
-                  <div className="absolute top-[50px] left-1/2  w-px bg-primary/30 h-full" />
-                )}
-              </div>
-
-              <div>
-                <div
-                  className={`rounded-lg border p-4 shadow-sm transition ${ev.isCurrent
-                      ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                      : "border-gray-200 bg-white"
-                    }`}
-                >
-                  <div className="text-sm text-muted-foreground mb-1">
-                    {ev.date ? format(new Date(ev.date), "PPP") : "—"}
-                  </div>
-                  <div
-                    className={`font-semibold ${ev.isCurrent ? "text-primary" : ""
-                      }`}
-                  >
-                    {ev.title}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-    </div>
+    <Timeline className="w-2/3">
+      {finalEvents.map((ev, i) => (
+        <TimelineItem
+          key={ev.id}
+          date={ev.date}
+          title={ev.title}
+          isCurrent={ev.isCurrent}
+          isLast={i === events.length - 1}
+        />
+      ))}
+    </Timeline>
 
   );
 }

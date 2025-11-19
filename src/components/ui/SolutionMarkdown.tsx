@@ -28,7 +28,7 @@ function SolutionMarkdown<T extends { description: string }>({ solutionForm, def
                     <div>
                         <Textarea
                             rows={12}
-                            className="border-none rounded-none text-2xl leading-relaxed"
+                            className="border-none rounded-none text-2xl leading-relaxed h-[300px]"
                             value={solutionForm.watch(description) || ""}
                             placeholder="Explain how your technology works. You can use Markdown for formatting (e.g., *bold*, lists, links)."
                             {...solutionForm.register(description, {
@@ -43,7 +43,7 @@ function SolutionMarkdown<T extends { description: string }>({ solutionForm, def
                         </div>
                     </div>
                 ) : (
-                    <div className="p-3 min-h-[200px]">
+                    <div className="p-3 h-[300px] overflow-y-auto">
                         <MarkdownViewer
                             content={
                                 (solutionForm.getValues(description) as string) || "Nothing to preview"
@@ -52,12 +52,11 @@ function SolutionMarkdown<T extends { description: string }>({ solutionForm, def
                     </div>
                 )}
 
-                {/* Tabs + Markdown label */}
-                <div className="flex items-center justify-between border-t bg-white px-2">
-                    <div className="flex">
+                <div className="flex items-center justify-between border-t  px-2">
+                    <div className="flex gap-2">
                         <button
                             type="button"
-                            className={`px-4 py-2 text-sm rounded-sm ${!isPreview ? "bg-accent font-medium" : "hover:bg-gray-100"
+                            className={`px-4 py-2 text-sm rounded-sm ${!isPreview ? "bg-accent font-medium" : "hover:bg-accent/20"
                                 }`}
                             onClick={() => setIsPreview(false)}
                         >
@@ -65,7 +64,7 @@ function SolutionMarkdown<T extends { description: string }>({ solutionForm, def
                         </button>
                         <button
                             type="button"
-                            className={`px-4 py-2 text-sm rounded-sm ${isPreview ? "bg-accent font-medium" : "hover:bg-gray-100"
+                            className={`px-4 py-2 text-sm rounded-sm ${isPreview ? "bg-primary font-medium text-white" : "hover:bg-primary/20"
                                 }`}
                             onClick={() => setIsPreview(true)}
                         >
@@ -74,7 +73,7 @@ function SolutionMarkdown<T extends { description: string }>({ solutionForm, def
                     </div>
 
                     <p className="text-xs text-gray-500">
-                        Parsed with <span className="text-blue-600">Markdown</span>
+                        Parsed with <span className="text-primary">Markdown</span>
                     </p>
                 </div>
             </div>

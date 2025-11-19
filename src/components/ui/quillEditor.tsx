@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "quill/dist/quill.snow.css";
 
 interface QuillEditorProps {
@@ -17,7 +17,18 @@ export default function QuillEditor({
 }: QuillEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const quillRef = useRef<any>(null);
-  const hasInitRef = useRef(false); 
+  const hasInitRef = useRef(false);
+
+  const [isDarkTheme, setisDarkTheme] = useState(false);
+
+  useEffect(() => {
+    const getTheme = localStorage.getItem("theme");
+    if (getTheme === "light") {
+      setisDarkTheme(false)
+    } else {
+      setisDarkTheme(true)
+    }
+  }, [isDarkTheme])
 
   useEffect(() => {
     async function init() {
@@ -32,7 +43,7 @@ export default function QuillEditor({
         placeholder,
         modules: {
           toolbar: [
-            [{ header: [1, 2, 3, false] }],
+            [{ header: [ 2, 3, false] }],
             ["bold", "italic", "underline", "strike"],
             [{ list: "ordered" }],
             ["link", "image"],
@@ -40,7 +51,19 @@ export default function QuillEditor({
             [{ align: [] }],
             ["clean"],
           ],
-        },
+          keyboard: {
+            bindings: {
+              handleBackspace: {
+                key: 'backspace',
+                collapsed: false,
+                handler: function (range: any) {
+                  quillRef.current?.deleteText(range.index, range.length);
+                  return false;
+                }
+              }
+            },
+          },
+        }
       });
 
       quillRef.current.on("text-change", () => {
@@ -54,7 +77,7 @@ export default function QuillEditor({
     }
 
     init();
-  }, [onChange,placeholder,value]);
+  }, [onChange, placeholder, value]);
 
   useEffect(() => {
     if (!quillRef.current) return;
@@ -66,12 +89,14 @@ export default function QuillEditor({
   }, [value]);
 
   return (
-    <div className="quill-wrapper flex flex-col w-full  rounded-md bg-background shadow-sm">
-      <div
-        ref={editorRef}
-        className="rounded-b-md p-2 h-full"
-        style={{ minHeight: height }}
-      />
+    <div className="quill-wrapper flex flex-col w-full rounded-md shadow-sm">
+      <div className={isDarkTheme ? "quill-dark" : "quill-light"}>
+        <div
+          ref={editorRef}
+          className="rounded-b-md p-2 h-full"
+          style={{ minHeight: height }}
+        />
+      </div>
     </div>
   );
 }

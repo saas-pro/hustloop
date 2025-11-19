@@ -28,9 +28,9 @@ const solutionSubmissionSchema = z.object({
         .string()
         .min(3, "Place of residence must be at least 3 characters long.")
         .max(100, "Too long."),
-    district: z
+    state: z
         .string()
-        .min(2, "District name must be at least 2 characters long.")
+        .min(2, "State name must be at least 2 characters long.")
         .max(50, "Too long."),
     files: z
         .array(z.instanceof(File))
@@ -66,7 +66,7 @@ export function SolutionSubmissionForm({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [agreeToTerms, setAgreeToTerms] = useState(false);
-    
+
     const form = useForm<SolutionSubmissionSchema>({
         resolver: zodResolver(solutionSubmissionSchema),
         defaultValues: {
@@ -90,10 +90,6 @@ export function SolutionSubmissionForm({
             setValue("contactName", parsedUser.name);
         }
     }, [setValue]);
-
-
-
-
 
     const selectedFiles = watch("files") || [];
 
@@ -134,7 +130,7 @@ export function SolutionSubmissionForm({
             formData.append("contactName", data.contactName);
             formData.append("mobileNumber", data.mobileNumber);
             formData.append("placeOfResidence", data.placeOfResidence);
-            formData.append("district", data.district);
+            formData.append("state", data.state);
 
             if (data.files && data.files.length > 0) {
                 data.files.forEach((file) => formData.append("files", file));
@@ -185,9 +181,7 @@ export function SolutionSubmissionForm({
                     <Label htmlFor="description" className="mb-2 block">
                         Description
                     </Label>
-                    <SolutionMarkdown solutionForm={form} defaultDescription={`
-Briefly describe your solution and how it addresses the identified challenge.
-
+                    <SolutionMarkdown solutionForm={form} defaultDescription={`Briefly describe your solution and how it addresses the identified challenge.
 ---
 
 ## Key Features
@@ -315,7 +309,7 @@ Briefly describe your solution and how it addresses the identified challenge.
 
 
 
-                <div className="border rounded-md p-4 bg-gray-50">
+                <div className="border rounded-md p-4 ">
                     <h3 className="font-semibold text-lg mb-4">Contact Details</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -330,7 +324,7 @@ Briefly describe your solution and how it addresses the identified challenge.
                                     readOnly={!isEditingName}
                                     className={
                                         !isEditingName
-                                            ? "bg-gray-100 cursor-not-allowed"
+                                            ? "cursor-not-allowed"
                                             : ""
                                     }
                                     {...register("contactName")}
@@ -356,8 +350,12 @@ Briefly describe your solution and how it addresses the identified challenge.
                                 Mobile Number
                             </Label>
                             <Input
-                                id="mobileNumber"
+                                type="text"
+                                maxLength={10}
                                 placeholder="Enter 10-digit mobile number"
+                                onInput={(e:any) => {
+                                    e.target.value = e.target.value.replace(/\D/g, "");
+                                }}
                                 {...register("mobileNumber")}
                             />
                             {errors.mobileNumber && (
@@ -385,17 +383,17 @@ Briefly describe your solution and how it addresses the identified challenge.
                         </div>
 
                         <div>
-                            <Label htmlFor="district" className="mb-2 block">
-                                District
+                            <Label htmlFor="state" className="mb-2 block">
+                                State
                             </Label>
                             <Input
-                                id="district"
-                                placeholder="Enter district"
-                                {...register("district")}
+                                id="state"
+                                placeholder="Enter state"
+                                {...register("state")}
                             />
-                            {errors.district && (
+                            {errors.state && (
                                 <p className="text-red-500 text-sm mt-1">
-                                    {errors.district.message}
+                                    {errors.state.message}
                                 </p>
                             )}
                         </div>

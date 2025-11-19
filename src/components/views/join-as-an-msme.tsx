@@ -124,9 +124,9 @@ interface MsmeDashboardViewProps {
 const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: View) => void, contentType: string }) => (
     <div className="flex flex-col items-center justify-center h-full text-center p-8">
         <Lock className="h-16 w-16 text-accent mb-6" />
-        <h3 className="text-2xl font-bold mb-2">Content Locked</h3>
+        <h3 className="text-2xl font-bold mb-2">Access required</h3>
         <p className="max-w-md mx-auto text-muted-foreground mb-6">
-            Please log in or sign up to view available Problem Statements.
+            Log in or sign up to post your business challenges and connect with solution providers.
         </p>
         <div className="flex gap-4">
             <Button onClick={() => setActiveView('login')}>Login</Button>
@@ -528,8 +528,10 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                             <DialogHeader className="p-6">
                                 <DialogTitle className="text-3xl font-bold text-center  font-headline">Join as an MSME</DialogTitle>
                                 <DialogDescription className="text-center">
-                                    <span className="text-accent">{"Your business, your potential."}</span><br />
-                                    Browse technology profiles from various organizations seeking collaboration.
+                                    <span className="text-accent">{"Collaborate, solve, and scale with a network of trusted innovators."}</span><br />
+                                    <span className="block text-center mx-auto">
+                                        Empower your business by tapping a network of vetted innovators. Post your challenges, collaborate on tailored solutions, and unlock measurable growth with expert support and transparent rewards.
+                                    </span>
 
                                 </DialogDescription>
                             </DialogHeader>

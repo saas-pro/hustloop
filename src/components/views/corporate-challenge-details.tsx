@@ -243,7 +243,7 @@ export default function CorporateChallengeDetails({
         </DialogHeader>
 
         <Tabs defaultValue="summary" className="w-full px-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 h-fit">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="announcement">Announcements</TabsTrigger>
@@ -252,7 +252,7 @@ export default function CorporateChallengeDetails({
             <TabsTrigger value="faq">FAQ</TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-grow mt-4 h-[calc(90vh-200px)]">
+          <ScrollArea className="flex-grow mt-4 h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]">
             <TabsContent value="summary">
               <ScrollArea className="flex-grow mt-4 px-6">
                 <div className="space-y-12">
@@ -567,15 +567,6 @@ export default function CorporateChallengeDetails({
                   </div>
                 ) : (
                   <>
-                    <div className="px-4 mb-4">
-                      <Input
-                        placeholder="Search by name, points, district..."
-                        value={search}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-                        className="max-w-md mx-auto"
-                      />
-                    </div>
-
                     <CardContent>
                       <div className="w-full overflow-x-auto">
                         <Table>
@@ -688,7 +679,7 @@ export default function CorporateChallengeDetails({
           <ScrollArea
             ref={termsRef}
             onScrollCapture={handleScroll}
-            className="max-h-[40vh] border rounded-md p-4 text-sm text-muted-foreground"
+            className="max-h-[40vh] border rounded-md p-4 text-sm"
           >
             <div className="pr-4 space-y-4">
               <div className="space-y-3">

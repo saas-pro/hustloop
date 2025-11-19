@@ -1,6 +1,6 @@
 
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import TwinklingStars from '@/components/layout/twinkling-stars';
@@ -10,13 +10,50 @@ import GoogleAnalytics from "./metrics/GoogleAnalytics"
 import MicrosoftClarity from "./metrics/MicrosoftClarity"
 
 
-// export const metadata: Metadata = {
-//   title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
-//   description: 'Open talent, Real impact. An ecosystem for problem solving and technology transfer - founders, enablers, innovators and students.',
-//   alternates: {
-//     canonical: 'https://hustloop.com/',
-//   },
-// };
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
+export const metadata: Metadata = {
+  metadataBase: new URL('https://hustloop.com'),
+  title: {
+    default: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
+    template: '%s | Hustloop',
+  },
+  description: 'Open talent, Real impact. A dynamic ecosystem for problem solving and technology transfer. We connect founders, enablers, innovators, and students to collaborate, build startups, and drive meaningful innovation together.',
+  keywords: ['startup', 'innovation', 'collaboration', 'founders', 'students', 'technology transfer', 'ecosystem'],
+  authors: [{ name: 'Hustloop Team' }],
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://hustloop.com',
+    title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
+    description: 'Open talent, Real impact. A dynamic ecosystem for problem solving and technology transfer. We connect founders, enablers, innovators, and students to collaborate, build startups, and drive meaningful innovation together.',
+    siteName: 'Hustloop',
+    images: [
+      {
+        url: '/logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'Hustloop',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
+    description: 'Open talent, Real impact. A dynamic ecosystem for problem solving and technology transfer. We connect founders, enablers, innovators, and students to collaborate, build startups, and drive meaningful innovation together.',
+    images: ['/logo.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: 'https://hustloop.com',
+  },
+};
 
 export default function RootLayout({
   children,
@@ -25,16 +62,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <title>Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet</title>
-        <meta name="description" content="Open talent, Real impact. An ecosystem for problem solving and technology transfer - founders, enablers, innovators and students." />
-        <meta property="og:url" content="https://hustloop.com" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://hustloop.com/logo.png" />
-        <meta name="robots" content="index, follow" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="canonical" href="https://hustloop.com" />
-      </head>
       <body className="bg-background font-sans">
         <ThemeProvider>
           <div className="flex-grow ">

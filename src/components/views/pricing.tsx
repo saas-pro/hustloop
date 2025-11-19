@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import plans from "../static_price";
+import { toast } from "@/hooks/use-toast";
 
 interface PricingViewProps {
   isOpen: boolean;
@@ -15,6 +16,23 @@ interface PricingViewProps {
 }
 
 export default function PricingView({ isOpen, onOpenChange, onGetStartedClick }: PricingViewProps) {
+  const handlePlanClick = (idx: number) => {
+    if (idx === 0) {
+      return;
+    }
+
+    if (idx === 1 || idx === 2) {
+      toast({
+        title: "Payment Integrated Coming Soon!"
+      });
+      return;
+    }
+
+    if (idx === 3) {
+      window.location.href = "/contact-us";
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-7xl h-[90vh] flex flex-col">
@@ -28,8 +46,8 @@ export default function PricingView({ isOpen, onOpenChange, onGetStartedClick }:
               <Card
                 key={plan.name}
                 className={cn(
-                  "relative flex flex-col bg-card/50 backdrop-blur-sm",
-                  plan.primary ? "border-primary ring-2 ring-primary" : "border-border/50"
+                  "relative flex flex-col bg-card/50",
+                  plan.primary && "border-primary border"
                 )}
               >
                 <CardHeader>
@@ -66,14 +84,17 @@ export default function PricingView({ isOpen, onOpenChange, onGetStartedClick }:
                     )}
 
                     <div className="flex flex-col">
+
                       <span className="text-4xl font-bold">{plan.price}</span>
                       {(idx === 1 || idx === 2) && (
-                        <span className="text-xs text-muted-foreground">INR (including GST)</span>
+                        <span className="text-xs text-muted-foreground">INR + GST Applicable</span>
                       )}
                     </div>
                   </div>
 
                   <Button
+                    onClick={() => handlePlanClick(idx)}
+                    disabled={idx === 0}
                     className={cn(
                       "w-full",
                       plan.primary

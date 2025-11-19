@@ -9,7 +9,7 @@ const plans = [
         ],
         cta: "Get Started",
         primary: false,
-        note: "Payment integration coming soon. You will be notified before your plan ends."
+        note: "Payment integration coming soon."
     },
     {
         name: "Standard",
@@ -25,7 +25,7 @@ const plans = [
         ],
         cta: "Get Started",
         primary: false,
-        note: "Payment integration coming soon. You will be notified before your plan ends."
+        note: "Payment integration coming soon."
     },
     {
         name: "Premium",
@@ -42,18 +42,19 @@ const plans = [
         ],
         cta: "Get Started",
         primary: true,
-        note: "Payment integration coming soon. You will be notified before your plan ends."
+        note: "Payment integration coming soon."
     },
     {
         name: "Enterprise",
-        description: "High-touch support with fully customizable MSME problem-solving solutions and dedicated expert assistance.",
+        description: "High-touch support with fully customizable problem‑solving solutions and dedicated expert assistance.",
         features: [
+            "Tailored Solutions",
             "You can discuss your requirements with us",
             "24/7 priority support"
         ],
         cta: "Contact Us",
         primary: false,
-        note: "Payment integration coming soon. You will be notified before your plan ends."
+        note: "Payment integration coming soon."
     }
 ];
 

@@ -683,7 +683,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                   className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
                   onClick={() => setActiveView("msmes")}
                 >
-                  Solve Challenges
+                  Browse Challenges
                 </Button>
               </Card>
 

@@ -267,7 +267,7 @@ const QAItemView = ({
                         <AvatarFallback>{item.author.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <span
-                        className={`font-semibold  ${item.isOrganizer ? 'text-primary' : 'text-foreground'}`}
+                        className={`font-semibold text-[14px]  ${item.isOrganizer ? 'text-primary' : 'text-foreground'}`}
                     >
                         {item.author}
                     </span>

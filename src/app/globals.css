@@ -1316,11 +1316,118 @@ body {
   border-radius: 12px 12px 0 0 !important;
 }
 
+.ql-toolbar button {
+  border-radius: 6px;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+
+.quill-light .ql-toolbar button:hover,
+.quill-light .ql-toolbar button.ql-active {
+  background-color: rgba(6, 78, 190, 0.08) !important; /* #064ebe with low alpha */
+}
+
+.quill-dark .ql-toolbar button:hover,
+.quill-dark .ql-toolbar button.ql-active {
+  background-color: rgba(74, 163, 255, 0.12) !important; /* #4aa3ff with low alpha */
+}
+
+/* Ensure icons also get an appropriate color so the filled background looks correct */
+.quill-light .ql-toolbar button:hover svg,
+.quill-light .ql-toolbar button.ql-active svg {
+  stroke: #064ebe !important;
+  color: #064ebe !important;
+}
+.quill-dark .ql-toolbar button:hover svg,
+.quill-dark .ql-toolbar button.ql-active svg {
+  stroke: #4aa3ff !important;
+  color: #4aa3ff !important;
+}
+
+/* .quill-dark .ql-toolbar  button svg,
+.quill-dark .ql-toolbar .ql-picker-label svg,
+.quill-dark .ql-toolbar .ql-picker-item svg {
+  stroke: white !important;
+  color: white !important;
+}
+
+.quill-dark .ql-toolbar .ql-picker-label,
+.quill-dark .ql-toolbar .ql-picker-item {
+  color: white !important;
+} */
+
+.quill-dark .ql-toolbar .ql-stroke {
+  fill: none !important;
+  stroke: #fff !important;
+}
+
+.quill-dark .ql-toolbar .ql-fill {
+  fill: #fff !important;
+  stroke: none !important;
+}
+
+.quill-dark .ql-toolbar .ql-picker {
+  color: #fff !important;
+}
+
+.quill-dark .ql-picker-options {
+  color: white !important;
+  background-color: hsl(var(--background)) !important;
+}
+
+.quill-dark .ql-editor.ql-blank::before {
+    color: #888 !important; 
+    opacity: 1 !important;  
+}
+
+.quill-dark .ql-editor {
+  padding: 4px 2px 0px 2px;
+}
+
+.quill-dark .ql-toolbar button:hover .ql-stroke {
+    stroke: #4aa3ff !important;  
+}
+
+.quill-dark .ql-toolbar button:hover .ql-fill {
+    fill: #4aa3ff !important;
+}
+
+.quill-dark .ql-toolbar .ql-picker:hover {
+    color: #4aa3ff !important;
+}
+.quill-light .ql-editor {
+  padding: 4px 2px 0px 2px;
+}
+
+
+.quill-light .ql-toolbar button svg,
+.quill-light .ql-toolbar .ql-picker-label svg,
+.quill-light .ql-toolbar .ql-picker-item svg {
+  stroke: black !important;
+  color: black !important;
+}
+
+
+
+.quill-light .ql-toolbar .ql-picker-label,
+.quill-light .ql-toolbar .ql-picker-item {
+  color: black !important;
+
+}
+
+
 .quill-wrapper .ql-editor {
   font-size: 15px;
   letter-spacing: 5;
   min-height: 150px;
   line-height: 1.6;
+}
+
+.dark .prose {
+  color: #d1d5db !important; 
+}
+.prose p {
+  color: white !important; 
 }
 
 .inverted {
@@ -1356,7 +1463,6 @@ body {
   height: 44px;
   width: 44px;
   background: linear-gradient(90deg, #2A7B9B 0%, #8AA827 100%) !important;
-
   display: flex;
   top: -3.5%;
   left: -2%;
@@ -1389,7 +1495,7 @@ body {
   bottom: -9%;
   border-radius: 10px;
   right: 0%;
-    font-weight: bold;
+  font-weight: bold;
   position: absolute;
   align-items: center;
   justify-content: center;
@@ -1402,4 +1508,44 @@ body {
 
 .author-name>p {
   font-size: small;
+}
+
+/* Ensure Tailwind Typography prose content is readable in dark mode across the app.
+   This is a defensive override for cases where `dark:prose-invert` isn't applied or
+   other styles are overriding text color. Use specific selectors to avoid leaking.
+*/
+.dark .prose,
+.quill-dark .prose {
+  color: #fff !important;
+}
+
+.dark .prose p,
+.quill-dark .prose p,
+.dark .prose li,
+.quill-dark .prose li,
+.dark .prose span,
+.quill-dark .prose span {
+  color: #e6eef8 !important; /* slightly off-white for better readability */
+}
+
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4,
+.quill-dark .prose h1,
+.quill-dark .prose h2,
+.quill-dark .prose h3,
+.quill-dark .prose h4 {
+  color: #fff !important;
+}
+
+.dark .prose a,
+.quill-dark .prose a {
+  color: #93c5fd !important; /* sky-300 */
+}
+
+.dark .prose code,
+.quill-dark .prose code {
+  color: #f8fafc !important;
+  background-color: rgba(255,255,255,0.04) !important;
 }
