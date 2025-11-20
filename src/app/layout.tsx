@@ -10,6 +10,7 @@ import GoogleAnalytics from "./metrics/GoogleAnalytics"
 import MicrosoftClarity from "./metrics/MicrosoftClarity"
 
 
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,

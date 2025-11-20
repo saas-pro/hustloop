@@ -762,7 +762,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         if (userRole === 'admin') {
             if (activeTab === 'users') fetchUsers(1, 10);
             if (activeTab === 'aignite') fetchRegistrations(1);
-            if (activeTab === 'connex') fetchConnex(1);
+            // if (activeTab === 'connex') fetchConnex(1);
             // if (activeTab === 'blog') fetchBlogPosts();
             // if (activeTab === 'sessions') fetchEducationPrograms();
             if (activeTab === 'ip/technologies') fetchIps();
@@ -1043,7 +1043,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setisipOverview(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "connex", "engagement", "settings"];
+    const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "aignite", "engagement", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
     const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];
@@ -2919,7 +2919,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             </CardContent>
                                         </Card>
                                     </TabsContent>
-                                    <TabsContent value="connex" className="mt-0">
+                                    {/* <TabsContent value="connex" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader>
                                                 <div className="flex justify-between items-center">
@@ -3091,7 +3091,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 )}
                                             </CardContent>
                                         </Card>
-                                    </TabsContent>
+                                    </TabsContent> */}
                                     <TabsContent value="blog" className="mt-0 space-y-6">
                                         <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">
                                             <TabsList className="grid w-full grid-cols-2">

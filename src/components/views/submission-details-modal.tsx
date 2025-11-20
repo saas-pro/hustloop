@@ -446,7 +446,7 @@ export default function SubmissionDetailsModal({
                                                         {comment.authorRole.toLowerCase() === "msme"
                                                             ? `${submission.challenge?.postedBy?.companyName || "Unknown Company"} - MSME`
                                                             : comment.authorRole.toLowerCase() === "admin"
-                                                                ? "Triagger"
+                                                                ? "Triager"
                                                                 : comment.authorRole}
                                                     </span>
                                                 )}

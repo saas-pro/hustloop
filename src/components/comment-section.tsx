@@ -161,7 +161,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
 
     const renderCommentContent = (text: string) => {
         if (!text.trim()) return null;
-        return <div className="prose dark:prose-invert max-w-none">{text}</div>;
+        return <div className=" max-w-none">{text}</div>;
     };
 
     const renderFileAttachment = (fileURL: string, fileName: string) => (
@@ -835,12 +835,12 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                         <div className="flex flex-col items-left mb-2">
                             <label htmlFor={textareaId} className="font-semibold text-sm mb-1">Add a comment</label>
                             {replyingTo && (
-                                <div className="p-2 mb-2 border-l-4 border-green-500 bg-green-50 dark:bg-green-900/50 rounded-md flex justify-between items-center">
+                                <div className="p-2 mb-2 border-l-4 border-primary bg-card rounded-md flex justify-between items-center">
                                     <div className='truncate pr-2'>
-                                        <p className="font-semibold text-green-700 dark:text-green-300 text-sm">Replying to {replyingTo.name}</p>
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{replyingTo.comment || replyingTo.fileName || 'Attachment.'}</p>
+                                        <p className="font-semibold text-primary text-sm">Replying to {replyingTo.name}</p>
+                                        <p className="text-xs truncate">{replyingTo.comment || replyingTo.fileName || 'Attachment.'}</p>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleCancelReply}>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 " onClick={handleCancelReply}>
                                         <X className="h-4 w-4" />
                                     </Button>
                                 </div>

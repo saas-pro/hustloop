@@ -12,7 +12,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { CorporateChallenge } from './msmes';
 import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award, Lock } from 'lucide-react';
 import {
   Tooltip,
@@ -48,16 +47,53 @@ interface CorporateChallengeDetailsProps {
   setActiveView: (view: View) => void;
 }
 
+import { LoadingButton } from "../ui/loading-button";
+import TimelineCounter from '../ui/timeline-counter';
+
+interface CorporateChallenge {
+  id: string;
+  title: string;
+  description: string;
+  reward_amount: number;
+  reward_min: number;
+  reward_max: number;
+  challenge_type: string;
+  start_date: string;
+  end_date: string;
+  sector: string;
+  stage: string;
+  technology_area: string;
+  contact_name: string;
+  contact_role: string;
+  created_at: string;
+  looking_for: string;
+  status: string;
+  company_name: string;
+  company_sector: string;
+  company_description: string;
+  website_url: string;
+  linkedin_url: string;
+  scope: string;
+  x_url: string;
+  logo_url: string;
+  extended_end_date?: string | null;
+}
+
 type hallOfFame = {
   contactName: string;
   points: number;
-  district: string;
+  state: string;
 }
 
 type TimelineData = {
-  startDate: string;
-  underReview: string;
-  verification: string;
+  application_started: string;
+  application_ended: string;
+  extended_end_date: string | null;
+  review_started: string;
+  review_ended: string;
+  screening_started: string;
+  screening_ended: string;
+  challenge_close: boolean | string;
 };
 
 type Announcement = {
@@ -96,7 +132,7 @@ export default function CorporateChallengeDetails({
   const [events, setEvents] = useState<TimelineData | null>(null);
   const [data, setData] = useState<hallOfFame[]>([]);
   const [search, setSearch] = useState("");
-
+  
   useEffect(() => {
     if (!challenge) return;
 
@@ -167,9 +203,19 @@ export default function CorporateChallengeDetails({
   const termsRef = useRef<HTMLDivElement>(null);
 
   if (!challenge) return null;
-  const isOtherUsers = ["incubator", "mentor"].some(role =>
-    localStorage.getItem('userRole')?.includes(role)
-  );
+  const userRole = localStorage.getItem("userRole") || "";
+  const founderRole = localStorage.getItem("founder_role") || "";
+  console.log(founderRole)
+
+  const isAllowedFounder =
+    userRole.includes("founder") &&
+    founderRole === "Solve MSME&#39;s challenge";
+
+  const isOtherUsers =
+    userRole.includes("incubator") ||
+    userRole.includes("mentor") ||
+    userRole.includes("msme") ||
+    (userRole.includes("founder") && !isAllowedFounder);
 
   const isDisabled = !isLoggedIn || isOtherUsers;
   let tooltipContent = null;
@@ -214,9 +260,7 @@ export default function CorporateChallengeDetails({
     }
   };
 
-
-
-
+  const isChallengeExpiredOrStopped = challenge.status === "expired" || challenge.status === "stopped";
 
   return (
     <Dialog open={!!challenge} onOpenChange={onOpenChange}>
@@ -231,6 +275,7 @@ export default function CorporateChallengeDetails({
               className="rounded-lg"
             />
             <div>
+
               <DialogTitle className="text-3xl font-bold font-headline">
                 {challenge.company_name}
               </DialogTitle>
@@ -255,17 +300,29 @@ export default function CorporateChallengeDetails({
           <ScrollArea className="flex-grow mt-4 h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]">
             <TabsContent value="summary">
               <ScrollArea className="flex-grow mt-4 px-6">
-                <div className="space-y-12">
+                <div className="space-y-8">
                   {/* Title */}
-                  <div className="mb-8 flex items-start gap-4">
-                    <Award className="h-10 w-10 text-primary mt-1" />
-                    <div>
-                      <h2 className="text-xl font-bold text-muted-foreground tracking-wide uppercase mb-1">
-                        Challenge Title
-                      </h2>
-                      <h1 className="text-4xl font-extrabold leading-tight text-foreground">
-                        {challenge.title}
-                      </h1>
+                  {isChallengeExpiredOrStopped && (
+                    <div className="text-white bg-red-500 w-full font-semibold p-2 rounded">
+                      <p>This challenge is {challenge.status}.</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between m-auto items-center gap-4">
+                    <div className='flex items-start gap-2'>
+                      <Award className="h-10 w-10 text-primary mt-1" />
+                      <div>
+                        <h2 className="text-xl font-bold text-muted-foreground tracking-wide uppercase mb-1">
+                          Challenge Title
+                        </h2>
+                        <h1 className="text-4xl font-extrabold leading-tight text-foreground">
+                          {challenge.title}
+                        </h1>
+                      </div>
+
+                    </div>
+                    <div className=''>
+                      <TimelineCounter endDate={challenge?.end_date} extendedEndDate={challenge.extended_end_date} status={challenge.status} />
                     </div>
                   </div>
 
@@ -278,7 +335,7 @@ export default function CorporateChallengeDetails({
                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                       <CardHeader className="items-center">
                         <Workflow className="h-8 w-8 text-primary mb-2" />
-                        <CardTitle className="text-4xl font-bold">{challenge.stage}</CardTitle>
+                        <CardTitle className="text-4xl font-bold">{challenge?.stage}</CardTitle>
                         <p className="text-sm text-muted-foreground">Challenge Stage</p>
                       </CardHeader>
                     </Card>
@@ -349,45 +406,60 @@ export default function CorporateChallengeDetails({
                   </div>
 
 
-                  {/* Apply Section */}
-                  {isOtherUsers ?
-                    <div className="text-center bg-card/50 rounded-lg my-12 py-10">
-                      <h2 className="text-3xl font-bold mb-4 font-headline">
-                        Ready to Solve This Challenge?
-                      </h2>
-                      <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
-                        Login as Founder to Solve this Problem
-                      </p>
-                    </div>
-
-                    : <div className="text-center bg-card/50 rounded-lg my-12 py-10">
-                      <h2 className="text-3xl font-bold mb-4 font-headline">
-                        Ready to Solve This Challenge?
-                      </h2>
-                      <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
-                        Submit your innovative solution and get a chance to win exciting rewards and partnerships.
-                      </p>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            {isLoggedIn ? <Button
-                              size="lg"
-                              className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                              onClick={() => handleApplyClick(challenge.id)}
-                              disabled={!!isDisabled}
-                            >
-                              <Rocket className="mr-2 h-5 w-5" /> Solve This Challenge
-                            </Button> : <div className="flex gap-4 w-full justify-center">
-                              <Button onClick={() => setActiveView('login')}>Login</Button>
-                              <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                  {<div className="text-center bg-card/50 rounded-lg my-12 py-10">
+                    {isChallengeExpiredOrStopped ? (
+                      <div className="text-red-500 font-semibold mb-4">
+                        This challenge is {challenge.status}. Submissions are no longer accepted.
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="text-3xl font-bold mb-4 font-headline">
+                          Ready to Solve This Challenge?
+                        </h2>
+                        <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
+                          Submit your innovative solution and get a chance to win exciting rewards and partnerships.
+                        </p>
+                      </>
+                    )}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          {isOtherUsers ? (
+                            // ❌ BLOCKED USERS
+                            <div className="flex gap-4 w-full justify-center">
+                              <Button disabled className="bg-gray-400 cursor-not-allowed">
+                                Not Allowed
+                              </Button>
+                            </div>
+                          ) : isAllowedFounder || isLoggedIn ? (
+                            challenge.extended_end_date || challenge.status === "active" ? (
+                              <Button
+                                size="lg"
+                                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                                onClick={() => handleApplyClick(challenge.id)}
+                                disabled={isDisabled || isChallengeExpiredOrStopped}
+                              >
+                                <Rocket className="mr-2 h-5 w-5" /> Solve This Challenge
+                              </Button>
+                            ) : null
+                          ) : (
+                            <div className="flex gap-4 w-full justify-center">
+                              <Button onClick={() => setActiveView("login")}>Login</Button>
+                              <Button
+                                onClick={() => setActiveView("signup")}
+                                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                              >
                                 Sign Up
                               </Button>
-                            </div>}
-                          </TooltipTrigger>
-                          {isDisabled && <TooltipContent>{tooltipContent}</TooltipContent>}
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>}
+                            </div>
+                          )}
+                        </TooltipTrigger>
+
+                        {isDisabled && <TooltipContent>{tooltipContent}</TooltipContent>}
+                      </Tooltip>
+                    </TooltipProvider>
+
+                  </div>}
                 </div>
               </ScrollArea>
             </TabsContent>
@@ -408,13 +480,6 @@ export default function CorporateChallengeDetails({
                       <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
                       <p className="max-w-xs text-sm">
                         You must be logged in to view the challenge timeline.
-                      </p>
-                    </div>
-                  ) : isOtherUsers ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                      <h3 className="text-lg font-semibold text-foreground">Access Restricted</h3>
-                      <p className="max-w-xs text-sm">
-                        Please log in as <strong>Founder</strong> to view the timeline.
                       </p>
                     </div>
                   ) : (
@@ -450,14 +515,7 @@ export default function CorporateChallengeDetails({
                       <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
                       <p className="max-w-xs text-sm">You must be logged in to view announcements.</p>
                     </div>
-                  ) : isOtherUsers ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                      <h3 className="text-lg font-semibold text-foreground">Access Restricted</h3>
-                      <p className="max-w-xs text-sm">
-                        Please log in as <strong>Founder</strong> to view announcements.
-                      </p>
-                    </div>
-                  ) : (
+                  ) :  (
                     <>
                       {(!announcements || announcements.length === 0) && (
                         <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
@@ -558,14 +616,7 @@ export default function CorporateChallengeDetails({
                     <p className="max-w-xs text-sm">You must be logged in to view the Hall of Fame.</p>
                   </div>
 
-                ) : isOtherUsers ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                    <h3 className="text-lg font-semibold text-foreground">Access Restricted</h3>
-                    <p className="max-w-xs text-sm">
-                      Please log in as <strong>Founder</strong> to view the Hall of Fame.
-                    </p>
-                  </div>
-                ) : (
+                ) :  (
                   <>
                     <CardContent>
                       <div className="w-full overflow-x-auto">
@@ -615,7 +666,7 @@ export default function CorporateChallengeDetails({
 
                                   <TableCell className="font-medium">{item.contactName}</TableCell>
                                   <TableCell className="font-semibold">{item.points}</TableCell>
-                                  <TableCell className="font-medium">{item.district}</TableCell>
+                                  <TableCell className="font-medium">{item.state}</TableCell>
                                 </TableRow>
                               ))
                             )}
@@ -642,21 +693,7 @@ export default function CorporateChallengeDetails({
                   <CardContent>
                   </CardContent>
                 </Card>
-              ) : isOtherUsers ? (
-                <Card className="p-4">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">Q/A Forum</CardTitle>
-                    <CardDescription>Ask questions and collaborate with others on this challenge.</CardDescription>
-                  </CardHeader>
-                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                    <h3 className="text-lg font-semibold text-foreground">Access Restricted</h3>
-                    <p className="max-w-xs text-sm">Please log in as <strong>Founder</strong> to participate in the Q/A forum.</p>
-                  </div>
-                  <CardContent>
-                  </CardContent>
-                </Card>
-
-              ) : (
+              ) :  (
                 <QAForum collaborationId={challenge?.id} />
               )}
 

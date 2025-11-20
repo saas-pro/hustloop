@@ -273,7 +273,7 @@ export function SolutionSubmissionForm({
                         onChange={handleFileChange}
                     />
                     {selectedFiles.length > 0 && (
-                        <ul className="mt-4 border rounded-md divide-y divide-gray-200 bg-gray-50">
+                        <ul className="mt-4 border rounded-md ">
                             {selectedFiles.map((file, index) => (
                                 <li
                                     key={index}

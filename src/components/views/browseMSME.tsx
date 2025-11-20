@@ -21,6 +21,52 @@ import {
 } from "@/components/ui/dialog";
 import { API_BASE_URL } from "@/lib/api";
 import Image from "next/image";
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Calendar } from "@/components/ui/calendar"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { CalendarIcon } from "lucide-react"
+import { useToast } from "@/hooks/use-toast";
+import { LoadingButton } from "../ui/loading-button";
+
+interface Collaboration {
+    id: string;
+    title: string;
+    description: string;
+    reward_amount: number;
+    reward_min: number;
+    reward_max: number;
+    challenge_type: string;
+    start_date: string;
+    end_date: string;
+    sector: string;
+    technology_area: string;
+    contact_name: string;
+    contact_role: string;
+    created_at: string;
+    status: string;
+    company_name: string;
+    company_sector: string;
+    company_description: string;
+    website_url: string;
+    linkedin_url: string;
+    x_url: string;
+    logo_url: string;
+    extended_end_date?: string | null;
+}
 
 interface MSMEProfile {
     id: string;
@@ -45,6 +91,15 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedProfile, setSelectedProfile] = useState<MSMEProfile | null>(null);
+    const [collaborations, setCollaborations] = useState<Collaboration[]>([]);
+    const [collabLoading, setCollabLoading] = useState(false);
+    const [collabError, setCollabError] = useState<string | null>(null);
+    const { toast } = useToast()
+    const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date())
+    const [isExtendDateLoading, setIsExtendDateLoading] = React.useState(false);
+    const [isStopCollaborationLoading, setIsStopCollaborationLoading] = React.useState(false);
+    const [extendCollabId, setExtendCollabId] = React.useState<string | null>(null);
+    const [stopCollabId, setStopCollabId] = React.useState<string | null>(null);
 
     useEffect(() => {
         const ac = new AbortController();
@@ -59,8 +114,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
-                    },
-                    signal: ac.signal,
+                    }
                 });
 
                 if (!res.ok) {
@@ -85,8 +139,144 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
         };
 
         fetchProfiles();
-        return () => ac.abort();
     }, []);
+
+    useEffect(() => {
+        const fetchCollaborations = async () => {
+            if (!selectedProfile) return;
+            try {
+                setCollabLoading(true);
+                setCollabError(null);
+
+                const token = localStorage.getItem("token");
+                const res = await fetch(
+                    `${API_BASE_URL}/api/collaborations/user/${selectedProfile.user_id}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                        }
+                    }
+                );
+
+                if (!res.ok) {
+                    let msg = `${res.status} ${res.statusText}`;
+                    try {
+                        const body = await res.json();
+                        if (body?.message) msg = body.message;
+                    } catch { }
+                    throw new Error(msg);
+                }
+
+                const data = await res.json();
+                if (Array.isArray(data.message)) setCollaborations(data.message);
+
+                else if (data && data.message) setCollabError(data.message);
+                else setCollaborations([]);
+            } catch (err: any) {
+                if (err.name !== "AbortError")
+                    setCollabError(err.message ?? "Failed to fetch collaborations");
+            } finally {
+                setCollabLoading(false);
+            }
+        };
+
+        fetchCollaborations();
+    }, [selectedProfile]);
+
+    const handleExtendCollaboration = async (collaborationId: string) => {
+        setExtendCollabId(collaborationId);
+        setIsExtendDateLoading(true);
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${API_BASE_URL}/api/collaborations/${collaborationId}/extend`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ extended_end_date: selectedDate })
+            });
+            console.log(selectedDate)
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to extend collaboration end date');
+            }
+
+            const responseData = await response.json();
+            setCollaborations(collaborations.map(collab =>
+                collab.id === collaborationId ? { ...collab, extended_end_date: responseData.message.extended_end_date, status: responseData.message.status } : collab
+            ));
+
+            toast({
+                title: "Collaboration Extended",
+                description: "The collaboration end date has been successfully extended.",
+            })
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.message,
+            })
+        } finally {
+            setIsExtendDateLoading(false);
+            setExtendCollabId(null);
+            setSelectedDate(undefined);
+        }
+    };
+
+    const handleStopCollaboration = async (collaborationId: string) => {
+        setStopCollabId(collaborationId);
+        setIsStopCollaborationLoading(true);
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(
+                `${API_BASE_URL}/api/collaborations/${collaborationId}/stop-resume`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to toggle collaboration status");
+            }
+            if (!data.message.status) {
+                throw new Error("Invalid API response: status missing");
+            }
+            setCollaborations(
+                collaborations.map((collab) =>
+                    collab.id === collaborationId
+                        ? { ...collab, status: data.message.status.toLowerCase() }
+                        : collab
+                )
+            );
+
+            toast({
+                title: "Status Updated",
+                description: "Status changed successfully",
+            });
+
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.message,
+            });
+        } finally {
+            setIsStopCollaborationLoading(false);
+            setStopCollabId(null);
+        }
+    };
+
+
 
     return (
         <>
@@ -169,9 +359,9 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                 </DialogContent>
             </Dialog >
 
-            <Dialog open={!!selectedProfile} onOpenChange={() => setSelectedProfile(null)}>
+            <Dialog open={!!selectedProfile} onOpenChange={() => { setSelectedProfile(null); setCollaborations([]) }}>
                 {selectedProfile && (
-                    <DialogContent className="max-w-lg">
+                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>{selectedProfile.company_name}</DialogTitle>
                             <DialogDescription>{selectedProfile.sector}</DialogDescription>
@@ -224,10 +414,160 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                     </Button>
                                 )}
                             </div>
+
+                            <h3 className="text-lg font-semibold">Challenges</h3>
+                            {collabLoading ? (
+                                <p>Loading challenges...</p>
+                            ) : collabError ? (
+                                <p className="text-red-500">Error: {collabError}</p>
+                            ) : collaborations.length === 0 ? (
+                                <p>No challenges found for this MSME.</p>
+                            ) : (
+                                <Table>
+                                    <TableCaption>
+                                        List of challenges by {selectedProfile.company_name}.
+                                    </TableCaption>
+
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[350px]">Title</TableHead>
+                                            <TableHead className="w-[150px]">End Date</TableHead>
+                                            <TableHead className="w-[150px]">Extended End Date</TableHead>
+                                            <TableHead className="w-[120px]">Status</TableHead>
+                                            <TableHead className="text-right w-[220px]">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+
+                                    <TableBody>
+                                        {collaborations.map((collaboration) => (
+                                            <TableRow key={collaboration.id}>
+
+                                                {/* TITLE */}
+                                                <TableCell className="font-medium">
+                                                    {collaboration.title}
+                                                </TableCell>
+
+
+                                                <TableCell>
+                                                    {collaboration.end_date
+                                                        ? new Date(collaboration.end_date).toLocaleDateString()
+                                                        : "N/A"}
+                                                </TableCell>
+
+                                                <TableCell>
+                                                    {collaboration.extended_end_date
+                                                        ? new Date(collaboration.extended_end_date).toLocaleDateString()
+                                                        : "N/A"}
+                                                </TableCell>
+
+                                                {/* STATUS */}
+                                                <TableCell className="capitalize">
+                                                    {collaboration.status}
+                                                </TableCell>
+
+                                                {/* ACTIONS */}
+                                                <TableCell className="text-right w-[220px]">
+                                                    <div className="flex justify-end items-center gap-2">
+
+                                                        {/* EXPIRED → SHOW ONLY ACTIVATE BUTTON */}
+                                                        {collaboration.status === "expired" ? (
+                                                            <Popover>
+                                                                <PopoverTrigger asChild>
+                                                                    <Button
+                                                                        variant="default"
+                                                                        className="min-w-[100px] bg-green-600 hover:bg-green-700 text-white"
+                                                                        disabled={isExtendDateLoading && extendCollabId === collaboration.id}
+                                                                    >
+                                                                        Activate
+                                                                    </Button>
+                                                                </PopoverTrigger>
+
+                                                                <PopoverContent className="w-auto p-0" align="end">
+                                                                    <Calendar
+                                                                        mode="single"
+                                                                        selected={selectedDate}
+                                                                        onSelect={setSelectedDate}
+                                                                        disabled={(date) => date < new Date(collaboration.end_date)}
+                                                                        defaultMonth={new Date(collaboration.end_date)}
+                                                                    />
+
+                                                                    <div className="flex justify-end">
+                                                                        <LoadingButton
+                                                                            onClick={() => handleExtendCollaboration(collaboration.id)}
+                                                                            className="w-fit m-2 min-w-[140px]"
+                                                                            disabled={!selectedDate}
+                                                                            isLoading={isExtendDateLoading && extendCollabId === collaboration.id}
+                                                                        >
+                                                                            Confirm Activation
+                                                                        </LoadingButton>
+                                                                    </div>
+                                                                </PopoverContent>
+                                                            </Popover>
+                                                        ) : (
+                                                            <>
+                                                                {/* EXTEND BUTTON (active + stopped) */}
+                                                                <Popover>
+                                                                    <PopoverTrigger asChild>
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            className="min-w-[88px]"
+                                                                            disabled={isExtendDateLoading && extendCollabId === collaboration.id}
+                                                                        >
+                                                                            Extend
+                                                                        </Button>
+                                                                    </PopoverTrigger>
+
+                                                                    <PopoverContent className="w-auto p-0" align="end">
+                                                                        <Calendar
+                                                                            mode="single"
+                                                                            selected={selectedDate}
+                                                                            onSelect={setSelectedDate}
+                                                                            disabled={(date) => date < new Date(collaboration.end_date)}
+                                                                            defaultMonth={new Date(collaboration.extended_end_date || collaboration.end_date)}
+                                                                        />
+
+                                                                        <div className="flex justify-end">
+                                                                            <LoadingButton
+                                                                                onClick={() => handleExtendCollaboration(collaboration.id)}
+                                                                                className="w-fit m-2 min-w-[120px]"
+                                                                                disabled={!selectedDate}
+                                                                                isLoading={isExtendDateLoading && extendCollabId === collaboration.id}
+                                                                            >
+                                                                                Confirm Extend
+                                                                            </LoadingButton>
+                                                                        </div>
+                                                                    </PopoverContent>
+                                                                </Popover>
+
+                                                                {/* STOP / RESUME */}
+                                                                <LoadingButton
+                                                                    variant={collaboration.status === "stopped" ? "default" : "destructive"}
+                                                                    onClick={() => handleStopCollaboration(collaboration.id)}
+                                                                    disabled={isStopCollaborationLoading && stopCollabId === collaboration.id}
+                                                                    isLoading={isStopCollaborationLoading && stopCollabId === collaboration.id}
+                                                                    className="min-w-[88px]"
+                                                                >
+                                                                    {collaboration.status === "stopped" ? "Resume" : "Stop"}
+                                                                </LoadingButton>
+                                                            </>
+                                                        )}
+
+                                                    </div>
+                                                </TableCell>
+
+
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
                         </div>
                     </DialogContent>
                 )}
-            </Dialog >
+            </Dialog>
         </>
     );
 }
+
+
+

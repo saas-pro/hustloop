@@ -648,6 +648,8 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                       setActiveView("browseMSME");
                     } else if (!isLoggedIn) {
                       setActiveView("joinasanMSME");
+                    }else{
+                      setActiveView('joinasanMSME')
                     }
                   }}
                 >

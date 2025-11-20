@@ -23,7 +23,7 @@ export default function QuillEditor({
 
   useEffect(() => {
     const getTheme = localStorage.getItem("theme");
-    if (getTheme === "light") {
+    if (getTheme === "light" || !getTheme) {
       setisDarkTheme(false)
     } else {
       setisDarkTheme(true)
@@ -43,7 +43,7 @@ export default function QuillEditor({
         placeholder,
         modules: {
           toolbar: [
-            [{ header: [ 2, 3, false] }],
+            [{ header: [2, 3, false] }],
             ["bold", "italic", "underline", "strike"],
             [{ list: "ordered" }],
             ["link", "image"],

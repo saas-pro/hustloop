@@ -27,73 +27,87 @@ import { GovermentChallengeCard } from "./GovernmentChallengeCard";
 export type CorporateChallenge = {
   id: string;
   title: string;
-  company_description: string
-  company_sector: string
-  start_date: Date
-  end_date: Date
   description: string;
-  looking_for: string;
-  reward_amount: string;
+  reward_amount: number;
+  reward_min: number;
+  reward_max: number;
   challenge_type: string;
+  start_date: string;
+  end_date: string;
+  sector: string;
+  stage: string;
+  technology_area: string;
   contact_name: string;
   contact_role: string;
-  scope: [];
-  company_name: string
-  stage: number
-  logo_url: string
-  linkedin_url: string
-  x_url: string
-  website_url: string
-  reward_min: number
-  reward_max: number
-
+  created_at: string;
+  looking_for: string;
+  status: string;
+  company_name: string;
+  company_sector: string;
+  company_description: string;
+  website_url: string;
+  linkedin_url: string;
+  scope: string;
+  x_url: string;
+  logo_url: string;
+  extended_end_date?: string | null;
 };
 
 export type MSMEChallenge = {
-  id: number;
+  id: string;
   title: string;
-  company_description: string
-  company_sector: string
-  start_date: Date
-  end_date: Date
   description: string;
-  looking_for: string;
-  reward_amount: string;
+  reward_amount: number;
+  reward_min: number;
+  reward_max: number;
   challenge_type: string;
+  start_date: string;
+  end_date: string;
+  sector: string;
+  stage: string;
+  technology_area: string;
   contact_name: string;
   contact_role: string;
-  scope: [];
-  company_name: string
-  stage: number
-  logo_url: string
-  linkedin_url: string
-  x_url: string
-  website_url: string
-  reward_min: number
-  reward_max: number
+  created_at: string;
+  looking_for: string;
+  status: string;
+  company_name: string;
+  company_sector: string;
+  company_description: string;
+  website_url: string;
+  linkedin_url: string;
+  scope: string;
+  x_url: string;
+  logo_url: string;
+  extended_end_date?: string | null;
 };
 export type Governmentchallenges = {
   id: string;
   title: string;
-  company_description: string
-  company_sector: string
-  start_date: Date
-  end_date: Date
   description: string;
-  looking_for: string;
-  reward_amount: string;
+  reward_amount: number;
+  reward_min: number;
+  reward_max: number;
   challenge_type: string;
+  start_date: string;
+  end_date: string;
+  sector: string;
+  stage: string;
+  technology_area: string;
   contact_name: string;
   contact_role: string;
-  scope: [];
-  company_name: string
-  stage: number
-  logo_url: string
-  linkedin_url: string
-  x_url: string
-  website_url: string
-  reward_min: number
-  reward_max: number
+  created_at: string;
+  looking_for: string;
+  status: string;
+  company_name: string;
+  company_sector: string;
+  company_description: string;
+  website_url: string;
+  linkedin_url: string;
+  scope: string;
+  x_url: string;
+  logo_url: string;
+  extended_end_date?: string | null;
 };
 
 interface MsmesViewProps {
@@ -436,3 +450,5 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
     </>
   );
 }
+
+
