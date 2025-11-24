@@ -27,6 +27,7 @@ interface QAItem {
     text: string;
     attachment?: { name: string; url: string; type: 'image' | 'doc' | 'pdf' };
     replies: QAItem[];
+    role: string;
 }
 
 interface QAForumProps {
@@ -59,8 +60,6 @@ const QAReplyForm = ({
     const handleSubmit = () => {
         if (text.trim() || file) {
             onAddReply(text, file);
-            setText('');
-            setFile(null);
             onCancel();
         }
     };
@@ -72,6 +71,7 @@ const QAReplyForm = ({
                 onChange={setText}
                 placeholder="Ask your question here..."
                 height="150px"
+                disabled={isPostingReply}
             />
             <div className="flex justify-between items-center">
                 <Input
@@ -81,17 +81,20 @@ const QAReplyForm = ({
                     onChange={(e) => setNewFile(e.target.files?.[0] || null)}
                 />
                 <div className='flex items-center gap-2'>
-                    <Button
-                        className='flex gap-2'
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={!!newFile}
-                    >
-                        <Paperclip className="h-4 w-4" />
-                        <p>Attachment</p>
-                    </Button>
-                    <span className="text-xs text-muted-foreground">
-                        Supported file types: PDF, DOC, DOCX, JPG, PNG
-                    </span>
+                    <div className='flex flex-col md:flex-row items-center gap-2'>
+                        <Button
+                            className='flex gap-2'
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={!!newFile}
+                        >
+                            <Paperclip className="h-4 w-4" />
+                            <p>Attachment</p>
+                        </Button>
+                        <span className="text-xs text-muted-foreground md:block hidden">
+                            Supported file types: PDF, DOC, DOCX, JPG, PNG
+                        </span>
+                    </div>
+
                     {newFile && <p className="text-xs text-muted-foreground">Selected: {newFile.name}</p>}
                     {newFile && (
                         <Button
@@ -198,11 +201,8 @@ const QAItemView = ({
 
     useEffect(() => {
         if (isEditing) {
-            setEditText(item.text);
-            setEditFile(null);
-            setRemoveAttachment(false);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
+            if (item.text) {
+                setEditText(item.text);
             }
         }
     }, [isEditing, item.text]);
@@ -259,6 +259,7 @@ const QAItemView = ({
 
 
     const { canEdit, canDelete } = getQAactions(item);
+    console.log(item.author);
     return (
         <div className="flex gap-3 text-base ">
             <div className="flex-1">
@@ -267,21 +268,27 @@ const QAItemView = ({
                         <AvatarFallback>{item.author.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <span
-                        className={`font-semibold text-[14px]  ${item.isOrganizer ? 'text-primary' : 'text-foreground'}`}
+                        className={`font-semibold text-[14px]  ${item.isOrganizer ? 'text-foreground' : 'text-foreground'}`}
                     >
                         {item.author}
                     </span>
-                    {/* {item.isOrganizer && <Badge variant="secondary">Organizer</Badge>} */}
+                    {item.isOrganizer ? (
+                        <Badge variant="secondary">Organizer</Badge>
+                    ) : item.role === "admin" ? (
+                        <Badge variant="default">Triager</Badge>
+                    ) : (
+                        <Badge variant="outline">{item.role}</Badge>
+                    )}
                     <span>• {formatRelativeTime(item.timestamp)}</span>
                 </div>
-                <div className='ml-2'>
+                <div className='ml-2 py-1'>
                     <QAItemViewer html={item.text} />
                     {item.attachment && (
                         <a
                             href={item.attachment.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-2 ml-2 flex items-center gap-2 text-sm text-blue-500 hover:underline"
+                            className="mt-2 ml-2  flex items-center gap-2 text-sm text-blue-500 hover:underline"
                         >
                             <Paperclip className="h-4 w-4" />
                             {item.attachment.name}
@@ -304,44 +311,7 @@ const QAItemView = ({
                                 className="hidden"
                                 onChange={handleFileChange}
                             />
-                            <div className='flex items-center gap-2'>
-                                <Button
-                                    className='flex gap-2'
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={!!editFile}
-                                >
-                                    <p>Attachment</p>
-                                    <Paperclip className="h-4 w-4" />
 
-                                </Button>
-                                <span className="text-xs text-muted-foreground">Supported Files: PDF, DOC, DOCX, Images (JPG, PNG)</span>
-                                {editFile && <p className="text-xs text-muted-foreground">New: {editFile.name}</p>}
-                                {item.attachment && !editFile && !removeAttachment && (
-                                    <p className="text-xs text-muted-foreground">Current: {item.attachment.name}</p>
-                                )}
-                                {removeAttachment && <p className="text-xs text-muted-foreground">Attachment will be removed</p>}
-
-                                {item.attachment && !removeAttachment && (
-                                    <Button
-                                        variant="destructive"
-                                        size="default"
-                                        onClick={handleRemoveCurrentAttachment}
-                                        className="text-xs"
-                                    >
-                                        Remove Current
-                                    </Button>
-                                )}
-                                {editFile && (
-                                    <Button
-                                        variant="destructive"
-                                        size="default"
-                                        onClick={() => { setEditFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                                        className="text-xs"
-                                    >
-                                        Cancel New File
-                                    </Button>
-                                )}
-                            </div>
                             <div className="flex gap-2">
                                 <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
                                     Cancel
@@ -367,14 +337,14 @@ const QAItemView = ({
 
                             <>
                                 {canEdit && (
-                                    <Button
+                                    (item.text ? <Button
                                         variant="ghost"
                                         size="sm"
                                         className="text-xs"
                                         onClick={() => setIsEditing(true)}
                                     >
                                         Edit
-                                    </Button>
+                                    </Button> : null)
                                 )}
                                 {canDelete && (
                                     <Button
@@ -395,7 +365,7 @@ const QAItemView = ({
                 {replyingTo === item.id && (
                     <QAReplyForm
                         parentId={item.id}
-                        onCancel={() => setReplyingTo(null)}
+                        onCancel={() => setReplyingTo(isPostingReply ? null : replyingTo)}
                         onAddReply={(text, file) => onAddReply(item.id, text, file)}
                         isPostingReply={isPostingReply}
                     />
@@ -519,10 +489,10 @@ export function QAForum({ collaborationId }: QAForumProps) {
             });
             return;
         }
-
+        setIsPostingReply(true)
         try {
             const formData = new FormData();
-            setIsPostingReply(true)
+
             formData.append('text', text);
             formData.append('collaboration_id', String(collaborationId));
             formData.append('parent_id', String(parentId));
@@ -550,7 +520,7 @@ export function QAForum({ collaborationId }: QAForumProps) {
 
             const newReply = await res.json();
             setQaData(prev => addReplyToItem(prev, parentId, newReply));
-
+            setReplyingTo(null);
         } catch (err) {
             console.error("Reply error:", err);
             toast({
@@ -711,7 +681,7 @@ export function QAForum({ collaborationId }: QAForumProps) {
                     />
 
                     <div className="flex gap-2 items-center justify-between">
-                        <div className='flex items-center gap-2'>
+                        <div className='flex items-center  gap-2'>
                             <Input
                                 ref={fileInputRef}
                                 type="file"
@@ -719,18 +689,19 @@ export function QAForum({ collaborationId }: QAForumProps) {
                                 onChange={(e) => setNewFile(e.target.files?.[0] || null)}
                             />
 
-                            <Button
-                                className='flex gap-2 '
-                                disabled={!!newFile}
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <Paperclip className="h-4 w-4" />
-                                <p>Attachment</p>
-
-                            </Button>
-                            <span className="text-xs text-muted-foreground">
-                                Supported file types: PDF, DOC, DOCX, JPG, PNG
-                            </span>
+                            <div className='flex flex-col md:flex-row justify-center items-center gap-2'>
+                                <Button
+                                    className='flex gap-2'
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={!!newFile}
+                                >
+                                    <Paperclip className="h-4 w-4" />
+                                    <p>Attachment</p>
+                                </Button>
+                                <span className="text-xs text-muted-foreground hidden md:block">
+                                    Supported file types: PDF, DOC, DOCX, JPG, PNG
+                                </span>
+                            </div>
 
                             {newFile && (
                                 <Button

@@ -3,14 +3,40 @@ import { API_BASE_URL } from '@/lib/api';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { Info } from 'lucide-react';
+import { Info, Edit, X, Save, Trash2, FileText } from 'lucide-react';
 import { MarkdownViewer } from '../ui/markdownViewer';
 import { Button } from '../ui/button';
 import { AnnouncementDialog } from './AnnouncementDialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import SectorSearchWithDropdown from '../ui/SectorSearchWithDropdown';
+import ChallengeMarkdownEditor from '../ui/ChallengeMarkdown';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+export interface SectorData {
+    id: number | string
+    name: string
+    children: string[]
+}
 
 interface CollaborationViewProps {
     collaborationId: number;
     onClose: () => void;
+    initialEditMode?: boolean;
 }
 
 interface GetUsersCollaborationSchema {
@@ -29,51 +55,200 @@ interface GetUsersCollaborationSchema {
     contact_role: string;
     created_at: string;
     user_id: number;
+    attachments: [];
 }
 
-const CollaborationView = ({ collaborationId, onClose }: CollaborationViewProps) => {
+
+const editCollaborationSchema = z.object({
+    title: z.string().min(3, { message: "Title is required." }),
+    description: z.string().min(10, { message: "Description is required." }),
+    technologyArea: z
+        .object({
+            sector: z.string().min(1, "Sector is required"),
+            techArea: z.string().min(1, "Technology area is required"),
+        })
+        .refine(
+            (val) => val.sector && val.techArea,
+            { message: "Please select a technology area", path: ["techArea"] }
+        ),
+    challenge_type: z.enum(['corporate', 'msme', 'government'], {
+        errorMap: () => ({ message: "Please select a challenge type." }),
+    }),
+    contact_name: z.string().min(2, { message: "Contact name is required." }),
+    contact_role: z.string().min(2, { message: "Contact role is required." }),
+});
+
+type EditCollaborationFormValues = z.infer<typeof editCollaborationSchema>;
+
+const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }: CollaborationViewProps) => {
     const [collabDetails, setCollabDetails] = useState<GetUsersCollaborationSchema | null>(null);
     const [isFetching, setIsFetching] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(true);
     const [announcementOpen, setAnnouncementOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(initialEditMode);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [sectors, setSectors] = useState<SectorData[]>([]);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+    const editForm = useForm<EditCollaborationFormValues>({
+        resolver: zodResolver(editCollaborationSchema),
+        defaultValues: {
+            title: '',
+            description: '',
+            technologyArea: {
+                sector: '',
+                techArea: ''
+            },
+            challenge_type: 'corporate',
+            contact_name: '',
+            contact_role: '',
+        },
+    });
 
     const handleCloseDialog = useCallback(() => {
         setIsDialogOpen(false);
         onClose();
     }, [onClose]);
 
-    useEffect(() => {
-        const fetchCollabDetails = async () => {
-            setIsFetching(true);
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/get-users-collaboration?id=${collaborationId}`, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`,
-                    },
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setCollabDetails(data.collaborations[0]);
+    const fetchSectors = async () => {
+        const res = await fetch(`${API_BASE_URL}/api/sectors`);
+        const data = await res.json();
+        setSectors(data);
+    };
 
-                } else {
-                    toast({
-                        title: 'Failed to load Collaboration',
-                        description: 'Unknown error occurred',
-                        variant: 'destructive',
-                    });
-                }
-            } catch (error) {
+    const fetchCollabDetails = useCallback(async () => {
+        setIsFetching(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/get-users-collaboration?id=${collaborationId}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                const collaboration = data.collaborations[0];
+
+                setCollabDetails(collaboration);
+
+                editForm.reset({
+                    title: collaboration.title,
+                    description: collaboration.description,
+                    technologyArea: {
+                        sector: collaboration.sector || '',
+                        techArea: collaboration.technology_area || ''
+                    },
+                    challenge_type: collaboration.challenge_type,
+                    contact_name: collaboration.contact_name,
+                    contact_role: collaboration.contact_role,
+                });
+            } else {
                 toast({
-                    title: 'Error',
-                    description: 'Something went wrong while loading collaboration details.',
+                    title: 'Failed to load Collaboration',
+                    description: 'Unknown error occurred',
                     variant: 'destructive',
                 });
-            } finally {
-                setIsFetching(false);
             }
-        };
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'Something went wrong while loading collaboration details.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsFetching(false);
+        }
+    }, [collaborationId, editForm]);
+
+
+    const attachments = Array.isArray(collabDetails?.attachments)
+        ? collabDetails.attachments
+        : JSON.parse(collabDetails?.attachments || "[]");
+
+    const onEditSubmit = async (data: EditCollaborationFormValues) => {
+        setIsSubmitting(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/collaborations/${collaborationId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+                body: JSON.stringify({
+                    title: data.title,
+                    description: data.description,
+                    sector: data.technologyArea?.sector,
+                    technologyArea: data.technologyArea?.techArea,
+                    challenge_type: data.challenge_type,
+                    contact_name: data.contact_name,
+                    contact_role: data.contact_role,
+                }),
+            });
+
+            if (response.ok) {
+                toast({
+                    title: 'Collaboration Updated',
+                    description: 'Your collaboration details have been updated successfully.',
+                });
+                setIsEditMode(false);
+                await fetchCollabDetails();
+            } else {
+                const errorData = await response.json();
+                toast({
+                    variant: 'destructive',
+                    title: 'Failed to update collaboration',
+                    description: errorData.error || 'An unknown error occurred.',
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Network Error',
+                description: 'Could not update collaboration. Please try again later.',
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/collaborations/${collaborationId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+            });
+
+            if (response.ok) {
+                toast({
+                    title: 'Collaboration Deleted',
+                    description: 'The collaboration has been successfully deleted.',
+                });
+                setIsDeleteDialogOpen(false);
+                onClose();
+                window.location.reload(); // Refresh to show updated list
+            } else {
+                const errorData = await response.json();
+                toast({
+                    title: 'Error',
+                    description: errorData.error || 'Failed to delete collaboration',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: 'An error occurred while deleting the collaboration',
+                variant: 'destructive',
+            });
+        }
+    };
+
+    useEffect(() => {
         fetchCollabDetails();
-    }, [collaborationId]);
+        fetchSectors();
+    }, [collaborationId, fetchCollabDetails]);
 
     return (
         <Dialog
@@ -96,65 +271,320 @@ const CollaborationView = ({ collaborationId, onClose }: CollaborationViewProps)
                     <DialogTitle className="text-xl font-bold">
                         {collabDetails?.title}
                     </DialogTitle>
+
                 </div>
-
-                <div className="flex-grow overflow-y-auto p-4 space-y-4">
-                    {collabDetails && (
-                        <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
-                            <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
-                                <CardTitle className="text-lg font-extrabold text-primary flex items-center">
-                                    <Info className="h-5 w-5 mr-2" />
-                                    {collabDetails.title}
-                                </CardTitle>
-                                <CardDescription className="text-sm text-muted-foreground">
-                                    Submitted by {collabDetails.contact_name} — {collabDetails.contact_role}
-                                </CardDescription>
-                            </CardHeader>
-
-                            <CardContent className="p-4 pt-0 text-sm">
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <p><span className="font-semibold">Sector:</span> {collabDetails.sector}</p>
-                                    <p><span className="font-semibold">Technology Area:</span> {collabDetails.technology_area}</p>
-                                    <p><span className="font-semibold">Challenge Type:</span> {collabDetails.challenge_type}</p>
-                                    <p>
-                                        <span className="font-semibold">Reward:</span>{" "}
-                                        {collabDetails.reward_amount
-                                            ? `₹${collabDetails.reward_amount}`
-                                            : `₹${collabDetails.reward_min} - ₹${collabDetails.reward_max}`}
-                                    </p>
-                                    <p><span className="font-semibold">Start Date:</span> {collabDetails.start_date ? new Date(collabDetails.start_date).toLocaleDateString() : 'N/A'}</p>
-                                    <p><span className="font-semibold">End Date:</span> {collabDetails.end_date ? new Date(collabDetails.end_date).toLocaleDateString() : 'N/A'}</p>
-                                </div>
-
-                                <h1 className="text-lg mb-2">Description:</h1>
-                                <MarkdownViewer content={collabDetails.description} />
-
-                                <p className="mt-4 text-xs text-muted-foreground">
-                                    Created on: {new Date(collabDetails.created_at).toLocaleString()}
-                                </p>
-
-                            </CardContent>
-                        </Card>
+                <div className='flex justify-end gap-2'>
+                    {!isEditMode && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setIsDeleteDialogOpen(true)}
+                        >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                        </Button>
                     )}
-                    {/* Floating Button */}
                     <Button
-                        onClick={() => setAnnouncementOpen(true)}
-                        className="
+                        variant={isEditMode ? "destructive" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                            if (isEditMode) {
+                                setIsEditMode(false);
+                                editForm.reset({
+                                    title: collabDetails?.title,
+                                    description: collabDetails?.description,
+                                    technologyArea: {
+                                        sector: collabDetails?.sector || '',
+                                        techArea: collabDetails?.technology_area || ''
+                                    },
+                                    challenge_type: collabDetails?.challenge_type,
+                                    contact_name: collabDetails?.contact_name,
+                                    contact_role: collabDetails?.contact_role,
+                                });
+                            } else {
+                                setIsEditMode(true);
+                            }
+                        }}
+                        className="mr-8"
+                    >
+                        {isEditMode ? (
+                            <>
+                                <X className="h-4 w-4 mr-2" />
+                                Cancel
+                            </>
+                        ) : (
+                            <>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                            </>
+                        )}
+                    </Button>
+                </div>
+                <div className="flex-grow overflow-y-auto px-4 pb-4 space-y-4">
+                    {!isEditMode ? (
+                        <>
+                            {collabDetails && (
+                                <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
+                                    <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
+                                        <CardTitle className="text-lg font-extrabold text-primary flex items-center">
+                                            <Info className="h-5 w-5 mr-2" />
+                                            {collabDetails.title}
+                                        </CardTitle>
+                                        <CardDescription className="text-sm text-muted-foreground">
+                                            Submitted by {collabDetails.contact_name} — {collabDetails.contact_role}
+                                        </CardDescription>
+                                    </CardHeader>
+
+                                    <CardContent className="p-4 pt-0 text-sm">
+                                        <div className="grid grid-cols-2 gap-4 mb-4">
+                                            <p><span className="font-semibold">Sector:</span> {collabDetails.sector}</p>
+                                            <p><span className="font-semibold">Technology Area:</span> {collabDetails.technology_area}</p>
+                                            <p><span className="font-semibold">Challenge Type:</span> {collabDetails.challenge_type}</p>
+                                            <p>
+                                                <span className="font-semibold">Reward:</span>{" "}
+                                                {collabDetails.reward_amount
+                                                    ? `₹${collabDetails.reward_amount}`
+                                                    : `₹${collabDetails.reward_min} - ₹${collabDetails.reward_max}`}
+                                            </p>
+                                            <p><span className="font-semibold">Start Date:</span> {collabDetails.start_date ? new Date(collabDetails.start_date).toLocaleDateString() : 'N/A'}</p>
+                                            <p><span className="font-semibold">End Date:</span> {collabDetails.end_date ? new Date(collabDetails.end_date).toLocaleDateString() : 'N/A'}</p>
+                                        </div>
+
+                                        <h1 className="text-lg mb-2">Description:</h1>
+                                        <MarkdownViewer content={collabDetails.description} />
+                                        {attachments && attachments.length > 0 && (
+                                            <div className="mt-6">
+                                                <h2 className="text-lg font-semibold mb-2">Attachments</h2>
+
+                                                <div className="space-y-2 bg-accent/50 hover:bg-accent p-2 rounded-md">
+                                                    {attachments.map((fileUrl: string, index: number) => {
+                                                        const fileName = fileUrl.split('/').pop();
+
+                                                        return (
+                                                            <a
+                                                                key={index}
+                                                                href={fileUrl}
+                                                                download
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex items-center gap-2 text-primary hover:text-primary/80"
+                                                            >
+                                                                <FileText className="h-4 w-4" />
+                                                                {fileName}
+                                                            </a>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <p className="mt-4 text-xs text-muted-foreground">
+                                            Created on: {new Date(collabDetails.created_at).toLocaleString()}
+                                        </p>
+
+                                    </CardContent>
+                                </Card>
+                            )}
+                            {/* Floating Button */}
+                            <Button
+                                onClick={() => setAnnouncementOpen(true)}
+                                className="
     bg-primary text-white px-4 py-2 rounded-md 
     absolute bottom-4 right-4 shadow-lg z-50
   "
-                    >
-                        + Create Announcement
-                    </Button>
+                            >
+                                + Create Announcement
+                            </Button>
+                        </>
+                    ) : (
+                        // Edit Mode
+                        <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
+                            <CardHeader className="p-4">
+                                <CardTitle className="text-lg font-extrabold text-primary flex items-center">
+                                    <Edit className="h-5 w-5 mr-2" />
+                                    Edit Challenge
+                                </CardTitle>
+                                <CardDescription>
+                                    Update the Challenge details below
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                                <Form {...editForm}>
+                                    <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                                        <FormField
+                                            control={editForm.control}
+                                            name="title"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Title <span className="text-red-500">*</span></FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Collaboration title" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
+                                        <FormField
+                                            control={editForm.control}
+                                            name="technologyArea"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Sector & Technology Area <span className="text-red-500">*</span></FormLabel>
+                                                    <FormControl>
+                                                        <SectorSearchWithDropdown
+                                                            data={sectors}
+                                                            defaultValue={field.value}
+                                                            onSelect={(item: any) => field.onChange({ "sector": item.sector, "techArea": item.label })}
+                                                            onDataAdded={fetchSectors}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={editForm.control}
+                                            name="challenge_type"
+                                            render={({ field }) => (
+                                                <FormItem className="space-y-3">
+                                                    <FormLabel>Challenge Type <span className="text-red-500">*</span></FormLabel>
+                                                    <FormControl>
+                                                        <RadioGroup
+                                                            onValueChange={field.onChange}
+                                                            defaultValue={field.value}
+                                                            value={field.value}
+                                                            className="flex gap-5"
+                                                        >
+                                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                <FormControl>
+                                                                    <RadioGroupItem value="corporate" />
+                                                                </FormControl>
+                                                                <FormLabel className="font-normal">Corporate Challenges</FormLabel>
+                                                            </FormItem>
+                                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                <FormControl>
+                                                                    <RadioGroupItem value="msme" />
+                                                                </FormControl>
+                                                                <FormLabel className="font-normal">MSME Challenges</FormLabel>
+                                                            </FormItem>
+                                                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                <FormControl>
+                                                                    <RadioGroupItem value="government" />
+                                                                </FormControl>
+                                                                <FormLabel className="font-normal">Government Challenges</FormLabel>
+                                                            </FormItem>
+                                                        </RadioGroup>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+
+                                        <FormField
+                                            control={editForm.control}
+                                            name="description"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        Description <span className="text-red-500">*</span>
+                                                    </FormLabel>
+                                                    <ChallengeMarkdownEditor
+                                                        ttForm={editForm}
+                                                        defaultDescription={field.value}
+                                                    />
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField
+                                                control={editForm.control}
+                                                name="contact_name"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Contact Name <span className="text-red-500">*</span></FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="Contact person name" {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={editForm.control}
+                                                name="contact_role"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Contact Role <span className="text-red-500">*</span></FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="e.g., Project Manager" {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+
+                                        <div className="flex justify-end gap-2 pt-4">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setIsEditMode(false);
+                                                    editForm.reset();
+                                                }}
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button type="submit" disabled={isSubmitting}>
+                                                {isSubmitting ? (
+                                                    <>
+                                                        <Save className="h-4 w-4 mr-2 animate-spin" />
+                                                        Saving...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Save className="h-4 w-4 mr-2" />
+                                                        Save Changes
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </form>
+                                </Form>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </DialogContent>
+
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your
+                            collaboration and remove your data from our servers.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <AnnouncementDialog
                 open={announcementOpen}
-                onOpenChange={setAnnouncementOpen}
+                onOpenChange={() => setAnnouncementOpen(false)}
                 collaborationId={collaborationId}
             />
-
         </Dialog>
     );
 };

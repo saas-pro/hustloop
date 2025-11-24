@@ -7,6 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { MoreHorizontal } from "lucide-react"
+
 import {
     Info,
     Paperclip,
@@ -33,6 +36,8 @@ import {
     AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import { Submission } from '@/app/types';
+import { SolutionMarkdownViewer } from '../ui/SolutionMarkdownViewer';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 
 interface FileData {
     name: string;
@@ -54,6 +59,7 @@ interface Comment {
     fileName?: string;
     fileURL?: string;
     isUpdated?: boolean;
+    commentType?: string;
 }
 
 
@@ -84,7 +90,7 @@ export default function SubmissionDetailsModal({
     const textareaId = useId();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const commentsEndRef = useRef<HTMLDivElement>(null);
-
+    const [isOtherType, setIsOtherType] = useState<boolean>(false);
 
     const scrollToBottom = useCallback(() => {
         commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,6 +135,7 @@ export default function SubmissionDetailsModal({
                 if (!res.ok) throw new Error('Failed to load comments');
                 const data = await res.json();
                 setComments(data.comments || []);
+
                 scrollToBottom();
             } catch {
                 toast({
@@ -393,183 +400,357 @@ export default function SubmissionDetailsModal({
 
                 </div>
 
-                <div className="flex-grow overflow-y-auto p-4 space-y-4">
-                    <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
-                        <CardHeader className="p-4 flex flex-row items-center justify-between">
-                            <CardTitle className="text-lg font-extrabold text-primary flex items-center">
-                                <Info className="h-5 w-5 mr-2" />
-                                {submission.challenge?.title}
-                            </CardTitle>
-                            <span className="px-3 py-2 text-xs font-semibold border rounded-sm">
-                                {submission.status}
-                            </span>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0 text-sm">
-                            <h1 className="text-lg mb-2">Description:</h1>
-                            <MarkdownViewer content={submission.description} />
-                            {submission.files && submission.files.length > 0 && (
-                                <div className="mt-4 border-t pt-3">
-                                    <p className="font-medium text-primary-dark mb-2">Attached Submission Files:</p>
+                <div className="flex-grow overflow-y-auto p-4">
 
-                                    <div className="space-y-2">
-                                        {submission.files.map((file) => (
-                                            renderFileAttachment(file.previewUrl, file.name, file.name)
+                    {/* TIMELINE WRAPPER */}
+                    <div className="relative pl-2 space-y-4">
 
-                                        ))}
+                        {/* GLOBAL TIMELINE LINE that scrolls correctly */}
+                        <div className="absolute left-[28px] top-1 bottom-1 w-px bg-muted-foreground"></div>
+
+
+                        {/* ===================== DESCRIPTION CARD ===================== */}
+                        <Card className="rounded-none border-none shadow-none bg-transparent relative">
+                            <CardHeader className="p-1 flex flex-row items-start justify-between">
+
+                                <div className="flex gap-3 items-start relative">
+
+                                    {/* Submission Avatar – anchored to timeline */}
+                                    <Avatar className="h-8 w-8 relative z-10">
+                                        <AvatarFallback className="font-semibold">
+                                            {submission.contactName?.charAt(0)}
+                                        </AvatarFallback>
+                                    </Avatar>
+
+
+
+                                    <div className='flex flex-col justify-between'>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-muted-foreground text-sm">
+                                                Submitted By{" "}
+                                                <span className="font-semibold">
+                                                    {submission.contactName} to {submission.challenge?.postedBy?.companyName}
+                                                </span>
+
+                                            </p>
+                                            <span className="px-3 py-2 text-xs font-semibold border rounded-sm">
+                                                {submission.status}
+                                            </span>
+                                        </div>
+
+
+                                        <div className="mt-3">
+                                            <h1 className="text-lg mb-2">Description:</h1>
+                                            <SolutionMarkdownViewer content={submission.description} />
+
+                                            {submission.files && submission.files?.length > 0 && (
+                                                <div className="mt-4 border-t pt-3">
+                                                    <p className="font-medium text-primary-dark mb-2">
+                                                        Attached Submission Files:
+                                                    </p>
+
+                                                    <div className="space-y-2">
+                                                        {submission.files.map((file) =>
+                                                            renderFileAttachment(file.previewUrl, file.name, file.name)
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            )}
-                            <p className="mt-2 text-muted-foreground">
-                                Submitted By: <span className="font-semibold">{submission.contactName}</span>
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    {comments.length === 0 ? (
-                        <p className="text-center text-muted-foreground mt-10">No comments yet. Be the first!</p>
-                    ) : (
-                        comments.map((comment) => {
-                            const { canEdit, canDelete } = getCommentActions(comment);
-                            const parentComment = comment.parentId ? findParentComment(comment.parentId) : null;
-                            return (
-                                <div key={comment.id} id={`comment-${comment.id}`} className={`p-3 rounded-lg border bg-card transition-all duration-300 z-[999] ${highlightedCommentId === comment.id
-                                    ? 'ring-2 ring-yellow-500 bg-yellow-50 dark:bg-yellow-900/30'
-                                    : 'hover:shadow-md'
-                                    }`}>
-                                    <div className="flex justify-between items-start mb-2">
-
-                                        <div className='flex gap-2 items-center'>
-                                            <p className="font-semibold text-sm flex items-center gap-2">
-                                                <span className="text-foreground">{comment.authorName}</span>
-                                                {comment.authorRole && (
-                                                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                                                        {comment.authorRole.toLowerCase() === "msme"
-                                                            ? `${submission.challenge?.postedBy?.companyName || "Unknown Company"} - MSME`
-                                                            : comment.authorRole.toLowerCase() === "admin"
-                                                                ? "Triager"
-                                                                : comment.authorRole}
-                                                    </span>
-                                                )}
 
 
-                                                {comment.isUpdated && (
-                                                    <span className="text-xs italic text-muted-foreground">(edited)</span>
-                                                )}
-                                            </p>
-                                            <small className="text-xs text-muted-foreground">
-                                                {formatTime(new Date(comment.timestamp))}
-                                            </small>
-                                        </div>
-                                        <div className='flex gap-2'>
-                                            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setReplyingTo(comment)} >
-                                                Reply
-                                            </Button>
+                            </CardHeader>
+                        </Card>
+
+
+
+                        {/* ===================== COMMENTS ===================== */}
+                        {comments.length === 0 ? (
+                            <p className="text-center text-muted-foreground mt-10">No comments yet. Be the first!</p>
+                        ) : (
+                            comments.map((comment) => {
+                                const { canEdit, canDelete } = getCommentActions(comment);
+
+                                if (comment.commentType === "verified") {
+                                    return (
+                                        <div key={comment.id} className="my-6 flex items-center w-full select-none">
+                                            <div className="h-2 w-2 ml-[17.5px] z-10 bg-accent rounded-full"></div>
+                                            <div className='flex items-center w-full'>
+                                                <div className="w-6 border-t border-muted-foreground"></div>
+
+                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full">
+                                                    {comment.text}
+                                                </span>
+                                                {/* 
+                                                <div className="w-10 border-t border-muted-foreground"></div> */}
+                                            </div>
 
                                         </div>
-                                    </div>
 
-                                    {parentComment && (
-                                        <div
-                                            className="
-                                                mb-3 p-2 rounded-lg border-l-4 border-muted-foreground/30
-                                                cursor-pointer transition-colors hover:bg-muted/50
-                                                text-sm
-                                            "
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                scrollToComment(comment.parentId!);
-                                            }}
-                                            title="Click to jump to parent comment"
-                                        >
-                                            <p className="font-semibold text-muted-foreground mb-0.5 not-italic truncate">
-                                                {parentComment.authorName}
-                                            </p>
-                                            <p className="line-clamp-1 text-muted-foreground">
-                                                {parentComment.text || parentComment.fileName || '— Attachment sent.'}
-                                            </p>
+                                    );
+                                }
+                                if (comment.commentType === "points") {
+                                    return (
+                                        <div key={comment.id} className="my-6 flex items-center w-full select-none">
+                                            <div className="h-2 w-2 ml-[17.5px] z-10 bg-yellow-500 rounded-full"></div>
+                                            <div className='flex items-center w-full'>
+                                                <div className="w-6 border-t border-muted-foreground"></div>
+
+                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full">
+                                                    {comment.text} By {comment.authorName}
+                                                </span>
+                                                {/* 
+                                                <div className="w-10 border-t border-muted-foreground"></div> */}
+                                            </div>
+
                                         </div>
-                                    )}
-                                    {editingCommentId === comment.id ? (
-                                        <div>
-                                            <Textarea
-                                                value={editingText}
-                                                onChange={(e) => setEditingText(e.target.value)}
-                                                className="mb-2"
-                                            />
-                                            <div className="flex gap-2">
-                                                <Button size="sm" onClick={handleSaveEdit}>
-                                                    <Save className="h-4 w-4 mr-2" /> Save
-                                                </Button>
-                                                <Button variant="outline" size="sm" onClick={() => setEditingCommentId(null)}>
-                                                    Cancel
-                                                </Button>
+
+                                    );
+                                }
+                                if (comment.commentType === "delete") {
+                                    return (
+                                        <div key={comment.id} className="my-6 flex items-center w-full select-none">
+                                            <div className="h-2 w-2 ml-[17.5px] z-10 bg-destructive rounded-full"></div>
+                                            <div className='flex items-center w-full'>
+                                                <div className="w-6 border-t border-muted-foreground"></div>
+
+                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full">
+                                                    {comment.text}
+                                                </span>
+                                                {/* 
+                                                <div className="w-10 border-t border-muted-foreground"></div> */}
+                                            </div>
+
+                                        </div>
+
+                                    );
+                                }
+
+                                if (comment.commentType && comment.commentType !== "comment") {
+                                    return (
+                                        <div key={comment.id} className="my-6 flex items-center w-full select-none">
+                                            <div className="h-2 w-2 ml-[17.5px] z-10 bg-primary rounded-full"></div>
+                                            <div className='flex items-center w-full'>
+                                                <div className="w-6 border-t border-muted-foreground"></div>
+                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full">
+                                                    {comment.text} By {comment.authorName}
+                                                </span>
+
+                                                {/* <div className="w-10 border-t border-muted-foreground"></div> */}
                                             </div>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <p>{comment.text}</p>
-                                            {comment.fileURL && (
-                                                comment.fileName &&
-                                                renderFileAttachment(comment.fileURL, comment.fileName, comment.fileName)
-                                            )}
-                                        </>
-                                    )}
+                                    );
+                                }
 
-                                    <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                                        {canEdit && (
-                                            <Button
-                                                variant="link"
-                                                size="sm"
-                                                onClick={() => handleEditComment(comment)}
-                                                className="h-auto p-0 font-normal text-muted-foreground hover:text-blue-500"
-                                            >
-                                                <Edit className="h-3 w-3 mr-1" /> Edit
-                                            </Button>
-                                        )}
 
-                                        {canEdit && canDelete && (
-                                            <span className="text-gray-400 dark:text-gray-600"> • </span>
-                                        )}
+                                // ================= NORMAL COMMENT WITH AVATAR =================
+                                const parentComment = comment.parentId ? findParentComment(comment.parentId) : null;
 
-                                        {canDelete && (
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
+                                return (
+                                    <div
+                                        key={comment.id}
+                                        id={`comment-${comment.id}`}
+                                        className={`relative flex gap-3 p-2 items-start bg-transparent transition-all duration-300 ${highlightedCommentId === comment.id
+                                            && 'ring-2 ring-yellow-500 bg-yellow-50 dark:bg-yellow-900/30'
+                                            }`}
+                                    >
+
+                                        {/* Comment avatar aligned to timeline */}
+                                        <Avatar className="h-8 w-8 relative z-10">
+                                            <AvatarFallback className="font-semibold">
+                                                {comment.authorName?.charAt(0)}
+                                            </AvatarFallback>
+                                        </Avatar>
+
+                                        {/* COMMENT BODY */}
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-center mb-2">
+
+                                                <div className='flex gap-2 items-center'>
+                                                    <p className="font-semibold text-sm flex items-center gap-2">
+                                                        <span className="text-foreground">{comment.authorName}</span>
+
+                                                        {comment.authorRole && (
+                                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                                                {comment.authorRole.toLowerCase() === "msme"
+                                                                    ? `${submission.challenge?.postedBy?.companyName || "Unknown Company"} - MSME`
+                                                                    : comment.authorRole.toLowerCase() === "admin"
+                                                                        ? "Triager"
+                                                                        : comment.authorRole}
+                                                            </span>
+                                                        )}
+
+                                                        {comment.isUpdated && (
+                                                            <span className="text-xs italic text-muted-foreground">(edited)</span>
+                                                        )}
+                                                    </p>
+
+                                                    <small className="text-xs text-muted-foreground">
+                                                        {formatTime(new Date(comment.timestamp))}
+                                                    </small>
+                                                </div>
+
+
+                                                <div className="flex items-center my-auto  text-xs">
+
+                                                    {/* Reply button */}
                                                     <Button
-                                                        variant="link"
+                                                        variant="ghost"
                                                         size="sm"
-                                                        className="h-auto p-0 font-normal text-muted-foreground hover:text-red-500"
+                                                        className="h-7 text-xs block"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setReplyingTo(comment);
+                                                        }}
                                                     >
-                                                        <Trash2 className="h-3 w-3 mr-1" /> Delete
+                                                        Reply
                                                     </Button>
-                                                </AlertDialogTrigger>
 
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Delete comment?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            This action cannot be undone.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
+                                                    {(canEdit || canDelete) && (
+                                                        <DropdownMenu >
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-7 w-7 p-0 flex items-center justify-center"
+                                                                    onClick={(e) => e.stopPropagation()}   // PREVENTS parent click
+                                                                >
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
 
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction
-                                                            onClick={() => handleDeleteComment(comment.id)}
-                                                            className="bg-red-600 hover:bg-red-700 text-white"
-                                                        >
-                                                            Delete
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        )}
+                                                            <DropdownMenuContent
+                                                                align="end"
+                                                                className="w-32"
+                                                                onClick={(e) => e.stopPropagation()}        // PREVENTS parent click
+                                                            >
+
+                                                                {/* Edit */}
+                                                                {canEdit && (
+                                                                    <DropdownMenuItem
+                                                                        className="cursor-pointer"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleEditComment(comment);
+                                                                        }}
+                                                                    >
+                                                                        <Edit className="h-3 w-3 mr-2" /> Edit
+                                                                    </DropdownMenuItem>
+                                                                )}
+
+                                                                {/* Delete */}
+                                                                {canDelete && (
+                                                                    <DropdownMenuItem
+                                                                        className="cursor-pointer text-red-600 focus:text-red-600"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+
+                                                                        }}
+                                                                    >
+                                                                        <AlertDialog>
+                                                                            <AlertDialogTrigger asChild>
+                                                                                <div
+                                                                                    className="flex items-center"
+                                                                                    onClick={(e) => e.stopPropagation()}  // avoid parent clicks
+                                                                                >
+                                                                                    <Trash2 className="h-3 w-3 mr-2" /> Delete
+                                                                                </div>
+                                                                            </AlertDialogTrigger>
+
+                                                                            <AlertDialogContent
+                                                                                onClick={(e) => e.stopPropagation()}      // safe
+                                                                            >
+                                                                                <AlertDialogHeader>
+                                                                                    <AlertDialogTitle>Delete comment?</AlertDialogTitle>
+                                                                                    <AlertDialogDescription>
+                                                                                        This action cannot be undone.
+                                                                                    </AlertDialogDescription>
+                                                                                </AlertDialogHeader>
+
+                                                                                <AlertDialogFooter>
+                                                                                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+
+                                                                                    <AlertDialogAction
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            handleDeleteComment(comment.id);
+                                                                                        }}
+                                                                                        className="bg-red-600 hover:bg-red-700 text-white"
+                                                                                    >
+                                                                                        Delete
+                                                                                    </AlertDialogAction>
+                                                                                </AlertDialogFooter>
+                                                                            </AlertDialogContent>
+                                                                        </AlertDialog>
+                                                                    </DropdownMenuItem>
+                                                                )}
+
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    )}
+                                                </div>
+
+
+                                            </div>
+
+                                            {parentComment && (
+                                                <div
+                                                    className="mb-3 p-2 rounded-lg border-l-4 border-muted-foreground/30 cursor-pointer hover:bg-muted/50 text-sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        scrollToComment(comment.parentId!);
+                                                    }}
+                                                >
+                                                    <p className="font-semibold text-muted-foreground mb-0.5 truncate">
+                                                        {parentComment.authorName}
+                                                    </p>
+                                                    <p className="line-clamp-1 text-muted-foreground">
+                                                        {parentComment.text || parentComment.fileName || '— Attachment sent.'}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {editingCommentId === comment.id ? (
+                                                <div>
+                                                    <Textarea
+                                                        value={editingText}
+                                                        onChange={(e) => setEditingText(e.target.value)}
+                                                        className="mb-2"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <Button size="sm" onClick={handleSaveEdit}>
+                                                            <Save className="h-4 w-4 mr-2" /> Save
+                                                        </Button>
+                                                        <Button variant="outline" size="sm" onClick={() => setEditingCommentId(null)}>
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <p>{comment.text}</p>
+                                                    {comment.fileURL && (
+                                                        comment.fileName &&
+                                                        renderFileAttachment(comment.fileURL, comment.fileName, comment.fileName)
+                                                    )}
+                                                </>
+                                            )}
+
+
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })
-                    )}
-                    <div ref={commentsEndRef} />
+                                );
+                            })
+                        )}
+
+                        <div ref={commentsEndRef} />
+
+                    </div>
                 </div>
+
+
 
                 {/* Input area */}
                 <div className="p-4 border-t bg-muted/30 flex flex-col">
@@ -622,6 +803,6 @@ export default function SubmissionDetailsModal({
                     </div>
                 </div>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

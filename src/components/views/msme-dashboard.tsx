@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2, Upload, CalendarIcon, Target, Handshake, Lock, ChevronDown, Save } from "lucide-react";
+import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, Trash2, PlusCircle, Loader2, Upload, CalendarIcon, Target, Handshake, Lock, ChevronDown, Save, Pencil, MoreVertical, UploadCloud } from "lucide-react";
 import type { MsmeDashboardTab, Submission, Comment, View } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,30 @@ import {
 } from "@/components/ui/command";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { Badge } from "../ui/badge";
+import { useDropzone } from "react-dropzone";
+import { X } from "lucide-react";
 
+
+
+const DEFAULT_COLLABORATION_DESCRIPTION = `[Give a brief overview of the context and purpose of this challenge. What inspired it? Why does it matter?]
+## Objective  
+[What do you aim to achieve with this challenge? Clearly state the expected outcome or impact.]
+
+## Problem Statement  
+
+### Background  
+[Describe the core problem this challenge seeks to solve. Why does it exist? Who is impacted? Include background details, context, and motivations.]
+
+### What We Are Looking For  
+[Explain the type of solution you want participants to propose or build.]
+
+### Scope of Requirements  
+[Outline any requirements, functionalities, or constraints for the solution.]
+
+- Requirement 1  
+- Requirement 2  
+- Requirement 3  
+`;
 
 type User = {
     name: string;
@@ -66,7 +89,6 @@ export interface SectorData {
     name: string
     children: string[]
 }
-
 
 const profileFormSchema = z.object({
     name: z.string().min(1, "Company name is required"),
@@ -122,6 +144,7 @@ const collaborationSchema = z.object({
     endDate: z.date({
         required_error: "An end date is required.",
     }),
+    attachments: z.array(z.any()).max(5, "Max 5 files allowed").optional(),
 })
     .refine((data) => data.endDate > data.startDate, {
         message: "End date must be after the start date.",
@@ -212,15 +235,12 @@ interface getUsersCollaborationSchema {
 const statusBadgeClasses: Record<SolutionStatus, string> = {
     new: "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300",
     under_review: "border-yellow-500 text-yellow-700 bg-yellow-50 dark:border-yellow-400 dark:text-yellow-300",
-    valid: "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300",
     duplicate: "border-purple-500 text-purple-700 bg-purple-50 dark:border-purple-400 dark:text-purple-300",
     rejected: "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300",
-    solution_accepted: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
+    solution_accepted_points: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
     triaged: "border-orange-500 text-orange-700 bg-orange-50 dark:border-orange-400 dark:text-orange-300",
-    triaged_points: "border-orange-600 text-orange-800 bg-orange-100 dark:border-orange-500 dark:text-orange-400",
     need_info: "border-blue-600 text-blue-800 bg-blue-100 dark:border-blue-500 dark:text-blue-400",
 };
-
 
 const emptyProfile: ProfileFormValues = {
     name: "",
@@ -234,12 +254,10 @@ const emptyProfile: ProfileFormValues = {
 export enum SolutionStatus {
     new = "new",
     under_review = "under_review",
-    valid = "valid",
     duplicate = "duplicate",
     rejected = "rejected",
-    solution_accepted = "solution_accepted",
+    solution_accepted_points = "solution_accepted_points",
     triaged = "triaged",
-    triaged_points = "triaged_points",
     need_info = "need_info",
 }
 
@@ -247,12 +265,10 @@ export enum SolutionStatus {
 export const statusLabels: Record<SolutionStatus, string> = {
     new: "New",
     under_review: "Under Review",
-    valid: "Valid",
     duplicate: "Duplicate",
     rejected: "Rejected",
-    solution_accepted: "Solution Accepted",
+    solution_accepted_points: "Solution Accepted + Points",
     triaged: "Triaged",
-    triaged_points: "Triaged + Points",
     need_info: "Need Info",
 };
 
@@ -292,11 +308,17 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [selectedCollabId, setSelectedCollabId] = useState<number | null>(null);
+    const [isCollabEditMode, setIsCollabEditMode] = useState(false);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [isMsmerole, setisMsmeRole] = useState(false)
     const isMsmeRole = localStorage.getItem("userRole");
+    const [isAdmin, setIsAdmin] = useState(false);
     const [statusUpdates, setStatusUpdates] = useState<Record<string, SolutionStatus>>({});
     const [isUpdating, setIsUpdating] = useState<Record<string, boolean>>({});
+    const MAX_FILES = 5;
+
+    const [files, setFiles] = useState<File[]>([]);
+    const [uploadError, setUploadError] = useState("");
     function formatPrettyDate(date: Date) {
         const months = [
             "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -321,6 +343,21 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         }
     }, [isMsmeRole])
 
+    useEffect(() => {
+        const userRole = localStorage.getItem("userRole");
+        setIsAdmin(userRole === "admin");
+    }, []);
+
+    // Helper function to check if a field should be disabled in edit mode
+    const isFieldDisabled = (fieldName: string) => {
+        if (!isEditingCollaboration) return false; // Not in edit mode, all fields editable
+        if (isAdmin) return false; // Admin can edit all fields
+
+        // Fields that regular users CAN edit
+        const editableFields = ['title', 'technologyArea', 'description', 'challengeType', 'contact.name', 'contact.role'];
+        return !editableFields.includes(fieldName);
+    };
+
     const profileForm = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema),
         defaultValues: emptyProfile,
@@ -330,25 +367,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         resolver: zodResolver(collaborationSchema),
         defaultValues: {
             title: "",
-            description: `[Give a brief overview of the context and purpose of this challenge. What inspired it? Why does it matter?]
-## Objective  
-[What do you aim to achieve with this challenge? Clearly state the expected outcome or impact.]
-
-## Problem Statement  
-
-### Background  
-[Describe the core problem this challenge seeks to solve. Why does it exist? Who is impacted? Include background details, context, and motivations.]
-
-### What We Are Looking For  
-[Explain the type of solution you want participants to propose or build.]
-
-### Scope of Requirements  
-[Outline any requirements, functionalities, or constraints for the solution.]
-
-- Requirement 1  
-- Requirement 2  
-- Requirement 3  
-`,
+            description: DEFAULT_COLLABORATION_DESCRIPTION,
             rewardType: "fixed",
             rewardAmount: 0,
             rewardMin: undefined,
@@ -500,7 +519,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                         ? {
                             ...sub,
                             status: newStatus,
-                            points: newStatus === "triaged_points" ? 50 : sub.points,
+                            points: newStatus === "solution_accepted_points" ? 50 : 0,
                         }
                         : sub
                 )
@@ -509,7 +528,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
             toast({
                 title: "Status Updated",
                 description:
-                    newStatus === "triaged_points"
+                    newStatus === "solution_accepted_points"
                         ? `Submission triaged with points. Awarded 50 points.`
                         : `Submission status updated to ${statusLabels[newStatus]}.`,
             });
@@ -526,47 +545,118 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     };
 
 
-    const [SubmissionsLength, setSubmissionsLength] = useState();
+    const [SubmissionsLength, setSubmissionsLength] = useState(0);
+    const list = Array.isArray(submissions) ? submissions : [];
 
     const overviewStats = {
-        new: submissions.filter(s => s.status === 'new').length,
-        review: submissions.filter(s => s.status === 'under_review').length,
-        valid: submissions.filter(s => s.status === 'valid').length,
-        challengeSubmitted: SubmissionsLength
+        new: list.filter(s => s.status === 'new').length,
+        review: list.filter(s => s.status === 'under_review').length,
+        solutionAcceptedPoints: list.filter(s => s.status === 'solution_accepted_points').length,
+        challengeSubmitted: SubmissionsLength,
+    };
+
+    const allowedExtensions = ["pdf", "doc", "docx"];
+
+    const onDrop = useCallback(
+        (acceptedFiles: any) => {
+            setUploadError("");
+
+            const validFiles = [];
+            const allowedExtensions = ["pdf", "doc", "docx"];
+
+            for (const file of acceptedFiles) {
+                const ext = file.name.split(".").pop().toLowerCase();
+
+                if (!allowedExtensions.includes(ext)) {
+                    setUploadError(`Only PDF, DOC, and DOCX files are allowed: ${file.name}`);
+                    continue;
+                }
+
+                if (validFiles.length + files.length >= MAX_FILES) {
+                    setUploadError(`Maximum ${MAX_FILES} files allowed`);
+                    break;
+                }
+
+                validFiles.push(file);
+            }
+
+            if (validFiles.length === 0) return;
+
+            const updated = [...files, ...validFiles];
+            setFiles(updated);
+            collaborationForm.setValue("attachments", updated);
+        },
+        [files, collaborationForm]
+    );
+
+
+    const { getRootProps, getInputProps, isDragActive, open: open1 } = useDropzone({
+        onDrop,
+        noClick: true,
+        noKeyboard: true
+    });
+
+    const openFileDialog = () => open1();
+
+    const removeFile = (index: number) => {
+        const updated = files.filter((_, i) => i !== index);
+        setFiles(updated);
+        collaborationForm.setValue("attachments", updated);
     };
 
     const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     async function onCollaborationSubmit(data: collaborationFormValues) {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            toast({
+                variant: "destructive",
+                title: "Authentication Error",
+                description: "Please log in again.",
+            });
             return;
         }
 
-        let rewardData;
+        // Reward logic
+        let rewardData: any = {};
         if (data.rewardType === "fixed") {
-            rewardData = { reward_amount: data.rewardAmount };
+            rewardData.reward_amount = data.rewardAmount;
         } else {
-            rewardData = {
-                reward_min: data.rewardMin,
-                reward_max: data.rewardMax,
-            };
+            rewardData.reward_min = data.rewardMin;
+            rewardData.reward_max = data.rewardMax;
         }
 
-        const collaborationData = {
-            title: data.title,
-            description: data.description,
-            challenge_type: data.challengeType,
-            contact_name: data.contact.name,
-            contact_role: data.contact.role,
-            startDate: data.startDate?.toISOString(),
-            endDate: data.endDate?.toISOString(),
-            sector: data.technologyArea?.sector,
-            technologyArea: data.technologyArea?.techArea,
-            ...rewardData,
-        };
+        const formData = new FormData();
 
+        formData.append("title", data.title);
+        formData.append("description", data.description);
+        formData.append("challenge_type", data.challengeType);
+        formData.append("contact_name", data.contact.name);
+        formData.append("contact_role", data.contact.role);
+
+        formData.append("startDate", data.startDate?.toISOString() || "");
+        formData.append("endDate", data.endDate?.toISOString() || "");
+
+        formData.append("sector", data.technologyArea?.sector || "");
+        formData.append("technologyArea", data.technologyArea?.techArea || "");
+
+        // Reward
+        if (rewardData.reward_amount !== undefined) {
+            formData.append("reward_amount", String(rewardData.reward_amount));
+        }
+        if (rewardData.reward_min !== undefined) {
+            formData.append("reward_min", String(rewardData.reward_min));
+        }
+        if (rewardData.reward_max !== undefined) {
+            formData.append("reward_max", String(rewardData.reward_max));
+        }
+
+        if (files.length > 0) {
+            files.forEach((file) => {
+                formData.append("attachments", file);
+            });
+        }
 
         let url = `${API_BASE_URL}/api/collaborations`;
         let method = "POST";
@@ -577,26 +667,29 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         }
 
         try {
+            setIsSubmitting(true);
+
             const response = await fetch(url, {
-                method: method,
+                method,
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
+                    Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(collaborationData),
+                body: formData,
             });
 
             if (response.ok) {
                 toast({
                     title: isEditingCollaboration ? "Collaboration Updated" : "Collaboration Saved",
-                    description: isEditingCollaboration ? "Your collaboration details have been updated." : "Your collaboration details have been saved.",
+                    description: isEditingCollaboration
+                        ? "Your collaboration details have been updated."
+                        : "Your collaboration details have been saved.",
                 });
 
                 getUsersCollaboration();
 
                 collaborationForm.reset({
                     title: "",
-                    description: "",
+                    description: DEFAULT_COLLABORATION_DESCRIPTION,
                     rewardType: "fixed",
                     rewardAmount: 0,
                     rewardMin: undefined,
@@ -606,7 +699,10 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                     startDate: undefined,
                     endDate: undefined,
                     technologyArea: { sector: "", techArea: "" },
+                    attachments: [],
                 });
+
+                setFiles([]); // reset file uploader
 
                 setIsEditingCollaboration(false);
                 setCurrentEditingCollaborationId(null);
@@ -623,11 +719,27 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
             toast({
                 variant: "destructive",
                 title: "Network Error",
-                description: `Could not ${isEditingCollaboration ? "update" : "save"} collaboration info. Please try again later.`,
+                description: `Could not ${isEditingCollaboration ? "update" : "save"
+                    } collaboration info. Please try again later.`,
             });
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
+
+
+
+    const [sectors, setSectors] = useState<SectorData[]>([]);
+
+    const fetchSectors = async () => {
+        const res = await fetch(`${API_BASE_URL}/api/sectors`);
+        const data = await res.json();
+        setSectors(data);
+    };
+    useEffect(() => {
+        fetchSectors();
+    }, []);
 
     useEffect(() => {
         if (selectedCollaborationToEdit) {
@@ -653,7 +765,32 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         }
     }, [selectedCollaborationToEdit, collaborationForm]);
 
+    const getSubmissions = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/solutions`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token} `
+                }
+            });
 
+            const result = await response.json();
+            setSubmissions(Array.isArray(result.solutions) ? result.solutions : []);
+        } catch (error) {
+            setSubmissions([]);
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });
+        }
+    }, [toast])
+
+    useEffect(() => {
+        getSubmissions()
+    }, [getSubmissions])
 
     const getUsersCollaboration = useCallback(async () => {
         const token = localStorage.getItem('token');
@@ -672,38 +809,15 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
             const result = await response.json();
 
-            setGetUserCollaborationData(result.collaborations);
-            setSubmissionsLength(result.length);
+            setGetUserCollaborationData(Array.isArray(result.collaborations) ? result.collaborations : []);
+            if (result.length > 0) {
+                setSubmissionsLength(result.length);
+            }
         } catch (error) {
+            setGetUserCollaborationData([]);
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
         }
     }, [setGetUserCollaborationData, toast]);
-
-    const getSubmissions = useCallback(async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
-            return;
-        }
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/solutions`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const result = await response.json();
-            setSubmissions(result.solutions);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });
-        }
-    }, [toast])
-
-    useEffect(() => {
-        getSubmissions()
-    }, [getSubmissions])
 
     useEffect(() => {
         const checkProfile = async () => {
@@ -815,16 +929,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         setLogoPreview(null);
     };
 
-    const [sectors, setSectors] = useState<SectorData[]>([]);
-
-    const fetchSectors = async () => {
-        const res = await fetch(`${API_BASE_URL}/api/sectors`);
-        const data = await res.json();
-        setSectors(data);
-    };
-    useEffect(() => {
-        fetchSectors();
-    }, []);
 
     const handleOpenDialog = async () => {
         const isValid = await profileForm.trigger();
@@ -981,7 +1085,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                 "
                                                 onClick={() => setActiveTab("submissions")} >
                                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Accepted Solutions</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                                                <CardContent><div className="text-2xl font-bold">{overviewStats.valid}</div><p className="text-xs text-muted-foreground">Marked as valid for collaboration</p></CardContent>
+                                                <CardContent><div className="text-2xl font-bold">{overviewStats.solutionAcceptedPoints}</div><p className="text-xs text-muted-foreground">Marked as valid for collaboration</p></CardContent>
                                             </Card>
                                         </div>
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -1023,11 +1127,14 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                         className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
                                                                     >
                                                                         {sub.challenge?.sector && sub.challenge?.technologyArea
-                                                                            ? `${sub.challenge.sector} / ${sub.challenge.technologyArea}`
-                                                                            : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"}
-                                                                    </Badge>
-                                                                )} */}
-                                                            </div>
+                                                                            ? `${ sub.challenge.sector } / ${sub.challenge.technologyArea}`
+                                                                            : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"
+            }
+                                                                    </Badge >
+                                                                )
+        } */
+                                                                }
+                                                            </div >
 
                                                             <CardDescription className="flex gap-2 items-center text-sm text-muted-foreground">
 
@@ -1047,9 +1154,9 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                 </Badge>
 
                                                             </CardDescription>
-                                                        </div>
-                                                    </div>
-                                                </CardHeader>
+                                                        </div >
+                                                    </div >
+                                                </CardHeader >
 
                                                 <CardFooter className="flex gap-2 items-center">
                                                     <div className="flex gap-2 w-full items-center">
@@ -1120,76 +1227,79 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     </DropdownMenuItem>
                                                                 ))}
                                                             </DropdownMenuContent>
-
                                                         </DropdownMenu>
-
                                                     </div>
-
-
-
                                                 </CardFooter>
-                                            </Card>
+                                            </Card >
                                         )) : (
                                             <Card className="text-center text-muted-foreground py-16">
                                                 <CardContent>You have not received any submissions yet.</CardContent>
                                             </Card>
-                                        )}
-                                    </TabsContent>
+                                        )
+                                        }
+                                    </TabsContent >
                                     <TabsContent value="engagement" className="mt-0 space-y-4">
                                         {getUsersCollaborationData?.length > 0 ? getUsersCollaborationData.map((sub) => (
-                                            <Card key={sub.id} onClick={() => setSelectedCollabId(sub.id)} className="
-    bg-card/50 backdrop-blur-sm border-border/50 cursor-pointer
-     hover:bg-accent/20
-  ">
+                                            <Card
+                                                key={sub.id}
+                                                onClick={() => setSelectedCollabId(sub.id)}
+                                                className="bg-card/50 backdrop-blur-sm border-border/50 cursor-pointer hover:border-primary"
+                                            >
                                                 <CardHeader>
                                                     <div className="flex justify-between items-start w-full">
                                                         <div>
                                                             <CardTitle className="text-lg">{sub.title}</CardTitle>
                                                             <CardDescription>Submitted by {sub.contact_name}</CardDescription>
                                                         </div>
-                                                        <div className="flex space-x-2">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setSelectedCollaborationToEdit(sub);
-                                                                    setIsEditingCollaboration(true);
-                                                                    setCurrentEditingCollaborationId(sub.id);
-                                                                    setActiveTab("profile");
-                                                                }}
-                                                            >
-                                                                Edit
-                                                            </Button>
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setCollaborationToDeleteId(sub.id);
-                                                                    setIsDeleteDialogOpen(true);
-                                                                }}
-                                                                className="flex items-center"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                                <span className="ml-2">Delete</span>
-                                                            </Button>
-                                                        </div>
+
+                                                        {/* 3 DOT MENU */}
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon">
+                                                                    <MoreVertical className="h-5 w-5" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setSelectedCollabId(sub.id);
+                                                                        setIsCollabEditMode(true);
+                                                                    }}
+                                                                >
+                                                                    <Pencil className="h-4 w-4 mr-2" />
+                                                                    Edit
+                                                                </DropdownMenuItem>
+
+                                                                <DropdownMenuItem
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setCollaborationToDeleteId(sub.id);
+                                                                        setIsDeleteDialogOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                                    Delete
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                     </div>
                                                 </CardHeader>
+
                                                 <CardFooter>
                                                     <p className="text-sm text-muted-foreground">
                                                         Submitted on {new Date(sub.created_at).toLocaleString()}
                                                     </p>
                                                 </CardFooter>
                                             </Card>
-
                                         )) : (
                                             <Card className="text-center text-muted-foreground py-16">
                                                 <CardContent>You have not submit any Collaboration.</CardContent>
                                             </Card>
                                         )}
                                     </TabsContent>
+
                                     <TabsContent value="profile" className="mt-0">
                                         <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/25 backdrop-blur-sm border-border/50`}>
                                             <CardHeader>
@@ -1529,6 +1639,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                             defaultValue={field.value}
                                                                             onSelect={(item: any) => field.onChange({ "sector": item.sector, "techArea": item.label })}
                                                                             onDataAdded={fetchSectors}
+
                                                                         />
                                                                     </FormControl>
                                                                     <FormMessage />
@@ -1536,11 +1647,18 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                             )}
                                                         />
 
-                                                        <div>
-                                                            <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
-                                                            <ChallengeMarkdownEditor
-                                                                ttForm={collaborationForm}
-                                                                defaultDescription={`[Give a brief overview of the context and purpose of this challenge.]
+                                                        <FormField
+                                                            control={collaborationForm.control}
+                                                            name="description"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>
+                                                                        Description <span className="text-red-500">*</span>
+                                                                    </FormLabel>
+
+                                                                    <ChallengeMarkdownEditor
+                                                                        ttForm={collaborationForm}
+                                                                        defaultDescription={`[Give a brief overview of the context and purpose of this challenge.]
 ## Objective
 [What do you aim to achieve with this challenge? Clearly state the expected outcome or impact.]
 
@@ -1557,11 +1675,15 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 1. Requirement 1
 2. Requirement 2
 3. Requirement 3
-
 `}
-                                                            />
+                                                                    />
 
-                                                        </div>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
+
                                                         <FormField
                                                             control={collaborationForm.control}
                                                             name="rewardType"
@@ -1580,6 +1702,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                     <button
                                                                                         type="button"
                                                                                         className="w-[130px] h-10 flex items-center justify-between rounded-md border px-3 text-sm"
+                                                                                        disabled={isFieldDisabled('rewardType')}
                                                                                     >
                                                                                         {rewardOptions.find((opt) => opt.value === field.value)?.label ??
                                                                                             "Select type"}
@@ -1622,6 +1745,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                         {...collaborationForm.register("rewardAmount", { valueAsNumber: true })}
                                                                                         min={0}
                                                                                         className="no-spin w-48"
+                                                                                        disabled={isFieldDisabled('rewardType')}
                                                                                     />
                                                                                 </>
                                                                             ) : (
@@ -1631,6 +1755,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                         placeholder="Min"
                                                                                         {...collaborationForm.register("rewardMin", { valueAsNumber: true })}
                                                                                         className="no-spin w-24"
+                                                                                        disabled={isFieldDisabled('rewardType')}
                                                                                     />
                                                                                     <span>-</span>
                                                                                     <Input
@@ -1638,15 +1763,22 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                         placeholder="Max"
                                                                                         {...collaborationForm.register("rewardMax", { valueAsNumber: true })}
                                                                                         className="no-spin w-24"
+                                                                                        disabled={isFieldDisabled('rewardType')}
                                                                                     />
                                                                                 </div>
                                                                             )}
                                                                         </div>
                                                                     </FormControl>
+                                                                    {isFieldDisabled('rewardType') && (
+                                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                                            These fields are only editable by admin. Contact admin.
+                                                                        </p>
+                                                                    )}
                                                                     <FormMessage />
                                                                 </FormItem>
                                                             )}
                                                         />
+
                                                         <FormField
                                                             control={collaborationForm.control}
                                                             name="challengeType"
@@ -1697,6 +1829,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                             variant="outline"
                                                                             className="pl-3 text-left font-normal"
                                                                             onClick={() => setDatePickerOpen((prev) => !prev)}
+                                                                            disabled={isFieldDisabled('startDate')}
                                                                         >
                                                                             {collaborationForm.watch("startDate") && collaborationForm.watch("endDate") ? (
                                                                                 <>
@@ -1709,7 +1842,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                                         </Button>
 
-                                                                        {datePickerOpen && (
+                                                                        {datePickerOpen && !isFieldDisabled('startDate') && (
                                                                             <div className="mt-2 border rounded-md p-3 shadow-md z-50 w-fit">
                                                                                 <Calendar
                                                                                     mode="range"
@@ -1745,12 +1878,101 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                 </div>
                                                                             </div>
                                                                         )}
+                                                                        {isFieldDisabled('startDate') && (
+                                                                            <p className="text-xs text-muted-foreground mt-1">
+                                                                                These fields are only editable by admin. Contact admin.
+                                                                            </p>
+                                                                        )}
                                                                         <FormMessage />
                                                                     </FormItem>
                                                                 </div>
 
                                                             )}
                                                         />
+                                                        <FormField
+                                                            control={collaborationForm.control}
+                                                            name="attachments"
+                                                            render={() => (
+                                                                <FormItem>
+                                                                    <FormLabel>Attachments (Max 5 files)</FormLabel>
+                                                                    <FormControl>
+                                                                        <div
+                                                                            {...getRootProps()}
+                                                                            className={cn(
+                                                                                "border border-dashed rounded-md p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3",
+                                                                                isDragActive ? "bg-accent/30" : "bg-muted/20"
+                                                                            )}
+                                                                        >
+                                                                            <input {...getInputProps()} />
+
+
+                                                                            <UploadCloud className="h-10 w-10 text-primary opacity-80" />
+
+                                                                            <p className="text-sm text-muted-foreground mt-1">
+                                                                                Drag & drop PDF or DOCX here, or{" "}
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={openFileDialog}
+                                                                                    className="underline text-primary"
+                                                                                >
+                                                                                    browse
+                                                                                </button>
+                                                                            </p>
+
+                                                                            <p className="text-xs text-muted-foreground">
+                                                                                Max 5 files • Allowed: PDF, DOCX
+                                                                            </p>
+                                                                        </div>
+                                                                    </FormControl>
+
+
+                                                                    {files.length > 0 && (
+                                                                        <div className="mt-4 space-y-2">
+                                                                            {files.map((file: any, index) => {
+                                                                                const ext = file.name.split(".").pop().toLowerCase();
+                                                                                const isPDF = ext === "pdf";
+                                                                                const isDOC = ext === "doc";
+                                                                                const isDOCX = ext === "docx";
+
+                                                                                return (
+                                                                                    <div
+                                                                                        key={index}
+                                                                                        className="flex justify-between items-center border rounded p-2 bg-muted/40"
+                                                                                    >
+                                                                                        <div className="flex items-center gap-3">
+                                                                                            <div>
+                                                                                                <div className="text-sm font-medium">{file.name}</div>
+                                                                                                <div className="text-xs text-muted-foreground">
+                                                                                                    {(file.size / 1024).toFixed(1)} KB
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        <Button
+                                                                                            type="button"
+                                                                                            variant="ghost"
+                                                                                            size="icon"
+                                                                                            onClick={() => removeFile(index)}
+                                                                                        >
+                                                                                            <X className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+
+
+                                                                    {/* Error */}
+                                                                    {uploadError && (
+                                                                        <p className="text-xs text-destructive mt-1">{uploadError}</p>
+                                                                    )}
+
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
 
                                                         <Separator className="my-4" />
 
@@ -1863,23 +2085,29 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                             </CardContent>
                                         </Card>
                                     </TabsContent>
-                                </ScrollArea>
-                            </Tabs>
-                        </div>
+                                </ScrollArea >
+                            </Tabs >
+                        </div >
                     </>)
                     }
-                </DialogContent>
-            </Dialog>
+                </DialogContent >
+            </Dialog >
             <SubmissionDetailsModal
                 submission={selectedSubmission}
                 onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
             />
-            {selectedCollabId !== null && (
-                <CollaborationView
-                    collaborationId={selectedCollabId}
-                    onClose={() => setSelectedCollabId(null)}
-                />
-            )}
+            {
+                selectedCollabId !== null && (
+                    <CollaborationView
+                        collaborationId={selectedCollabId}
+                        initialEditMode={isCollabEditMode}
+                        onClose={() => {
+                            setSelectedCollabId(null);
+                            setIsCollabEditMode(false);
+                        }}
+                    />
+                )
+            }
             <Script
                 src="https://www.google.com/recaptcha/enterprise.js?render=6LfZ4H8rAAAAAA0NMVH1C-sCiE9-Vz4obaWy9eUI"
                 strategy="afterInteractive"

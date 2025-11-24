@@ -31,6 +31,8 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { API_BASE_URL } from "@/lib/api";
@@ -165,7 +167,8 @@ const ActionHandlerContent = () => {
     const [info, setInfo] = React.useState<{ email: string; from: Action } | null>(null);
     const [showResendForm, setShowResendForm] = React.useState(false);
     const form = useForm<PasswordResetValues>({ resolver: zodResolver(passwordResetSchema) });
-
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     // If there are no query params, show the ResendVerificationForm immediately
     const modeParam = searchParams.get("mode") as Action;
     const codeParam = searchParams.get("oobCode");
@@ -286,12 +289,27 @@ const ActionHandlerContent = () => {
                                     <FormItem>
                                         <FormLabel>New Password</FormLabel>
                                         <FormControl>
-                                            <Input type="password" {...field} />
+                                            <div className="relative">
+                                                <Input
+                                                    type={showPassword ? "text" : "password"}
+                                                    {...field}
+                                                    value={field.value ?? ""}
+                                                    className="pr-10"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                >
+                                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                </button>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+
                             <FormField
                                 control={form.control}
                                 name="confirmPassword"
@@ -299,12 +317,27 @@ const ActionHandlerContent = () => {
                                     <FormItem>
                                         <FormLabel>Confirm Password</FormLabel>
                                         <FormControl>
-                                            <Input type="password" {...field} />
+                                            <div className="relative">
+                                                <Input
+                                                    type={showConfirmPassword ? "text" : "password"}
+                                                    {...field}
+                                                    value={field.value ?? ""}
+                                                    className="pr-10"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                >
+                                                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                </button>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+
                             <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
                                 {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
                             </Button>

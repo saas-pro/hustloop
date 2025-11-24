@@ -23,8 +23,8 @@ export const metadata: Metadata = {
     template: '%s | Hustloop',
   },
   description: 'Open talent, Real impact. A dynamic ecosystem for problem solving and technology transfer. We connect founders, enablers, innovators, and students to collaborate, build startups, and drive meaningful innovation together.',
-  keywords: ['startup', 'innovation', 'collaboration', 'founders', 'students', 'technology transfer', 'ecosystem'],
-  authors: [{ name: 'Hustloop Team' }],
+  keywords: ['startup', 'innovation', 'team', 'incentive challenge', 'collaboration', 'founders', 'students', 'technology transfer', 'ecosystem'],
+  authors: [{ name: 'Hustloop' }],
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -100,6 +100,18 @@ export default function RootLayout({
             s.src = "https://salesiq.zohopublic.in/widget";
             var t = d.getElementsByTagName("script")[0];
             t.parentNode.insertBefore(s, t);
+          `}
+        </Script>
+        <Script id="org-schema" type="application/ld+json">
+          {`
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Hustloop",
+            "url": "https://hustloop.com",
+            "description": "Open talent, real impact. Hustloop connects founders, innovators, MSMEs, and students to collaborate, solve challenges, and accelerate startup growth.",
+            "logo": "https://hustloop.com/logo.png"
+          }
           `}
         </Script>
       </body>

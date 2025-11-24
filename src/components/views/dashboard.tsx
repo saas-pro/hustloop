@@ -80,7 +80,7 @@ const programSchema = z.object({
 type ProgramFormValues = z.infer<typeof programSchema>;
 
 
-type User = { name: string; email: string; }
+type User = { name: string; email: string; userId: string }
 type AuthProvider = 'local' | 'google';
 
 interface DashboardViewProps {
@@ -191,36 +191,31 @@ type connexRegistrations = {
 export enum SolutionStatus {
     new = "new",
     under_review = "under_review",
-    valid = "valid",
     duplicate = "duplicate",
     rejected = "rejected",
-    solution_accepted = "solution_accepted",
+    solution_accepted_points = "solution_accepted_points",
     triaged = "triaged",
-    triaged_points = "triaged_points",
     need_info = "need_info",
 }
+
 
 export const statusLabels: Record<SolutionStatus, string> = {
     new: "New",
     under_review: "Under Review",
-    valid: "Valid",
     duplicate: "Duplicate",
     rejected: "Rejected",
-    solution_accepted: "Solution Accepted",
+    solution_accepted_points: "Solution Accepted + Points",
     triaged: "Triaged",
-    triaged_points: "Triaged + Points",
     need_info: "Need Info",
 };
 
 const statusBadgeClasses: Record<SolutionStatus, string> = {
     new: "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300",
     under_review: "border-yellow-500 text-yellow-700 bg-yellow-50 dark:border-yellow-400 dark:text-yellow-300",
-    valid: "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300",
     duplicate: "border-purple-500 text-purple-700 bg-purple-50 dark:border-purple-400 dark:text-purple-300",
     rejected: "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300",
-    solution_accepted: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
+    solution_accepted_points: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
     triaged: "border-orange-500 text-orange-700 bg-orange-50 dark:border-orange-400 dark:text-orange-300",
-    triaged_points: "border-orange-600 text-orange-800 bg-orange-100 dark:border-orange-500 dark:text-orange-400",
     need_info: "border-blue-600 text-blue-800 bg-blue-100 dark:border-blue-500 dark:text-blue-400",
 };
 
@@ -1222,7 +1217,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         ? {
                             ...sub,
                             status: newStatus,
-                            points: newStatus === "triaged_points" ? 50 : 0,
+                            points: newStatus === "solution_accepted_points" ? 50 : 0,
                         }
                         : sub
                 )
@@ -1231,7 +1226,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             toast({
                 title: "Status Updated",
                 description:
-                    newStatus === "triaged_points"
+                    newStatus === "solution_accepted_points"
                         ? `Submission triaged with points. Awarded 50 points.`
                         : `Submission status updated to ${statusLabels[newStatus]}.`,
             });

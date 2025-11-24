@@ -1,5 +1,5 @@
 
-export type View = "home" | "blog" | "mentors"  | "incubators" | "submitIP" | "pricing" | "msmes" | "solveChallenges" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile" | "joinasanMSME" | "browseTech" | "marketplace" | "browseMSME";
+export type View = "home" | "blog" | "mentors" | "incubators" | "submitIP" | "pricing" | "msmes" | "solveChallenges" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile" | "joinasanMSME" | "browseTech" | "marketplace" | "browseMSME";
 export type DashboardTab = "overview" | "msmes" | "ip/technologies" | "incubators" | "engagements" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" | "aignite" | "connex";
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
 export type SolveChallengeTab = "overview" | "submission" | "team" | "settings"
@@ -32,11 +32,13 @@ export interface ChallengeInfo {
   } | null;
 }
 
+
 export type Submission = {
+  user_id: string;
   solutionId: string
   challengeId: string;
   contactName: string;
-  status: 'new' | 'under_review' | 'valid' | 'duplicate' | 'rejected' | 'solution_accepted' | 'triaged' | 'triaged_points' | 'need_info';
+  status: 'new' | 'under_review' | 'duplicate' | 'rejected' | 'solution_accepted_points' | 'triaged' | 'need_info';
   points: number;
   description: string;
   createdAt: string;
@@ -46,6 +48,14 @@ export type Submission = {
   comments: Comment[];
   files?: FileData[];
   challenge?: ChallengeInfo | null;
+  team_members?: TeamMember[];
+  isOwner?: boolean;
+};
+
+type TeamMember = {
+  userId: string;
+  name: string;
+  email: string;
 };
 
 export type AppUser = {

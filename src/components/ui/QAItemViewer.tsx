@@ -2,7 +2,7 @@ import React from "react";
 import DOMPurify from "dompurify";
 
 interface QAItemViewerProps {
-  html: string; 
+  html: string;
 }
 
 const QAItemViewer: React.FC<QAItemViewerProps> = ({ html }) => {

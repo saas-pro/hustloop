@@ -79,7 +79,7 @@ const programSchema = z.object({
 type ProgramFormValues = z.infer<typeof programSchema>;
 
 
-type User = { name: string; email: string; }
+type User = { name: string; email: string; userId: string }
 type AuthProvider = 'local' | 'google';
 
 interface InnovativeIdeaDashboardViewProps {
@@ -528,8 +528,8 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
         }
     }, [perPage, toast]);
 
-    const [connexRegistrations,setConnexRegistrations] = useState<connexRegistrations[]>([]);
-    
+    const [connexRegistrations, setConnexRegistrations] = useState<connexRegistrations[]>([]);
+
     const fetchConnex = useCallback(async (page: number) => {
         setIsLoadingFormUsers(true);
         const token = localStorage.getItem('token');
@@ -677,7 +677,7 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
             if (activeTab === 'ip/technologies') fetchIps();
             if (activeTab === 'subscribers') fetchSubscribers();
         }
-    }, [activeTab, userRole, fetchUsers,fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
+    }, [activeTab, userRole, fetchUsers, fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
 
 
 
@@ -952,7 +952,7 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
             setisipOverview(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "subscribers", "ip/technologies","connex","engagement", "settings"];
+    const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "connex", "engagement", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
     const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];

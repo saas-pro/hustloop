@@ -79,7 +79,7 @@ const programSchema = z.object({
 type ProgramFormValues = z.infer<typeof programSchema>;
 
 
-type User = { name: string; email: string; }
+type User = { name: string; email: string; userId: string }
 type AuthProvider = 'local' | 'google';
 
 interface ListTechnologyDashboardViewProps {
@@ -528,8 +528,8 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
         }
     }, [perPage, toast]);
 
-    const [connexRegistrations,setConnexRegistrations] = useState<connexRegistrations[]>([]);
-    
+    const [connexRegistrations, setConnexRegistrations] = useState<connexRegistrations[]>([]);
+
     const fetchConnex = useCallback(async (page: number) => {
         setIsLoadingFormUsers(true);
         const token = localStorage.getItem('token');
@@ -677,7 +677,7 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
             if (activeTab === 'ip/technologies') fetchIps();
             if (activeTab === 'subscribers') fetchSubscribers();
         }
-    }, [activeTab, userRole, fetchUsers,fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
+    }, [activeTab, userRole, fetchUsers, fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
 
 
 

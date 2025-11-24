@@ -40,6 +40,8 @@ import MarkdownEditor from "../ui/markdown";
 import { MoreVertical, Trash2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import SubmissionDetailsModal from "./submission-details-modal";
+import TeamMembers from "./team-members";
+import { LoadingButton } from "../ui/loading-button";
 
 const settingsFormSchema = z.object({
     name: z
@@ -79,7 +81,7 @@ const programSchema = z.object({
 type ProgramFormValues = z.infer<typeof programSchema>;
 
 
-type User = { name: string; email: string; }
+type User = { name: string; email: string; userId: string }
 type AuthProvider = 'local' | 'google';
 
 interface SolveChallengeDashboardViewProps {
@@ -189,12 +191,10 @@ type connexRegistrations = {
 export enum SolutionStatus {
     new = "new",
     under_review = "under_review",
-    valid = "valid",
     duplicate = "duplicate",
     rejected = "rejected",
-    solution_accepted = "solution_accepted",
+    solution_accepted_points = "solution_accepted_points",
     triaged = "triaged",
-    triaged_points = "triaged_points",
     need_info = "need_info",
 }
 
@@ -202,24 +202,20 @@ export enum SolutionStatus {
 export const statusLabels: Record<SolutionStatus, string> = {
     new: "New",
     under_review: "Under Review",
-    valid: "Valid",
     duplicate: "Duplicate",
     rejected: "Rejected",
-    solution_accepted: "Solution Accepted",
+    solution_accepted_points: "Solution Accepted + Points",
     triaged: "Triaged",
-    triaged_points: "Triaged + Points",
     need_info: "Need Info",
 };
 
 const statusBadgeClasses: Record<SolutionStatus, string> = {
     new: "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300",
     under_review: "border-yellow-500 text-yellow-700 bg-yellow-50 dark:border-yellow-400 dark:text-yellow-300",
-    valid: "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300",
     duplicate: "border-purple-500 text-purple-700 bg-purple-50 dark:border-purple-400 dark:text-purple-300",
     rejected: "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300",
-    solution_accepted: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
+    solution_accepted_points: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
     triaged: "border-orange-500 text-orange-700 bg-orange-50 dark:border-orange-400 dark:text-orange-300",
-    triaged_points: "border-orange-600 text-orange-800 bg-orange-100 dark:border-orange-500 dark:text-orange-400",
     need_info: "border-blue-600 text-blue-800 bg-blue-100 dark:border-blue-500 dark:text-blue-400",
 };
 
@@ -307,7 +303,8 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
     const [isLoadingFormUsers, setIsLoadingFormUsers] = useState(false)
     const [perPage] = useState(10);
     const [totalRegistrations, setTotalRegistrations] = useState(0);
-
+    const [teamMembers, setTeamMembers] = useState<User[]>([]);
+    const [isOwner, setIsOwner] = useState(false);
 
     const fetchUsers = useCallback(async (page: number, perPage: number) => {
         setIsLoadingUsers(true);
@@ -1337,7 +1334,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
     const [hasDraft, setHasDraft] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [existingFile, setExistingFile] = useState<ExistingFile | null>(null);
-    const [showConfirm, setShowConfirm] = useState(false);
+    const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
     const [confirmText, setConfirmText] = useState("");
 
     const handleDelete = async (solutionId: string) => {
@@ -1351,6 +1348,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
         }
 
         try {
+            setIsDeleting(true);
             const token = localStorage.getItem("token");
             const res = await fetch(`${API_BASE_URL}/api/solutions/${solutionId}`, {
                 method: "DELETE",
@@ -1374,12 +1372,16 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                     description: data.error || "Something went wrong.",
                 });
             }
+            setDeleteTargetId(null);
+            setConfirmText("");
         } catch (err) {
             toast({
                 variant: "destructive",
                 title: "Error",
                 description: "Failed to delete submission.",
             });
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -1491,6 +1493,20 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
     )
 
 
+    const handleMemberRemoved = (solutionId: string, userId: string) => {
+        setSubmissions((prevSubmissions) =>
+            prevSubmissions.map((sub) => {
+                if (sub.solutionId === solutionId) {
+                    return {
+                        ...sub,
+                        team_members: sub.team_members?.filter((m: any) => m.userId !== userId) || [],
+                    };
+                }
+                return sub;
+            })
+        );
+    };
+
     const handleRestore = async (restoreId: any) => {
         try {
             const res = await fetch(`${API_BASE_URL}/api/techtransfer/restore/${restoreId}`, {
@@ -1585,13 +1601,15 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                         ? "Users"
                                                         : tab === "submission"
                                                             ? "FileText"
-                                                            : tab === "settings"
-                                                                ? "Settings"
-                                                                : tab === "users"
-                                                                    ? "User"
-                                                                    : tab === "subscribers"
-                                                                        ? "Mail"
-                                                                        : "BookOpen"
+                                                            : tab === "team"
+                                                                ? "Users"
+                                                                : tab === "settings"
+                                                                    ? "Settings"
+                                                                    : tab === "users"
+                                                                        ? "User"
+                                                                        : tab === "subscribers"
+                                                                            ? "Mail"
+                                                                            : "BookOpen"
                                     ] || LucideIcons.HelpCircle
                                 ) as React.ComponentType<LucideProps>;
 
@@ -1655,6 +1673,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                     <LockedContent setActiveView={setActiveView} title="MSMEs" />
                                 )}
                             </TabsContent>
+
                             <TabsContent value="incubators" className="mt-0">
                                 {hasSubscription || userRole === 'admin' ? (
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -1676,125 +1695,133 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                             </TabsContent>
                             <TabsContent value="submission" className="mt-0 space-y-4">
                                 {submissions.length > 0 ? (
-                                    submissions.map((sub, id) => {
+                                    submissions.map((sub, id) => (
+                                        <Card
+                                            key={id}
+                                            onClick={() => setSelectedSubmission(sub)}
+                                            className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors relative"
+                                        >
+                                            {/* ⋯ Menu */}
+                                            <div className="absolute top-3 right-3">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
 
-                                        return (
-                                            <Card
-                                                key={id}
-                                                onClick={() => setSelectedSubmission(sub)}
-                                                className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors relative"
-                                            >
-                                                {/* ⋯ Menu */}
-                                                <div className="absolute top-3 right-3">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                                <MoreVertical className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem
-                                                                className="text-red-500 cursor-pointer"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setShowConfirm((prev) => !prev);
-                                                                }}
-                                                            >
-                                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </div>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            className="text-red-500 cursor-pointer"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDeleteTargetId(sub.solutionId);
+                                                                setConfirmText("");
+                                                            }}
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
 
-                                                <CardHeader>
-                                                    <div className="flex justify-between items-start">
-                                                        <div className="space-y-1">
-                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                <CardTitle className="text-lg font-semibold">
-                                                                    {sub.challenge?.title || "Untitled Challenge"}
-                                                                </CardTitle>
-                                                                {/* {sub.challenge && (
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
-                                                                    >
-                                                                        {sub.challenge?.sector && sub.challenge?.technologyArea
-                                                                            ? `${sub.challenge.sector} / ${sub.challenge.technologyArea}`
-                                                                            : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"}
-                                                                    </Badge>
-                                                                )} */}
+                                            {/* Card Header */}
+                                            <CardHeader>
+                                                <div className="flex justify-between items-start">
+                                                    <div className="space-y-1">
+                                                        <CardTitle className="text-lg font-semibold">
+                                                            {sub.challenge?.title || "Untitled Challenge"}
+                                                        </CardTitle>
+                                                        <CardDescription className="flex gap-2 items-center text-sm text-muted-foreground">
+                                                            <div>
+                                                                Submitted For{" "}
+                                                                {sub.challenge?.postedBy?.companyName && (
+                                                                    <span className="font-medium">{sub.challenge.postedBy.companyName}</span>
+                                                                )}
                                                             </div>
 
-                                                            <CardDescription className="flex gap-2 items-center text-sm text-muted-foreground">
-
-                                                                <div>
-                                                                    Submitted For{" "}
-                                                                    {sub.challenge?.postedBy?.companyName && (
-                                                                        <span className="font-medium">{sub.challenge.postedBy.companyName}</span>
-                                                                    )}
-                                                                </div>
-
-                                                                <Badge
-                                                                    className={`px-3 py-1 text-xs font-semibold border rounded-sm 
-                                                                    ${statusBadgeClasses[sub.status]}`}
-                                                                >
-                                                                    {statusLabels[sub.status]}
-                                                                </Badge>
-                                                            </CardDescription>
-                                                        </div>
+                                                            <Badge
+                                                                className={`px-3 py-1 text-xs font-semibold border rounded-sm 
+                                        ${statusBadgeClasses[sub.status]}`}
+                                                            >
+                                                                {statusLabels[sub.status]}
+                                                            </Badge>
+                                                        </CardDescription>
                                                     </div>
-                                                </CardHeader>
+                                                </div>
+                                            </CardHeader>
 
-                                                <CardFooter className="flex gap-2 items-center flex-wrap">
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Submitted on {sub.createdAt}
-                                                    </p>
+                                            <CardFooter className="flex gap-2 items-center flex-wrap">
+                                                <p className="text-sm text-muted-foreground">
+                                                    Submitted on {sub.createdAt}
+                                                </p>
 
-                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                        <span>Comments</span>
-                                                        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
-                                                            {sub.comments?.length || 0}
-                                                        </span>
-                                                    </div>
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <span>Comments</span>
+                                                    <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
+                                                        {sub.comments?.length || 0}
+                                                    </span>
+                                                </div>
 
-                                                    <div className="flex items-center gap-2">
-                                                        <span>Points</span>
-                                                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                            {sub.points ?? 0}
-                                                        </span>
-                                                    </div>
-                                                </CardFooter>
+                                                <div className="flex items-center gap-2">
+                                                    <span>Points</span>
+                                                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                        {sub.points ?? 0}
+                                                    </span>
+                                                </div>
+                                            </CardFooter>
 
-                                                {/* Delete confirmation input */}
-                                                {showConfirm && (
-                                                    <div
-                                                        className="p-4 border-t border-border bg-muted/30 flex flex-col sm:flex-row sm:items-center gap-2"
-                                                        onClick={(e) => e.stopPropagation()}
+                                            {/* Delete confirmation block */}
+                                            {deleteTargetId === sub.solutionId && (
+                                                <div
+                                                    className="p-4 border-t border-border bg-muted/30 flex flex-col sm:flex-row sm:items-center gap-2"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <Input
+                                                        placeholder="Type 'delete' to confirm"
+                                                        value={confirmText}
+                                                        onChange={(e) => setConfirmText(e.target.value)}
+                                                        className="text-sm"
+                                                    />
+                                                    <LoadingButton
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => handleDelete(sub.solutionId)}
+                                                        isLoading={isDeleting}
                                                     >
-                                                        <Input
-                                                            placeholder="Type 'delete' to confirm"
-                                                            value={confirmText}
-                                                            onChange={(e) => setConfirmText(e.target.value)}
-                                                            className="text-sm"
-                                                        />
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(sub.solutionId)}
-                                                        >
-                                                            Confirm Delete
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </Card>
-                                        );
-                                    })
+                                                        Confirm Delete
+                                                    </LoadingButton>
+                                                </div>
+                                            )}
+                                        </Card>
+                                    ))
                                 ) : (
                                     <Card className="text-center text-muted-foreground py-16">
                                         <CardContent>You have not received any submissions yet.</CardContent>
                                     </Card>
                                 )}
                             </TabsContent>
+
+                            <TabsContent value="team" className="mt-0">
+                                {submissions.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {submissions.map((sub: any) => (
+                                            <TeamMembers
+                                                key={sub.solutionId}
+                                                solutionId={sub.solutionId}
+                                                isOwner={sub.isOwner ?? false}
+                                                currentUserId={sub.user_id}
+                                                onMemberRemoved={(userId) => handleMemberRemoved(sub.solutionId, userId)}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <Card className="text-center text-muted-foreground py-16">
+                                        <CardContent>No team data available.</CardContent>
+                                    </Card>
+                                )}
+                            </TabsContent>
+
                             <TabsContent value="engagements" className="mt-0">
                                 {(
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">

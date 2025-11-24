@@ -59,6 +59,7 @@ const ContactView = dynamic(() => import('@/components/views/contact'), { loadin
 type User = {
   name: string;
   email: string;
+  userId: string;
 }
 type AuthProvider = 'local' | 'google';
 

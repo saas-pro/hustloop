@@ -51,6 +51,7 @@ export type CorporateChallenge = {
   x_url: string;
   logo_url: string;
   extended_end_date?: string | null;
+  attachments: [];
 };
 
 export type MSMEChallenge = {
@@ -80,6 +81,7 @@ export type MSMEChallenge = {
   x_url: string;
   logo_url: string;
   extended_end_date?: string | null;
+  attachments: [];
 };
 export type Governmentchallenges = {
   id: string;
@@ -108,6 +110,7 @@ export type Governmentchallenges = {
   x_url: string;
   logo_url: string;
   extended_end_date?: string | null;
+  attachments: [];
 };
 
 interface MsmesViewProps {
@@ -425,7 +428,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
             <DialogDescription className="text-center">
               <span className="text-accent">&quot;Empowering MSMEs for Success&quot;</span>
               <span className="block text-center mx-auto">
-               Collaborate on MSME, corporate and government incentive challenges for rewards and growth. Innovators, entrepreneurs, and experts - find your match.
+                Collaborate on MSME, corporate and government incentive challenges for rewards and growth. Innovators, entrepreneurs, and experts - find your match.
               </span>
             </DialogDescription>
           </DialogHeader>

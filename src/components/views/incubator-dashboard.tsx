@@ -34,31 +34,31 @@ type AuthProvider = 'local' | 'google';
 
 
 const profileFormSchema = z.object({
-  name: z.string().min(1, "Incubator name is required"),
-  location: z.string().min(1, "Location is required"),
-  description: z.string().min(1, "Description is required").max(5000,{message:"Description must not exceed 5000 characters"}),
-  focus: z.array(z.object({ value: z.string().min(1, "Focus area cannot be empty.") })).min(1, "At least one focus area is required."),
-  metrics: z.object({
-    startups: z.string().min(1, "Required"),
-    funding: z.string().min(1, "Required"),
-    successRate: z.string().min(1, "Required"),
-  }),
-  details: z.object({
-    overview: z.string().min(1, "Overview is required"),
-    services: z.array(z.object({
-        title: z.string().min(1, "Service title is required"),
-        description: z.string().min(1, "Service description is required").max(200,"Description must not exceed 200 characters"),
-    })),
-    benefits: z.array(z.object({ value: z.string().min(1, "Benefit cannot be empty") })),
-     eligibility: z.object({
-      focusAreas: z.string().min(1, "Required").max(200,"Focus area must not exceed 200 characters"),
-      requirements: z.array(z.object({ value: z.string().min(1, "Requirement cannot be empty") })),
+    name: z.string().min(1, "Incubator name is required"),
+    location: z.string().min(1, "Location is required"),
+    description: z.string().min(1, "Description is required").max(5000, { message: "Description must not exceed 5000 characters" }),
+    focus: z.array(z.object({ value: z.string().min(1, "Focus area cannot be empty.") })).min(1, "At least one focus area is required."),
+    metrics: z.object({
+        startups: z.string().min(1, "Required"),
+        funding: z.string().min(1, "Required"),
+        successRate: z.string().min(1, "Required"),
     }),
-    timeline: z.array(z.object({
-      event: z.string().min(1, "Event name is required"),
-      period: z.string().min(1, "Period is required"),
-    })),
-  }),
+    details: z.object({
+        overview: z.string().min(1, "Overview is required"),
+        services: z.array(z.object({
+            title: z.string().min(1, "Service title is required"),
+            description: z.string().min(1, "Service description is required").max(200, "Description must not exceed 200 characters"),
+        })),
+        benefits: z.array(z.object({ value: z.string().min(1, "Benefit cannot be empty") })),
+        eligibility: z.object({
+            focusAreas: z.string().min(1, "Required").max(200, "Focus area must not exceed 200 characters"),
+            requirements: z.array(z.object({ value: z.string().min(1, "Requirement cannot be empty") })),
+        }),
+        timeline: z.array(z.object({
+            event: z.string().min(1, "Event name is required"),
+            period: z.string().min(1, "Period is required"),
+        })),
+    }),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -72,11 +72,11 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 const initialSubmissionsData: Submission[] = [];
 
 const statusIcons: { [key: string]: React.ReactNode } = {
-  'New': <Clock className="h-4 w-4 text-blue-500" />,
-  'Under Review': <Clock className="h-4 w-4 text-yellow-500" />,
-  'Valid': <CheckCircle className="h-4 w-4 text-green-500" />,
-  'Duplicate': <Copy className="h-4 w-4 text-orange-500" />,
-  'Rejected': <XCircle className="h-4 w-4 text-red-500" />,
+    'New': <Clock className="h-4 w-4 text-blue-500" />,
+    'Under Review': <Clock className="h-4 w-4 text-yellow-500" />,
+    'Valid': <CheckCircle className="h-4 w-4 text-green-500" />,
+    'Duplicate': <Copy className="h-4 w-4 text-orange-500" />,
+    'Rejected': <XCircle className="h-4 w-4 text-red-500" />,
 }
 
 interface IncubatorDashboardViewProps {
@@ -87,25 +87,25 @@ interface IncubatorDashboardViewProps {
 }
 
 const emptyProfile: ProfileFormValues = {
-  name: "",
-  location: "",
-  description: "",
-  focus: [],
-  metrics: {
-    startups: "",
-    funding: "",
-    successRate: "",
-  },
-  details: {
-    overview: "",
-    services: [],
-    benefits: [],
-    eligibility: {
-      focusAreas: "",
-      requirements: [],
+    name: "",
+    location: "",
+    description: "",
+    focus: [],
+    metrics: {
+        startups: "",
+        funding: "",
+        successRate: "",
     },
-    timeline: [],
-  },
+    details: {
+        overview: "",
+        services: [],
+        benefits: [],
+        eligibility: {
+            focusAreas: "",
+            requirements: [],
+        },
+        timeline: [],
+    },
 };
 
 export default function IncubatorDashboardView({ isOpen, onOpenChange, user, authProvider }: IncubatorDashboardViewProps) {
@@ -137,7 +137,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
     const { fields: focusFields, append: appendFocus, remove: removeFocus } = useFieldArray({
         control: profileForm.control, name: "focus"
     });
-     const { fields: requirementFields, append: appendRequirement, remove: removeRequirement } = useFieldArray({
+    const { fields: requirementFields, append: appendRequirement, remove: removeRequirement } = useFieldArray({
         control: profileForm.control, name: "details.eligibility.requirements"
     });
     const { fields: timelineFields, append: appendTimeline, remove: removeTimeline } = useFieldArray({
@@ -195,7 +195,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
             });
         }
     }
-    
+
     async function onSettingsSubmit(data: SettingsFormValues) {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -232,7 +232,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
 
     const handleAddComment = (submissionId: string, commentText: string) => {
         const newComment: Comment = {
-            id:1,
+            id: 1,
             author: 'Incubator',
             text: commentText,
             timestamp: 'Just now'
@@ -250,10 +250,12 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
     };
 
     const overviewStats = {
-      new: submissions.filter(s => s.status === 'new').length,
-      review: submissions.filter(s => s.status === 'under_review').length,
-      valid: submissions.filter(s => s.status === 'valid').length,
+        new: submissions.filter(s => s.status === 'new').length,
+        review: submissions.filter(s => s.status === 'under_review').length,
+        valid: submissions.filter(s => s.status === 'solution_accepted_points').length,
     }
+
+
 
     return (
         <>
@@ -364,126 +366,126 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
                                 </TabsContent>
                                 <TabsContent value="profile" className="mt-0">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                    <CardHeader>
-                                        <CardTitle>Create/Edit Incubator Profile</CardTitle>
-                                        <CardDescription>This information will be publicly visible. Fill it out to attract founders.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Form {...profileForm}>
-                                            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8">
-                                                <FormField control={profileForm.control} name="name" render={({ field }) => (
-                                                    <FormItem><FormLabel>Incubator Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                                )}/>
-                                                <FormField control={profileForm.control} name="location" render={({ field }) => (
-                                                    <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Bangalore, India" {...field} /></FormControl><FormMessage /></FormItem>
-                                                )}/>
-                                                <FormField control={profileForm.control} name="description" render={({ field }) => (
-                                                    <FormItem><FormLabel>Short Description</FormLabel><FormControl><Textarea placeholder="A brief, one-sentence pitch for your incubator." {...field} /></FormControl><FormMessage /></FormItem>
-                                                )}/>
+                                        <CardHeader>
+                                            <CardTitle>Create/Edit Incubator Profile</CardTitle>
+                                            <CardDescription>This information will be publicly visible. Fill it out to attract founders.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Form {...profileForm}>
+                                                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8">
+                                                    <FormField control={profileForm.control} name="name" render={({ field }) => (
+                                                        <FormItem><FormLabel>Incubator Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                                    )} />
+                                                    <FormField control={profileForm.control} name="location" render={({ field }) => (
+                                                        <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Bangalore, India" {...field} /></FormControl><FormMessage /></FormItem>
+                                                    )} />
+                                                    <FormField control={profileForm.control} name="description" render={({ field }) => (
+                                                        <FormItem><FormLabel>Short Description</FormLabel><FormControl><Textarea placeholder="A brief, one-sentence pitch for your incubator." {...field} /></FormControl><FormMessage /></FormItem>
+                                                    )} />
 
-                                                <div>
-                                                    <h3 className="text-lg font-medium mb-2">Focus Areas</h3>
-                                                    {focusFields.map((field, index) => (
-                                                        <div key={field.id} className="flex items-center gap-2 mb-2">
-                                                            <FormField control={profileForm.control} name={`focus.${index}.value`} render={({ field }) => (
-                                                                <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., SaaS" {...field} /></FormControl><FormMessage /></FormItem>
-                                                            )}/>
-                                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFocus(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                                        </div>
-                                                    ))}
-                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendFocus({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Focus Area</Button>
-                                                </div>
+                                                    <div>
+                                                        <h3 className="text-lg font-medium mb-2">Focus Areas</h3>
+                                                        {focusFields.map((field, index) => (
+                                                            <div key={field.id} className="flex items-center gap-2 mb-2">
+                                                                <FormField control={profileForm.control} name={`focus.${index}.value`} render={({ field }) => (
+                                                                    <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., SaaS" {...field} /></FormControl><FormMessage /></FormItem>
+                                                                )} />
+                                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeFocus(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                            </div>
+                                                        ))}
+                                                        <Button type="button" variant="outline" size="sm" onClick={() => appendFocus({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Focus Area</Button>
+                                                    </div>
 
-                                                <Separator />
-                                                <h3 className="text-lg font-medium">Metrics</h3>
-                                                <div className="grid grid-cols-3 gap-4">
-                                                    <FormField control={profileForm.control} name="metrics.startups" render={({ field }) => (
-                                                        <FormItem><FormLabel>Startups Supported</FormLabel><FormControl><Input placeholder="e.g., 150+" {...field} /></FormControl><FormMessage /></FormItem>
-                                                    )}/>
-                                                    <FormField control={profileForm.control} name="metrics.funding" render={({ field }) => (
-                                                        <FormItem><FormLabel>Average Funding</FormLabel><FormControl><Input placeholder="e.g., $5M" {...field} /></FormControl><FormMessage /></FormItem>
-                                                    )}/>
-                                                    <FormField control={profileForm.control} name="metrics.successRate" render={({ field }) => (
-                                                        <FormItem><FormLabel>Success Rate</FormLabel><FormControl><Input placeholder="e.g., 85%" {...field} /></FormControl><FormMessage /></FormItem>
-                                                    )}/>
-                                                </div>
-                                                
-                                                <Separator />
-                                                <h3 className="text-lg font-medium">Program Details</h3>
-                                                <FormField control={profileForm.control} name="details.overview" render={({ field }) => (
-                                                    <FormItem><FormLabel>Program Overview</FormLabel><FormControl><Textarea rows={5} placeholder="Describe your program in detail." {...field} /></FormControl><FormMessage /></FormItem>
-                                                )}/>
-                                                
-                                                <div>
-                                                    <h3 className="text-lg font-medium mb-2">Services Offered</h3>
-                                                    {services.map((service, index) => (
-                                                        <Card key={service.id} className="mb-4 p-4 space-y-2">
-                                                            <div className="flex justify-end"><Button type="button" variant="ghost" size="icon" onClick={() => removeService(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button></div>
-                                                            <FormField control={profileForm.control} name={`details.services.${index}.title`} render={({ field }) => (
-                                                                <FormItem><FormLabel>Service Title</FormLabel><FormControl><Input placeholder="e.g., Mentorship" {...field} /></FormControl><FormMessage /></FormItem>
-                                                            )}/>
-                                                            <FormField control={profileForm.control} name={`details.services.${index}.description`} render={({ field }) => (
-                                                                <FormItem><FormLabel>Service Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-                                                            )}/>
-                                                        </Card>
-                                                    ))}
-                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendService({ title: '', description: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Service</Button>
-                                                </div>
+                                                    <Separator />
+                                                    <h3 className="text-lg font-medium">Metrics</h3>
+                                                    <div className="grid grid-cols-3 gap-4">
+                                                        <FormField control={profileForm.control} name="metrics.startups" render={({ field }) => (
+                                                            <FormItem><FormLabel>Startups Supported</FormLabel><FormControl><Input placeholder="e.g., 150+" {...field} /></FormControl><FormMessage /></FormItem>
+                                                        )} />
+                                                        <FormField control={profileForm.control} name="metrics.funding" render={({ field }) => (
+                                                            <FormItem><FormLabel>Average Funding</FormLabel><FormControl><Input placeholder="e.g., $5M" {...field} /></FormControl><FormMessage /></FormItem>
+                                                        )} />
+                                                        <FormField control={profileForm.control} name="metrics.successRate" render={({ field }) => (
+                                                            <FormItem><FormLabel>Success Rate</FormLabel><FormControl><Input placeholder="e.g., 85%" {...field} /></FormControl><FormMessage /></FormItem>
+                                                        )} />
+                                                    </div>
 
-                                                <div>
-                                                    <h3 className="text-lg font-medium mb-2">Benefits</h3>
-                                                    {benefits.map((benefit, index) => (
-                                                        <div key={benefit.id} className="flex items-center gap-2 mb-2">
-                                                            <FormField control={profileForm.control} name={`details.benefits.${index}.value`} render={({ field }) => (
-                                                                <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., $120,000 investment" {...field} /></FormControl><FormMessage /></FormItem>
-                                                            )}/>
-                                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeBenefit(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                                        </div>
-                                                    ))}
-                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendBenefit({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Benefit</Button>
-                                                </div>
+                                                    <Separator />
+                                                    <h3 className="text-lg font-medium">Program Details</h3>
+                                                    <FormField control={profileForm.control} name="details.overview" render={({ field }) => (
+                                                        <FormItem><FormLabel>Program Overview</FormLabel><FormControl><Textarea rows={5} placeholder="Describe your program in detail." {...field} /></FormControl><FormMessage /></FormItem>
+                                                    )} />
 
-                                                <Separator />
-                                                <h3 className="text-lg font-medium mb-2">Eligibility</h3>
-                                                 <FormField control={profileForm.control} name="details.eligibility.focusAreas" render={({ field }) => (
-                                                    <FormItem><FormLabel>Focus Areas (Detailed)</FormLabel><FormControl><Textarea placeholder="Describe your focus areas in detail." {...field} /></FormControl><FormMessage /></FormItem>
-                                                )}/>
-                                                <div>
-                                                    <h4 className="text-md font-medium my-2">Key Requirements</h4>
-                                                    {requirementFields.map((field, index) => (
-                                                        <div key={field.id} className="flex items-center gap-2 mb-2">
-                                                            <FormField control={profileForm.control} name={`details.eligibility.requirements.${index}.value`} render={({ field }) => (
-                                                                <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., MVP required" {...field} /></FormControl><FormMessage /></FormItem>
-                                                            )}/>
-                                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeRequirement(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                                        </div>
-                                                    ))}
-                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendRequirement({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Requirement</Button>
-                                                </div>
+                                                    <div>
+                                                        <h3 className="text-lg font-medium mb-2">Services Offered</h3>
+                                                        {services.map((service, index) => (
+                                                            <Card key={service.id} className="mb-4 p-4 space-y-2">
+                                                                <div className="flex justify-end"><Button type="button" variant="ghost" size="icon" onClick={() => removeService(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
+                                                                <FormField control={profileForm.control} name={`details.services.${index}.title`} render={({ field }) => (
+                                                                    <FormItem><FormLabel>Service Title</FormLabel><FormControl><Input placeholder="e.g., Mentorship" {...field} /></FormControl><FormMessage /></FormItem>
+                                                                )} />
+                                                                <FormField control={profileForm.control} name={`details.services.${index}.description`} render={({ field }) => (
+                                                                    <FormItem><FormLabel>Service Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                                                                )} />
+                                                            </Card>
+                                                        ))}
+                                                        <Button type="button" variant="outline" size="sm" onClick={() => appendService({ title: '', description: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Service</Button>
+                                                    </div>
+
+                                                    <div>
+                                                        <h3 className="text-lg font-medium mb-2">Benefits</h3>
+                                                        {benefits.map((benefit, index) => (
+                                                            <div key={benefit.id} className="flex items-center gap-2 mb-2">
+                                                                <FormField control={profileForm.control} name={`details.benefits.${index}.value`} render={({ field }) => (
+                                                                    <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., $120,000 investment" {...field} /></FormControl><FormMessage /></FormItem>
+                                                                )} />
+                                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeBenefit(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                            </div>
+                                                        ))}
+                                                        <Button type="button" variant="outline" size="sm" onClick={() => appendBenefit({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Benefit</Button>
+                                                    </div>
+
+                                                    <Separator />
+                                                    <h3 className="text-lg font-medium mb-2">Eligibility</h3>
+                                                    <FormField control={profileForm.control} name="details.eligibility.focusAreas" render={({ field }) => (
+                                                        <FormItem><FormLabel>Focus Areas (Detailed)</FormLabel><FormControl><Textarea placeholder="Describe your focus areas in detail." {...field} /></FormControl><FormMessage /></FormItem>
+                                                    )} />
+                                                    <div>
+                                                        <h4 className="text-md font-medium my-2">Key Requirements</h4>
+                                                        {requirementFields.map((field, index) => (
+                                                            <div key={field.id} className="flex items-center gap-2 mb-2">
+                                                                <FormField control={profileForm.control} name={`details.eligibility.requirements.${index}.value`} render={({ field }) => (
+                                                                    <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., MVP required" {...field} /></FormControl><FormMessage /></FormItem>
+                                                                )} />
+                                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeRequirement(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                            </div>
+                                                        ))}
+                                                        <Button type="button" variant="outline" size="sm" onClick={() => appendRequirement({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Requirement</Button>
+                                                    </div>
 
 
-                                                <Separator />
-                                                <h3 className="text-lg font-medium mb-2">Timeline</h3>
-                                                 {timelineFields.map((field, index) => (
+                                                    <Separator />
+                                                    <h3 className="text-lg font-medium mb-2">Timeline</h3>
+                                                    {timelineFields.map((field, index) => (
                                                         <Card key={field.id} className="mb-4 p-4 space-y-2">
-                                                            <div className="flex justify-end"><Button type="button" variant="ghost" size="icon" onClick={() => removeTimeline(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button></div>
+                                                            <div className="flex justify-end"><Button type="button" variant="ghost" size="icon" onClick={() => removeTimeline(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
                                                             <FormField control={profileForm.control} name={`details.timeline.${index}.event`} render={({ field }) => (
                                                                 <FormItem><FormLabel>Event</FormLabel><FormControl><Input placeholder="e.g., Application Period" {...field} /></FormControl><FormMessage /></FormItem>
-                                                            )}/>
+                                                            )} />
                                                             <FormField control={profileForm.control} name={`details.timeline.${index}.period`} render={({ field }) => (
                                                                 <FormItem><FormLabel>Period</FormLabel><FormControl><Input placeholder="e.g., Jan - Mar" {...field} /></FormControl><FormMessage /></FormItem>
-                                                            )}/>
+                                                            )} />
                                                         </Card>
                                                     ))}
-                                                <Button type="button" variant="outline" size="sm" onClick={() => appendTimeline({ event: '', period: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Timeline Event</Button>
+                                                    <Button type="button" variant="outline" size="sm" onClick={() => appendTimeline({ event: '', period: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Timeline Event</Button>
 
-                                                <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-                                                     {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                     Save Profile
-                                                </Button>
-                                            </form>
-                                        </Form>
-                                    </CardContent>
+                                                    <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+                                                        {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                        Save Profile
+                                                    </Button>
+                                                </form>
+                                            </Form>
+                                        </CardContent>
                                     </Card>
                                 </TabsContent>
                                 <TabsContent value="settings" className="mt-0">
@@ -500,7 +502,7 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
                                                         <div className="space-y-4">
                                                             <FormField control={settingsForm.control} name="name" render={({ field }) => (
                                                                 <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
-                                                            )}/>
+                                                            )} />
                                                             <FormField
                                                                 control={settingsForm.control}
                                                                 name="email"
@@ -538,8 +540,8 @@ export default function IncubatorDashboardView({ isOpen, onOpenChange, user, aut
                     </div>
                 </DialogContent>
             </Dialog>
-            <SubmissionDetailsModal 
-                submission={selectedSubmission} 
+            <SubmissionDetailsModal
+                submission={selectedSubmission}
                 onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
             />
         </>
@@ -554,12 +556,11 @@ const incubatorChartData = [
     { month: "May", submissions: 0 },
     { month: "June", submissions: 0 },
 ];
-  
+
 const incubatorChartConfig = {
     submissions: {
-      label: "Submissions",
-      color: "hsl(var(--chart-2))",
+        label: "Submissions",
+        color: "hsl(var(--chart-2))",
     },
 };
 
-    

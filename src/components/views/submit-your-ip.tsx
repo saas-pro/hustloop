@@ -62,14 +62,14 @@ const sessionSchema = z.object({
 });
 const programSchema = z.object({
     title: z.string().min(5, "Title is required"),
-    description: z.string().min(10, "Description is required").max(5000,"Description must not exceed 5000 characters"),
+    description: z.string().min(10, "Description is required").max(5000, "Description must not exceed 5000 characters"),
     sessions: z.array(sessionSchema).min(1, "At least one session is required"),
     features: z.array(featureSchema).min(1, "At least one feature is required"),
 });
 type ProgramFormValues = z.infer<typeof programSchema>;
 
 
-type User = { name: string; email: string; }
+type User = { name: string; email: string; userId: string }
 type AuthProvider = 'local' | 'google';
 
 interface DashboardViewProps {
@@ -660,7 +660,7 @@ export default function SubmitIPDashboard({ isOpen, setUser, onOpenChange, user,
 
     const [mySubmissions, setMySubmissions] = useState<TechTransferIP[]>([]);
     const [loading, setLoading] = useState(false);
-    const [emptyToastShown, setEmptyToastShown] = useState(false); 
+    const [emptyToastShown, setEmptyToastShown] = useState(false);
 
     useEffect(() => {
         const fetchMySubmissions = async () => {

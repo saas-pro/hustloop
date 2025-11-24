@@ -41,6 +41,9 @@ import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import { LoadingButton } from "../ui/loading-button";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
 interface Collaboration {
     id: string;
@@ -143,6 +146,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
 
     useEffect(() => {
         const fetchCollaborations = async () => {
+            console.log(selectedProfile)
             if (!selectedProfile) return;
             try {
                 setCollabLoading(true);
@@ -277,6 +281,59 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
     };
 
 
+
+    const [editRewardCollab, setEditRewardCollab] = useState<Collaboration | null>(null);
+    const [isRewardUpdating, setIsRewardUpdating] = useState(false);
+
+    const handleUpdateReward = async (collabId: string, data: { reward_amount?: number, reward_min?: number, reward_max?: number }) => {
+        setIsRewardUpdating(true);
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_BASE_URL}/api/collaborations/${collabId}/rewards`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to update rewards');
+            }
+
+            setCollaborations(collaborations.map(c =>
+                c.id === collabId ? { ...c, ...data } : c
+            ));
+
+            toast({
+                title: "Success",
+                description: "Rewards updated successfully",
+            });
+            setEditRewardCollab(null);
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.message,
+            });
+        } finally {
+            setIsRewardUpdating(false);
+        }
+    };
+
+
+    const isAdmin = () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return false;
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.role === 'admin';
+        } catch {
+            return false;
+        }
+    };
 
     return (
         <>
@@ -469,6 +526,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                 <TableCell className="text-right w-[220px]">
                                                     <div className="flex justify-end items-center gap-2">
 
+
                                                         {/* EXPIRED → SHOW ONLY ACTIVATE BUTTON */}
                                                         {collaboration.status === "expired" ? (
                                                             <Popover>
@@ -491,7 +549,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                         defaultMonth={new Date(collaboration.end_date)}
                                                                     />
 
-                                                                    <div className="flex justify-end">
+                                                                    <div className="flex justify-between items-center">
                                                                         <LoadingButton
                                                                             onClick={() => handleExtendCollaboration(collaboration.id)}
                                                                             className="w-fit m-2 min-w-[140px]"
@@ -500,6 +558,16 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                         >
                                                                             Confirm Activation
                                                                         </LoadingButton>
+                                                                        {isAdmin() && (
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="default"
+                                                                                className="w-fit m-2 min-w-[140px]"
+                                                                                onClick={() => setEditRewardCollab(collaboration)}
+                                                                            >
+                                                                                Edit Reward
+                                                                            </Button>
+                                                                        )}
                                                                     </div>
                                                                 </PopoverContent>
                                                             </Popover>
@@ -526,7 +594,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                             defaultMonth={new Date(collaboration.extended_end_date || collaboration.end_date)}
                                                                         />
 
-                                                                        <div className="flex justify-end">
+                                                                        <div className="flex justify-between items-center">
                                                                             <LoadingButton
                                                                                 onClick={() => handleExtendCollaboration(collaboration.id)}
                                                                                 className="w-fit m-2 min-w-[120px]"
@@ -535,6 +603,16 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                             >
                                                                                 Confirm Extend
                                                                             </LoadingButton>
+                                                                            {isAdmin() && (
+                                                                                <Button
+                                                                                    variant="outline"
+                                                                                    size="default"
+                                                                                    className="w-fit m-2 min-w-[140px]"
+                                                                                    onClick={() => setEditRewardCollab(collaboration)}
+                                                                                >
+                                                                                    Edit Reward
+                                                                                </Button>
+                                                                            )}
                                                                         </div>
                                                                     </PopoverContent>
                                                                 </Popover>
@@ -565,7 +643,127 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                     </DialogContent>
                 )}
             </Dialog>
+
+            {editRewardCollab && (
+                <EditRewardDialog
+                    open={!!editRewardCollab}
+                    onOpenChange={(open) => !open && setEditRewardCollab(null)}
+                    collaboration={editRewardCollab}
+                    onUpdate={handleUpdateReward}
+                    isLoading={isRewardUpdating}
+                />
+            )}
         </>
+    );
+}
+
+function EditRewardDialog({ open, onOpenChange, collaboration, onUpdate, isLoading }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    collaboration: Collaboration;
+    onUpdate: (id: string, data: any) => void;
+    isLoading: boolean;
+}) {
+    const [rewardType, setRewardType] = useState<'fixed' | 'range'>(
+        collaboration.reward_amount ? 'fixed' : 'range'
+    );
+    const [amount, setAmount] = useState(collaboration.reward_amount?.toString() || '');
+    const [min, setMin] = useState(collaboration.reward_min?.toString() || '');
+    const [max, setMax] = useState(collaboration.reward_max?.toString() || '');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (rewardType === 'fixed') {
+            onUpdate(collaboration.id, {
+                reward_amount: Number(amount),
+                reward_min: 0,
+                reward_max: 0
+            });
+        } else {
+            onUpdate(collaboration.id, {
+                reward_amount: 0,
+                reward_min: Number(min),
+                reward_max: Number(max)
+            });
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Reward</DialogTitle>
+                </DialogHeader>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+
+                    <div className="space-y-2">
+                        <Label>Reward Type</Label>
+                        <RadioGroup
+                            value={rewardType}
+                            onValueChange={(value) => setRewardType(value as "fixed" | "range")}
+                            className="flex gap-6"
+                        >
+                            <div className="flex items-center gap-2">
+                                <RadioGroupItem value="fixed" id="fixed" />
+                                <Label htmlFor="fixed">Fixed Amount</Label>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <RadioGroupItem value="range" id="range" />
+                                <Label htmlFor="range">Range</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+
+                    {/* FIXED AMOUNT */}
+                    {rewardType === "fixed" && (
+                        <div className="space-y-2">
+                            <Label htmlFor="amount">Amount</Label>
+                            <Input
+                                id="amount"
+                                type="number"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                required
+                            />
+                        </div>
+                    )}
+
+                    {/* RANGE */}
+                    {rewardType === "range" && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="min">Min</Label>
+                                <Input
+                                    id="min"
+                                    type="number"
+                                    value={min}
+                                    onChange={(e) => setMin(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="max">Max</Label>
+                                <Input
+                                    id="max"
+                                    type="number"
+                                    value={max}
+                                    onChange={(e) => setMax(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <Button type="submit" disabled={isLoading} className="w-full">
+                        {isLoading ? "Updating..." : "Update Reward"}
+                    </Button>
+                </form>
+            </DialogContent >
+        </Dialog >
+
     );
 }
 

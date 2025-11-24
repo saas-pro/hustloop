@@ -42,6 +42,22 @@ const loginSchema = z.object({
 
 type LoginSchema = z.infer<typeof loginSchema>;
 
+const forceResetPasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required."),
+  newPassword: z.string()
+    .min(10, { message: "Password must be at least 10 characters long." })
+    .regex(/[A-Z]/, { message: "Must contain at least one uppercase letter." })
+    .regex(/[a-z]/, { message: "Must contain at least one lowercase letter." })
+    .regex(/[0-9]/, { message: "Must contain at least one number." })
+    .regex(/[^A-Za-z0-9]/, { message: "Must contain at least one special character." }),
+  confirmPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "New passwords do not match.",
+  path: ["confirmPassword"],
+});
+
+type ForceResetPasswordSchema = z.infer<typeof forceResetPasswordSchema>;
+
 type AuthProvider = 'local' | 'google';
 
 interface LoginModalProps {
@@ -57,6 +73,17 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
   const router = useRouter();
   const { auth } = useFirebaseAuth();
   const [isSocialLoading, setIsSocialLoading] = useState(false);
+  const [isMustResetPassword, setIsMustResetPassword] = useState(false);
+  const [tempToken, setTempToken] = useState<string | null>(null);
+
+  const forceResetForm = useForm<ForceResetPasswordSchema>({
+    resolver: zodResolver(forceResetPasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -152,12 +179,19 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
         headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
       });
       const data = await response.json();
-      setIsOpen(false);
+
       if (data.action === 'complete-profile' && data.token) {
         router.push(`/complete-profile?token=${data.token}`);
         return;
       }
 
+      if (data.must_reset_password) {
+        setTempToken(data.token);
+        setIsMustResetPassword(true);
+        return;
+      }
+
+      setIsOpen(false);
       if (response.ok) {
         onLoginSuccess({
           role: data.role, token: data.token, hasSubscription: data.hasSubscription,
@@ -241,7 +275,6 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     }, 1000);
 
     try {
-      // Fire the request in background
       const response = await fetch(`${API_BASE_URL}/api/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -271,11 +304,51 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       });
       setResetBtnState("idle");
     } finally {
-      // Reset back to idle after 2s regardless of success/error
       setTimeout(() => setResetBtnState("idle"), 2000);
     }
   };
 
+
+  const handleForceReset = async (values: ForceResetPasswordSchema) => {
+    if (!tempToken) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tempToken}`
+        },
+        body: JSON.stringify(values),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Your password has been updated successfully. Please login with your new password.",
+        });
+        setIsMustResetPassword(false);
+        setIsOpen(false);
+        forceResetForm.reset();
+        setTempToken(null);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Update Failed",
+          description: result.error || "An unknown error occurred.",
+        });
+      }
+
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Network Error",
+        description: "Could not update password. Please try again later.",
+      });
+    }
+  };
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -283,107 +356,157 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-lg overflow-hidden">
         <DialogHeader className="text-center">
-          <DialogTitle>Login</DialogTitle>
-          <DialogDescription>Access your hustloop account.</DialogDescription>
+          <DialogTitle>{isMustResetPassword ? "Reset Password" : "Login"}</DialogTitle>
+          <DialogDescription>{isMustResetPassword ? "You must reset your password to continue." : "Access your hustloop account."}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 gap-4">
-          <Button variant="outline" onClick={() => handleSocialLogin('google')}>
-            <GoogleIcon className="mr-2 h-4 w-4" /> Sign in with Google</Button>
-        </div>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-          </div>
-        </div>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handlePasswordLogin)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl><Input type="email" placeholder="you@example.com" {...field} disabled={isSubmitting} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => {
-
-
-                return (
+        {isMustResetPassword ? (
+          <Form {...forceResetForm}>
+            <form onSubmit={forceResetForm.handleSubmit(handleForceReset)} className="space-y-4">
+              <FormField
+                control={forceResetForm.control}
+                name="currentPassword"
+                render={({ field }) => (
                   <FormItem>
-                    <div className="flex justify-between">
-                      <FormLabel>Password</FormLabel>
-                      {resetBtnState === "sent" ? (
-                        <div className="text-xs text-ring">Sent</div>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="link"
-                          className="h-auto p-0 text-xs flex items-center gap-1"
-                          onClick={handlePasswordReset}
-                          disabled={resetBtnState === "sending"}
-                        >
-                          {resetBtnState === "sending" ? (
-                            <>
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Sending...
-                            </>
-                          ) : (
-                            "Forgot password?"
-                          )}
-                        </Button>
-                      )}
-
-                    </div>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          {...field}
-                          disabled={isSubmitting}
-                          className="pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                          tabIndex={-1} // prevent focus stealing
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </FormControl>
+                    <FormLabel>Current Password</FormLabel>
+                    <FormControl><Input type="password" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
-                );
-              }}
-            />
-            <DialogFooter className="pt-4">
-              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Login
-              </Button>
-            </DialogFooter>
-            <div className="flex justify-center items-center">
-              <div>
-                <Button variant="link" type="button" className="text-xs block p-0 h-auto" onClick={() => { handleAuthClick('signup'); }}>
-                  {`Don't have an account? Sign Up`}
+                )}
+              />
+              <FormField
+                control={forceResetForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl><Input type="password" {...field} /></FormControl>
+                    <p className="text-xs text-muted-foreground">Must be 10+ characters with uppercase, lowercase, number, and special character.</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={forceResetForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl><Input type="password" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter className="pt-4">
+                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={forceResetForm.formState.isSubmitting}>
+                  {forceResetForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Update Password
                 </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4">
+              <Button variant="outline" onClick={() => handleSocialLogin('google')}>
+                <GoogleIcon className="mr-2 h-4 w-4" /> Sign in with Google</Button>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
               </div>
             </div>
-          </form>
-        </Form>
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handlePasswordLogin)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl><Input type="email" placeholder="you@example.com" {...field} disabled={isSubmitting} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => {
+
+
+                    return (
+                      <FormItem>
+                        <div className="flex justify-between">
+                          <FormLabel>Password</FormLabel>
+                          {resetBtnState === "sent" ? (
+                            <div className="text-xs text-ring">Sent</div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="link"
+                              className="h-auto p-0 text-xs flex items-center gap-1"
+                              onClick={handlePasswordReset}
+                              disabled={resetBtnState === "sending"}
+                            >
+                              {resetBtnState === "sending" ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Sending...
+                                </>
+                              ) : (
+                                "Forgot password?"
+                              )}
+                            </Button>
+                          )}
+
+                        </div>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="••••••••"
+                              {...field}
+                              disabled={isSubmitting}
+                              className="pr-10"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword((prev) => !prev)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                              tabIndex={-1} // prevent focus stealing
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+                <DialogFooter className="pt-4">
+                  <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Login
+                  </Button>
+                </DialogFooter>
+                <div className="flex justify-center items-center">
+                  <div>
+                    <Button variant="link" type="button" className="text-xs block p-0 h-auto" onClick={() => { handleAuthClick('signup'); }}>
+                      {`Don't have an account? Sign Up`}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+
+            </Form>
+          </>
+        )}
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 }

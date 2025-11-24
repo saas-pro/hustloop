@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award, Lock } from 'lucide-react';
+import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award, Lock, FileText } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -77,6 +77,7 @@ interface CorporateChallenge {
   x_url: string;
   logo_url: string;
   extended_end_date?: string | null;
+  attachments?: []
 }
 
 type hallOfFame = {
@@ -132,7 +133,7 @@ export default function CorporateChallengeDetails({
   const [events, setEvents] = useState<TimelineData | null>(null);
   const [data, setData] = useState<hallOfFame[]>([]);
   const [search, setSearch] = useState("");
-  
+
   useEffect(() => {
     if (!challenge) return;
 
@@ -261,7 +262,9 @@ export default function CorporateChallengeDetails({
   };
 
   const isChallengeExpiredOrStopped = challenge.status === "expired" || challenge.status === "stopped";
-
+  const attachments = Array.isArray(challenge?.attachments)
+    ? challenge.attachments
+    : JSON.parse(challenge?.attachments || "[]");
   return (
     <Dialog open={!!challenge} onOpenChange={onOpenChange}>
       <DialogContent className="w-[90vw] max-w-[90vw] h-[90vh] flex flex-col p-0">
@@ -297,70 +300,96 @@ export default function CorporateChallengeDetails({
             <TabsTrigger value="faq">FAQ</TabsTrigger>
           </TabsList>
 
+          {/* <ScrollArea className="flex-grow mt-4 h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]"> */}
           <ScrollArea className="flex-grow mt-4 h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]">
-            <TabsContent value="summary">
-              <ScrollArea className="flex-grow mt-4 px-6">
+            <div className="flex flex-col w-full mt-4">
+
+              <TabsContent value="summary">
                 <div className="space-y-8">
-                  {/* Title */}
+
                   {isChallengeExpiredOrStopped && (
                     <div className="text-white bg-red-500 w-full font-semibold p-2 rounded">
                       <p>This challenge is {challenge.status}.</p>
                     </div>
                   )}
 
-                  <div className="flex justify-between m-auto items-center gap-4">
-                    <div className='flex items-start gap-2'>
+                  <div className="flex flex-col md:flex-row justify-between items-center md:items-center gap-6">
+                    <div className="flex items-start gap-3">
                       <Award className="h-10 w-10 text-primary mt-1" />
                       <div>
-                        <h2 className="text-xl font-bold text-muted-foreground tracking-wide uppercase mb-1">
+                        <h2 className="text-xl font-bold text-muted-foreground uppercase mb-1">
                           Challenge Title
                         </h2>
-                        <h1 className="text-4xl font-extrabold leading-tight text-foreground">
+                        <h1 className="text-3xl md:text-4xl font-extrabold leading-tight text-foreground break-words">
                           {challenge.title}
                         </h1>
                       </div>
+                    </div>
+                    <div className='md:mr-3'>
+                      <TimelineCounter
+                        endDate={challenge?.end_date}
+                        extendedEndDate={challenge.extended_end_date}
+                        status={challenge.status}
+                      />
+                    </div>
 
-                    </div>
-                    <div className=''>
-                      <TimelineCounter endDate={challenge?.end_date} extendedEndDate={challenge.extended_end_date} status={challenge.status} />
-                    </div>
                   </div>
 
                   <div>
-                    <h3 className="text-2xl font-bold mb-4 font-headline">About The Challenge</h3>
+                    <h3 className="text-2xl font-bold mb-4">About The Challenge</h3>
                     <MarkdownViewer content={challenge.description} />
                   </div>
 
+                  {attachments?.length > 0 && (
+                    <div>
+                      <h2 className="text-lg font-semibold mb-2">Attachments</h2>
+
+                      <div className="space-y-2 text-sm bg-accent/50 hover:bg-accent p-3 rounded-md">
+                        {attachments.map((fileUrl: string, index: number) => {
+                          const fileName = fileUrl.split("/").pop();
+                          return (
+                            <a
+                              key={index}
+                              href={fileUrl}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-primary hover:text-primary/80 break-all"
+                            >
+                              <FileText className="h-4 w-4" />
+                              {fileName}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                    <Card className="bg-card/50 backdrop-blur-sm border">
                       <CardHeader className="items-center">
                         <Workflow className="h-8 w-8 text-primary mb-2" />
-                        <CardTitle className="text-4xl font-bold">{challenge?.stage}</CardTitle>
+                        <CardTitle className="text-3xl font-bold">{challenge?.stage}</CardTitle>
                         <p className="text-sm text-muted-foreground">Challenge Stage</p>
                       </CardHeader>
                     </Card>
 
-                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                    <Card className="bg-card/50 backdrop-blur-sm border">
                       <CardHeader className="items-center">
                         <Timer className="h-8 w-8 text-primary mb-2" />
-                        <CardTitle className="text-4xl font-bold">
-                          {new Date(challenge.end_date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                        <CardTitle className="text-2xl font-bold">
+                          {new Date(challenge.end_date).toLocaleDateString("en-US")}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">End Date</p>
                       </CardHeader>
                     </Card>
 
-                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                    <Card className="bg-card/50 backdrop-blur-sm border">
                       <CardHeader className="items-center">
                         <IndianRupee className="h-8 w-8 text-primary mb-2" />
-                        <CardTitle className="text-2xl font-bold">
-                          {challenge.reward_amount
-                            ? challenge.reward_amount
-                            : `${challenge.reward_min} - ${challenge.reward_max}`}
+                        <CardTitle className="text-xl font-bold">
+                          {challenge.reward_amount ??
+                            `${challenge.reward_min} - ${challenge.reward_max}`}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">Reward Amount</p>
                       </CardHeader>
@@ -371,42 +400,40 @@ export default function CorporateChallengeDetails({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                      <h3 className="text-2xl font-bold mb-4 font-headline">Mission</h3>
-                      <ul className="space-y-2">
-                        {Array.isArray(challenge.scope) && challenge.scope.map((s, i) => (
-                          <li key={i} className="flex items-start gap-3">
-                            <Check className="h-5 w-5 text-green-500 mt-1 shrink-0" />
-                            <span>{s}</span>
-                          </li>
-                        ))}
+                      <h3 className="text-2xl font-bold mb-4">Mission</h3>
+                      <ul className="space-y-3">
+                        {Array.isArray(challenge.scope) && challenge.scope.map((s, i) => (<li key={i} className="flex items-start gap-3"> <Check className="h-5 w-5 text-green-500 mt-1 shrink-0" /> <span>{s}</span> </li>))}
                       </ul>
                     </div>
 
                     <div>
-                      <h3 className="text-2xl font-bold mb-4 font-headline">Who Can Participate</h3>
-                      <p className="text-muted-foreground">{challenge.looking_for}</p>
+                      <h3 className="text-2xl font-bold mb-4">Who Can Participate</h3>
+                      <p className="text-muted-foreground break-words">
+                        {challenge.looking_for}
+                      </p>
                     </div>
                   </div>
-
                   <Separator />
-
                   <div>
                     <h3 className="text-2xl font-bold mb-4 font-headline">Primary Contact</h3>
+
                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                       <CardContent className="p-6 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                           <User className="h-8 w-8 text-primary" />
+
                           <div>
                             <p className="font-semibold">{challenge.contact_name}</p>
-                            <p className="text-sm text-muted-foreground">{challenge.contact_role}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {challenge.contact_role}
+                            </p>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   </div>
 
-
-                  {<div className="text-center bg-card/50 rounded-lg my-12 py-10">
+                  <div className="text-center bg-card/50 rounded-lg my-12 py-10">
                     {isChallengeExpiredOrStopped ? (
                       <div className="text-red-500 font-semibold mb-4">
                         This challenge is {challenge.status}. Submissions are no longer accepted.
@@ -416,16 +443,18 @@ export default function CorporateChallengeDetails({
                         <h2 className="text-3xl font-bold mb-4 font-headline">
                           Ready to Solve This Challenge?
                         </h2>
+
                         <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
-                          Submit your innovative solution and get a chance to win exciting rewards and partnerships.
+                          Submit your innovative solution and get a chance to win exciting rewards
+                          and partnerships.
                         </p>
                       </>
                     )}
+
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           {isOtherUsers ? (
-                            // ❌ BLOCKED USERS
                             <div className="flex gap-4 w-full justify-center">
                               <Button disabled className="bg-gray-400 cursor-not-allowed">
                                 Not Allowed
@@ -439,12 +468,14 @@ export default function CorporateChallengeDetails({
                                 onClick={() => handleApplyClick(challenge.id)}
                                 disabled={isDisabled || isChallengeExpiredOrStopped}
                               >
-                                <Rocket className="mr-2 h-5 w-5" /> Solve This Challenge
+                                <Rocket className="mr-2 h-5 w-5" />
+                                Solve This Challenge
                               </Button>
                             ) : null
                           ) : (
                             <div className="flex gap-4 w-full justify-center">
                               <Button onClick={() => setActiveView("login")}>Login</Button>
+
                               <Button
                                 onClick={() => setActiveView("signup")}
                                 className="bg-accent hover:bg-accent/90 text-accent-foreground"
@@ -458,11 +489,11 @@ export default function CorporateChallengeDetails({
                         {isDisabled && <TooltipContent>{tooltipContent}</TooltipContent>}
                       </Tooltip>
                     </TooltipProvider>
-
-                  </div>}
+                  </div>
                 </div>
-              </ScrollArea>
-            </TabsContent>
+              </TabsContent>
+            </div>
+
             <TabsContent value="timeline">
               <Card className="p-4">
                 <CardHeader >
@@ -515,7 +546,7 @@ export default function CorporateChallengeDetails({
                       <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
                       <p className="max-w-xs text-sm">You must be logged in to view announcements.</p>
                     </div>
-                  ) :  (
+                  ) : (
                     <>
                       {(!announcements || announcements.length === 0) && (
                         <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
@@ -616,7 +647,7 @@ export default function CorporateChallengeDetails({
                     <p className="max-w-xs text-sm">You must be logged in to view the Hall of Fame.</p>
                   </div>
 
-                ) :  (
+                ) : (
                   <>
                     <CardContent>
                       <div className="w-full overflow-x-auto">
@@ -693,7 +724,7 @@ export default function CorporateChallengeDetails({
                   <CardContent>
                   </CardContent>
                 </Card>
-              ) :  (
+              ) : (
                 <QAForum collaborationId={challenge?.id} />
               )}
 

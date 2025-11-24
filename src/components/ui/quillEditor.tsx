@@ -7,6 +7,7 @@ interface QuillEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   height?: string;
+  disabled?: boolean;
 }
 
 export default function QuillEditor({
@@ -14,6 +15,7 @@ export default function QuillEditor({
   onChange,
   placeholder = "Type your message...",
   height = "180px",
+  disabled = false,
 }: QuillEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const quillRef = useRef<any>(null);
@@ -87,6 +89,12 @@ export default function QuillEditor({
       quillRef.current.clipboard.dangerouslyPasteHTML(value || "");
     }
   }, [value]);
+
+  useEffect(() => {
+    if (quillRef.current) {
+      quillRef.current.enable(!disabled);
+    }
+  }, [disabled]);
 
   return (
     <div className="quill-wrapper flex flex-col w-full rounded-md shadow-sm">

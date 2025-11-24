@@ -54,21 +54,22 @@ export default function PricingPageClient() {
                 </div>
 
                 <ScrollArea className="h-full">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto pt-4">
+                    <div className="grid grid-cols-1 p-2 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto pt-4">
                         {plans.map((plan, idx) => (
                             <Card
                                 key={plan.name}
                                 className={cn(
-                                    "relative flex flex-col bg-card/50",
-                                    plan.primary && "border-primary border"
+                                    "relative flex flex-col bg-card/50 backdrop-blur-sm",
+                                    plan.primary ? "ring-2 ring-primary" : "border-border/50"
                                 )}
                             >
+                                {plan.tag && (
+                                    <Badge className="absolute top-[-12px] right-4 bg-accent text-accent-foreground hover:bg-accent/90">
+                                        {plan.tag}
+                                    </Badge>
+                                )}
                                 <CardHeader>
-                                    {plan.tag && (
-                                        <Badge className="absolute top-[-12px] right-4 bg-accent text-accent-foreground hover:bg-accent/90">
-                                            {plan.tag}
-                                        </Badge>
-                                    )}
+
                                     <div className="flex items-center">
                                         <CardTitle>{plan.name}</CardTitle>
                                         {plan.offer && (
@@ -97,7 +98,7 @@ export default function PricingPageClient() {
                                         )}
 
                                         <div className="flex flex-col">
-                                            
+
                                             <span className="text-4xl font-bold">{plan.price}</span>
                                             {(idx === 1 || idx === 2) && (
                                                 <span className="text-xs text-muted-foreground">INR + GST Applicable</span>
