@@ -364,6 +364,29 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         return `${month} ${day}${suffix} ${year}`;
     }
 
+    function timeAgoShort(date: Date) {
+        const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+
+        const intervals = [
+            { label: "y", seconds: 31536000 },
+            { label: "m", seconds: 2592000 },
+            { label: "w", seconds: 604800 },
+            { label: "d", seconds: 86400 },
+            { label: "h", seconds: 3600 },
+            { label: "min", seconds: 60 }
+        ];
+
+        for (let interval of intervals) {
+            const count = Math.floor(seconds / interval.seconds);
+            if (count > 0) {
+                return `${count}${interval.label} ago`;
+            }
+        }
+
+        return "just now";
+    }
+
+
 
     const fetchSubscribers = useCallback(async () => {
         setIsLoadingSubscribers(true);
@@ -1870,13 +1893,31 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         onClick={() => setSelectedSubmission(sub)}
                                         className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
                                     >
-                                        <CardHeader>
+                                        <CardHeader className="pb-4">
                                             <div className="flex justify-between items-start">
-                                                <div className="space-y-1">
+                                                <div className="space-y-1 w-full">
                                                     <div className="flex flex-wrap items-center gap-2">
-                                                        <CardTitle className="text-lg font-semibold">
-                                                            {sub.challenge?.title || "Untitled Challenge"}
-                                                        </CardTitle>
+                                                        <div className='flex justify-between w-full'>
+                                                            <CardTitle className="tracking-normal text-lg font-medium w-full">
+                                                                {sub.challenge?.title || "Untitled Challenge"}
+                                                            </CardTitle>
+                                                            <div className="flex gap-2">
+                                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                                    <span>Comments</span>
+                                                                    <div className="flex items-center gap-1">
+                                                                        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
+                                                                            {sub.comments?.length || 0}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                                    <span>Points</span>
+                                                                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                                        {sub.points ?? 0}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
 
                                                         {/* {sub.challenge && (
                                                             <Badge
@@ -1890,50 +1931,47 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         )} */}
                                                     </div>
 
-                                                    <CardDescription className="flex gap-2 items-center text-sm text-muted-foreground">
-
-                                                        <div>
-                                                            Submitted By {" "}
-                                                            {sub.contactName && (
-                                                                <>
-                                                                    <span className="font-medium">{sub.contactName}</span>
-                                                                </>
-                                                            )}
-                                                        </div>
+                                                    <CardDescription className="flex items-center text-sm text-muted-foreground">
+                                                        {sub.challenge?.postedBy && (
+                                                            <div className="flex items-center">
+                                                                <span className="font-medium">{sub.challenge?.postedBy?.companyName || "Untitled Challenge"}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
+                                                            </div>
+                                                        )}
                                                         <Badge
                                                             className={`px-3 py-1 text-xs font-semibold border rounded-sm 
                                                                     ${statusBadgeClasses[sub.status]}`}
                                                         >
                                                             {statusLabels[sub.status]}
-                                                        </Badge>
 
+                                                        </Badge>
+                                                        <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
+                                                        <p className="text-sm text-muted-foreground flex items-center">
+                                                            Submitted {formatPrettyDate(new Date(sub.createdAt))}
+                                                            {sub.lastActive ? <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span> : ''}
+                                                        </p>
+                                                        {/* {sub.contactName && (
+                                                            <div className="flex items-center">
+                                                                <span className="font-medium">By {sub.contactName}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
+                                                            </div>
+                                                        )} */}
+                                                        {sub.lastActive && (
+                                                            <p className="text-sm text-muted-foreground">
+                                                                Last active {timeAgoShort(new Date(sub.lastActive))}
+                                                            </p>
+                                                        )}
                                                     </CardDescription>
                                                 </div>
                                             </div>
                                         </CardHeader>
 
                                         <CardFooter className="flex gap-2 items-center">
-                                            <div className="flex gap-2 w-full items-center">
-                                                <p className="text-sm text-muted-foreground">
-                                                    Submitted on {formatPrettyDate(new Date(sub.createdAt))}
-                                                </p>
-
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <span>Comments</span>
-                                                    <div className="flex items-center gap-1">
-
-                                                        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
-                                                            {sub.comments?.length || 0}
-                                                        </span>
-                                                    </div>
+                                            {sub.contactName && (
+                                                <div className="flex items-center text-sm text-muted-foreground">
+                                                    <span className="font-medium">By {sub.contactName}</span>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span>Points</span>
-                                                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                        {sub.points ?? 0}
-                                                    </span>
-                                                </div>
-                                            </div>
+                                            )}
 
                                             <div className="flex items-center gap-2 ml-auto">
 
@@ -1991,182 +2029,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                 )) : (
                                     <Card className="text-center text-muted-foreground py-16">
                                         <CardContent>You have not received any submissions yet.</CardContent>
-                                    </Card>
-                                )}
-                            </TabsContent>
-                            <TabsContent value="engagements" className="mt-0">
-                                {(
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>IP Submission Form</CardTitle>
-                                            <CardDescription>
-                                                Submit details of your Intellectual Property for review and engagement.
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <form onSubmit={ttForm.handleSubmit(handleTechTransferSubmit)} className="space-y-4">
-                                                {/* Name Fields */}
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium mb-1">First Name</label>
-                                                        <Input {...ttForm.register("firstName")} placeholder="First Name" onChange={(e) => {
-                                                            const value = e.target.value.slice(0, 20);
-                                                            ttForm.setValue("firstName", value, { shouldValidate: true });
-                                                        }} />
-                                                        {ttForm.formState.errors.firstName && (
-                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.firstName.message}</p>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium mb-1">Last Name</label>
-                                                        <Input {...ttForm.register("lastName")} placeholder="Last Name" onChange={(e) => {
-                                                            const value = e.target.value.slice(0, 20);
-                                                            ttForm.setValue("lastName", value, { shouldValidate: true });
-                                                        }} />
-                                                        {ttForm.formState.errors.lastName && (
-                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.lastName.message}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* IP Title */}
-                                                <div>
-                                                    <label className="block text-sm font-medium mb-1">IP Title</label>
-                                                    <Input {...ttForm.register("ipTitle")} placeholder="Enter your IP title" onChange={(e) => {
-                                                        const value = e.target.value.slice(0, 35);
-                                                        ttForm.setValue("ipTitle", value, { shouldValidate: true });
-                                                    }} />
-                                                    {ttForm.formState.errors.ipTitle && (
-                                                        <p className="text-red-500 text-sm">{ttForm.formState.errors.ipTitle.message}</p>
-                                                    )}
-                                                </div>
-
-                                                {/* Summary */}
-                                                <div>
-                                                    <label className="block text-sm font-medium mb-1">Summary</label>
-                                                    <Textarea
-                                                        {...ttForm.register("summary")}
-                                                        placeholder="Write a brief summary of your IP..."
-                                                        value={summaryValue}
-                                                        onChange={(e) => {
-                                                            const value = e.target.value.slice(0, maxChars);
-                                                            ttForm.setValue("summary", value, { shouldValidate: true });
-                                                        }}
-                                                    />
-                                                    <div
-                                                        className={`text-right text-xs mt-1 ${summaryValue.length >= maxChars ? "text-red-500" : "text-gray-500"
-                                                            }`}
-                                                    >
-                                                        {summaryValue.length} / {maxChars} characters
-                                                    </div>
-
-
-                                                    {ttForm.formState.errors.summary && (
-                                                        <p className="text-red-500 text-sm">{ttForm.formState.errors.summary?.message}</p>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium mb-1">Describe the technology (Supports Markdown)</label>
-                                                    <MarkdownEditor ttForm={ttForm} />
-                                                </div>
-                                                {/* Inventor & Organization */}
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium mb-1">Inventor Name</label>
-                                                        <Input {...ttForm.register("inventorName")} placeholder="Inventor full name" onChange={(e) => {
-                                                            const value = e.target.value.slice(0, 35);
-                                                            ttForm.setValue("inventorName", value, { shouldValidate: true });
-                                                        }} />
-                                                        {ttForm.formState.errors.inventorName && (
-                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.inventorName.message}</p>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium mb-1">Organization</label>
-                                                        <Input {...ttForm.register("organization")} placeholder="Organization / Institution" onChange={(e) => {
-                                                            const value = e.target.value.slice(0, 100);
-                                                            ttForm.setValue("organization", value, { shouldValidate: true });
-                                                        }} />
-                                                        {ttForm.formState.errors.organization && (
-                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.organization.message}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* File Upload */}
-                                                <div>
-                                                    <label className="block text-sm font-medium mb-1">
-                                                        Upload Supporting Document <span className="text-gray-500">(multiple files supported)</span>
-                                                    </label>
-                                                    <div className="relative w-full">
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleButtonClick}
-                                                            className="px-4 py-2 bg-primary text-white border rounded-lg"
-                                                        >
-                                                            Upload File
-                                                        </button>
-                                                    </div>
-                                                    <input
-                                                        ref={techTransferFile}
-                                                        type="file"
-                                                        accept=".pdf,.doc,.docx"
-                                                        multiple
-                                                        style={{ display: "none" }}
-                                                        onChange={(e) => {
-                                                            if (e.target.files && e.target.files[0]) {
-                                                                ttForm.setValue("supportingFile", e.target.files[0], { shouldValidate: true });
-                                                            }
-                                                        }}
-                                                    />
-                                                    {existingFile ? (
-                                                        <p>
-                                                            Existing file:{" "}
-                                                            <a href={existingFile.url} target="_blank" rel="noopener noreferrer">
-                                                                {existingFile.name}
-                                                            </a>
-                                                        </p>
-                                                    ) : (
-                                                        ttForm.getValues("supportingFile") && (
-                                                            <p>Selected file: {(ttForm.getValues("supportingFile") as any)?.name}</p>
-                                                        )
-                                                    )}
-                                                </div>
-                                                <div className="flex justify-end items-center gap-2">
-                                                    <Button
-                                                        type="button"
-                                                        variant="secondary"
-                                                        className="w-full mt-2"
-                                                        onClick={hasDraft ? handleLoadDraft : handleSaveDraft}
-                                                        disabled={loading}
-                                                    >
-                                                        {loading ? (
-                                                            <>
-                                                                <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                                                                Processing...
-                                                            </>
-                                                        ) : hasDraft ? "Load Draft" : "Save Draft"}
-                                                    </Button>
-                                                    <Button
-                                                        type="submit"
-                                                        className="w-full mt-2"
-                                                        disabled={ttForm.formState.isSubmitting}
-                                                    >
-                                                        {ttForm.formState.isSubmitting ? (
-                                                            <>
-                                                                <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                                                                Submitting...
-                                                            </>
-                                                        ) : (
-                                                            'Submit IP'
-                                                        )}
-                                                    </Button>
-                                                </div>
-
-                                            </form>
-                                        </CardContent>
                                     </Card>
                                 )}
                             </TabsContent>

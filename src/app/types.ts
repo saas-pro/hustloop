@@ -27,6 +27,7 @@ export interface ChallengeInfo {
   title: string | null;
   sector: string | null;
   technologyArea: string | null;
+  allow_status_updates?: boolean;
   postedBy?: {
     companyName: string | null;
   } | null;
@@ -50,6 +51,7 @@ export type Submission = {
   challenge?: ChallengeInfo | null;
   team_members?: TeamMember[];
   isOwner?: boolean;
+  lastActive?: string;
 };
 
 type TeamMember = {

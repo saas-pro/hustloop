@@ -17,8 +17,18 @@ export const CorporateChallengeCard = ({
     ) => void;
 }) => {
     const { progress, daysRemaining } = useChallengeProgress(challenge);
+
+    const isClosed =
+        challenge.status === "stopped" ||
+        challenge.status === "expired";
+
+    const cardClasses = isClosed
+        && "bg-card/50 backdrop-blur-sm border-border/50";
+
+    const progressColor = isClosed ? "bg-red-500" : "bg-primary";
+
     return (
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 flex flex-col">
+        <Card className={`bg-card/50 backdrop-blur-sm border-border/50 flex flex-col`}>
             <CardHeader>
                 <div className="flex items-center gap-4">
                     <Image
@@ -29,9 +39,17 @@ export const CorporateChallengeCard = ({
                         className="rounded-lg"
                     />
                     <div>
-                        <CardTitle className="text-base">{challenge.title}</CardTitle>
-                        <CardDescription>{challenge.company_name}</CardDescription>
-                        <Badge variant="secondary">{challenge.company_sector}</Badge>
+                        <CardTitle className={`text-base ${isClosed ? "text-red-600" : ""}`}>
+                            {challenge.title}
+                        </CardTitle>
+
+                        <CardDescription>
+                            {challenge.company_name}
+                        </CardDescription>
+
+                        <Badge variant={isClosed ? "destructive" : "secondary"}>
+                            {isClosed ? "Closed" : challenge.company_sector}
+                        </Badge>
                     </div>
                 </div>
             </CardHeader>
@@ -41,23 +59,43 @@ export const CorporateChallengeCard = ({
                     <MarkdownViewer content={challenge.description} />
                 </div>
             </CardContent>
+
             <CardFooter className="flex-col items-start space-y-2">
-                <Badge variant="outline">
-                    Reward:{" "}
-                    {challenge.reward_amount
-                        ? `₹${challenge.reward_amount}`
-                        : `₹${challenge.reward_min} - ₹${challenge.reward_max}`}
+
+                <Badge variant={isClosed ? "destructive" : "outline"}>
+                    {isClosed ? (
+                        "Challenge Closed"
+                    ) : (
+                        <>
+                            Reward:{" "}
+                            {challenge.reward_amount
+                                ? `₹${challenge.reward_amount}`
+                                : `₹${challenge.reward_min} - ₹${challenge.reward_max}`}
+                        </>
+                    )}
                 </Badge>
+
                 <Button
-                    className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                    className="w-full bg-accent hover:bg-accent/90 text-accent-foreground disabled:opacity-50"
+
                     onClick={() => onViewDetails("CorporateChallenges", challenge)}
                 >
-                    View Challenge
+                    {"View Challenge"}
                 </Button>
-                <div className="w-full">
-                    <Progress value={progress} className="h-[6px]"/>
-                    <div className="flex justify-end items-end text-xs text-muted-foreground">
-                        <span>{daysRemaining}d remaining</span>
+
+                <div className="w-full mt-1">
+                    <Progress
+                        value={isClosed ? 100 : progress}
+                        className="h-[6px]"
+                        indicatorClassName={isClosed ? "bg-red-500" : "bg-primary"}
+                    />
+
+                    <div className="flex justify-end items-end text-xs text-muted-foreground mt-1">
+                        {isClosed ? (
+                            <span className="text-red-600 font-semibold">Closed</span>
+                        ) : (
+                            <span>{daysRemaining}d remaining</span>
+                        )}
                     </div>
                 </div>
             </CardFooter>

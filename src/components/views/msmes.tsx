@@ -49,6 +49,7 @@ export type CorporateChallenge = {
   linkedin_url: string;
   scope: string;
   x_url: string;
+  stop_date: string | null;
   logo_url: string;
   extended_end_date?: string | null;
   attachments: [];
@@ -81,6 +82,7 @@ export type MSMEChallenge = {
   x_url: string;
   logo_url: string;
   extended_end_date?: string | null;
+  stop_date: string | null;
   attachments: [];
 };
 export type Governmentchallenges = {
@@ -110,6 +112,7 @@ export type Governmentchallenges = {
   x_url: string;
   logo_url: string;
   extended_end_date?: string | null;
+  stop_date: string | null;
   attachments: [];
 };
 
@@ -386,10 +389,11 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                 </p>
               </div>
             ) : msmeCollaborations?.map((challenge, index) =>
-              <MSMEChallengeCard
+              <CorporateChallengeCard
                 key={index}
                 challenge={challenge}
                 onViewDetails={handleViewDetails}
+
               />
             )}
           </div>
@@ -407,10 +411,11 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                 </p>
               </div>
             ) : Governmentchallenges?.map((challenge, index) =>
-              <GovermentChallengeCard
+              <CorporateChallengeCard
                 key={index}
                 challenge={challenge}
                 onViewDetails={handleViewDetails}
+
               />
             )}
           </div>

@@ -483,8 +483,7 @@ body {
   will-change: opacity, transform;
   transition: transform 650ms cubic-bezier(0.65, 0, 0.076, 1),
     opacity 750ms ease-in-out;
-  /* TODO: Make sizes responsive */
-  /* original: 15% instead of 16.66% width  (menu-nav) */
+  /* original: 15% instead of 16.66% width (menu-nav) */
 }
 
 .menu-nav-sub.active {
@@ -1324,12 +1323,14 @@ body {
 
 .quill-light .ql-toolbar button:hover,
 .quill-light .ql-toolbar button.ql-active {
-  background-color: rgba(6, 78, 190, 0.08) !important; /* #064ebe with low alpha */
+  background-color: rgba(6, 78, 190, 0.08) !important;
+  /* #064ebe with low alpha */
 }
 
 .quill-dark .ql-toolbar button:hover,
 .quill-dark .ql-toolbar button.ql-active {
-  background-color: rgba(74, 163, 255, 0.12) !important; /* #4aa3ff with low alpha */
+  background-color: rgba(74, 163, 255, 0.12) !important;
+  /* #4aa3ff with low alpha */
 }
 
 /* Ensure icons also get an appropriate color so the filled background looks correct */
@@ -1338,6 +1339,7 @@ body {
   stroke: #064ebe !important;
   color: #064ebe !important;
 }
+
 .quill-dark .ql-toolbar button:hover svg,
 .quill-dark .ql-toolbar button.ql-active svg {
   stroke: #4aa3ff !important;
@@ -1376,8 +1378,8 @@ body {
 }
 
 .quill-dark .ql-editor.ql-blank::before {
-    color: #888 !important; 
-    opacity: 1 !important;  
+  color: #888 !important;
+  opacity: 1 !important;
 }
 
 .quill-dark .ql-editor {
@@ -1385,16 +1387,17 @@ body {
 }
 
 .quill-dark .ql-toolbar button:hover .ql-stroke {
-    stroke: #4aa3ff !important;  
+  stroke: #4aa3ff !important;
 }
 
 .quill-dark .ql-toolbar button:hover .ql-fill {
-    fill: #4aa3ff !important;
+  fill: #4aa3ff !important;
 }
 
 .quill-dark .ql-toolbar .ql-picker:hover {
-    color: #4aa3ff !important;
+  color: #4aa3ff !important;
 }
+
 .quill-light .ql-editor {
   padding: 4px 2px 0px 2px;
 }
@@ -1424,10 +1427,11 @@ body {
 }
 
 .dark .prose {
-  color: #d1d5db !important; 
+  color: #d1d5db !important;
 }
+
 .prose p {
-  color: white !important; 
+  color: white !important;
 }
 
 .inverted {
@@ -1525,7 +1529,8 @@ body {
 .quill-dark .prose li,
 .dark .prose span,
 .quill-dark .prose span {
-  color: #e6eef8 !important; /* slightly off-white for better readability */
+  color: #e6eef8 !important;
+  /* slightly off-white for better readability */
 }
 
 .dark .prose h1,
@@ -1541,11 +1546,12 @@ body {
 
 .dark .prose a,
 .quill-dark .prose a {
-  color: #93c5fd !important; /* sky-300 */
+  color: #93c5fd !important;
+  /* sky-300 */
 }
 
 .dark .prose code,
 .quill-dark .prose code {
   color: #f8fafc !important;
-  background-color: rgba(255,255,255,0.04) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
 }

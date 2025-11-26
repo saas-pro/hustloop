@@ -58,6 +58,7 @@ interface CorporateChallenge {
   reward_min: number;
   reward_max: number;
   challenge_type: string;
+
   start_date: string;
   end_date: string;
   sector: string;
@@ -75,6 +76,7 @@ interface CorporateChallenge {
   linkedin_url: string;
   scope: string;
   x_url: string;
+  stop_date: string | null;
   logo_url: string;
   extended_end_date?: string | null;
   attachments?: []
@@ -131,6 +133,7 @@ export default function CorporateChallengeDetails({
   const [scrolledToEnd, setScrolledToEnd] = useState(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [events, setEvents] = useState<TimelineData | null>(null);
+
   const [data, setData] = useState<hallOfFame[]>([]);
   const [search, setSearch] = useState("");
 
@@ -170,7 +173,6 @@ export default function CorporateChallengeDetails({
       );
 
       const data = await response.json();
-
       setEvents(data.message?.timeline || data.timeline);
     };
 
@@ -303,15 +305,43 @@ export default function CorporateChallengeDetails({
           {/* <ScrollArea className="flex-grow mt-4 h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]"> */}
           <ScrollArea className="flex-grow mt-4 h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]">
             <div className="flex flex-col w-full mt-4">
-
               <TabsContent value="summary">
                 <div className="space-y-8">
 
                   {isChallengeExpiredOrStopped && (
-                    <div className="text-white bg-red-500 w-full font-semibold p-2 rounded">
-                      <p>This challenge is {challenge.status}.</p>
+                    <div className="w-full bg-red-100 border-l-8 border-red-600 p-5 rounded text-red-900 shadow-sm">
+                      <div className="flex items-start space-x-3">
+                        <div className="text-red-600 text-xl">❗</div>
+                        <div>
+                          <h2 className="text-lg font-bold mb-1">
+                            {challenge.status === "stopped" && "This challenge has been Stopped"}
+                            {challenge.status === "expired" && "This challenge has been Ended"}
+                          </h2>
+
+                          <p className="text-sm leading-relaxed mb-2">
+                            All activity related to this challenge should be halted until further notice.
+                          </p>
+
+                          <p className="text-sm leading-relaxed mb-2">
+                            Effective immediately, this challenge is no longer accepting submissions.
+                            Our team is reviewing operational and safety requirements and will notify you
+                            when further updates are available. We appreciate your patience.
+                          </p>
+
+                          <p className="text-sm leading-relaxed mb-4">
+                            If you have any questions, please contact support or your challenge administrator.
+                          </p>
+
+                          {challenge.stop_date && (
+                            <p className="text-xs font-semibold text-red-700">
+                              Stopped on {new Date(challenge.stop_date).toUTCString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
+
 
                   <div className="flex flex-col md:flex-row justify-between items-center md:items-center gap-6">
                     <div className="flex items-start gap-3">
@@ -435,8 +465,37 @@ export default function CorporateChallengeDetails({
 
                   <div className="text-center bg-card/50 rounded-lg my-12 py-10">
                     {isChallengeExpiredOrStopped ? (
-                      <div className="text-red-500 font-semibold mb-4">
-                        This challenge is {challenge.status}. Submissions are no longer accepted.
+                      <div className="w-full text-left bg-red-100 border-l-8 border-red-600 p-5 rounded text-red-900 shadow-sm">
+                        <div className="flex items-start space-x-3">
+                          <div className="text-red-600 text-xl">❗</div>
+                          <div>
+                            <h2 className="text-lg font-bold mb-1">
+                              {challenge.status === "stopped" || "expired"
+                                ? "This challenge has been stopped"
+                                : "This challenge has been paused"}
+                            </h2>
+
+                            <p className="text-sm leading-relaxed mb-2">
+                              All activity related to this challenge should be halted until further notice.
+                            </p>
+
+                            <p className="text-sm leading-relaxed mb-2">
+                              Effective immediately, this challenge is no longer accepting submissions.
+                              Our team is reviewing operational and safety requirements and will notify you
+                              when further updates are available. We appreciate your patience.
+                            </p>
+
+                            <p className="text-sm leading-relaxed mb-4">
+                              If you have any questions, please contact support or your challenge administrator.
+                            </p>
+
+                            {challenge.stop_date && (
+                              <p className="text-xs font-semibold text-red-700">
+                                Stopped on {new Date(challenge.stop_date).toUTCString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <>

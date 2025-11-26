@@ -11,6 +11,7 @@ import { Card, CardContent } from "../ui/card";
 import { Trash2, UserPlus, Users, Repeat } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type TeamProps = {
     solutionId: string;
@@ -32,7 +33,7 @@ export default function TeamMembers({ solutionId, isOwner, currentUserId, onMemb
     const [members, setMembers] = useState<any[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [resendLoadingFor, setResendLoadingFor] = useState<string | null>(null);
-    const challengeTitle = submission.challenge?.title;
+
     const ownerId = submission.user_id;
 
     useEffect(() => {
@@ -203,17 +204,29 @@ export default function TeamMembers({ solutionId, isOwner, currentUserId, onMemb
             setResendLoadingFor(null);
         }
     };
-
+    const challengeTitle = submission.challenge?.title || "Untitled Solution";
     return (
         <>
             <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value={solutionId}>
                     <AccordionTrigger className="text-lg font-semibold hover:no-underline px-1">
-                        {challengeTitle}
+                        {refreshing ? <Skeleton className="h-7 w-64" /> : challengeTitle}
                     </AccordionTrigger>
 
                     <AccordionContent className="px-1 pb-4">
-                        {members.length === 0 ? (
+                        {refreshing ? (
+                            <div className="space-y-4 mt-2">
+                                {[1, 2].map((i) => (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <Skeleton className="h-10 w-10 rounded-full" />
+                                        <div className="space-y-2 w-full">
+                                            <Skeleton className="h-4 w-[200px]" />
+                                            <Skeleton className="h-3 w-[150px]" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : members.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-8 text-center space-y-3 bg-muted/30 rounded-lg border border-dashed">
                                 <div className="bg-muted p-3 rounded-full">
                                     <Users className="h-6 w-6 text-muted-foreground" />

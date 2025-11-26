@@ -20,13 +20,13 @@ export default function VerticalTimeline({
     screening_started: string;
     screening_ended: string;
     extended_end_date?: string | null;
-    challenge_close?: boolean | string;
+    challengeClose?: boolean | string;
   };
 }) {
   const isClosed =
-    timeline.challenge_close === true ||
-    timeline.challenge_close === "stopped" ||
-    timeline.challenge_close === "expired";
+    timeline.challengeClose === true ||
+    timeline.challengeClose === "stopped" ||
+    timeline.challengeClose === "expired";
 
   const events: EventItem[] = [
     {
@@ -74,25 +74,26 @@ export default function VerticalTimeline({
     value ? new Date(value) : null;
 
   const now = new Date();
-  let currentIndex = 0;
+  let currentIndex = -1;
+  if (!isClosed) {
+    for (let i = 0; i < events.length; i++) {
+      const currentDate = safeDate(events[i].date);
+      const nextDate = safeDate(events[i + 1]?.date ?? null);
 
-  for (let i = 0; i < events.length; i++) {
-    const currentDate = safeDate(events[i].date);
-    const nextDate = safeDate(events[i + 1]?.date ?? null);
+      if (!currentDate) {
+        currentIndex = i;
+        break;
+      }
 
-    if (!currentDate) {
-      currentIndex = i;
-      break;
-    }
+      if (!nextDate) {
+        if (now >= currentDate) currentIndex = i;
+        break;
+      }
 
-    if (!nextDate) {
-      if (now >= currentDate) currentIndex = i;
-      break;
-    }
-
-    if (now >= currentDate && now < nextDate) {
-      currentIndex = i;
-      break;
+      if (now >= currentDate && now < nextDate) {
+        currentIndex = i;
+        break;
+      }
     }
   }
 
@@ -101,9 +102,13 @@ export default function VerticalTimeline({
     let color = "text-gray-400";
 
     if (d) {
-      if (d < now) color = "text-red-500";
-      if (idx === currentIndex) color = "text-primary font-semibold";
-      if (d > now) color = "text-gray-400";
+      if (isClosed) {
+        color = d < now ? "text-red-500" : "text-gray-400";
+      } else {
+        if (d < now) color = "text-red-500";
+        if (idx === currentIndex) color = "text-primary font-semibold";
+        if (d > now) color = "text-gray-400";
+      }
     }
 
     return {

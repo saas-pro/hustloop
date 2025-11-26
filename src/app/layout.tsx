@@ -101,6 +101,7 @@ export default function RootLayout({
             var t = d.getElementsByTagName("script")[0];
             t.parentNode.insertBefore(s, t);
           `}
+
         </Script>
         <Script id="org-schema" type="application/ld+json">
           {`
@@ -114,7 +115,39 @@ export default function RootLayout({
           }
           `}
         </Script>
+        <Script id="website-schema" type="application/ld+json">
+          {`
+            [
+              {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "Hustloop",
+                "url": "https://hustloop.com"
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                "itemListElement": [
+                  {
+                    "@type": "SiteNavigationElement",
+                    "position": 1,
+                    "name": "Pricing",
+                    "description": "View our pricing plans",
+                    "url": "https://hustloop.com/pricing"
+                  },
+                  {
+                    "@type": "SiteNavigationElement",
+                    "position": 2,
+                    "name": "Contact Us",
+                    "description": "Contact our team",
+                    "url": "https://hustloop.com/contact-us"
+                  }
+                ]
+              }
+            ]
+          `}
+        </Script>
       </body>
-    </html>
+    </html >
   );
 }

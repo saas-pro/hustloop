@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, InputEventHandler } from 'react';
-import { Textarea } from '@/components/ui/textarea';
+import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';

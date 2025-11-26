@@ -44,6 +44,7 @@ import { LoadingButton } from "../ui/loading-button";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 
 interface Collaboration {
     id: string;
@@ -69,6 +70,7 @@ interface Collaboration {
     x_url: string;
     logo_url: string;
     extended_end_date?: string | null;
+    allow_status_updates: boolean;
 }
 
 interface MSMEProfile {
@@ -202,7 +204,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                 },
                 body: JSON.stringify({ extended_end_date: selectedDate })
             });
-            console.log(selectedDate)
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to extend collaboration end date');
@@ -320,6 +322,40 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
             });
         } finally {
             setIsRewardUpdating(false);
+        }
+    };
+
+    const handleToggleStatusUpdates = async (collaborationId: string, currentStatus: boolean) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${API_BASE_URL}/api/collaborations/${collaborationId}/toggle-status-updates`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to toggle status updates');
+            }
+
+            const responseData = await response.json();
+            setCollaborations(collaborations.map(collab =>
+                collab.id === collaborationId ? { ...collab, allow_status_updates: responseData.message.allow_status_updates } : collab
+            ));
+
+            toast({
+                title: "Success",
+                description: `Status updates ${responseData.message.allow_status_updates ? 'enabled' : 'disabled'}`,
+            });
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.message,
+            });
         }
     };
 
@@ -491,6 +527,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                             <TableHead className="w-[150px]">End Date</TableHead>
                                             <TableHead className="w-[150px]">Extended End Date</TableHead>
                                             <TableHead className="w-[120px]">Status</TableHead>
+                                            <TableHead className="w-[120px]">Allow Updates</TableHead>
                                             <TableHead className="text-right w-[220px]">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -522,12 +559,19 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                     {collaboration.status}
                                                 </TableCell>
 
+                                                <TableCell>
+                                                    <div className="flex items-center space-x-2">
+                                                        <Switch
+                                                            checked={collaboration.allow_status_updates}
+                                                            onCheckedChange={(checked) => handleToggleStatusUpdates(collaboration.id, checked)}
+                                                            disabled={!isAdmin()}
+                                                        />
+                                                    </div>
+                                                </TableCell>
+
                                                 {/* ACTIONS */}
                                                 <TableCell className="text-right w-[220px]">
                                                     <div className="flex justify-end items-center gap-2">
-
-
-                                                        {/* EXPIRED → SHOW ONLY ACTIVATE BUTTON */}
                                                         {collaboration.status === "expired" ? (
                                                             <Popover>
                                                                 <PopoverTrigger asChild>
@@ -540,10 +584,11 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                     </Button>
                                                                 </PopoverTrigger>
 
-                                                                <PopoverContent className="w-auto p-0" align="end">
+                                                                <PopoverContent className='w-fit p-0' align='end' alignOffset={-10} onFocusOutside={(e) => e.preventDefault()}>
                                                                     <Calendar
                                                                         mode="single"
                                                                         selected={selectedDate}
+                                                                        className="flex flex-col items-center w-full h-[40vh] overflow-y-scroll"
                                                                         onSelect={setSelectedDate}
                                                                         disabled={(date) => date < new Date(collaboration.end_date)}
                                                                         defaultMonth={new Date(collaboration.end_date)}
@@ -563,7 +608,11 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                                 variant="outline"
                                                                                 size="default"
                                                                                 className="w-fit m-2 min-w-[140px]"
-                                                                                onClick={() => setEditRewardCollab(collaboration)}
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    e.stopPropagation();
+                                                                                    setEditRewardCollab(collaboration);
+                                                                                }}
                                                                             >
                                                                                 Edit Reward
                                                                             </Button>
@@ -585,7 +634,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                         </Button>
                                                                     </PopoverTrigger>
 
-                                                                    <PopoverContent className="w-auto p-0" align="end">
+                                                                    <PopoverContent className="w-auto p-0" align="end" onFocusOutside={(e) => e.preventDefault()}>
                                                                         <Calendar
                                                                             mode="single"
                                                                             selected={selectedDate}
@@ -608,7 +657,11 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                                     variant="outline"
                                                                                     size="default"
                                                                                     className="w-fit m-2 min-w-[140px]"
-                                                                                    onClick={() => setEditRewardCollab(collaboration)}
+                                                                                    onClick={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        e.stopPropagation();
+                                                                                        setEditRewardCollab(collaboration);
+                                                                                    }}
                                                                                 >
                                                                                     Edit Reward
                                                                                 </Button>

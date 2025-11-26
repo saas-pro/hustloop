@@ -5,3 +5,5 @@
 
 User-agent: *
 Allow: /
+
+Sitemap: https://hustloop.com/sitemap.xml

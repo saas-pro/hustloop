@@ -337,6 +337,28 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         return `${month} ${day}${suffix} ${year}`;
     }
 
+    function timeAgoShort(date: Date) {
+        const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+
+        const intervals = [
+            { label: "y", seconds: 31536000 },
+            { label: "m", seconds: 2592000 },
+            { label: "w", seconds: 604800 },
+            { label: "d", seconds: 86400 },
+            { label: "h", seconds: 3600 },
+            { label: "min", seconds: 60 }
+        ];
+
+        for (let interval of intervals) {
+            const count = Math.floor(seconds / interval.seconds);
+            if (count > 0) {
+                return `${count}${interval.label} ago`;
+            }
+        }
+
+        return "just now";
+    }
+
     useEffect(() => {
         if (isMsmeRole === "msme") {
             setisMsmeRole(true)
@@ -1113,73 +1135,64 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                 onClick={() => setSelectedSubmission(sub)}
                                                 className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
                                             >
-                                                <CardHeader>
+                                                <CardHeader className="pb-4">
                                                     <div className="flex justify-between items-start">
-                                                        <div className="space-y-1">
+                                                        <div className="space-y-2 w-full">
                                                             <div className="flex flex-wrap items-center gap-2">
-                                                                <CardTitle className="text-lg font-semibold">
-                                                                    {sub.challenge?.title || "Untitled Challenge"}
-                                                                </CardTitle>
-
-                                                                {/* {sub.challenge && (
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
-                                                                    >
-                                                                        {sub.challenge?.sector && sub.challenge?.technologyArea
-                                                                            ? `${ sub.challenge.sector } / ${sub.challenge.technologyArea}`
-                                                                            : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"
-            }
-                                                                    </Badge >
-                                                                )
-        } */
-                                                                }
-                                                            </div >
-
-                                                            <CardDescription className="flex gap-2 items-center text-sm text-muted-foreground">
-
-                                                                <div>
-                                                                    Submitted By {" "}
-                                                                    {sub.contactName && (
-                                                                        <>
-                                                                            <span className="font-medium">{sub.contactName}</span>
-                                                                        </>
-                                                                    )}
+                                                                <div className='flex justify-between w-full'>
+                                                                    <CardTitle className="tracking-normal text-lg font-medium w-full">
+                                                                        {sub.challenge?.title || "Untitled Challenge"}
+                                                                    </CardTitle>
+                                                                    <div className="flex gap-2">
+                                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                                            <span>Comments</span>
+                                                                            <div className="flex items-center gap-1">
+                                                                                <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
+                                                                                    {sub.comments?.length || 0}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                                            <span>Points</span>
+                                                                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                                                {sub.points ?? 0}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
+                                                            </div>
+
+                                                            <CardDescription className="flex items-center text-sm text-muted-foreground">
+
+
+                                                                <p className="text-sm text-muted-foreground flex items-center">
+                                                                    Submitted {formatPrettyDate(new Date(sub.createdAt))}
+                                                                    {sub.lastActive ? <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span> : ''}
+                                                                </p>
                                                                 <Badge
                                                                     className={`px-3 py-1 text-xs font-semibold border rounded-sm 
                                                                     ${statusBadgeClasses[sub.status]}`}
                                                                 >
                                                                     {statusLabels[sub.status]}
+
                                                                 </Badge>
-
+                                                                <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
+                                                                {sub.lastActive && (
+                                                                    <p className="text-sm text-muted-foreground">
+                                                                        Last active {timeAgoShort(new Date(sub.lastActive))}
+                                                                    </p>
+                                                                )}
                                                             </CardDescription>
-                                                        </div >
-                                                    </div >
-                                                </CardHeader >
-
-                                                <CardFooter className="flex gap-2 items-center">
-                                                    <div className="flex gap-2 w-full items-center">
-                                                        <p className="text-sm text-muted-foreground">
-                                                            Submitted on {formatPrettyDate(new Date(sub.createdAt))}
-                                                        </p>
-
-                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                            <span>Comments</span>
-                                                            <div className="flex items-center gap-1">
-
-                                                                <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
-                                                                    {sub.comments?.length || 0}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span>Points</span>
-                                                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                                {sub.points ?? 0}
-                                                            </span>
                                                         </div>
                                                     </div>
+                                                </CardHeader>
+
+                                                <CardFooter className="flex gap-2 items-center">
+                                                    {sub.contactName && (
+                                                        <div className="flex items-center text-sm text-muted-foreground">
+                                                            <span className="font-medium">By {sub.contactName}</span>
+                                                        </div>
+                                                    )}
 
                                                     <div className="flex items-center gap-2 ml-auto">
                                                         {statusUpdates[sub.solutionId] && (
@@ -1200,34 +1213,36 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                             </Button>
                                                         )}
 
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                    className="flex items-center gap-2"
-                                                                >
-                                                                    {statusUpdates[sub.status]}
-                                                                    <span>{statusLabels[sub.status]}</span>
-                                                                    <ChevronDown className="ml-2 h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-
-                                                            <DropdownMenuContent>
-                                                                {Object.values(SolutionStatus).map((status) => (
-                                                                    <DropdownMenuItem
-                                                                        key={status}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleStatusChange(sub.solutionId, status);
-                                                                        }}
+                                                        {sub.challenge?.allow_status_updates !== false && (
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        className="flex items-center gap-2"
                                                                     >
-                                                                        <span>{statusLabels[status]}</span>
-                                                                    </DropdownMenuItem>
-                                                                ))}
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
+                                                                        {statusUpdates[sub.status]}
+                                                                        <span>{statusLabels[sub.status]}</span>
+                                                                        <ChevronDown className="ml-2 h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+
+                                                                <DropdownMenuContent>
+                                                                    {Object.values(SolutionStatus).map((status) => (
+                                                                        <DropdownMenuItem
+                                                                            key={status}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleStatusChange(sub.solutionId, status);
+                                                                            }}
+                                                                        >
+                                                                            <span>{statusLabels[status]}</span>
+                                                                        </DropdownMenuItem>
+                                                                    ))}
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        )}
                                                     </div>
                                                 </CardFooter>
                                             </Card >

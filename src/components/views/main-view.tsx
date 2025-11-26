@@ -707,6 +707,8 @@ export default function MainView() {
         isOpen={true}
         onOpenChange={handleModalOpenChange('marketplace')}
         setActiveView={setActiveView}
+        isLoggedIn={isLoggedIn}
+        hasSubscription={hasSubscription}
       />}
 
       {renderDashboard()}
