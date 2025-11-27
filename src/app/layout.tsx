@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://hustloop.com'),
   title: {
-    default: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
+    default: 'Hustloop',
     template: '%s | Hustloop',
   },
   description: 'Open talent, Real impact. A dynamic ecosystem for problem solving and technology transfer. We connect founders, enablers, innovators, and students to collaborate, build startups, and drive meaningful innovation together.',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://hustloop.com',
-    title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
+    title: 'Hustloop',
     description: 'Open talent, Real impact. A dynamic ecosystem for problem solving and technology transfer. We connect founders, enablers, innovators, and students to collaborate, build startups, and drive meaningful innovation together.',
     siteName: 'Hustloop',
     images: [

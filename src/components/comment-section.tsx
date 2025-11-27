@@ -29,7 +29,8 @@ interface IPDetails {
     approvalStatus: string;
     name: string;
     organization: string;
-    filePath: string;
+    filePath: string | string[];
+    supportingFile: string | string[];
 }
 
 interface Comment {
@@ -72,7 +73,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
     const [isFetching, setIsFetching] = useState(true);
     const [shouldRefetchComments, setShouldRefetchComments] = useState(true);
     const [isFetchingIpDetails, setIsFetchingIpDetails] = useState(true);
-
+    console.log("ipDetails", ipDetails);
 
     const { toast } = useToast();
     const textareaId = useId();
@@ -164,6 +165,19 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
         return <div className=" max-w-none">{text}</div>;
     };
 
+    const getFileNameFromUrl = (url: string) => {
+        try {
+            const dispositionMatch = url.match(/filename%3D%22([^%]+)%22/);
+            if (dispositionMatch && dispositionMatch[1]) {
+                return decodeURIComponent(dispositionMatch[1]);
+            }
+            const pathPart = url.split("?")[0];
+            return pathPart.split("/").pop() || url;
+        } catch {
+            return url;
+        }
+    };
+
     const renderFileAttachment = (fileURL: string, fileName: string) => (
         <a
             href={fileURL}
@@ -172,7 +186,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
         >
             <Paperclip className="h-4 w-4 text-primary" />
             <span className="font-medium text-sm text-primary truncate">
-                {fileName || 'Attached File'}
+                {getFileNameFromUrl(fileURL) || 'Attached File'}
             </span>
             <span className="text-xs text-muted-foreground ml-auto">
                 (Click to View)
@@ -660,12 +674,17 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                                     <MarkdownViewer content={ipDetails.describetheTech} />
                                 </div>
                                 <p className="mt-1 text-muted-foreground">Submitted By: <span className="font-semibold">{ipDetails.name}</span> from <span className="italic">{ipDetails.organization}</span></p>
+                                {Array.isArray(ipDetails.supportingFile) ? (
+                                    <div className="flex flex-col gap-2">
+                                        {ipDetails.supportingFile.map((url, index) => (
+                                            <div key={index}>
 
-                                {ipDetails.filePath && (
-                                    <div className="mt-4 border-t pt-3">
-                                        <p className="font-medium text-primary-dark mb-2">Attached Submission File:</p>
-                                        {renderFileAttachment(ipDetails.filePath, ipDetails.title)}
+                                                {renderFileAttachment(url, `${ipDetails.title}`)}
+                                            </div>
+                                        ))}
                                     </div>
+                                ) : (
+                                    renderFileAttachment(ipDetails.supportingFile, ipDetails.title)
                                 )}
                             </CardContent>
                         </Card>

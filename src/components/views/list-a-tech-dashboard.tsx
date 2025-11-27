@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
 import Image from "next/image";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2, Upload } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { CommentSection } from "../comment-section";
@@ -152,12 +152,14 @@ const techTransferSchema = z.object({
     inventorName: z.string().min(1, "Inventor name is required").max(35, "Inventor Name must not exceed 20 characters"),
     organization: z.string().min(1, "Organization is required").max(100, "Organization Name must not exceed 20 characters"),
     supportingFile: z
-        .any()
+        .array(
+            z.custom<File>().refine(
+                (file) => file.size <= MAX_FILE_SIZE,
+                "Each file must be 10MB or less"
+            )
+        )
+        .max(5, "You can upload a maximum of 5 files")
         .optional()
-        .refine(
-            (file) => !file || file.size <= MAX_FILE_SIZE,
-            "File size must be less than or equal to 10 MB"
-        ),
 });
 
 type TechTransferFormData = z.infer<typeof techTransferSchema>;
@@ -993,8 +995,8 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
             if (value) {
-                if (key === "supportingFile" && value instanceof File) {
-                    formData.append(key, value);
+                if (key === "supportingFile" && Array.isArray(value)) {
+                    value.forEach((file) => formData.append(key, file));
                 } else if (typeof value === "string") {
                     formData.append(key, value);
                 }
@@ -1352,9 +1354,11 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
         formData.append("firstName", ttForm.getValues("firstName"));
         formData.append("lastName", ttForm.getValues("lastName"));
         formData.append("contactEmail", user.email);
-        const file = ttForm.getValues("supportingFile");
-        if (file) {
-            formData.append("supportingFile", file);
+        const files = ttForm.getValues("supportingFile");
+        if (files && Array.isArray(files)) {
+            files.forEach((file) => {
+                formData.append("supportingFile", file);
+            });
         }
         try {
             const res = await fetch(`${API_BASE_URL}/api/techtransfer/saveDraft`, {
@@ -1720,168 +1724,229 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <form onSubmit={ttForm.handleSubmit(handleTechTransferSubmit)} className="space-y-4">
-                                                {/* Name Fields */}
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium mb-1">First Name</label>
-                                                        <Input {...ttForm.register("firstName")} placeholder="First Name" onChange={(e) => {
-                                                            const value = e.target.value.slice(0, 20);
-                                                            ttForm.setValue("firstName", value, { shouldValidate: true });
-                                                        }} />
-                                                        {ttForm.formState.errors.firstName && (
-                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.firstName.message}</p>
-                                                        )}
+                                            <FormProvider {...ttForm}>
+                                                <form onSubmit={ttForm.handleSubmit(handleTechTransferSubmit)} className="space-y-4">
+                                                    {/* Name Fields */}
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-sm font-medium mb-1">First Name</label>
+                                                            <Input {...ttForm.register("firstName")} placeholder="First Name" onChange={(e) => {
+                                                                const value = e.target.value.slice(0, 20);
+                                                                ttForm.setValue("firstName", value, { shouldValidate: true });
+                                                            }} />
+                                                            {ttForm.formState.errors.firstName && (
+                                                                <p className="text-red-500 text-sm">{ttForm.formState.errors.firstName.message}</p>
+                                                            )}
+                                                        </div>
+
+                                                        <div>
+                                                            <label className="block text-sm font-medium mb-1">Last Name</label>
+                                                            <Input {...ttForm.register("lastName")} placeholder="Last Name" onChange={(e) => {
+                                                                const value = e.target.value.slice(0, 20);
+                                                                ttForm.setValue("lastName", value, { shouldValidate: true });
+                                                            }} />
+                                                            {ttForm.formState.errors.lastName && (
+                                                                <p className="text-red-500 text-sm">{ttForm.formState.errors.lastName.message}</p>
+                                                            )}
+                                                        </div>
                                                     </div>
 
+                                                    {/* IP Title */}
                                                     <div>
-                                                        <label className="block text-sm font-medium mb-1">Last Name</label>
-                                                        <Input {...ttForm.register("lastName")} placeholder="Last Name" onChange={(e) => {
-                                                            const value = e.target.value.slice(0, 20);
-                                                            ttForm.setValue("lastName", value, { shouldValidate: true });
-                                                        }} />
-                                                        {ttForm.formState.errors.lastName && (
-                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.lastName.message}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* IP Title */}
-                                                <div>
-                                                    <label className="block text-sm font-medium mb-1">IP Title</label>
-                                                    <Input {...ttForm.register("ipTitle")} placeholder="Enter your IP title" onChange={(e) => {
-                                                        const value = e.target.value.slice(0, 35);
-                                                        ttForm.setValue("ipTitle", value, { shouldValidate: true });
-                                                    }} />
-                                                    {ttForm.formState.errors.ipTitle && (
-                                                        <p className="text-red-500 text-sm">{ttForm.formState.errors.ipTitle.message}</p>
-                                                    )}
-                                                </div>
-
-                                                {/* Summary */}
-                                                <div>
-                                                    <label className="block text-sm font-medium mb-1">Summary</label>
-                                                    <Textarea
-                                                        {...ttForm.register("summary")}
-                                                        placeholder="Write a brief summary of your IP..."
-                                                        value={summaryValue}
-                                                        onChange={(e) => {
-                                                            const value = e.target.value.slice(0, maxChars);
-                                                            ttForm.setValue("summary", value, { shouldValidate: true });
-                                                        }}
-                                                    />
-                                                    <div
-                                                        className={`text-right text-xs mt-1 ${summaryValue.length >= maxChars ? "text-red-500" : "text-gray-500"
-                                                            }`}
-                                                    >
-                                                        {summaryValue.length} / {maxChars} characters
-                                                    </div>
-
-
-                                                    {ttForm.formState.errors.summary && (
-                                                        <p className="text-red-500 text-sm">{ttForm.formState.errors.summary?.message}</p>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium mb-1">Describe the technology (Supports Markdown)</label>
-                                                    <MarkdownEditor ttForm={ttForm} />
-                                                </div>
-                                                {/* Inventor & Organization */}
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium mb-1">Inventor Name</label>
-                                                        <Input {...ttForm.register("inventorName")} placeholder="Inventor full name" onChange={(e) => {
+                                                        <label className="block text-sm font-medium mb-1">IP Title</label>
+                                                        <Input {...ttForm.register("ipTitle")} placeholder="Enter your IP title" onChange={(e) => {
                                                             const value = e.target.value.slice(0, 35);
-                                                            ttForm.setValue("inventorName", value, { shouldValidate: true });
+                                                            ttForm.setValue("ipTitle", value, { shouldValidate: true });
                                                         }} />
-                                                        {ttForm.formState.errors.inventorName && (
-                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.inventorName.message}</p>
+                                                        {ttForm.formState.errors.ipTitle && (
+                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.ipTitle.message}</p>
                                                         )}
                                                     </div>
 
+                                                    {/* Summary */}
                                                     <div>
-                                                        <label className="block text-sm font-medium mb-1">Organization</label>
-                                                        <Input {...ttForm.register("organization")} placeholder="Organization / Institution" onChange={(e) => {
-                                                            const value = e.target.value.slice(0, 100);
-                                                            ttForm.setValue("organization", value, { shouldValidate: true });
-                                                        }} />
-                                                        {ttForm.formState.errors.organization && (
-                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.organization.message}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* File Upload */}
-                                                <div>
-                                                    <label className="block text-sm font-medium mb-1">
-                                                        Upload Supporting Document <span className="text-gray-500">(multiple files supported)</span>
-                                                    </label>
-                                                    <div className="relative w-full">
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleButtonClick}
-                                                            className="px-4 py-2 bg-primary text-white border rounded-lg"
+                                                        <label className="block text-sm font-medium mb-1">Summary</label>
+                                                        <Textarea
+                                                            {...ttForm.register("summary")}
+                                                            placeholder="Write a brief summary of your IP..."
+                                                            value={summaryValue}
+                                                            onChange={(e) => {
+                                                                const value = e.target.value.slice(0, maxChars);
+                                                                ttForm.setValue("summary", value, { shouldValidate: true });
+                                                            }}
+                                                        />
+                                                        <div
+                                                            className={`text-right text-xs mt-1 ${summaryValue.length >= maxChars ? "text-red-500" : "text-gray-500"
+                                                                }`}
                                                         >
-                                                            Upload File
-                                                        </button>
-                                                    </div>
-                                                    <input
-                                                        ref={techTransferFile}
-                                                        type="file"
-                                                        accept=".pdf,.doc,.docx"
-                                                        multiple
-                                                        style={{ display: "none" }}
-                                                        onChange={(e) => {
-                                                            if (e.target.files && e.target.files[0]) {
-                                                                ttForm.setValue("supportingFile", e.target.files[0], { shouldValidate: true });
-                                                            }
-                                                        }}
-                                                    />
-                                                    {existingFile ? (
-                                                        <p>
-                                                            Existing file:{" "}
-                                                            <a href={existingFile.url} target="_blank" rel="noopener noreferrer">
-                                                                {existingFile.name}
-                                                            </a>
-                                                        </p>
-                                                    ) : (
-                                                        ttForm.getValues("supportingFile") && (
-                                                            <p>Selected file: {(ttForm.getValues("supportingFile") as any)?.name}</p>
-                                                        )
-                                                    )}
-                                                </div>
-                                                <div className="flex justify-end items-center gap-2">
-                                                    <Button
-                                                        type="button"
-                                                        variant="secondary"
-                                                        className="w-full mt-2"
-                                                        onClick={hasDraft ? handleLoadDraft : handleSaveDraft}
-                                                        disabled={loading}
-                                                    >
-                                                        {loading ? (
-                                                            <>
-                                                                <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                                                                Processing...
-                                                            </>
-                                                        ) : hasDraft ? "Load Draft" : "Save Draft"}
-                                                    </Button>
-                                                    <Button
-                                                        type="submit"
-                                                        className="w-full mt-2"
-                                                        disabled={ttForm.formState.isSubmitting}
-                                                    >
-                                                        {ttForm.formState.isSubmitting ? (
-                                                            <>
-                                                                <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                                                                Submitting...
-                                                            </>
-                                                        ) : (
-                                                            'Submit IP'
-                                                        )}
-                                                    </Button>
-                                                </div>
+                                                            {summaryValue.length} / {maxChars} characters
+                                                        </div>
 
-                                            </form>
+
+                                                        {ttForm.formState.errors.summary && (
+                                                            <p className="text-red-500 text-sm">{ttForm.formState.errors.summary?.message}</p>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium mb-1">Describe the technology (Supports Markdown)</label>
+                                                        <MarkdownEditor ttForm={ttForm} />
+                                                    </div>
+                                                    {/* Inventor & Organization */}
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-sm font-medium mb-1">Inventor Name</label>
+                                                            <Input {...ttForm.register("inventorName")} placeholder="Inventor full name" onChange={(e) => {
+                                                                const value = e.target.value.slice(0, 35);
+                                                                ttForm.setValue("inventorName", value, { shouldValidate: true });
+                                                            }} />
+                                                            {ttForm.formState.errors.inventorName && (
+                                                                <p className="text-red-500 text-sm">{ttForm.formState.errors.inventorName.message}</p>
+                                                            )}
+                                                        </div>
+
+                                                        <div>
+                                                            <label className="block text-sm font-medium mb-1">Organization</label>
+                                                            <Input {...ttForm.register("organization")} placeholder="Organization / Institution" onChange={(e) => {
+                                                                const value = e.target.value.slice(0, 100);
+                                                                ttForm.setValue("organization", value, { shouldValidate: true });
+                                                            }} />
+                                                            {ttForm.formState.errors.organization && (
+                                                                <p className="text-red-500 text-sm">{ttForm.formState.errors.organization.message}</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <FormField
+                                                        control={ttForm.control}
+                                                        name="supportingFile"
+                                                        render={() => (
+                                                            <FormItem>
+                                                                <FormLabel>Supporting Documents (max 5 files)</FormLabel>
+                                                                <FormControl>
+                                                                    <div>
+                                                                        <div
+                                                                            className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
+                                                                            onClick={() => techTransferFile.current?.click()}
+                                                                        >
+                                                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                                <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                                                                                <p className="mb-2 text-sm text-muted-foreground">
+                                                                                    <span className="font-semibold">Click to upload</span>
+                                                                                    <br />
+                                                                                    (PDF, DOC, DOCX)
+                                                                                </p>
+                                                                                <p className="text-xs text-muted-foreground">
+                                                                                    You can upload up to 5 files
+                                                                                </p>
+                                                                            </div>
+
+                                                                            <input
+                                                                                ref={techTransferFile}
+                                                                                type="file"
+                                                                                accept=".pdf,.doc,.docx"
+                                                                                multiple
+                                                                                className="hidden"
+                                                                                onChange={(e) => {
+                                                                                    const selected = Array.from(e.target.files || []);
+                                                                                    const existing =
+                                                                                        ttForm.getValues("supportingFile") || [];
+                                                                                    const newList = [...existing, ...selected];
+
+                                                                                    if (newList.length > 5) {
+                                                                                        alert("You can upload a maximum of 5 files.");
+                                                                                        return;
+                                                                                    }
+
+                                                                                    ttForm.setValue("supportingFile", newList, {
+                                                                                        shouldValidate: true,
+                                                                                    });
+                                                                                }}
+                                                                            />
+                                                                        </div>
+
+                                                                        {(ttForm.watch("supportingFile") || []).length > 0 && (
+                                                                            <div className="w-full mt-4">
+                                                                                <ul className="space-y-2">
+                                                                                    {(ttForm.watch("supportingFile") || []).map(
+                                                                                        (file: any, index: number) => (
+                                                                                            <li
+                                                                                                key={index}
+                                                                                                className="flex items-center justify-between bg-muted px-3 py-2 rounded-md text-sm"
+                                                                                            >
+                                                                                                <span className="truncate">
+                                                                                                    {file.name}
+                                                                                                </span>
+
+                                                                                                <Button
+                                                                                                    type="button"
+                                                                                                    variant="destructive"
+                                                                                                    size="icon"
+                                                                                                    className="h-6 w-6"
+                                                                                                    onClick={(e) => {
+                                                                                                        e.stopPropagation();
+                                                                                                        const arr =
+                                                                                                            ttForm.getValues(
+                                                                                                                "supportingFile"
+                                                                                                            ) || [];
+                                                                                                        arr.splice(index, 1);
+                                                                                                        ttForm.setValue(
+                                                                                                            "supportingFile",
+                                                                                                            [...arr],
+                                                                                                            {
+                                                                                                                shouldValidate: true,
+                                                                                                            }
+                                                                                                        );
+                                                                                                    }}
+                                                                                                >
+                                                                                                    <Trash2 className="h-4 w-4" />
+                                                                                                </Button>
+                                                                                            </li>
+                                                                                        )
+                                                                                    )}
+                                                                                </ul>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+
+
+                                                    <div className="flex justify-end items-center gap-2">
+                                                        <Button
+                                                            type="button"
+                                                            variant="secondary"
+                                                            className="w-full mt-2"
+                                                            onClick={hasDraft ? handleLoadDraft : handleSaveDraft}
+                                                            disabled={loading}
+                                                        >
+                                                            {loading ? (
+                                                                <>
+                                                                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                                                    Processing...
+                                                                </>
+                                                            ) : hasDraft ? "Load Draft" : "Save Draft"}
+                                                        </Button>
+                                                        <Button
+                                                            type="submit"
+                                                            className="w-full mt-2"
+                                                            disabled={ttForm.formState.isSubmitting}
+                                                        >
+                                                            {ttForm.formState.isSubmitting ? (
+                                                                <>
+                                                                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                                                    Submitting...
+                                                                </>
+                                                            ) : (
+                                                                'Submit IP'
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                </form>
+                                            </FormProvider>
+
                                         </CardContent>
                                     </Card>
                                 )}

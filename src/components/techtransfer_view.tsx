@@ -23,7 +23,7 @@ interface IPDetails {
   approvalStatus: string;
   name: string;
   organization: string;
-  supportingFileUrl: string;
+  supportingFileUrl: string | string[];
 }
 
 const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
@@ -48,7 +48,8 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
         });
         if (res.ok) {
           const data = await res.json();
-          setIpDetails(data.ips[0]);
+          console.log(data)
+          setIpDetails(data.message.ips[0]);
         } else {
           toast({
             title: 'Failed to load IP details',
@@ -70,6 +71,19 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
   }, [techId]);
 
 
+  const getFileNameFromUrl = (url: string) => {
+    try {
+      const dispositionMatch = url.match(/filename%3D%22([^%]+)%22/);
+      if (dispositionMatch && dispositionMatch[1]) {
+        return decodeURIComponent(dispositionMatch[1]);
+      }
+      const pathPart = url.split("?")[0];
+      return pathPart.split("/").pop() || url;
+    } catch {
+      return url;
+    }
+  };
+
   const renderFileAttachment = (fileURL: string, fileName: string) => (
     <a
       href={fileURL}
@@ -78,7 +92,7 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
     >
       <Paperclip className="h-4 w-4 text-primary" />
       <span className="font-medium text-sm text-primary truncate">
-        {fileName || 'Attached File'}
+        {getFileNameFromUrl(fileURL) || 'Attached File'}
       </span>
       <span className="text-xs text-muted-foreground ml-auto">
         (Click to View)
@@ -138,8 +152,21 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
 
                 {ipDetails.supportingFileUrl && (
                   <div className="mt-4 border-t pt-3">
-                    <p className="font-medium text-primary-dark mb-2">Attached Submission File:</p>
-                    {renderFileAttachment(ipDetails.supportingFileUrl, ipDetails.ipTitle)}
+                    <p className="font-medium text-primary-dark mb-2">
+                      Attached Submission File{Array.isArray(ipDetails.supportingFileUrl) && ipDetails.supportingFileUrl.length > 1 ? 's' : ''}:
+                    </p>
+                    {Array.isArray(ipDetails.supportingFileUrl) ? (
+                      <div className="flex flex-col gap-2">
+                        {ipDetails.supportingFileUrl.map((url, index) => (
+                          <div key={index}>
+
+                            {renderFileAttachment(url, `${ipDetails.ipTitle}`)}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      renderFileAttachment(ipDetails.supportingFileUrl, ipDetails.ipTitle)
+                    )}
                   </div>
                 )}
               </CardContent>

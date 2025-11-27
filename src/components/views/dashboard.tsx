@@ -105,7 +105,7 @@ interface TechTransferIP {
     summary: string;
     inventorName: string;
     organization: string;
-    supportingFile?: string;
+    supportingFile?: string[];
     approvalStatus: string;
     created_by?: number;
 }
@@ -2278,20 +2278,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                 </div>
 
                                                                                 <div className="pt-4 flex justify-between items-center">
-                                                                                    {ip.supportingFile && (
-                                                                                        <a
-                                                                                            href={`${ip.supportingFile}`}
-                                                                                            target="_blank"
-                                                                                            rel="noopener noreferrer"
-                                                                                            onClick={(e) => e.stopPropagation()}
-                                                                                        >
-                                                                                            <Button variant="outline" size="sm">
-                                                                                                <LucideIcons.Download className="mr-2 h-4 w-4" />
-                                                                                                View Document
-                                                                                            </Button>
-                                                                                        </a>
-                                                                                    )}
-
                                                                                     <div className="flex items-center gap-2 ml-auto">
                                                                                         {statusUpdates[ip.id] && (
                                                                                             <Button

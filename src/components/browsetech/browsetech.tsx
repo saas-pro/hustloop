@@ -51,7 +51,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                     toast({ title: "Error", description: "Cannot fetch Intelectual Property", variant: "destructive" })
                 }
                 const data = await response.json();
-                setProfiles(data.ips || []);
+                setProfiles(data.message.ips || []);
             } catch (e: any) {
                 setError(e.message);
             } finally {
@@ -126,28 +126,28 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                                     >
                                         <TechCard
                                             title={profile.ipTitle}
-                                            author={profile.firstName +" "+ profile.lastName}
+                                            author={profile.firstName + " " + profile.lastName}
                                         />
                                     </div>
 
-                                        ))
-                                        ) : (
-                                        <div className="py-10 text-center text-gray-500 col-span-full">
-                                            No profiles match your search.
-                                        </div>
+                                ))
+                            ) : (
+                                <div className="py-10 text-center text-gray-500 col-span-full">
+                                    No profiles match your search.
+                                </div>
                             )}
-                                    </div>
+                        </div>
 
                     </div>)}
-                    </div>
+                </div>
                 {
-                        techId !== null && (
-                            <TechTransfer
-                                techId={techId}
-                                onClose={() => setTechId(null)}
-                            />
-                        )
-                    }
+                    techId !== null && (
+                        <TechTransfer
+                            techId={techId}
+                            onClose={() => setTechId(null)}
+                        />
+                    )
+                }
             </DialogContent>
         </Dialog>
     );
