@@ -78,6 +78,7 @@ function VerifyContent() {
                     setStatus("success");
                     toast({
                         title: "Verification successful",
+                        description: "You Can Now Login With Your Credentials"
                     });
 
                     setTimeout(() => {
@@ -113,7 +114,6 @@ function VerifyContent() {
                 });
             }
         };
-
 
         verify()
     }, [token, router, toast])

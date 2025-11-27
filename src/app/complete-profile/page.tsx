@@ -67,13 +67,13 @@ function CompleteProfileForm() {
 
     const { formState: { isSubmitting } } = form;
 
-    const onLoginSuccess = (data: { role: UserRole, token: string,founder_role:string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
+    const onLoginSuccess = (data: { role: UserRole, token: string, founder_role: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
         const { role, token: loginToken, hasSubscription, name, email, authProvider } = data;
         const userData = { name, email };
 
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userRole', role!);
-        
+
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('hasSubscription', String(hasSubscription));
         localStorage.setItem('token', loginToken);
@@ -81,7 +81,7 @@ function CompleteProfileForm() {
 
         toast({ title: "Profile Complete!", description: `Welcome to Hustloop, ${name}!` });
         router.push('/');
-        setTimeout(() => window.location.reload(), 500); // Reload to ensure correct state on main page
+        setTimeout(() => window.location.reload(), 500);
     };
 
     const onSubmit = async (values: ProfileSchema) => {
@@ -103,7 +103,7 @@ function CompleteProfileForm() {
             });
 
             const data = await response.json();
-            
+
             if (response.ok) {
                 onLoginSuccess(data);
                 localStorage.setItem("founder_role", values.founder_role ?? "");

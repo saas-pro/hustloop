@@ -92,6 +92,9 @@ export default function SubmissionDetailsModal({
     const commentsEndRef = useRef<HTMLDivElement>(null);
     const [isOtherType, setIsOtherType] = useState<boolean>(false);
 
+    const isCommentsDisabled =
+        (submission?.challenge?.status === 'stopped') || (submission?.status === 'solution_accepted_points' || submission?.status === 'rejected');
+
     const scrollToBottom = useCallback(() => {
         commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, []);
@@ -145,6 +148,7 @@ export default function SubmissionDetailsModal({
                 });
             }
         };
+
         fetchComments();
     }, [submission?.solutionId, toast, scrollToBottom, submission]);
 
@@ -596,17 +600,19 @@ export default function SubmissionDetailsModal({
                                                 <div className="flex items-center my-auto  text-xs">
 
                                                     {/* Reply button */}
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-7 text-xs block"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setReplyingTo(comment);
-                                                        }}
-                                                    >
-                                                        Reply
-                                                    </Button>
+                                                    {!isCommentsDisabled && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-7 text-xs block"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setReplyingTo(comment);
+                                                            }}
+                                                        >
+                                                            Reply
+                                                        </Button>
+                                                    )}
 
                                                     {(canEdit || canDelete) && (
                                                         <DropdownMenu >
@@ -616,6 +622,7 @@ export default function SubmissionDetailsModal({
                                                                     size="sm"
                                                                     className="h-7 w-7 p-0 flex items-center justify-center"
                                                                     onClick={(e) => e.stopPropagation()}   // PREVENTS parent click
+                                                                    disabled={isCommentsDisabled}
                                                                 >
                                                                     <MoreHorizontal className="h-4 w-4" />
                                                                 </Button>
@@ -754,53 +761,65 @@ export default function SubmissionDetailsModal({
 
                 {/* Input area */}
                 <div className="p-4 border-t bg-muted/30 flex flex-col">
-                    {replyingTo && (
-                        <div className="p-2 mb-2 border-l-4 border-green-500 bg-green-50 dark:bg-green-900/50 rounded-md flex justify-between items-center">
-                            <div className='truncate pr-2'>
-                                <p className="font-semibold text-green-700 dark:text-green-300 text-sm">Replying to {replyingTo.authorName}</p>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{replyingTo.text || replyingTo.fileName || 'Attachment.'}</p>
+                    {isCommentsDisabled ? (
+                        <div className="text-center py-4 text-muted-foreground bg-muted/50 rounded-md border border-dashed">
+                            <p className="text-sm font-medium">Comments are disabled</p>
+                            <p className="text-xs mt-1">
+                                {submission?.challenge?.status === 'stopped'
+                                    && "This challenge has ended or is stopped."}
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            {replyingTo && (
+                                <div className="p-2 mb-2 border-l-4 border-green-500 bg-green-50 dark:bg-green-900/50 rounded-md flex justify-between items-center">
+                                    <div className='truncate pr-2'>
+                                        <p className="font-semibold text-green-700 dark:text-green-300 text-sm">Replying to {replyingTo.authorName}</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{replyingTo.text || replyingTo.fileName || 'Attachment.'}</p>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleCancelReply}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                            <Textarea
+                                id={textareaId}
+                                placeholder="Write your comment..."
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                rows={3}
+                            />
+                            {attachedFile && (
+                                <div className="mt-2 flex items-center gap-2 p-2 rounded-md border bg-muted text-sm">
+                                    <FileIcon className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-medium truncate">{attachedFile.name}</span>
+                                    <span className="text-xs text-muted-foreground ml-auto">({(attachedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 ml-2 shrink-0" onClick={() => setAttachedFile(null)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                            <div className="flex justify-between mt-2">
+                                <Button size="sm" className='flex items-center gap-2' onClick={() => fileInputRef.current?.click()}>
+                                    <Paperclip className="h-5 w-5" />
+                                    <span>Attachment</span>
+                                </Button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) setAttachedFile(file);
+                                    }}
+                                />
+                                <Button onClick={handleAddComment} disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                    Post Comment
+                                </Button>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleCancelReply}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
+                        </>
                     )}
-                    <Textarea
-                        id={textareaId}
-                        placeholder="Write your comment..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        rows={3}
-                    />
-                    {attachedFile && (
-                        <div className="mt-2 flex items-center gap-2 p-2 rounded-md border bg-muted text-sm">
-                            <FileIcon className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium truncate">{attachedFile.name}</span>
-                            <span className="text-xs text-muted-foreground ml-auto">({(attachedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 ml-2 shrink-0" onClick={() => setAttachedFile(null)}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    )}
-                    <div className="flex justify-between mt-2">
-                        <Button size="sm" className='flex items-center gap-2' onClick={() => fileInputRef.current?.click()}>
-                            <Paperclip className="h-5 w-5" />
-                            <span>Attachment</span>
-                        </Button>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) setAttachedFile(file);
-                            }}
-                        />
-                        <Button onClick={handleAddComment} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                            Post Comments
-                        </Button>
-                    </div>
                 </div>
             </DialogContent>
         </Dialog >

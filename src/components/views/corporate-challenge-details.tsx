@@ -58,7 +58,7 @@ interface CorporateChallenge {
   reward_min: number;
   reward_max: number;
   challenge_type: string;
-
+  affiliated_by: string | null;
   start_date: string;
   end_date: string;
   sector: string;
@@ -97,6 +97,7 @@ type TimelineData = {
   screening_started: string;
   screening_ended: string;
   challenge_close: boolean | string;
+  status: string;
 };
 
 type Announcement = {
@@ -133,7 +134,6 @@ export default function CorporateChallengeDetails({
   const [scrolledToEnd, setScrolledToEnd] = useState(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [events, setEvents] = useState<TimelineData | null>(null);
-
   const [data, setData] = useState<hallOfFame[]>([]);
   const [search, setSearch] = useState("");
 
@@ -287,6 +287,8 @@ export default function CorporateChallengeDetails({
               <DialogDescription>
                 {challenge.company_description}<br />
                 A challenge by {challenge.company_name}.
+                <br />
+                {challenge.affiliated_by && <span className="text-muted-foreground">Affiliated By: {challenge.affiliated_by}</span>}
               </DialogDescription>
             </div>
           </div>
@@ -329,7 +331,10 @@ export default function CorporateChallengeDetails({
                           </p>
 
                           <p className="text-sm leading-relaxed mb-4">
-                            If you have any questions, please contact support or your challenge administrator.
+                            If you have any questions, please reach out to support or email us at
+                            <a href="mailto:support@hustloop.com" className="font-semibold underline ml-1">
+                              support@hustloop.com
+                            </a>.
                           </p>
 
                           {challenge.stop_date && (
@@ -463,16 +468,16 @@ export default function CorporateChallengeDetails({
                     </Card>
                   </div>
 
-                  <div className="text-center bg-card/50 rounded-lg my-12 py-10">
+                  <div className="text-center rounded-lg my-12 py-10">
+
                     {isChallengeExpiredOrStopped ? (
                       <div className="w-full text-left bg-red-100 border-l-8 border-red-600 p-5 rounded text-red-900 shadow-sm">
                         <div className="flex items-start space-x-3">
                           <div className="text-red-600 text-xl">❗</div>
                           <div>
                             <h2 className="text-lg font-bold mb-1">
-                              {challenge.status === "stopped" || "expired"
-                                ? "This challenge has been stopped"
-                                : "This challenge has been paused"}
+                              {challenge.status === "stopped" && "This challenge has been Stopped"}
+                              {challenge.status === "expired" && "This challenge has been Ended"}
                             </h2>
 
                             <p className="text-sm leading-relaxed mb-2">
@@ -482,11 +487,14 @@ export default function CorporateChallengeDetails({
                             <p className="text-sm leading-relaxed mb-2">
                               Effective immediately, this challenge is no longer accepting submissions.
                               Our team is reviewing operational and safety requirements and will notify you
-                              when further updates are available. We appreciate your patience.
+                              when updates are available.
                             </p>
 
                             <p className="text-sm leading-relaxed mb-4">
-                              If you have any questions, please contact support or your challenge administrator.
+                              If you have any questions, please reach out to support or email us at
+                              <a href="mailto:support@hustloop.com" className="font-semibold underline ml-1">
+                                support@hustloop.com
+                              </a>.
                             </p>
 
                             {challenge.stop_date && (
@@ -513,26 +521,26 @@ export default function CorporateChallengeDetails({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          {isOtherUsers ? (
+                          {isChallengeExpiredOrStopped ? (
+                            <div />
+                          ) : isOtherUsers ? (
                             <div className="flex gap-4 w-full justify-center">
                               <Button disabled className="bg-gray-400 cursor-not-allowed">
                                 Not Allowed
                               </Button>
                             </div>
                           ) : isAllowedFounder || isLoggedIn ? (
-                            challenge.extended_end_date || challenge.status === "active" ? (
-                              <Button
-                                size="lg"
-                                className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                                onClick={() => handleApplyClick(challenge.id)}
-                                disabled={isDisabled || isChallengeExpiredOrStopped}
-                              >
-                                <Rocket className="mr-2 h-5 w-5" />
-                                Solve This Challenge
-                              </Button>
-                            ) : null
+                            <Button
+                              size="lg"
+                              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                              onClick={() => handleApplyClick(challenge.id)}
+                              disabled={isDisabled}
+                            >
+                              <Rocket className="mr-2 h-5 w-5" />
+                              Solve This Challenge
+                            </Button>
                           ) : (
-                            <div className="flex gap-4 w-full justify-center">
+                            <div className="flex gap-4 w-full justify-center mt-4">
                               <Button onClick={() => setActiveView("login")}>Login</Button>
 
                               <Button
@@ -549,6 +557,7 @@ export default function CorporateChallengeDetails({
                       </Tooltip>
                     </TooltipProvider>
                   </div>
+
                 </div>
               </TabsContent>
             </div>
@@ -784,10 +793,8 @@ export default function CorporateChallengeDetails({
                   </CardContent>
                 </Card>
               ) : (
-                <QAForum collaborationId={challenge?.id} />
+                <QAForum collaborationId={challenge?.id} isExpired={isChallengeExpiredOrStopped} />
               )}
-
-
             </TabsContent>
 
           </ScrollArea>

@@ -23,10 +23,10 @@ export default function VerticalTimeline({
     challengeClose?: boolean | string;
   };
 }) {
+
   const isClosed =
     timeline.challengeClose === true ||
-    timeline.challengeClose === "stopped" ||
-    timeline.challengeClose === "expired";
+    timeline.challengeClose === "true";
 
   const events: EventItem[] = [
     {

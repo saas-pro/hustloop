@@ -75,6 +75,11 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [isMustResetPassword, setIsMustResetPassword] = useState(false);
   const [tempToken, setTempToken] = useState<string | null>(null);
+  const [showResetPasswords, setShowResetPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
 
   const forceResetForm = useForm<ForceResetPasswordSchema>({
     resolver: zodResolver(forceResetPasswordSchema),
@@ -369,7 +374,26 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Current Password</FormLabel>
-                    <FormControl><Input type="password" {...field} /></FormControl>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showResetPasswords.current ? "text" : "password"}
+                          {...field}
+                          className="pr-16"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-muted-foreground">
+                          <span className={`text-xs ${field.value?.length >= 10 ? "text-gray-500" : "text-red-500"}`}>{field.value?.length || 0}</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowResetPasswords(prev => ({ ...prev, current: !prev.current }))}
+                            className="hover:text-foreground focus:outline-none"
+                            tabIndex={-1}
+                          >
+                            {showResetPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -380,7 +404,26 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>New Password</FormLabel>
-                    <FormControl><Input type="password" {...field} /></FormControl>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showResetPasswords.new ? "text" : "password"}
+                          {...field}
+                          className="pr-16"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-muted-foreground">
+                          <span className={`text-xs ${field.value?.length >= 10 ? "text-gray-500" : "text-red-500"}`}>{field.value?.length || 0}</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowResetPasswords(prev => ({ ...prev, new: !prev.new }))}
+                            className="hover:text-foreground focus:outline-none"
+                            tabIndex={-1}
+                          >
+                            {showResetPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </FormControl>
                     <p className="text-xs text-muted-foreground">Must be 10+ characters with uppercase, lowercase, number, and special character.</p>
                     <FormMessage />
                   </FormItem>
@@ -392,7 +435,26 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Confirm New Password</FormLabel>
-                    <FormControl><Input type="password" {...field} /></FormControl>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showResetPasswords.confirm ? "text" : "password"}
+                          {...field}
+                          className="pr-16"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-muted-foreground">
+                          <span className={`text-xs ${field.value?.length >= 10 ? "text-gray-500" : "text-red-500"}`}>{field.value?.length || 0}</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowResetPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                            className="hover:text-foreground focus:outline-none"
+                            tabIndex={-1}
+                          >
+                            {showResetPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -471,8 +533,9 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
                               placeholder="••••••••"
                               {...field}
                               disabled={isSubmitting}
-                              className="pr-10"
+                              className="pr-16"
                             />
+                            <span className={`text-xs absolute right-10 top-1/2 -translate-y-1/2 ${field.value?.length >= 10 ? "text-gray-500" : "text-red-500"}`}>{field.value?.length || 0}</span>
                             <button
                               type="button"
                               onClick={() => setShowPassword((prev) => !prev)}

@@ -53,7 +53,7 @@ interface SignupModalProps {
     activeView: View;
     setActiveView: (view: View) => void;
     setIsOpen: (isOpen: boolean) => void;
-    onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string,founder_role:string, authProvider: AuthProvider }) => void;
+    onLoginSuccess: (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, founder_role: string, authProvider: AuthProvider }) => void;
 }
 
 export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActiveView }: SignupModalProps) {
@@ -143,13 +143,13 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                 headers: { 'Authorization': `Bearer ${idToken}` },
             });
             const data = await response.json();
-            
+
             setIsOpen(false);
             if (data.action === 'complete-profile' && data.token) {
                 router.push(`/complete-profile?token=${data.token}`);
                 return;
             }
-            
+
             if (response.ok) {
                 const additionalUserInfo = getAdditionalUserInfo(result);
                 if (additionalUserInfo?.isNewUser) {
@@ -157,7 +157,7 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                 }
                 onLoginSuccess({
                     role: data.role, token: data.token, hasSubscription: data.hasSubscription,
-                    name: data.name, email: data.email, authProvider: 'google',founder_role:data.founder_role
+                    name: data.name, email: data.email, authProvider: 'google', founder_role: data.founder_role
                 });
             } else {
                 toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
@@ -183,19 +183,19 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                 <div className="grid grid-cols-1 gap-4">
                     <Button variant="outline" onClick={() => handleSocialLogin('google')} disabled={isSocialLoading}>
                         {isSocialLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
-                        <GoogleIcon className="mr-2 h-4 w-4" />
+                            <GoogleIcon className="mr-2 h-4 w-4" />
                         )}
                         Sign up with Google
                     </Button>
                 </div>
 
                 <div className="relative">
-                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                  </div>
+                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                    </div>
                 </div>
 
                 <Form {...form}>
@@ -230,8 +230,6 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                             control={form.control}
                             name="password"
                             render={({ field }) => {
-
-
                                 return (
                                     <FormItem>
                                         <FormLabel>Password</FormLabel>
@@ -242,8 +240,9 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
                                                     placeholder="••••••••"
                                                     {...field}
                                                     disabled={isSubmitting}
-                                                    className="pr-10" // space for eye button
+                                                    className="pr-16"
                                                 />
+                                                <span className={`text-xs absolute right-10 top-1/2 -translate-y-1/2 ${field.value?.length >= 10 ? "text-gray-500" : "text-red-500"}`}>{field.value?.length || 0}</span>
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowPassword((prev) => !prev)}

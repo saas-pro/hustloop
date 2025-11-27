@@ -28,6 +28,7 @@ export type CorporateChallenge = {
   id: string;
   title: string;
   description: string;
+  affiliated_by: string | null;
   reward_amount: number;
   reward_min: number;
   reward_max: number;
@@ -204,8 +205,9 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
           }
           const data = await response.json();
           setCorporateChallenges(
-            data.collaborations
+            data.message.collaborations
           );
+
         } catch (err: any) {
           toast({
             variant: "destructive",
@@ -237,7 +239,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
           }
           const data = await response.json();
           setMsmeCollaborations(
-            data.collaborations
+            data.message.collaborations
           );
         } catch (err: any) {
           toast({
@@ -270,7 +272,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
           }
           const data = await response.json();
           setGovernmentchallenges(
-            data.collaborations
+            data.message.collaborations
           );
         } catch (err: any) {
           toast({
@@ -371,7 +373,6 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                 key={index}
                 challenge={challenge}
                 onViewDetails={handleViewDetails}
-
               />
             )}
           </div>

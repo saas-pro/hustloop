@@ -93,6 +93,7 @@ export interface SectorData {
 const profileFormSchema = z.object({
     name: z.string().min(1, "Company name is required"),
     sector: z.string().min(1, "Sector is required"),
+    affiliated_by: z.string().optional().or(z.literal('')),
     short_description: z.string().min(1, "A short description is required"),
     website_url: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
     x_url: z.string().url("Please enter a valid URL for your X profile.").optional().or(z.literal('')),
@@ -246,6 +247,7 @@ const emptyProfile: ProfileFormValues = {
     name: "",
     sector: "",
     short_description: "",
+    affiliated_by: "",
     website_url: "",
     x_url: "",
     linkedin_url: "",
@@ -395,6 +397,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
             rewardMin: undefined,
             rewardMax: undefined,
 
+
             contact: {
                 name: "",
                 role: ""
@@ -439,6 +442,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         formData.append("company_name", profileData.name);
         formData.append("sector", profileData.sector);
         formData.append("short_description", profileData.short_description || "");
+        formData.append("affiliated_by", profileData.affiliated_by || "");
         formData.append("website_url", profileData.website_url || "");
         formData.append("linkedin_url", profileData.linkedin_url || "");
         formData.append("x_url", profileData.x_url || "");
@@ -1340,6 +1344,32 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                     {...field}
                                                                                     maxLength={MAX_CHARS}
                                                                                     placeholder="Enter company name"
+                                                                                    className="pr-16"
+                                                                                />
+                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                    {value.length}/{MAX_CHARS}
+                                                                                </span>
+                                                                            </div>
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                );
+                                                            }}
+                                                        />
+                                                        <FormField
+                                                            control={profileForm.control}
+                                                            name="affiliated_by"
+                                                            render={({ field }) => {
+                                                                const value = profileForm.watch("affiliated_by") || "";
+                                                                return (
+                                                                    <FormItem>
+                                                                        <FormLabel>Affiliated By</FormLabel>
+                                                                        <FormControl>
+                                                                            <div className="relative">
+                                                                                <Input
+                                                                                    {...field}
+                                                                                    maxLength={MAX_CHARS}
+                                                                                    placeholder="Eg: Company / Institution Name"
                                                                                     className="pr-16"
                                                                                 />
                                                                                 <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">

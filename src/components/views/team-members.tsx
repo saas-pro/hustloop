@@ -208,198 +208,204 @@ export default function TeamMembers({ solutionId, isOwner, currentUserId, onMemb
     return (
         <>
             <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value={solutionId}>
-                    <AccordionTrigger className="text-lg font-semibold hover:no-underline px-1">
-                        {refreshing ? <Skeleton className="h-7 w-64" /> : challengeTitle}
-                    </AccordionTrigger>
-
-                    <AccordionContent className="px-1 pb-4">
-                        {refreshing ? (
-                            <div className="space-y-4 mt-2">
-                                {[1, 2].map((i) => (
-                                    <div key={i} className="flex items-center gap-3">
+                {refreshing ? (
+                    [1, 2, 3].map((i) => (
+                        <AccordionItem value={`skeleton-${i}`} key={i}>
+                            <AccordionTrigger className="text-lg font-semibold hover:no-underline px-1">
+                                <Skeleton className="h-7 w-64" />
+                            </AccordionTrigger>
+                            <AccordionContent className="px-1 pb-4">
+                                <div className="space-y-4 mt-2">
+                                    <div className="flex items-center gap-3">
                                         <Skeleton className="h-10 w-10 rounded-full" />
                                         <div className="space-y-2 w-full">
                                             <Skeleton className="h-4 w-[200px]" />
                                             <Skeleton className="h-3 w-[150px]" />
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        ) : members.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 text-center space-y-3 bg-muted/30 rounded-lg border border-dashed">
-                                <div className="bg-muted p-3 rounded-full">
-                                    <Users className="h-6 w-6 text-muted-foreground" />
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="font-medium">No team members yet</p>
-                                    <p className="text-sm text-muted-foreground">Invite colleagues to collaborate on this solution.</p>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))
+                ) : (
+                    <AccordionItem value={solutionId}>
+                        <AccordionTrigger className="text-lg font-semibold hover:no-underline px-1">
+                            {challengeTitle}
+                        </AccordionTrigger>
+                        <AccordionContent className="px-1 pb-4">
+                            {members.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-8 text-center space-y-3 bg-muted/30 rounded-lg border border-dashed">
+                                    <div className="bg-muted p-3 rounded-full">
+                                        <Users className="h-6 w-6 text-muted-foreground" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="font-medium">No team members yet</p>
+                                        <p className="text-sm text-muted-foreground">Invite colleagues to collaborate on this solution.</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="grid gap-3 mt-2">
-                                {members.map((member: any, index: number) => {
-                                    const isOwnerMember =
-                                        member.userId === ownerId || member.userId === submission.userId;
-                                    const status =
-                                        member.status || (isOwnerMember ? "accepted" : "accepted");
+                            ) : (
+                                <div className="grid gap-3 mt-2">
+                                    {members.map((member: any, index: number) => {
+                                        const isOwnerMember =
+                                            member.userId === ownerId || member.userId === submission.userId;
+                                        const status =
+                                            member.status || (isOwnerMember ? "accepted" : "accepted");
 
-                                    return (
-                                        <div className="relative flex items-center gap-3" key={member.userId}>
-                                            {members.length > 1 && index !== members.length - 1 && (
-                                                <div className="absolute left-5 top-10 bottom-0 w-px h-full bg-muted-foreground/30" />
-                                            )}
+                                        return (
+                                            <div className="relative flex items-center gap-3" key={member.userId}>
+                                                {members.length > 1 && index !== members.length - 1 && (
+                                                    <div className="absolute left-5 top-10 bottom-0 w-px h-full bg-muted-foreground/30" />
+                                                )}
 
-                                            <Avatar className="h-10 w-10 border z-10 bg-white relative">
-                                                <AvatarImage src={member.avatarUrl} alt={member.name} />
-                                                <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                                                    {getInitials(member.name || member.email || "")}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            {members.length > 1 && <div className="w-6 absolute left-6 top-1/2 -translate-y-1/2 border-t border-muted-foreground"></div>}
-                                            <div className="flex items-center w-full justify-between p-3 mr-2 transition-colors">
+                                                <Avatar className="h-10 w-10 border z-10 bg-white relative">
+                                                    <AvatarImage src={member.avatarUrl} alt={member.name} />
+                                                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                                                        {getInitials(member.name || member.email || "")}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                {members.length > 1 && <div className="w-6 absolute left-6 top-1/2 -translate-y-1/2 border-t border-muted-foreground"></div>}
+                                                <div className="flex items-center w-full justify-between p-3 mr-2 transition-colors">
 
-                                                <div>
+                                                    <div>
 
-                                                    <p className="font-medium leading-none">{member.name}</p>
-                                                    <p className="text-sm text-muted-foreground mt-1">{member.email}</p>
+                                                        <p className="font-medium leading-none">{member.name}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1">{member.email}</p>
 
-                                                    <div className="mt-1 flex items-center gap-2">
-                                                        <span
-                                                            className={`inline-flex items-center gap-2 text-xs font-medium px-2 py-0.5 rounded-full ${status === "accepted"
-                                                                ? "bg-green-100 text-green-800"
-                                                                : "bg-yellow-100 text-yellow-800"
-                                                                }`}
-                                                        >
+                                                        <div className="mt-1 flex items-center gap-2">
                                                             <span
-                                                                className={`w-2 h-2 rounded-full ${status === "accepted" ? "bg-green-600" : "bg-yellow-600"
+                                                                className={`inline-flex items-center gap-2 text-xs font-medium px-2 py-0.5 rounded-full ${status === "accepted"
+                                                                    ? "bg-green-100 text-green-800"
+                                                                    : "bg-yellow-100 text-yellow-800"
                                                                     }`}
-                                                            />
-                                                            {status}
-                                                        </span>
-
-                                                        {isOwnerMember && (
-                                                            <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">
-                                                                Owner
+                                                            >
+                                                                <span
+                                                                    className={`w-2 h-2 rounded-full ${status === "accepted" ? "bg-green-600" : "bg-yellow-600"
+                                                                        }`}
+                                                                />
+                                                                {status}
                                                             </span>
+
+                                                            {isOwnerMember && (
+                                                                <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">
+                                                                    Owner
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2">
+                                                        {status === "pending" && (
+                                                            <LoadingButton
+                                                                onClick={() => handleResend(member.email)}
+                                                                isLoading={resendLoadingFor === member.email}
+                                                                variant="ghost"
+                                                                className="mr-2"
+                                                                aria-label="Resend invite"
+                                                            >
+                                                                <Repeat className="h-4 w-4" />
+                                                            </LoadingButton>
+                                                        )}
+
+                                                        {isOwner && !isOwnerMember && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                                                onClick={() => handleRemoveClick(member.userId)}
+                                                                title="Remove member"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
                                                         )}
                                                     </div>
                                                 </div>
-
-                                                <div className="flex items-center gap-2">
-                                                    {status === "pending" && (
-                                                        <LoadingButton
-                                                            onClick={() => handleResend(member.email)}
-                                                            isLoading={resendLoadingFor === member.email}
-                                                            variant="ghost"
-                                                            className="mr-2"
-                                                            aria-label="Resend invite"
-                                                        >
-                                                            <Repeat className="h-4 w-4" />
-                                                        </LoadingButton>
-                                                    )}
-
-                                                    {isOwner && !isOwnerMember && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                                                            onClick={() => handleRemoveClick(member.userId)}
-                                                            title="Remove member"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {isOwner && (
+                                <div className="mt-4">
+                                    <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto" variant="outline">
+                                        <UserPlus className="mr-2 h-4 w-4" />
+                                        Add Team Member
+                                    </Button>
+                                </div>
+                            )}
+                        </AccordionContent>
+                    </AccordionItem>
+                )}
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Add Team Member</DialogTitle>
+                            <DialogDescription>Enter the email address of the team member you want to invite.</DialogDescription>
+                        </DialogHeader>
+
+                        <div className="py-4 space-y-4">
+                            <div className="space-y-2">
+                                <label htmlFor="name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    Name
+                                </label>
+                                <Input
+                                    id="name"
+                                    value={newMemberName}
+                                    onChange={(e) => setNewMemberName(e.target.value)}
+                                    placeholder="John Doe"
+                                    type="text"
+                                />
                             </div>
-
-                        )}
-
-                        {isOwner && (
-                            <div className="mt-4">
-                                <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto" variant="outline">
-                                    <UserPlus className="mr-2 h-4 w-4" />
-                                    Add Team Member
-                                </Button>
+                            <div className="space-y-2">
+                                <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    Email
+                                </label>
+                                <Input
+                                    id="email"
+                                    value={newMemberEmail}
+                                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                                    placeholder="colleague@example.com"
+                                    type="email"
+                                />
                             </div>
-                        )}
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion >
-
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add Team Member</DialogTitle>
-                        <DialogDescription>Enter the email address of the team member you want to invite.</DialogDescription>
-                    </DialogHeader>
-
-                    <div className="py-4 space-y-4">
-                        <div className="space-y-2">
-                            <label htmlFor="name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                Name
-                            </label>
-                            <Input
-                                id="name"
-                                value={newMemberName}
-                                onChange={(e) => setNewMemberName(e.target.value)}
-                                placeholder="John Doe"
-                                type="text"
-                            />
                         </div>
-                        <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                Email
-                            </label>
-                            <Input
-                                id="email"
-                                value={newMemberEmail}
-                                onChange={(e) => setNewMemberEmail(e.target.value)}
-                                placeholder="colleague@example.com"
-                                type="email"
-                            />
+
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={loading}>
+                                Cancel
+                            </Button>
+                            <LoadingButton onClick={handleAddMember} isLoading={loading}>
+                                Send Invitation
+                            </LoadingButton>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Remove Team Member</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to remove this team member? This action cannot be undone. Type <strong>delete</strong> to confirm.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="py-4">
+                            <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="Type 'delete'" />
                         </div>
-                    </div>
 
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={loading}>
-                            Cancel
-                        </Button>
-                        <LoadingButton onClick={handleAddMember} isLoading={loading}>
-                            Send Invitation
-                        </LoadingButton>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={loading}>
+                                Cancel
+                            </Button>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Remove Team Member</DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to remove this team member? This action cannot be undone. Type <strong>delete</strong> to confirm.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="py-4">
-                        <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="Type 'delete'" />
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={loading}>
-                            Cancel
-                        </Button>
-
-                        <LoadingButton variant="destructive" onClick={confirmRemove} isLoading={loading} disabled={confirmText.toLowerCase() !== "delete"}>
-                            Remove Member
-                        </LoadingButton>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                            <LoadingButton variant="destructive" onClick={confirmRemove} isLoading={loading} disabled={confirmText.toLowerCase() !== "delete"}>
+                                Remove Member
+                            </LoadingButton>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </Accordion>
         </>
     );
 }

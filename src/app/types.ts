@@ -27,6 +27,7 @@ export interface ChallengeInfo {
   title: string | null;
   sector: string | null;
   technologyArea: string | null;
+  status: string;
   allow_status_updates?: boolean;
   postedBy?: {
     companyName: string | null;

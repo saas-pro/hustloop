@@ -17,7 +17,7 @@ export const CorporateChallengeCard = ({
     ) => void;
 }) => {
     const { progress, daysRemaining } = useChallengeProgress(challenge);
-
+    console.log(challenge)
     const isClosed =
         challenge.status === "stopped" ||
         challenge.status === "expired";
@@ -47,9 +47,9 @@ export const CorporateChallengeCard = ({
                             {challenge.company_name}
                         </CardDescription>
 
-                        <Badge variant={isClosed ? "destructive" : "secondary"}>
-                            {isClosed ? "Closed" : challenge.company_sector}
-                        </Badge>
+                        {<Badge variant={isClosed ? "destructive" : "secondary"}>
+                            {challenge.company_sector}
+                        </Badge>}
                     </div>
                 </div>
             </CardHeader>
@@ -62,18 +62,15 @@ export const CorporateChallengeCard = ({
 
             <CardFooter className="flex-col items-start space-y-2">
 
-                <Badge variant={isClosed ? "destructive" : "outline"}>
-                    {isClosed ? (
-                        "Challenge Closed"
-                    ) : (
-                        <>
-                            Reward:{" "}
-                            {challenge.reward_amount
-                                ? `₹${challenge.reward_amount}`
-                                : `₹${challenge.reward_min} - ₹${challenge.reward_max}`}
-                        </>
-                    )}
-                </Badge>
+                {!isClosed && <Badge variant={"outline"}>
+                    <>
+                        Reward:{" "}
+                        {challenge.reward_amount
+                            ? `₹${challenge.reward_amount}`
+                            : `₹${challenge.reward_min} - ₹${challenge.reward_max}`}
+                    </>
+
+                </Badge>}
 
                 <Button
                     className="w-full bg-accent hover:bg-accent/90 text-accent-foreground disabled:opacity-50"
@@ -84,13 +81,15 @@ export const CorporateChallengeCard = ({
                 </Button>
 
                 <div className="w-full mt-1">
+
                     <Progress
                         value={isClosed ? 100 : progress}
                         className="h-[6px]"
                         indicatorClassName={isClosed ? "bg-red-500" : "bg-primary"}
                     />
 
-                    <div className="flex justify-end items-end text-xs text-muted-foreground mt-1">
+                    <div className="flex justify-between items-end text-xs text-muted-foreground mt-1">
+                        <p>{challenge.submission_count} Sub...</p>
                         {isClosed ? (
                             <span className="text-red-600 font-semibold">Closed</span>
                         ) : (

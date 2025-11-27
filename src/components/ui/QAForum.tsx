@@ -31,6 +31,7 @@ interface QAItem {
 
 interface QAForumProps {
     collaborationId: string;
+    isExpired?: boolean;
 }
 
 const QAReplyForm = ({
@@ -130,7 +131,8 @@ const QAItemView = ({
     onDelete,
     onUpdate,
     isPostingReply,
-    isUpdating
+    isUpdating,
+    isExpired
 
 }: {
     item: QAItem;
@@ -142,6 +144,7 @@ const QAItemView = ({
     onUpdate: (itemId: string, updatedText: string, newFile: File | null, removeExistingAttachment: boolean) => void;
     isPostingReply: boolean
     isUpdating: boolean
+    isExpired?: boolean
 }) => {
 
     const [isAuthor, setIsAuthorOrAdmin] = useState(false);
@@ -324,15 +327,17 @@ const QAItemView = ({
                 ) : (
                     <>
                         <div className="flex items-center gap-2 mt-1">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-xs"
-                                onClick={() => onReply(item.id)}
-                            >
-                                <MessageCircle className="h-3 w-3 mr-1" />
-                                Reply
-                            </Button>
+                            {!isExpired && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-xs"
+                                    onClick={() => onReply(item.id)}
+                                >
+                                    <MessageCircle className="h-3 w-3 mr-1" />
+                                    Reply
+                                </Button>
+                            )}
 
                             <>
                                 {canEdit && (
@@ -383,6 +388,7 @@ const QAItemView = ({
                             onUpdate={onUpdate}
                             isPostingReply={isPostingReply}
                             isUpdating={isUpdating}
+                            isExpired={isExpired}
                         />
                     ))}
                 </div>
@@ -392,7 +398,7 @@ const QAItemView = ({
     );
 };
 
-export function QAForum({ collaborationId }: QAForumProps) {
+export function QAForum({ collaborationId, isExpired }: QAForumProps) {
     const [qaData, setQaData] = useState<QAItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [newQuestion, setNewQuestion] = useState('');
@@ -671,54 +677,63 @@ export function QAForum({ collaborationId }: QAForumProps) {
 
             <CardContent className="space-y-6">
                 <div className="space-y-3 p-4 border rounded-lg bg-background">
-                    <h4 className="font-semibold">Ask a Question</h4>
-                    <QuillEditor
-                        value={newQuestion}
-                        onChange={setNewQuestion}
-                        placeholder="Ask your question here..."
-                        height="150px"
-                    />
-
-                    <div className="flex gap-2 items-center justify-between">
-                        <div className='flex items-center  gap-2'>
-                            <Input
-                                ref={fileInputRef}
-                                type="file"
-                                className="hidden"
-                                onChange={(e) => setNewFile(e.target.files?.[0] || null)}
+                    {isExpired ? (
+                        <div className="text-center py-6 text-muted-foreground">
+                            <p className="font-semibold">This Q/A section is closed.</p>
+                            <p className="text-sm">New questions and replies are disabled because the challenge has ended or is stopped.</p>
+                        </div>
+                    ) : (
+                        <>
+                            <h4 className="font-semibold">Ask a Question</h4>
+                            <QuillEditor
+                                value={newQuestion}
+                                onChange={setNewQuestion}
+                                placeholder="Ask your question here..."
+                                height="150px"
                             />
 
-                            <div className='flex flex-col md:flex-row justify-center items-center gap-2'>
-                                <Button
-                                    className='flex gap-2'
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={!!newFile}
-                                >
-                                    <Paperclip className="h-4 w-4" />
-                                    <p>Attachment</p>
+                            <div className="flex gap-2 items-center justify-between">
+                                <div className='flex items-center  gap-2'>
+                                    <Input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        className="hidden"
+                                        onChange={(e) => setNewFile(e.target.files?.[0] || null)}
+                                    />
+
+                                    <div className='flex flex-col md:flex-row justify-center items-center gap-2'>
+                                        <Button
+                                            className='flex gap-2'
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={!!newFile}
+                                        >
+                                            <Paperclip className="h-4 w-4" />
+                                            <p>Attachment</p>
+                                        </Button>
+                                        <span className="text-xs text-muted-foreground hidden md:block">
+                                            Supported file types: PDF, DOC, DOCX, JPG, PNG
+                                        </span>
+                                    </div>
+
+                                    {newFile && (
+                                        <Button
+                                            variant="destructive"
+                                            onClick={handleCancel}
+                                            className="text-xs"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    )}
+                                </div>
+
+                                <div className="flex-grow" />
+                                <Button onClick={handlePostQuestion} disabled={isPostingQuestion}>
+                                    {isPostingQuestion ? "Posting..." : "Post Question"}
                                 </Button>
-                                <span className="text-xs text-muted-foreground hidden md:block">
-                                    Supported file types: PDF, DOC, DOCX, JPG, PNG
-                                </span>
+
                             </div>
-
-                            {newFile && (
-                                <Button
-                                    variant="destructive"
-                                    onClick={handleCancel}
-                                    className="text-xs"
-                                >
-                                    Cancel
-                                </Button>
-                            )}
-                        </div>
-
-                        <div className="flex-grow" />
-                        <Button onClick={handlePostQuestion} disabled={isPostingQuestion}>
-                            {isPostingQuestion ? "Posting..." : "Post Question"}
-                        </Button>
-
-                    </div>
+                        </>
+                    )}
 
                 </div>
                 {newFile && <p className="text-xs text-muted-foreground">Selected: {newFile.name}</p>}
@@ -743,6 +758,7 @@ export function QAForum({ collaborationId }: QAForumProps) {
                                 onUpdate={handleUpdateItem}
                                 isPostingReply={isPostingReply}
                                 isUpdating={isUpdating}
+                                isExpired={isExpired}
                             />
                         ))}
                     </div>
