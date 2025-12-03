@@ -92,15 +92,13 @@ export default function RootLayout({
         </Script>
         <Script id="website-schema" type="application/ld+json">
           {`
-            [
-              {
-                "@context": "https://schema.org",
-                "@type": "WebSite",
-                "name": "Hustloop",
-                "description":"Open talent, real impact. Hustloop connects founders, innovators, MSMEs, and students to collaborate, solve challenges, and accelerate startup growth.",
-                "url": "https://hustloop.com"
-              },
-            ]
+            {
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "Hustloop",
+              "description": "Open talent, real impact. Hustloop connects founders, innovators, MSMEs, and students to collaborate, solve challenges, and accelerate startup growth.",
+              "url": "https://hustloop.com"
+            }
           `}
         </Script>
         <GoogleAnalytics />
@@ -133,9 +131,7 @@ export default function RootLayout({
             var t = d.getElementsByTagName("script")[0];
             t.parentNode.insertBefore(s, t);
           `}
-
         </Script>
-
       </body>
     </html >
   );
