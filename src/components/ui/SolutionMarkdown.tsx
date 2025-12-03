@@ -70,23 +70,23 @@ function SolutionMarkdown<T extends { description: string }>({ solutionForm, def
                             Preview
                         </button>
                     </div>
-                    <div className="text-right text-xs my-1 mr-2 text-gray-500 rounded-t-sm flex gap-2">
-                        {(solutionForm.watch(description)?.length || 0)} / 15000 characters
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
+                    <div className="text-right text-xs my-1 mr-2 text-gray-500 rounded-t-sm items-center flex gap-2">
+
+                        <div className="text-xs text-white flex justify-center bg-primary p-1 px-2 rounded-md items-center gap-2">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 640 512"
-                                className="w-4 h-4 text-primary"
+                                className="w-4 h-4"
                                 fill="currentColor"
                             >
                                 <path d="M593.8 59.1H46.2C20.7 59.1 0 79.8 0 105.2v301.5c0 25.5 20.7 46.2 46.2 46.2h547.7c25.5 0 46.2-20.7 46.1-46.1V105.2c0-25.4-20.7-46.1-46.2-46.1zM338.5 360.6H277v-120l-61.5 76.9-61.5-76.9v120H92.3V151.4h61.5l61.5 76.9 61.5-76.9h61.5v209.2zm135.3 3.1L381.5 256H443V151.4h61.5V256H566z" />
                             </svg>
 
                             <span>
-                                Parsed with <span className="text-primary font-medium">Markdown</span>
+                                Parsed with <span className="font-medium">Markdown</span>
                             </span>
                         </div>
-
+                        {(solutionForm.watch(description)?.length || 0)} / 15000 characters
                     </div>
                 </div>
             </div>

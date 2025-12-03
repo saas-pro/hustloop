@@ -116,20 +116,19 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                         </div>
 
                         {/* Profiles Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mx-14">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-12 mx-auto w-fit justify-items-center">
                             {filteredProfiles.length > 0 ? (
                                 filteredProfiles.map((profile) => (
                                     <div
                                         key={profile.id}
                                         onClick={() => setTechId(profile.id)}
-                                        className="relative cursor-pointer"
+                                        className="relative cursor-pointer w-full"
                                     >
                                         <TechCard
                                             title={profile.ipTitle}
                                             author={profile.firstName + " " + profile.lastName}
                                         />
                                     </div>
-
                                 ))
                             ) : (
                                 <div className="py-10 text-center text-gray-500 col-span-full">
@@ -137,6 +136,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                                 </div>
                             )}
                         </div>
+
 
                     </div>)}
                 </div>

@@ -94,6 +94,7 @@ const ResendVerificationForm = () => {
                 body: JSON.stringify(data),
             });
             const result = await res.json();
+            console.log(result);
             if (res.ok) {
                 // Success: user exists and is not verified
                 toast({
@@ -133,7 +134,7 @@ const ResendVerificationForm = () => {
                                 <FormItem>
                                     <FormLabel>Email</FormLabel>
                                     <FormControl>
-                                        <Input type="email" placeholder="you@example.com" {...field} />
+                                        <Input type="email" placeholder="you@example.com" {...field} value={field.value ?? ""}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

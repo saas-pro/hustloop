@@ -3,7 +3,7 @@ import { API_BASE_URL } from '@/lib/api';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { Info, Edit, X, Save, Trash2, FileText } from 'lucide-react';
+import { Info, Edit, X, Save, Trash2, FileText, MoreVertical } from 'lucide-react';
 import { MarkdownViewer } from '../ui/markdownViewer';
 import { Button } from '../ui/button';
 import { AnnouncementDialog } from './AnnouncementDialog';
@@ -16,6 +16,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import SectorSearchWithDropdown from '../ui/SectorSearchWithDropdown';
 import ChallengeMarkdownEditor from '../ui/ChallengeMarkdown';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -25,6 +32,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export interface SectorData {
@@ -51,6 +59,7 @@ interface GetUsersCollaborationSchema {
     end_date: Date | undefined;
     sector: string;
     technology_area: string;
+    status: string;
     contact_name: string;
     contact_role: string;
     created_at: string;
@@ -82,6 +91,7 @@ type EditCollaborationFormValues = z.infer<typeof editCollaborationSchema>;
 
 const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }: CollaborationViewProps) => {
     const [collabDetails, setCollabDetails] = useState<GetUsersCollaborationSchema | null>(null);
+
     const [isFetching, setIsFetching] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(true);
     const [announcementOpen, setAnnouncementOpen] = useState(false);
@@ -89,6 +99,9 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [sectors, setSectors] = useState<SectorData[]>([]);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [announcements, setAnnouncements] = useState<any[]>([]);
+
+    const [activeTab, setActiveTab] = useState("overview");
 
     const editForm = useForm<EditCollaborationFormValues>({
         resolver: zodResolver(editCollaborationSchema),
@@ -160,10 +173,46 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
         }
     }, [collaborationId, editForm]);
 
+    const fetchAnnouncements = useCallback(async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/announcements/${collaborationId}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAnnouncements(data.announcements);
+            }
+        } catch (error) {
+            console.error("Failed to fetch announcements", error);
+        }
+    }, [collaborationId]);
 
-    const attachments = Array.isArray(collabDetails?.attachments)
-        ? collabDetails.attachments
-        : JSON.parse(collabDetails?.attachments || "[]");
+    useEffect(() => {
+        fetchCollabDetails();
+        fetchSectors();
+        fetchAnnouncements();
+    }, [collaborationId, fetchCollabDetails, fetchAnnouncements]);
+
+    useEffect(() => {
+        if (announcements.length === 0 && activeTab === "announcements") {
+            setActiveTab("overview");
+        }
+    }, [announcements, activeTab]);
+
+
+    const safeParse = (jsonString: string | any[]) => {
+        if (Array.isArray(jsonString)) return jsonString;
+        if (!jsonString) return [];
+        try {
+            return JSON.parse(jsonString);
+        } catch (e) {
+            return [];
+        }
+    };
+
+    const attachments = safeParse(collabDetails?.attachments || "[]");
 
     const onEditSubmit = async (data: EditCollaborationFormValues) => {
         setIsSubmitting(true);
@@ -245,10 +294,50 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
         }
     };
 
-    useEffect(() => {
-        fetchCollabDetails();
-        fetchSectors();
-    }, [collaborationId, fetchCollabDetails]);
+    const handleDeleteAnnouncement = async (id: string) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/announcements/${id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            });
+
+            if (res.ok) {
+                toast({
+                    title: "Announcement Deleted",
+                    description: "The announcement has been removed.",
+                });
+                fetchAnnouncements();
+            } else {
+                toast({
+                    title: "Error",
+                    description: "Failed to delete announcement.",
+                    variant: "destructive",
+                });
+            }
+        } catch (error) {
+            console.error("Error deleting announcement", error);
+        }
+    };
+
+    function formatPrettyDate(date: Date) {
+        const months = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        const year = date.getFullYear();
+
+        const suffix =
+            day % 10 === 1 && day !== 11 ? "st" :
+                day % 10 === 2 && day !== 12 ? "nd" :
+                    day % 10 === 3 && day !== 13 ? "rd" : "th";
+
+        return `${month} ${day}${suffix} ${year}`;
+    }
 
     return (
         <Dialog
@@ -263,7 +352,7 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
             <DialogContent
                 className={`
           relative flex flex-col border bg-background transition-all duration-500 p-0 
-          w-[90vw] max-w-[90vw] shadow-lg text-base h-[90vh]  fixed
+          w-[90vw] max-w-[90vw] shadow-lg text-base h-[90vh] fixed
           rounded-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
         `}
             >
@@ -321,244 +410,343 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                     </Button>
                 </div>
                 <div className="flex-grow overflow-y-auto px-4 pb-4 space-y-4">
-                    {!isEditMode ? (
-                        <>
-                            {collabDetails && (
-                                <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
-                                    <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
-                                        <CardTitle className="text-lg font-extrabold text-primary flex items-center">
-                                            <Info className="h-5 w-5 mr-2" />
-                                            {collabDetails.title}
-                                        </CardTitle>
-                                        <CardDescription className="text-sm text-muted-foreground">
-                                            Submitted by {collabDetails.contact_name} — {collabDetails.contact_role}
-                                        </CardDescription>
-                                    </CardHeader>
-
-                                    <CardContent className="p-4 pt-0 text-sm">
-                                        <div className="grid grid-cols-2 gap-4 mb-4">
-                                            <p><span className="font-semibold">Sector:</span> {collabDetails.sector}</p>
-                                            <p><span className="font-semibold">Technology Area:</span> {collabDetails.technology_area}</p>
-                                            <p><span className="font-semibold">Challenge Type:</span> {collabDetails.challenge_type}</p>
-                                            <p>
-                                                <span className="font-semibold">Reward:</span>{" "}
-                                                {collabDetails.reward_amount
-                                                    ? `₹${collabDetails.reward_amount}`
-                                                    : `₹${collabDetails.reward_min} - ₹${collabDetails.reward_max}`}
-                                            </p>
-                                            <p><span className="font-semibold">Start Date:</span> {collabDetails.start_date ? new Date(collabDetails.start_date).toLocaleDateString() : 'N/A'}</p>
-                                            <p><span className="font-semibold">End Date:</span> {collabDetails.end_date ? new Date(collabDetails.end_date).toLocaleDateString() : 'N/A'}</p>
-                                        </div>
-
-                                        <h1 className="text-lg mb-2">Description:</h1>
-                                        <MarkdownViewer content={collabDetails.description} />
-                                        {attachments && attachments.length > 0 && (
-                                            <div className="mt-6">
-                                                <h2 className="text-lg font-semibold mb-2">Attachments</h2>
-
-                                                <div className="space-y-2 bg-accent/50 hover:bg-accent p-2 rounded-md">
-                                                    {attachments.map((fileUrl: string, index: number) => {
-                                                        const fileName = fileUrl.split('/').pop();
-
-                                                        return (
-                                                            <a
-                                                                key={index}
-                                                                href={fileUrl}
-                                                                download
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="flex items-center gap-2 text-primary hover:text-primary/80"
-                                                            >
-                                                                <FileText className="h-4 w-4" />
-                                                                {fileName}
-                                                            </a>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <p className="mt-4 text-xs text-muted-foreground">
-                                            Created on: {new Date(collabDetails.created_at).toLocaleString()}
-                                        </p>
-
-                                    </CardContent>
-                                </Card>
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <TabsList className={`grid w-full ${announcements.length > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                            <TabsTrigger value="overview">Overview</TabsTrigger>
+                            {(announcements.length > 0) && (
+                                <TabsTrigger value="announcements">Announcements</TabsTrigger>
                             )}
-                            {/* Floating Button */}
-                            <Button
-                                onClick={() => setAnnouncementOpen(true)}
-                                className="
+                        </TabsList>
+                        <TabsContent value="overview">
+                            {!isEditMode ? (
+                                <>
+                                    {collabDetails && (
+                                        <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
+                                            <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
+                                                <CardTitle className="text-lg font-extrabold text-primary flex items-center">
+                                                    <Info className="h-5 w-5 mr-2" />
+                                                    {collabDetails.title}
+                                                </CardTitle>
+                                                <CardDescription className="text-sm text-muted-foreground">
+                                                    Submitted by {collabDetails.contact_name} — {collabDetails.contact_role}
+                                                </CardDescription>
+                                            </CardHeader>
+
+                                            <CardContent className="p-4 pt-0 text-sm">
+                                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                                    <p><span className="font-semibold">Sector:</span> {collabDetails.sector}</p>
+                                                    <p><span className="font-semibold">Technology Area:</span> {collabDetails.technology_area}</p>
+                                                    <p><span className="font-semibold">Challenge Type:</span> {collabDetails.challenge_type}</p>
+                                                    <p>
+                                                        <span className="font-semibold">Reward:</span>{" "}
+                                                        {collabDetails.reward_amount
+                                                            ? `₹${collabDetails.reward_amount}`
+                                                            : `₹${collabDetails.reward_min} - ₹${collabDetails.reward_max}`}
+                                                    </p>
+                                                    <p><span className="font-semibold">Start Date:</span> {collabDetails.start_date ? new Date(collabDetails.start_date).toLocaleDateString() : 'N/A'}</p>
+                                                    <p><span className="font-semibold">End Date:</span> {collabDetails.end_date ? new Date(collabDetails.end_date).toLocaleDateString() : 'N/A'}</p>
+                                                </div>
+
+                                                <h1 className="text-lg mb-2">Description:</h1>
+                                                <MarkdownViewer content={collabDetails.description} />
+                                                {attachments && attachments.length > 0 && (
+                                                    <div className="mt-6">
+                                                        <h2 className="text-lg font-semibold mb-2">Attachments</h2>
+
+                                                        <div className="space-y-2 bg-accent/50 hover:bg-accent p-2 rounded-md">
+                                                            {attachments.map((fileUrl: string, index: number) => {
+                                                                const fileName = fileUrl.split('/').pop();
+
+                                                                return (
+                                                                    <a
+                                                                        key={index}
+                                                                        href={fileUrl}
+                                                                        download
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="flex items-center gap-2 text-primary hover:text-primary/80"
+                                                                    >
+                                                                        <FileText className="h-4 w-4" />
+                                                                        {fileName}
+                                                                    </a>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <p className="mt-4 text-xs text-muted-foreground">
+                                                    Created on: {new Date(collabDetails.created_at).toLocaleString()}
+                                                </p>
+
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                    {/* Floating Button */}
+                                    {collabDetails?.status !== 'stopped' && <Button
+                                        onClick={() => setAnnouncementOpen(true)}
+                                        className="
     bg-primary text-white px-4 py-2 rounded-md 
     absolute bottom-4 right-4 shadow-lg z-50
   "
-                            >
-                                + Create Announcement
-                            </Button>
-                        </>
-                    ) : (
-                        // Edit Mode
-                        <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
-                            <CardHeader className="p-4">
-                                <CardTitle className="text-lg font-extrabold text-primary flex items-center">
-                                    <Edit className="h-5 w-5 mr-2" />
-                                    Edit Challenge
-                                </CardTitle>
-                                <CardDescription>
-                                    Update the Challenge details below
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                                <Form {...editForm}>
-                                    <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
-                                        <FormField
-                                            control={editForm.control}
-                                            name="title"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Title <span className="text-red-500">*</span></FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Collaboration title" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                    >
+                                        + Create Announcement
+                                    </Button>}
+                                </>
+                            ) : (
+                                // Edit Mode
+                                <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
+                                    <CardHeader className="p-4">
+                                        <CardTitle className="text-lg font-extrabold text-primary flex items-center">
+                                            <Edit className="h-5 w-5 mr-2" />
+                                            Edit Challenge
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Update the Challenge details below
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-0">
+                                        <Form {...editForm}>
+                                            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                                                <FormField
+                                                    control={editForm.control}
+                                                    name="title"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Title <span className="text-red-500">*</span></FormLabel>
+                                                            <FormControl>
+                                                                <Input placeholder="Collaboration title" {...field} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
 
-                                        <FormField
-                                            control={editForm.control}
-                                            name="technologyArea"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Sector & Technology Area <span className="text-red-500">*</span></FormLabel>
-                                                    <FormControl>
-                                                        <SectorSearchWithDropdown
-                                                            data={sectors}
-                                                            defaultValue={field.value}
-                                                            onSelect={(item: any) => field.onChange({ "sector": item.sector, "techArea": item.label })}
-                                                            onDataAdded={fetchSectors}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={editForm.control}
-                                            name="challenge_type"
-                                            render={({ field }) => (
-                                                <FormItem className="space-y-3">
-                                                    <FormLabel>Challenge Type <span className="text-red-500">*</span></FormLabel>
-                                                    <FormControl>
-                                                        <RadioGroup
-                                                            onValueChange={field.onChange}
-                                                            defaultValue={field.value}
-                                                            value={field.value}
-                                                            className="flex gap-5"
-                                                        >
-                                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                                <FormControl>
-                                                                    <RadioGroupItem value="corporate" />
-                                                                </FormControl>
-                                                                <FormLabel className="font-normal">Corporate Challenges</FormLabel>
-                                                            </FormItem>
-                                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                                <FormControl>
-                                                                    <RadioGroupItem value="msme" />
-                                                                </FormControl>
-                                                                <FormLabel className="font-normal">MSME Challenges</FormLabel>
-                                                            </FormItem>
-                                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                                <FormControl>
-                                                                    <RadioGroupItem value="government" />
-                                                                </FormControl>
-                                                                <FormLabel className="font-normal">Government Challenges</FormLabel>
-                                                            </FormItem>
-                                                        </RadioGroup>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                                <FormField
+                                                    control={editForm.control}
+                                                    name="technologyArea"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Sector & Technology Area <span className="text-red-500">*</span></FormLabel>
+                                                            <FormControl>
+                                                                <SectorSearchWithDropdown
+                                                                    data={sectors}
+                                                                    defaultValue={field.value}
+                                                                    onSelect={(item: any) => field.onChange({ "sector": item.sector, "techArea": item.label })}
+                                                                    onDataAdded={fetchSectors}
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={editForm.control}
+                                                    name="challenge_type"
+                                                    render={({ field }) => (
+                                                        <FormItem className="space-y-3">
+                                                            <FormLabel>Challenge Type <span className="text-red-500">*</span></FormLabel>
+                                                            <FormControl>
+                                                                <RadioGroup
+                                                                    onValueChange={field.onChange}
+                                                                    defaultValue={field.value}
+                                                                    value={field.value}
+                                                                    className="flex gap-5"
+                                                                >
+                                                                    <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                        <FormControl>
+                                                                            <RadioGroupItem value="corporate" />
+                                                                        </FormControl>
+                                                                        <FormLabel className="font-normal">Corporate Challenges</FormLabel>
+                                                                    </FormItem>
+                                                                    <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                        <FormControl>
+                                                                            <RadioGroupItem value="msme" />
+                                                                        </FormControl>
+                                                                        <FormLabel className="font-normal">MSME Challenges</FormLabel>
+                                                                    </FormItem>
+                                                                    <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                        <FormControl>
+                                                                            <RadioGroupItem value="government" />
+                                                                        </FormControl>
+                                                                        <FormLabel className="font-normal">Government Challenges</FormLabel>
+                                                                    </FormItem>
+                                                                </RadioGroup>
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
 
 
-                                        <FormField
-                                            control={editForm.control}
-                                            name="description"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        Description <span className="text-red-500">*</span>
-                                                    </FormLabel>
-                                                    <ChallengeMarkdownEditor
-                                                        ttForm={editForm}
-                                                        defaultDescription={field.value}
+                                                <FormField
+                                                    control={editForm.control}
+                                                    name="description"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>
+                                                                Description <span className="text-red-500">*</span>
+                                                            </FormLabel>
+                                                            <ChallengeMarkdownEditor
+                                                                ttForm={editForm}
+                                                                defaultDescription={field.value}
+                                                            />
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <FormField
+                                                        control={editForm.control}
+                                                        name="contact_name"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Contact Name <span className="text-red-500">*</span></FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="Contact person name" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
                                                     />
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
 
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <FormField
-                                                control={editForm.control}
-                                                name="contact_name"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Contact Name <span className="text-red-500">*</span></FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Contact person name" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                                    <FormField
+                                                        control={editForm.control}
+                                                        name="contact_role"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Contact Role <span className="text-red-500">*</span></FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="e.g., Project Manager" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
 
-                                            <FormField
-                                                control={editForm.control}
-                                                name="contact_role"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Contact Role <span className="text-red-500">*</span></FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="e.g., Project Manager" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
+                                                <div className="flex justify-end gap-2 pt-4">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        onClick={() => {
+                                                            setIsEditMode(false);
+                                                            editForm.reset();
+                                                        }}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button type="submit" disabled={isSubmitting}>
+                                                        {isSubmitting ? (
+                                                            <>
+                                                                <Save className="h-4 w-4 mr-2 animate-spin" />
+                                                                Saving...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Save className="h-4 w-4 mr-2" />
+                                                                Save Changes
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </form>
+                                        </Form>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </TabsContent>
+                        {announcements.length > 0 && (
+                            <TabsContent value="announcements">
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <h2 className="text-lg font-semibold">Announcements</h2>
+                                        {collabDetails?.status !== 'stopped' && <Button onClick={() => setAnnouncementOpen(true)} >
+                                            + New Announcement
+                                        </Button>}
+                                    </div>
 
-                                        <div className="flex justify-end gap-2 pt-4">
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    setIsEditMode(false);
-                                                    editForm.reset();
-                                                }}
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <Button type="submit" disabled={isSubmitting}>
-                                                {isSubmitting ? (
-                                                    <>
-                                                        <Save className="h-4 w-4 mr-2 animate-spin" />
-                                                        Saving...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Save className="h-4 w-4 mr-2" />
-                                                        Save Changes
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </div>
-                                    </form>
-                                </Form>
-                            </CardContent>
-                        </Card>
-                    )}
+                                    {announcements.length === 0 ? (
+                                        <p className="text-center text-muted-foreground py-8">
+                                            No announcements yet.
+                                        </p>
+                                    ) : (
+                                        announcements.map((announcement) => (
+                                            <Card key={announcement.id} className="relative">
+                                                <CardHeader className="pb-2">
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <CardTitle className="text-base font-bold">
+                                                                {announcement.title}
+                                                            </CardTitle>
+                                                            <CardDescription>
+                                                                {formatPrettyDate(new Date(announcement.createdAt))}
+                                                            </CardDescription>
+                                                        </div>
+                                                        <AlertDialog>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                                        <MoreVertical className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <DropdownMenuItem className="text-red-600">
+                                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                                            Delete
+                                                                        </DropdownMenuItem>
+                                                                    </AlertDialogTrigger>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Delete Announcement?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This action cannot be undone. This will permanently remove the announcement.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction
+                                                                        className="bg-red-600 hover:bg-red-700"
+                                                                        onClick={() => handleDeleteAnnouncement(announcement.id)}
+                                                                    >
+                                                                        Confirm
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <p className="text-sm whitespace-pre-wrap">{announcement.message}</p>
+                                                    {safeParse(announcement.attachments).length > 0 && (
+                                                        <div className="mt-2 flex flex-wrap gap-2">
+                                                            {safeParse(announcement.attachments).map((url: string, idx: number) => (
+                                                                <a
+                                                                    key={idx}
+                                                                    href={url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-xs bg-muted px-2 py-1 rounded-md hover:bg-muted/80 flex items-center gap-1"
+                                                                >
+                                                                    <FileText className="h-3 w-3" />
+                                                                    Attachment {idx + 1}
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        ))
+                                    )}
+                                </div>
+                            </TabsContent>
+                        )}
+                    </Tabs>
                 </div>
             </DialogContent>
 
@@ -582,10 +770,13 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
 
             <AnnouncementDialog
                 open={announcementOpen}
-                onOpenChange={() => setAnnouncementOpen(false)}
+                onOpenChange={(open) => {
+                    setAnnouncementOpen(open);
+                    if (!open) fetchAnnouncements();
+                }}
                 collaborationId={collaborationId}
             />
-        </Dialog>
+        </Dialog >
     );
 };
 

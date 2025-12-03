@@ -138,19 +138,19 @@ interface RestoreIP {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const techTransferSchema = z.object({
-    firstName: z.string().min(1, "First name is required").max(20, "First name must not exceed 20 characters"),
-    lastName: z.string().min(1, "Last name is required").max(20, "Last name must not exceed 20 characters"),
-    ipTitle: z.string().min(1, "IP title is required").max(35, "First name must not exceed 20 characters"),
+    firstName: z.string().min(1, "First name is required").max(300, "First name must not exceed 300 characters"),
+    lastName: z.string().min(1, "Last name is required").max(300, "Last name must not exceed 300 characters"),
+    ipTitle: z.string().min(1, "IP title is required").max(300, "IP title must not exceed 300 characters"),
     summary: z
         .string()
         .min(10, "Description must be at least 10 characters")
-        .max(1000, "Description must not exceed 1000 characters"),
+        .max(5000, "Description must not exceed 5000 characters"),
     describetheTech: z
         .string()
         .min(10, "Description must be at least 10 characters")
-        .max(5000, "Description must not exceed 5000 characters"),
-    inventorName: z.string().min(1, "Inventor name is required").max(35, "Inventor Name must not exceed 20 characters"),
-    organization: z.string().min(1, "Organization is required").max(100, "Organization Name must not exceed 20 characters"),
+        .max(15000, "Description must not exceed 15000 characters"),
+    inventorName: z.string().min(1, "Inventor name is required").max(300, "Inventor Name must not exceed 300 characters"),
+    organization: z.string().min(1, "Organization is required").max(300, "Organization Name must not exceed 300 characters"),
     supportingFile: z
         .array(
             z.custom<File>().refine(
@@ -1186,7 +1186,7 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
     const [chartData, setChartData] = useState<ChartDataItem[]>([]);
     const [ipData, setIpData] = useState<ipDataItem[]>([]);
     const [summary, setSummary] = useState("");
-    const maxChars = 1000;
+    const maxChars = 5000;
     const summaryValue = ttForm.watch("summary") || "";
 
 
@@ -1730,10 +1730,15 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
                                                     <div className="grid grid-cols-2 gap-4">
                                                         <div>
                                                             <label className="block text-sm font-medium mb-1">First Name</label>
-                                                            <Input {...ttForm.register("firstName")} placeholder="First Name" onChange={(e) => {
-                                                                const value = e.target.value.slice(0, 20);
-                                                                ttForm.setValue("firstName", value, { shouldValidate: true });
-                                                            }} />
+                                                            <div className="relative">
+                                                                <Input {...ttForm.register("firstName")} placeholder="First Name" className="pr-16" onChange={(e) => {
+                                                                    const value = e.target.value.slice(0, 300);
+                                                                    ttForm.setValue("firstName", value, { shouldValidate: true });
+                                                                }} />
+                                                                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background px-1">
+                                                                    {(ttForm.watch("firstName") || "").length}/300
+                                                                </div>
+                                                            </div>
                                                             {ttForm.formState.errors.firstName && (
                                                                 <p className="text-red-500 text-sm">{ttForm.formState.errors.firstName.message}</p>
                                                             )}
@@ -1741,10 +1746,15 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
 
                                                         <div>
                                                             <label className="block text-sm font-medium mb-1">Last Name</label>
-                                                            <Input {...ttForm.register("lastName")} placeholder="Last Name" onChange={(e) => {
-                                                                const value = e.target.value.slice(0, 20);
-                                                                ttForm.setValue("lastName", value, { shouldValidate: true });
-                                                            }} />
+                                                            <div className="relative">
+                                                                <Input {...ttForm.register("lastName")} placeholder="Last Name" className="pr-16" onChange={(e) => {
+                                                                    const value = e.target.value.slice(0, 300);
+                                                                    ttForm.setValue("lastName", value, { shouldValidate: true });
+                                                                }} />
+                                                                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background px-1">
+                                                                    {(ttForm.watch("lastName") || "").length}/300
+                                                                </div>
+                                                            </div>
                                                             {ttForm.formState.errors.lastName && (
                                                                 <p className="text-red-500 text-sm">{ttForm.formState.errors.lastName.message}</p>
                                                             )}
@@ -1754,10 +1764,15 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
                                                     {/* IP Title */}
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">IP Title</label>
-                                                        <Input {...ttForm.register("ipTitle")} placeholder="Enter your IP title" onChange={(e) => {
-                                                            const value = e.target.value.slice(0, 35);
-                                                            ttForm.setValue("ipTitle", value, { shouldValidate: true });
-                                                        }} />
+                                                        <div className="relative">
+                                                            <Input {...ttForm.register("ipTitle")} placeholder="Enter your IP title" className="pr-16" onChange={(e) => {
+                                                                const value = e.target.value.slice(0, 300);
+                                                                ttForm.setValue("ipTitle", value, { shouldValidate: true });
+                                                            }} />
+                                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background px-1">
+                                                                {(ttForm.watch("ipTitle") || "").length}/300
+                                                            </div>
+                                                        </div>
                                                         {ttForm.formState.errors.ipTitle && (
                                                             <p className="text-red-500 text-sm">{ttForm.formState.errors.ipTitle.message}</p>
                                                         )}
@@ -1766,20 +1781,23 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
                                                     {/* Summary */}
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">Summary</label>
-                                                        <Textarea
-                                                            {...ttForm.register("summary")}
-                                                            placeholder="Write a brief summary of your IP..."
-                                                            value={summaryValue}
-                                                            onChange={(e) => {
-                                                                const value = e.target.value.slice(0, maxChars);
-                                                                ttForm.setValue("summary", value, { shouldValidate: true });
-                                                            }}
-                                                        />
-                                                        <div
-                                                            className={`text-right text-xs mt-1 ${summaryValue.length >= maxChars ? "text-red-500" : "text-gray-500"
-                                                                }`}
-                                                        >
-                                                            {summaryValue.length} / {maxChars} characters
+                                                        <div className="relative">
+                                                            <Textarea
+                                                                {...ttForm.register("summary")}
+                                                                placeholder="Write a brief summary of your IP..."
+                                                                value={summaryValue}
+                                                                onChange={(e) => {
+                                                                    const value = e.target.value.slice(0, maxChars);
+                                                                    ttForm.setValue("summary", value, { shouldValidate: true });
+                                                                }}
+                                                                className="pb-6"
+                                                            />
+                                                            <div
+                                                                className={`absolute bottom-2 right-2 text-xs ${summaryValue.length >= maxChars ? "text-red-500" : "text-gray-500"
+                                                                    }`}
+                                                            >
+                                                                {summaryValue.length} / {maxChars} characters
+                                                            </div>
                                                         </div>
 
 
@@ -1789,16 +1807,21 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
                                                     </div>
                                                     <div>
                                                         <label className="block text-sm font-medium mb-1">Describe the technology (Supports Markdown)</label>
-                                                        <MarkdownEditor ttForm={ttForm} />
+                                                        <MarkdownEditor ttForm={ttForm} maxLength={15000} />
                                                     </div>
                                                     {/* Inventor & Organization */}
                                                     <div className="grid grid-cols-2 gap-4">
                                                         <div>
                                                             <label className="block text-sm font-medium mb-1">Inventor Name</label>
-                                                            <Input {...ttForm.register("inventorName")} placeholder="Inventor full name" onChange={(e) => {
-                                                                const value = e.target.value.slice(0, 35);
-                                                                ttForm.setValue("inventorName", value, { shouldValidate: true });
-                                                            }} />
+                                                            <div className="relative">
+                                                                <Input {...ttForm.register("inventorName")} placeholder="Inventor full name" className="pr-16" onChange={(e) => {
+                                                                    const value = e.target.value.slice(0, 300);
+                                                                    ttForm.setValue("inventorName", value, { shouldValidate: true });
+                                                                }} />
+                                                                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background px-1">
+                                                                    {(ttForm.watch("inventorName") || "").length}/300
+                                                                </div>
+                                                            </div>
                                                             {ttForm.formState.errors.inventorName && (
                                                                 <p className="text-red-500 text-sm">{ttForm.formState.errors.inventorName.message}</p>
                                                             )}
@@ -1806,10 +1829,15 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
 
                                                         <div>
                                                             <label className="block text-sm font-medium mb-1">Organization</label>
-                                                            <Input {...ttForm.register("organization")} placeholder="Organization / Institution" onChange={(e) => {
-                                                                const value = e.target.value.slice(0, 100);
-                                                                ttForm.setValue("organization", value, { shouldValidate: true });
-                                                            }} />
+                                                            <div className="relative">
+                                                                <Input {...ttForm.register("organization")} placeholder="Organization / Institution" className="pr-16" onChange={(e) => {
+                                                                    const value = e.target.value.slice(0, 300);
+                                                                    ttForm.setValue("organization", value, { shouldValidate: true });
+                                                                }} />
+                                                                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background px-1">
+                                                                    {(ttForm.watch("organization") || "").length}/300
+                                                                </div>
+                                                            </div>
                                                             {ttForm.formState.errors.organization && (
                                                                 <p className="text-red-500 text-sm">{ttForm.formState.errors.organization.message}</p>
                                                             )}

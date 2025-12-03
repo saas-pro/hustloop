@@ -1,6 +1,6 @@
 
 export type View = "home" | "blog" | "mentors" | "incubators" | "submitIP" | "pricing" | "msmes" | "solveChallenges" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile" | "joinasanMSME" | "browseTech" | "marketplace" | "browseMSME";
-export type DashboardTab = "overview" | "msmes" | "ip/technologies" | "incubators" | "engagements" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" | "aignite" | "connex";
+export type DashboardTab = "overview" | "msmes" | "ip/technologies" | "incubators" | "engagements" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" | "aignite" | "connex" | "pitch-details";
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
 export type SolveChallengeTab = "overview" | "submission" | "team" | "settings"
 export type TechTransferTab = "overview" | "submission" | "engagements" | "settings"
@@ -40,7 +40,7 @@ export type Submission = {
   solutionId: string
   challengeId: string;
   contactName: string;
-  status: 'new' | 'under_review' | 'duplicate' | 'rejected' | 'solution_accepted_points' | 'triaged' | 'need_info';
+  status: 'new' | 'under_review' | 'duplicate' | 'rejected' | 'solution_accepted_points' | 'triaged' | 'need_info' | 'winner';
   points: number;
   description: string;
   createdAt: string;

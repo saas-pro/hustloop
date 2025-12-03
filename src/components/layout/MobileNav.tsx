@@ -156,7 +156,7 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
     };
     return (
         <div>
-            <div className="md:hidden fixed flex top-6 right-4 z-50 pointer-events-auto text-current">
+            <div className="fixed flex top-6 right-4 z-50 pointer-events-auto text-current">
                 <div>
                     <ThemeToggleDropdown heroVisible={heroVisible} activeView={"home"} setActiveView={function (view: View): void {
                         throw new Error("Function not implemented.");

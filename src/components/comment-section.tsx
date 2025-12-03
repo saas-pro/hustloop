@@ -73,7 +73,6 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
     const [isFetching, setIsFetching] = useState(true);
     const [shouldRefetchComments, setShouldRefetchComments] = useState(true);
     const [isFetchingIpDetails, setIsFetchingIpDetails] = useState(true);
-    console.log("ipDetails", ipDetails);
 
     const { toast } = useToast();
     const textareaId = useId();

@@ -52,7 +52,6 @@
   width: var(--col-width);
   overflow: hidden;
   /* hide any sub-pixel overflow */
-  will-change: transform;
 }
 
 .track {

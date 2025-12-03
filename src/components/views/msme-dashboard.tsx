@@ -55,6 +55,7 @@ import { ChevronsUpDown, Check } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { useDropzone } from "react-dropzone";
 import { X } from "lucide-react";
+import { LoadingButton } from "../ui/loading-button";
 
 
 
@@ -241,6 +242,7 @@ const statusBadgeClasses: Record<SolutionStatus, string> = {
     solution_accepted_points: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
     triaged: "border-orange-500 text-orange-700 bg-orange-50 dark:border-orange-400 dark:text-orange-300",
     need_info: "border-blue-600 text-blue-800 bg-blue-100 dark:border-blue-500 dark:text-blue-400",
+    winner: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
 };
 
 const emptyProfile: ProfileFormValues = {
@@ -261,6 +263,7 @@ export enum SolutionStatus {
     solution_accepted_points = "solution_accepted_points",
     triaged = "triaged",
     need_info = "need_info",
+    winner = "winner",
 }
 
 
@@ -272,6 +275,7 @@ export const statusLabels: Record<SolutionStatus, string> = {
     solution_accepted_points: "Solution Accepted + Points",
     triaged: "Triaged",
     need_info: "Need Info",
+    winner: "Winner",
 };
 
 
@@ -451,6 +455,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
             formData.append("logo", profileData.logo);
         }
         try {
+            setIsProfileSubmitting(true);
             const response = await fetch(`${API_BASE_URL}/api/msme-profiles`, {
                 method: 'POST',
                 headers: {
@@ -464,6 +469,8 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                     title: "Profile Created",
                     description: "Your public MSME profile has been saved and is now visible.",
                 });
+                setIsProfileSubmitted(true);
+                setOpen(false);
             } else {
                 const errorData = await response.json();
                 toast({
@@ -478,6 +485,8 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                 title: "Network Error",
                 description: "Could not save profile. Please try again later.",
             });
+        } finally {
+            setIsProfileSubmitting(false);
         }
     }
 
@@ -545,7 +554,8 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                         ? {
                             ...sub,
                             status: newStatus,
-                            points: newStatus === "solution_accepted_points" ? 50 : 0,
+                            points: newStatus === "solution_accepted_points" || "winner" ? 50 : 0,
+
                         }
                         : sub
                 )
@@ -631,6 +641,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     };
 
     const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
+    const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     async function onCollaborationSubmit(data: collaborationFormValues) {
@@ -1171,7 +1182,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
                                                                 <p className="text-sm text-muted-foreground flex items-center">
                                                                     Submitted {formatPrettyDate(new Date(sub.createdAt))}
-                                                                    {sub.lastActive ? <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span> : ''}
+                                                                    <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
                                                                 </p>
                                                                 <Badge
                                                                     className={`px-3 py-1 text-xs font-semibold border rounded-sm 
@@ -1180,7 +1191,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     {statusLabels[sub.status]}
 
                                                                 </Badge>
-                                                                <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
+                                                                {sub.lastActive && <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>}
                                                                 {sub.lastActive && (
                                                                     <p className="text-sm text-muted-foreground">
                                                                         Last active {timeAgoShort(new Date(sub.lastActive))}
@@ -1206,7 +1217,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     e.stopPropagation();
                                                                     handleUpdateStatus(sub.solutionId);
                                                                 }}
-                                                                disabled={isUpdating[sub.solutionId]}
+                                                                disabled={isUpdating[sub.solutionId] || sub.challenge?.status === "stopped" || sub.challenge?.status === "expired"}
                                                             >
                                                                 {isUpdating[sub.solutionId] ? (
                                                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1217,7 +1228,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                             </Button>
                                                         )}
 
-                                                        {sub.challenge?.allow_status_updates !== false && (
+                                                        {sub.challenge?.allow_status_updates !== false && sub.challenge?.status !== "expired" && sub.challenge?.status !== "stopped" && (
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
                                                                     <Button
@@ -1523,7 +1534,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                             name="logo"
                                                             render={({ field }) => (
                                                                 <FormItem>
-                                                                    <FormLabel>Company Logo</FormLabel>
+                                                                    <FormLabel>Company Logo <span className="text-red-500">*</span></FormLabel>
                                                                     <FormControl>
                                                                         <div
                                                                             onClick={() => fileInputRef.current?.click()}
@@ -1581,13 +1592,14 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
                                                         <Dialog open={open} onOpenChange={setOpen}>
                                                             <DialogTrigger asChild>
-                                                                <Button
+                                                                <LoadingButton
                                                                     type="button"
                                                                     onClick={handleOpenDialog}
-                                                                    disabled={isProfileSubmitted}
+                                                                    isLoading={isSubmitting}
+                                                                    disabled={isProfileSubmitting}
                                                                 >
                                                                     {isProfileSubmitted ? "Profile Already Submitted" : "Save Profile"}
-                                                                </Button>
+                                                                </LoadingButton>
                                                             </DialogTrigger>
 
                                                             <DialogContent>
@@ -1616,8 +1628,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     <Button
                                                                         onClick={() => {
                                                                             profileForm.handleSubmit(onProfileSubmit)();
-                                                                            setIsProfileSubmitted(true);
-                                                                            setOpen(false);
                                                                         }}
                                                                         disabled={
                                                                             profileForm.formState.isSubmitting ||
@@ -1944,24 +1954,18 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                         <div
                                                                             {...getRootProps()}
                                                                             className={cn(
-                                                                                "border border-dashed rounded-md p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3",
+                                                                                "border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3 hover:bg-muted/30",
                                                                                 isDragActive ? "bg-accent/30" : "bg-muted/20"
                                                                             )}
+                                                                            onClick={openFileDialog}
                                                                         >
                                                                             <input {...getInputProps()} />
 
 
-                                                                            <UploadCloud className="h-10 w-10 text-primary opacity-80" />
+                                                                            <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
 
-                                                                            <p className="text-sm text-muted-foreground mt-1">
-                                                                                Drag & drop PDF or DOCX here, or{" "}
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={openFileDialog}
-                                                                                    className="underline text-primary"
-                                                                                >
-                                                                                    browse
-                                                                                </button>
+                                                                            <p className="text-sm text-muted-foreground mt-1" >
+                                                                                Click to upload or Drag & drop PDF or DOCX here
                                                                             </p>
 
                                                                             <p className="text-xs text-muted-foreground">

@@ -14,6 +14,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
+import { Upload } from "lucide-react";
 
 interface AnnouncementDialogProps {
     open: boolean;
@@ -34,7 +35,7 @@ export function AnnouncementDialog({
 
     const [attachments, setAttachments] = useState<File[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const MAX_ATTACHMENTS = 2;
+    const MAX_ATTACHMENTS = 1;
     const onDrop = (event: React.DragEvent) => {
         event.preventDefault();
         const newFiles = Array.from(event.dataTransfer.files);
@@ -129,28 +130,40 @@ export function AnnouncementDialog({
                 <DialogTitle>Create Announcement</DialogTitle>
 
                 <div className="space-y-2">
-                    <Label className="text-sm font-medium">Title</Label>
-                    <Input
-                        type="text"
-                        placeholder="Enter announcement title..."
-                        className="w-full border rounded-md p-2"
-                        value={announcementForm.title}
-                        onChange={(e) =>
-                            setAnnouncementForm((f) => ({ ...f, title: e.target.value }))
-                        }
-                    />
+                    <Label className="text-sm font-medium">Title <span className="text-red-500">*</span></Label>
+                    <div className="relative">
+                        <Input
+                            type="text"
+                            placeholder="Enter announcement title..."
+                            className="w-full border rounded-md p-2 pr-16"
+                            value={announcementForm.title}
+                            maxLength={300}
+                            onChange={(e) =>
+                                setAnnouncementForm((f) => ({ ...f, title: e.target.value }))
+                            }
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                            {announcementForm.title.length}/300
+                        </span>
+                    </div>
                 </div>
 
                 <div className="space-y-2">
-                    <Label className="text-sm font-medium">Message</Label>
-                    <Textarea
-                        placeholder="Write the announcement message..."
-                        className="w-full border rounded-md p-2 h-28"
-                        value={announcementForm.message}
-                        onChange={(e) =>
-                            setAnnouncementForm((f) => ({ ...f, message: e.target.value }))
-                        }
-                    />
+                    <Label className="text-sm font-medium">Message <span className="text-red-500">*</span></Label>
+                    <div className="relative">
+                        <Textarea
+                            placeholder="Write the announcement message..."
+                            className="w-full border rounded-md p-2 h-28 pb-6"
+                            value={announcementForm.message}
+                            maxLength={300}
+                            onChange={(e) =>
+                                setAnnouncementForm((f) => ({ ...f, message: e.target.value }))
+                            }
+                        />
+                        <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                            {announcementForm.message.length}/300
+                        </span>
+                    </div>
                 </div>
 
                 <div className="space-y-2">
@@ -182,12 +195,14 @@ export function AnnouncementDialog({
                     <Label className="text-sm font-medium">Attachment (Drag & Drop)</Label>
 
                     <div
+
                         onDrop={attachments.length < MAX_ATTACHMENTS ? onDrop : undefined}
                         onDragOver={attachments.length < MAX_ATTACHMENTS ? onDragOver : undefined}
-                        className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer
-    ${attachments.length >= MAX_ATTACHMENTS ? "opacity-50 cursor-not-allowed" : "border-primary/50 bg-muted/30"}
+                        className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer flex flex-col items-center justify-center
+    ${attachments.length >= MAX_ATTACHMENTS ? "opacity-50 cursor-not-allowed" : "border-muted/50 bg-muted/30 hover:border-muted/70 hover:bg-muted/50"}
   `}
                     >
+                        <Upload className="w-6 h-6 text-muted-foreground mb-2" />
                         <Input
                             type="file"
                             multiple
@@ -198,7 +213,7 @@ export function AnnouncementDialog({
                         />
 
 
-                        <Label htmlFor="fileUpload" className="cursor-pointer text-sm text-primary">
+                        <Label htmlFor="fileUpload" className="cursor-pointer text-sm text-muted-foreground">
                             Drag files here or <span className="underline">browse</span>
                         </Label>
                     </div>

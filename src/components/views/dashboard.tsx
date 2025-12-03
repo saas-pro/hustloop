@@ -196,6 +196,7 @@ export enum SolutionStatus {
     solution_accepted_points = "solution_accepted_points",
     triaged = "triaged",
     need_info = "need_info",
+    winner = "winner",
 }
 
 
@@ -207,6 +208,7 @@ export const statusLabels: Record<SolutionStatus, string> = {
     solution_accepted_points: "Solution Accepted + Points",
     triaged: "Triaged",
     need_info: "Need Info",
+    winner: "Winner",
 };
 
 const statusBadgeClasses: Record<SolutionStatus, string> = {
@@ -217,6 +219,7 @@ const statusBadgeClasses: Record<SolutionStatus, string> = {
     solution_accepted_points: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
     triaged: "border-orange-500 text-orange-700 bg-orange-50 dark:border-orange-400 dark:text-orange-300",
     need_info: "border-blue-600 text-blue-800 bg-blue-100 dark:border-blue-500 dark:text-blue-400",
+    winner: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
 };
 
 
@@ -263,6 +266,27 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [itemToDelete, setItemToDelete] = useState<{ type: 'blog' | 'program'; id: number } | null>(null);
     const [loadingChange, setLoadingChange] = useState(false)
     const [loadingResend, setLoadingResend] = useState(false)
+
+    // Pitching Details State
+    interface PitchingDetail {
+        id: string;
+        user_id: string;
+        solution_id: string;
+        solution_title: string;
+        company_name: string;
+        pitch_date: string;
+        pitch_time: string;
+        requirements: string;
+        submitted: boolean;
+        founder_name: string;
+        created_at: string;
+    }
+    const [pitchingDetails, setPitchingDetails] = useState<PitchingDetail[]>([]);
+    const [isLoadingPitching, setIsLoadingPitching] = useState(false);
+    const [selectedPitchIds, setSelectedPitchIds] = useState<string[]>([]);
+    const [pitchPage, setPitchPage] = useState(1);
+    const [pitchPerPage, setPitchPerPage] = useState(10);
+    const [isDeletingPitch, setIsDeletingPitch] = useState(false);
 
     const searchParams = useSearchParams()
 
@@ -492,9 +516,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         link.click();
         document.body.removeChild(link);
     };
-
-
-
 
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -777,6 +798,27 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     }, [activeTab, userRole, token, toast]);
 
 
+    const fetchPitchingDetails = useCallback(async () => {
+        setIsLoadingPitching(true);
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/pitching/details`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setPitchingDetails(data.message || data);
+            } else {
+                toast({ variant: 'destructive', title: 'Failed to fetch pitching details' });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error' });
+        } finally {
+            setIsLoadingPitching(false);
+        }
+    }, [toast]);
+
+
     useEffect(() => {
         if (userRole === 'admin') {
             if (activeTab === 'users') fetchUsers(1, 10);
@@ -785,9 +827,55 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             // if (activeTab === 'blog') fetchBlogPosts();
             // if (activeTab === 'sessions') fetchEducationPrograms();
             if (activeTab === 'ip/technologies') fetchIps();
-            if (activeTab === 'subscribers') fetchSubscribers();
+            // if (activeTab === 'subscribers') fetchSubscribers();
+            if (activeTab === 'pitch-details') fetchPitchingDetails();
         }
-    }, [activeTab, userRole, fetchUsers, fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
+    }, [activeTab, userRole, fetchUsers, fetchPitchingDetails, fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
+
+
+
+    const togglePitchSelect = (id: string) => {
+        setSelectedPitchIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
+
+    const selectAllPitch = () => {
+        if (selectedPitchIds.length === paginatedPitchingDetails.length) {
+            setSelectedPitchIds([]);
+        } else {
+            setSelectedPitchIds(paginatedPitchingDetails.map(p => p.id));
+        }
+    };
+
+    const handleDeletePitching = async () => {
+        if (selectedPitchIds.length === 0) return;
+        setIsDeletingPitch(true);
+        const token = localStorage.getItem('token');
+
+        try {
+            // Delete sequentially or parallel
+            await Promise.all(selectedPitchIds.map(id =>
+                fetch(`${API_BASE_URL}/api/pitching/delete/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ));
+
+            toast({ title: "Success", description: "Selected pitching details deleted." });
+            setSelectedPitchIds([]);
+            fetchPitchingDetails();
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Error", description: "Failed to delete some items." });
+        } finally {
+            setIsDeletingPitch(false);
+        }
+    };
+
+    // Pagination logic for Pitching Details
+    const totalPitchPages = Math.ceil(pitchingDetails.length / pitchPerPage);
+    const paginatedPitchingDetails = pitchingDetails.slice(
+        (pitchPage - 1) * pitchPerPage,
+        pitchPage * pitchPerPage
+    );
 
 
 
@@ -1062,7 +1150,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setisipOverview(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "aignite", "engagement", "settings"];
+    const adminTabs = ["overview", "users", "ip/technologies", "aignite", "engagement", "pitch-details", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
     const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];
@@ -1241,7 +1329,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         ? {
                             ...sub,
                             status: newStatus,
-                            points: newStatus === "solution_accepted_points" ? 50 : 0,
+                            points: newStatus === "solution_accepted_points" || "winner" ? 50 : 0,
                         }
                         : sub
                 )
@@ -1663,10 +1751,11 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                 grid 
                                 grid-cols-3       
                                 sm:grid-cols-3    
-                                md:grid-cols-4     
+                                md:grid-cols-4 
+                                justify-center    
                                 ${isTechTransfer ? "lg:grid-cols-4" : (userRole === 'admin' ? "lg:grid-cols-6" : "lg:grid-cols-5")}
                                 gap-2 h-fit
-                                items-stretch       
+                                items-center       
                                 bg-muted/50 rounded-lg p-1
                                 mb-4 sm:mb-6 lg:mb-10 z-10`}
                         >
@@ -1694,7 +1783,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                         ? "User"
                                                                         : tab === "subscribers"
                                                                             ? "Mail"
-                                                                            : "BookOpen"
+                                                                            : tab === "pitch-details"
+                                                                                ? "Presentation"
+                                                                                : "BookOpen"
+
                                     ] || LucideIcons.HelpCircle
                                 ) as React.ComponentType<LucideProps>;
 
@@ -1704,13 +1796,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         value={tab}
                                         onClick={() => setActiveTab(tab as DashboardTab)}
                                         className="
-                                    flex items-center justify-start md:justify-center gap-2 
-                                    rounded-md bg-card 
-                                    text-sm sm:text-base 
-                                    data-[state=active]:bg-accent data-[state=active]:text-accent-foreground 
-                                    hover:bg-accent/20 transition"
+                                            flex items-center justify-center gap-2 
+                                            rounded-md bg-card 
+                                            text-sm sm:text-base 
+                                            data-[state=active]:bg-accent data-[state=active]:text-accent-foreground 
+                                            hover:bg-accent/20 transition
+                                        "
                                     >
-                                        <Icon className="h-4 w-4 shrink-0" />
+                                        <Icon className="h-4 w-4" />
                                         <span className="truncate">{tab}</span>
                                     </TabsTrigger>
 
@@ -1973,9 +2066,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                     <span className="font-medium">By {sub.contactName}</span>
                                                 </div>
                                             )}
-
                                             <div className="flex items-center gap-2 ml-auto">
-
                                                 {statusUpdates1[sub.solutionId] && (
                                                     <Button
                                                         size="sm"
@@ -1993,7 +2084,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         Update Status
                                                     </Button>
                                                 )}
-
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button
@@ -2021,9 +2111,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                             </DropdownMenuItem>
                                                         ))}
                                                     </DropdownMenuContent>
-
                                                 </DropdownMenu>
-
                                             </div>
                                         </CardFooter>
                                     </Card>
@@ -2033,8 +2121,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     </Card>
                                 )}
                             </TabsContent>
-
-
 
                             {userRole === "admin" && (
                                 <>
@@ -2452,7 +2538,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         </Tabs>
                                     </TabsContent>
 
-                                    <TabsContent value="subscribers" className="mt-0">
+                                    {/* <TabsContent value="subscribers" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader>
                                                 <CardTitle>Newsletter Subscribers</CardTitle>
@@ -2544,7 +2630,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 )}
                                             </CardContent>
                                         </Card>
-                                    </TabsContent>
+                                    </TabsContent> */}
 
                                     {/* <TabsContent value="subscribers" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -2935,7 +3021,204 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 )}
                                             </CardContent>
                                         </Card>
-                                    </TabsContent> */}
+                                    </TabsContent>
+*/}
+                                    <TabsContent value="pitch-details" className="space-y-4">
+                                        <Card>
+                                            <CardHeader className="flex flex-row items-center justify-between">
+                                                <div>
+                                                    <CardTitle>Pitching Details</CardTitle>
+                                                    <CardDescription>Manage pitching submissions and details.</CardDescription>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {selectedPitchIds.length > 0 && (
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="destructive" size="sm">
+                                                                    <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
+                                                                    Delete Selected ({selectedPitchIds.length})
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This action cannot be undone. This will permanently delete the selected pitching details.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={handleDeletePitching} disabled={isDeletingPitch}>
+                                                                        {isDeletingPitch ? "Deleting..." : "Delete"}
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    )}
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm text-muted-foreground">Show</span>
+                                                        <Select
+                                                            value={pitchPerPage.toString()}
+                                                            onValueChange={(val) => {
+                                                                setPitchPerPage(Number(val));
+                                                                setPitchPage(1);
+                                                            }}
+                                                        >
+                                                            <SelectTrigger className="w-[70px]">
+                                                                <SelectValue placeholder="10" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="10">10</SelectItem>
+                                                                <SelectItem value="25">25</SelectItem>
+                                                                <SelectItem value="50">50</SelectItem>
+                                                                <SelectItem value="100">100</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <span className="text-sm text-muted-foreground">entries</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="rounded-md border">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead className="w-[50px]">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={paginatedPitchingDetails.length > 0 && selectedPitchIds.length === paginatedPitchingDetails.length}
+                                                                        onChange={selectAllPitch}
+                                                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                                    />
+                                                                </TableHead>
+                                                                <TableHead>Founder Name</TableHead>
+                                                                <TableHead>Solution Title</TableHead>
+                                                                <TableHead>Company</TableHead>
+                                                                <TableHead>Pitch Date</TableHead>
+                                                                <TableHead>Pitch Time</TableHead>
+                                                                <TableHead>Submitted</TableHead>
+                                                                <TableHead>Created At</TableHead>
+                                                                <TableHead className="text-right">Actions</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {isLoadingPitching ? (
+                                                                Array.from({ length: 5 }).map((_, i) => (
+                                                                    <TableRow key={i}>
+                                                                        <TableCell><div className="h-4 w-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                        <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                        <TableCell><div className="h-4 w-32 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                        <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                        <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                        <TableCell><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                        <TableCell><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                        <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                        <TableCell><div className="h-4 w-8 bg-gray-200 rounded animate-pulse ml-auto" /></TableCell>
+                                                                    </TableRow>
+                                                                ))
+                                                            ) : paginatedPitchingDetails.length === 0 ? (
+                                                                <TableRow>
+                                                                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                                                                        No pitching details found.
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ) : (
+                                                                paginatedPitchingDetails.map((pitch) => (
+                                                                    <TableRow key={pitch.id}>
+                                                                        <TableCell>
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={selectedPitchIds.includes(pitch.id)}
+                                                                                onChange={() => togglePitchSelect(pitch.id)}
+                                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                                            />
+                                                                        </TableCell>
+                                                                        <TableCell className="font-medium">{pitch.founder_name}</TableCell>
+                                                                        <TableCell>{pitch.solution_title}</TableCell>
+                                                                        <TableCell>{pitch.company_name}</TableCell>
+                                                                        <TableCell>{pitch.pitch_date}</TableCell>
+                                                                        <TableCell>{pitch.pitch_time}</TableCell>
+                                                                        <TableCell>
+                                                                            <Badge variant={pitch.submitted ? "default" : "secondary"}>
+                                                                                {pitch.submitted ? "Yes" : "No"}
+                                                                            </Badge>
+                                                                        </TableCell>
+                                                                        <TableCell className="text-muted-foreground text-sm">{pitch.created_at}</TableCell>
+                                                                        <TableCell className="text-right">
+                                                                            <AlertDialog>
+                                                                                <AlertDialogTrigger asChild>
+                                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive/90">
+                                                                                        <LucideIcons.Trash2 className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                </AlertDialogTrigger>
+                                                                                <AlertDialogContent>
+                                                                                    <AlertDialogHeader>
+                                                                                        <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                                                                                        <AlertDialogDescription>
+                                                                                            This will permanently delete the pitching details for {pitch.solution_title}.
+                                                                                        </AlertDialogDescription>
+                                                                                    </AlertDialogHeader>
+                                                                                    <AlertDialogFooter>
+                                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                                        <AlertDialogAction
+                                                                                            onClick={async () => {
+                                                                                                setIsDeletingPitch(true);
+                                                                                                const token = localStorage.getItem('token');
+                                                                                                try {
+                                                                                                    await fetch(`${API_BASE_URL}/api/pitching/delete/${pitch.id}`, {
+                                                                                                        method: 'DELETE',
+                                                                                                        headers: { 'Authorization': `Bearer ${token}` }
+                                                                                                    });
+                                                                                                    toast({ title: "Deleted", description: "Pitching detail deleted." });
+                                                                                                    fetchPitchingDetails();
+                                                                                                } catch (e) {
+                                                                                                    toast({ variant: 'destructive', title: "Error", description: "Failed to delete." });
+                                                                                                } finally {
+                                                                                                    setIsDeletingPitch(false);
+                                                                                                }
+                                                                                            }}
+                                                                                        >
+                                                                                            Delete
+                                                                                        </AlertDialogAction>
+                                                                                    </AlertDialogFooter>
+                                                                                </AlertDialogContent>
+                                                                            </AlertDialog>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))
+                                                            )}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+
+                                                {/* Pagination Controls */}
+                                                <div className="flex items-center justify-end space-x-2 py-4">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setPitchPage(p => Math.max(1, p - 1))}
+                                                        disabled={pitchPage === 1 || isLoadingPitching}
+                                                    >
+                                                        Previous
+                                                    </Button>
+                                                    <div className="text-sm font-medium">
+                                                        Page {pitchPage} of {totalPitchPages || 1}
+                                                    </div>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setPitchPage(p => Math.min(totalPitchPages, p + 1))}
+                                                        disabled={pitchPage >= totalPitchPages || isLoadingPitching}
+                                                    >
+                                                        Next
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
                                     <TabsContent value="blog" className="mt-0 space-y-6">
                                         <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">
                                             <TabsList className="grid w-full grid-cols-2">
@@ -3121,7 +3404,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                             </TabsContent>
                         </div>
                     </Tabs>
-                </div>
+                </div >
                 {
                     commentingSubmissionId !== null && (
                         <CommentSection

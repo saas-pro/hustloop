@@ -196,6 +196,7 @@ export enum SolutionStatus {
     solution_accepted_points = "solution_accepted_points",
     triaged = "triaged",
     need_info = "need_info",
+    winner = "winner"
 }
 
 
@@ -207,6 +208,7 @@ export const statusLabels: Record<SolutionStatus, string> = {
     solution_accepted_points: "Solution Accepted + Points",
     triaged: "Triaged",
     need_info: "Need Info",
+    winner: "Winner",
 };
 
 const statusBadgeClasses: Record<SolutionStatus, string> = {
@@ -217,6 +219,7 @@ const statusBadgeClasses: Record<SolutionStatus, string> = {
     solution_accepted_points: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
     triaged: "border-orange-500 text-orange-700 bg-orange-50 dark:border-orange-400 dark:text-orange-300",
     need_info: "border-blue-600 text-blue-800 bg-blue-100 dark:border-blue-500 dark:text-blue-400",
+    winner: "border-green-600 text-green-800 bg-green-100 dark:border-green-500 dark:text-green-400",
 };
 
 const iconNames = Object.keys(LucideIcons).filter(k => k !== 'createLucideIcon' && k !== 'icons' && k !== 'default');

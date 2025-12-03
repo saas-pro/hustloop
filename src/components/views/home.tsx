@@ -34,9 +34,9 @@ import PricingData from '../BillingCard/billing-card';
 import { DashboardTab } from '@/app/types';
 
 const contactFormSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters."),
+  fullName: z.string().min(2, "Full name must be at least 2 characters.").max(300, "Full name must not exceed 300 characters."),
   email: z.string().email("Please enter a valid email address."),
-  phone: z.string().optional(),
+  phone: z.string().max(10, "Phone number must not exceed 10 digits.").optional(),
   subject: z.string({ required_error: "Please select a subject." }),
   message: z.string().min(10, "Message must be at least 10 characters.").max(500, "Message must not exceed 500 characters."),
 });
@@ -197,7 +197,7 @@ const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
       {!inSheet && (
         <div className="flex items-center gap-2">
           <Separator orientation="vertical" className="h-8 bg-border w-0.5" />
-          <p className="text-sm leading-tight text-muted-foreground md:text-white">
+          <p className="text-sm leading-tight text-muted-foreground xl:text-white">
             Smart hustle. <br /> Infinite growth..
           </p>
         </div>
@@ -248,29 +248,29 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         muted
         preload="auto"
         playsInline
-        className="hidden absolute top-0 left-0 w-full h-full object-cover z-0 md:block"
+        className="hidden absolute top-0 left-0 w-full h-full object-cover z-0 xl:block"
       >
         <source src="/video/HeaderVideo.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
 
-      <div className="hidden absolute inset-0 md:bg-black/40 z-10 md:block"></div>
+      <div className="hidden absolute inset-0 md:bg-black/40 z-10 xl:block"></div>
 
       {/* Logo */}
       <BrandLogo />
 
       {/* Content */}
-      <section className="relative text-center w-full md:text-left z-20 h-screen flex flex-col lg:flex-row items-center justify-center">
-        <div className="lg:flex-1 flex-0 lg:text-left relative lg:left-16 lg:top-4">
-          <h1 className="text-5xl md:text-[80px] font-bold font-headline leading-tight text-current md:text-white">
+      <section className="relative text-center w-full xl:text-left z-20 h-screen flex flex-col xl:flex-row items-center justify-center">
+        <div className="xl:flex-1 flex-0 xl:text-left relative xl:left-16 xl:top-4">
+          <h1 className="text-5xl lg:text-[60px] xl:text-[80px] font-bold font-headline leading-tight text-current xl:text-white">
             {"Empowering Tomorrow's"}
             <br />
             <span className="relative inline-block text-primary">
               Innovators
               {/* underline svg */}
               <svg
-                className="absolute right-0 mx-auto w-[100px] md:w-[142px] -bottom-1 md:-bottom-1"
+                className="absolute right-0 mx-auto w-[100px] xl:w-[142px] -bottom-1 xl:-bottom-1 lg:bottom-0"
                 aria-hidden="true"
                 role="presentation"
                 viewBox="0 0 117 72"
@@ -289,11 +289,11 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
 
           </h1>
 
-          <span className="block text-3xl md:text-6xl font-headline mt-4 text-current md:text-white">
+          <span className="block text-3xl lg:text-6xl xl:text-6xl font-headline mt-4 text-current xl:text-white">
             The Hustloop
           </span>
 
-          <div className="block text-4xl md:text-8xl font-headline leading-tight text-current md:text-white">
+          <div className="block text-4xl lg:text-6xl xl:text-8xl font-headline leading-tight text-current xl:text-white">
             <span>for </span>
             <ReactTyped
               strings={[
@@ -340,7 +340,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       {/* 🔽 Scroll Down Indicator */}
       <div className="absolute bottom-6 w-full flex justify-center z-20 mb-6 md:mb-0">
         <div
-          className="flex flex-col items-center text-current md:text-white"
+          className="flex flex-col items-center text-black xl:text-white"
         >
           <span className="text-base mb-1">Scroll Down</span>
           <svg
@@ -648,7 +648,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                       setActiveView("browseMSME");
                     } else if (!isLoggedIn) {
                       setActiveView("joinasanMSME");
-                    }else{
+                    } else {
                       setActiveView('joinasanMSME')
                     }
                   }}
@@ -912,7 +912,14 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Full Name</FormLabel>
-                          <FormControl><Input placeholder="Enter your full name" {...field} /></FormControl>
+                          <div className="relative">
+                            <FormControl>
+                              <Input placeholder="Enter your full name" {...field} className="pr-16" />
+                            </FormControl>
+                            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${field.value?.length >= 300 ? "text-red-500" : "text-muted-foreground"}`}>
+                              {field.value?.length || 0}/300
+                            </span>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -934,7 +941,25 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Phone Number (Optional)</FormLabel>
-                          <FormControl><Input type="tel" placeholder="Enter your phone number" {...field} /></FormControl>
+                          <div className="relative">
+                            <FormControl>
+                              <Input
+                                type="tel"
+                                placeholder="Enter your phone number"
+                                maxLength={10}
+                                {...field}
+                                className="pr-16"
+                              />
+                            </FormControl>
+
+                            <span
+                              className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${(field.value?.length ?? 0) > 10 ? "text-red-500" : "text-muted-foreground"
+                                }`}
+                            >
+                              {(field.value?.length ?? 0)}/10
+                            </span>
+                          </div>
+
                           <FormMessage />
                         </FormItem>
                       )}
@@ -968,7 +993,14 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Message</FormLabel>
-                          <FormControl><Textarea placeholder="How can we help you?" {...field} /></FormControl>
+                          <div className="relative">
+                            <FormControl>
+                              <Textarea placeholder="How can we help you?" {...field} className="pb-6" />
+                            </FormControl>
+                            <span className={`absolute right-3 bottom-2 text-xs ${field.value?.length >= 500 ? "text-red-500" : "text-muted-foreground"}`}>
+                              {field.value?.length || 0}/500
+                            </span>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}

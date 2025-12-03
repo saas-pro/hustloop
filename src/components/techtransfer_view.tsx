@@ -48,7 +48,6 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
         });
         if (res.ok) {
           const data = await res.json();
-          console.log(data)
           setIpDetails(data.message.ips[0]);
         } else {
           toast({

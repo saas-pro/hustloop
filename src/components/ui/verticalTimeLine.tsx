@@ -79,7 +79,6 @@ export default function VerticalTimeline({
     for (let i = 0; i < events.length; i++) {
       const currentDate = safeDate(events[i].date);
       const nextDate = safeDate(events[i + 1]?.date ?? null);
-
       if (!currentDate) {
         currentIndex = i;
         break;
@@ -96,13 +95,23 @@ export default function VerticalTimeline({
       }
     }
   }
-
+  const isToday = (d: Date | null) => {
+    if (!d) return false;
+    const t = new Date();
+    return (
+      d.getFullYear() === t.getFullYear() &&
+      d.getMonth() === t.getMonth() &&
+      d.getDate() === t.getDate()
+    );
+  };
   const finalEvents = events.map((ev, idx) => {
     const d = safeDate(ev.date);
     let color = "text-gray-400";
 
     if (d) {
-      if (isClosed) {
+      if (isToday(d)) {
+        color = "text-primary font-semibold";
+      } else if (isClosed) {
         color = d < now ? "text-red-500" : "text-gray-400";
       } else {
         if (d < now) color = "text-red-500";
@@ -113,10 +122,11 @@ export default function VerticalTimeline({
 
     return {
       ...ev,
-      isCurrent: idx === currentIndex,
+      isCurrent: idx === currentIndex || isToday(d),
       color,
     };
   });
+
 
   return (
     <Timeline className="w-2/3">

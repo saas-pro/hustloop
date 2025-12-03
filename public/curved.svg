@@ -1,13 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 152">
 
-  <defs>
-    <linearGradient id="gradient_fill" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#2A7B9B; stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#8AA827; stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  
   <path d="M11,1H341A10,10 0,0,1 351,11V111A10,10 0,0,1 341,121H261A10,10 0,0,0 251,131V141A10,10 0,0,1 241,151H11A10,10 0,0,1 1,141V51A10,10 0,0,1 11,41H31A10,10 0,0,0 41,31V11A10,10 0,0,1 51,1" 
-        fill="url(#gradient_fill)" />
+        fill="#2a3a53ff" />
 
 </svg>

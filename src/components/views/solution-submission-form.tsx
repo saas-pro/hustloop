@@ -31,9 +31,9 @@ const solutionSubmissionSchema = z.object({
         .string()
         .min(10, "Description must be at least 10 characters long.")
         .max(5000, "Description is too long."),
-    contactName: z.string().min(2, "Contact name must be at least 2 characters long.").max(100, "Too long."),
+    contactName: z.string().min(2, "Contact name must be at least 2 characters long.").max(300, "Too long."),
     mobileNumber: z.string().regex(/^[0-9]{10}$/, "Enter a valid 10-digit mobile number."),
-    placeOfResidence: z.string().min(3, "Place of residence must be at least 3 characters long.").max(100, "Too long."),
+    placeOfResidence: z.string().min(3, "Place of residence must be at least 3 characters long.").max(50, "Too long."),
     state: z.string().min(2, "State name must be at least 2 characters long.").max(50, "Too long."),
     files: z
         .array(z.instanceof(File))
@@ -70,9 +70,7 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [agreeToTerms, setAgreeToTerms] = useState(false);
-
-    // team flow state (no email inputs in wizard per request)
-    const [teamList, setTeamList] = useState<string[]>([]); // still keep for backend submission outside wizard
+    const [teamList, setTeamList] = useState<string[]>([]);
     const [emailInput, setEmailInput] = useState("");
     const [choiceDialogOpen, setChoiceDialogOpen] = useState(false);
     const [teamWizardOpen, setTeamWizardOpen] = useState(false);
@@ -196,7 +194,6 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
             setTeamWizardOpen(false);
             setWizardStep(1);
             setFinalSuccessOpen(true);
-            onSubmissionSuccess();
         } catch (error: any) {
             toast({ variant: "destructive", title: "Failed to submit solution", description: error.message || "Please try again later." });
         } finally {
@@ -238,6 +235,41 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
         setTeamWizardOpen(false);
         setChoiceDialogOpen(false);
         setFinalSuccessOpen(false);
+        form.reset({
+            contactName: "",
+            mobileNumber: "",
+            placeOfResidence: "",
+            state: "",
+            description: `[Briefly describe your solution and how it addresses the identified challenge.]
+
+---
+
+## Key Features
+- Feature 1: Short description.
+- Feature 2: Short description.
+- Feature 3: Short description.
+
+---
+
+## Benefits
+- Benefit 1: Short description.
+- Benefit 2: Short description.
+- Benefit 3: Short description.
+
+---
+
+## Implementation Plan
+1. Step 1: Describe the first action or phase.
+2. Step 2: Outline the next action.
+3. Step 3: Add further steps as needed.
+
+---
+
+`,
+            files: [],
+            submissionType: "individual",
+            teamMembers: [],
+        });
     };
 
     const wizardStepContent = [
@@ -386,7 +418,19 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                                 Contact Name <span className="text-red-500 ml-1">*</span>
                             </Label>
                             <div className="flex items-center gap-2">
-                                <Input id="contactName" readOnly={!isEditingName} className={!isEditingName ? "cursor-not-allowed" : ""} {...register("contactName")} />
+                                <div className="relative w-full">
+                                    <Input
+                                        id="contactName"
+                                        readOnly={!isEditingName}
+                                        className={!isEditingName ? "cursor-not-allowed" : "pr-16"}
+                                        {...register("contactName")}
+                                    />
+                                    {isEditingName && (
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background pl-1">
+                                            {watch("contactName")?.length || 0}/300
+                                        </div>
+                                    )}
+                                </div>
                                 <Button type="button" variant={isEditingName ? "default" : "outline"} className="whitespace-nowrap" onClick={() => setIsEditingName(!isEditingName)}>
                                     {isEditingName ? "Save" : "Edit"}
                                 </Button>
@@ -398,7 +442,19 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                             <Label htmlFor="mobileNumber" className="mb-2 block">
                                 Mobile Number <span className="text-red-500 ml-1">*</span>
                             </Label>
-                            <Input type="text" maxLength={10} placeholder="Enter 10-digit mobile number" onInput={(e: any) => (e.target.value = e.target.value.replace(/\D/g, ""))} {...register("mobileNumber")} />
+                            <div className="relative">
+                                <Input
+                                    type="text"
+                                    maxLength={10}
+                                    placeholder="Enter 10-digit mobile number"
+                                    className="pr-16"
+                                    onInput={(e: any) => (e.target.value = e.target.value.replace(/\D/g, ""))}
+                                    {...register("mobileNumber")}
+                                />
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background pl-1">
+                                    {watch("mobileNumber")?.length || 0}/10
+                                </div>
+                            </div>
                             {errors.mobileNumber && <p className="text-red-500 text-sm mt-1">{errors.mobileNumber.message}</p>}
                         </div>
 
@@ -406,7 +462,17 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                             <Label htmlFor="placeOfResidence" className="mb-2 block">
                                 Place of Residence <span className="text-red-500 ml-1">*</span>
                             </Label>
-                            <Input id="placeOfResidence" placeholder="Enter place of residence" {...register("placeOfResidence")} />
+                            <div className="relative">
+                                <Input
+                                    id="placeOfResidence"
+                                    placeholder="Enter place of residence"
+                                    className="pr-16"
+                                    {...register("placeOfResidence")}
+                                />
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background pl-1">
+                                    {watch("placeOfResidence")?.length || 0}/50
+                                </div>
+                            </div>
                             {errors.placeOfResidence && <p className="text-red-500 text-sm mt-1">{errors.placeOfResidence.message}</p>}
                         </div>
 
@@ -414,7 +480,17 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                             <Label htmlFor="state" className="mb-2 block">
                                 State <span className="text-red-500 ml-1">*</span>
                             </Label>
-                            <Input id="state" placeholder="Enter state" {...register("state")} />
+                            <div className="relative">
+                                <Input
+                                    id="state"
+                                    placeholder="Enter state"
+                                    className="pr-16"
+                                    {...register("state")}
+                                />
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background pl-1">
+                                    {watch("state")?.length || 0}/50
+                                </div>
+                            </div>
                             {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state.message}</p>}
                         </div>
                     </div>
@@ -557,7 +633,7 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                         </div> */}
                     </div>
                     <DialogFooter>
-                        <Button onClick={() => { setFinalSuccessOpen(false); resetAll(); }}>Close</Button>
+                        <Button onClick={() => { setFinalSuccessOpen(false); resetAll(); onSubmissionSuccess(); }}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

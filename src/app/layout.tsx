@@ -43,13 +43,20 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
+    title: 'Hustloop',
     description: 'Open talent, Real impact. A dynamic ecosystem for problem solving and technology transfer. We connect founders, enablers, innovators, and students to collaborate, build startups, and drive meaningful innovation together.',
     images: ['/logo.png'],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   alternates: {
     canonical: 'https://hustloop.com',
@@ -71,6 +78,31 @@ export default function RootLayout({
           </div>
           <Toaster />
         </ThemeProvider>
+        <Script id="org-schema" type="application/ld+json">
+          {`
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Hustloop",
+            "url": "https://hustloop.com",
+            "description": "Open talent, real impact. Hustloop connects founders, innovators, MSMEs, and students to collaborate, solve challenges, and accelerate startup growth.",
+            "logo": "https://hustloop.com/logo.png"
+          }
+          `}
+        </Script>
+        <Script id="website-schema" type="application/ld+json">
+          {`
+            [
+              {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "Hustloop",
+                "description":"Open talent, real impact. Hustloop connects founders, innovators, MSMEs, and students to collaborate, solve challenges, and accelerate startup growth.",
+                "url": "https://hustloop.com"
+              },
+            ]
+          `}
+        </Script>
         <GoogleAnalytics />
         <MicrosoftClarity />
         <Script id="zoho-salesiq-script" strategy="lazyOnload">
@@ -103,50 +135,7 @@ export default function RootLayout({
           `}
 
         </Script>
-        <Script id="org-schema" type="application/ld+json">
-          {`
-          {
-            "@context": "https://schema.org",
-            "@type": "Organization",
-            "name": "Hustloop",
-            "url": "https://hustloop.com",
-            "description": "Open talent, real impact. Hustloop connects founders, innovators, MSMEs, and students to collaborate, solve challenges, and accelerate startup growth.",
-            "logo": "https://hustloop.com/logo.png"
-          }
-          `}
-        </Script>
-        <Script id="website-schema" type="application/ld+json">
-          {`
-            [
-              {
-                "@context": "https://schema.org",
-                "@type": "WebSite",
-                "name": "Hustloop",
-                "url": "https://hustloop.com"
-              },
-              {
-                "@context": "https://schema.org",
-                "@type": "ItemList",
-                "itemListElement": [
-                  {
-                    "@type": "SiteNavigationElement",
-                    "position": 1,
-                    "name": "Pricing",
-                    "description": "View our pricing plans",
-                    "url": "https://hustloop.com/pricing"
-                  },
-                  {
-                    "@type": "SiteNavigationElement",
-                    "position": 2,
-                    "name": "Contact Us",
-                    "description": "Contact our team",
-                    "url": "https://hustloop.com/contact-us"
-                  }
-                ]
-              }
-            ]
-          `}
-        </Script>
+
       </body>
     </html >
   );

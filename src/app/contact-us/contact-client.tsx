@@ -23,9 +23,9 @@ import Link from "next/link";
 // Contact form schema
 // -----------------------------
 const contactFormSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters."),
+  fullName: z.string().min(2, "Full name must be at least 2 characters.").max(300, "Full name must not exceed 300 characters."),
   email: z.string().email("Enter a valid email."),
-  phone: z.string().optional(),
+  phone: z.string().max(10, "Phone number must not exceed 10 digits.").optional(),
   subject: z.string({ required_error: "Select a subject." }),
   message: z.string().min(10, "Message must be at least 10 characters.").max(500),
 });
@@ -146,13 +146,13 @@ export default function ContactClient() {
               </a>
 
               <div className="flex gap-4 mt-4">
-                <a href="#" className="text-muted-foreground hover:text-primary">
+                <a href="https://x.com/hustloop" target="_blank">
                   <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.41l-5.8-7.58-6.64 7.58H.47l8.6-9.83L0 1.15h7.59l5.24 6.93 6.07-6.93ZM17.25 20.72h2.6L6.86 2.6H4.06l13.19 18.12Z" /></svg>
                 </a>
                 <a href="https://www.linkedin.com/company/hustloop/" target="_blank">
                   <Linkedin className="h-5 w-5" />
                 </a>
-                <a href="mailto:support@hustloop.com">
+                <a href="mailto:support@hustloop.com" target="_blank">
                   <Mail className="h-5 w-5" />
                 </a>
               </div>
@@ -168,7 +168,14 @@ export default function ContactClient() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
-                      <FormControl><Input placeholder="Your name" {...field} /></FormControl>
+                      <div className="relative">
+                        <FormControl>
+                          <Input placeholder="Your name" {...field} className="pr-16" />
+                        </FormControl>
+                        <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${field.value?.length >= 300 ? "text-red-500" : "text-muted-foreground"}`}>
+                          {field.value?.length || 0}/300
+                        </span>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -194,7 +201,14 @@ export default function ContactClient() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Phone (Optional)</FormLabel>
-                      <FormControl><Input placeholder="Phone number" {...field} /></FormControl>
+                      <div className="relative">
+                        <FormControl>
+                          <Input type="tel" placeholder="Phone number" {...field} className="pr-16" />
+                        </FormControl>
+                        <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${(field.value?.length || 0) >= 10 ? "text-red-500" : "text-muted-foreground"}`}>
+                          {field.value?.length || 0}/10
+                        </span>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -232,7 +246,14 @@ export default function ContactClient() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Message</FormLabel>
-                      <FormControl><Textarea placeholder="How can we help?" {...field} /></FormControl>
+                      <div className="relative">
+                        <FormControl>
+                          <Textarea placeholder="How can we help?" {...field} className="pb-6" />
+                        </FormControl>
+                        <span className={`absolute right-3 bottom-2 text-xs ${field.value?.length >= 500 ? "text-red-500" : "text-muted-foreground"}`}>
+                          {field.value?.length || 0}/500
+                        </span>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}

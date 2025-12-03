@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import { LoadingButton } from "../ui/loading-button";
 import { Label } from "../ui/label";
@@ -105,10 +105,9 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
     const [isStopCollaborationLoading, setIsStopCollaborationLoading] = React.useState(false);
     const [extendCollabId, setExtendCollabId] = React.useState<string | null>(null);
     const [stopCollabId, setStopCollabId] = React.useState<string | null>(null);
+    const [statusUpdateLoadingId, setStatusUpdateLoadingId] = useState<string | null>(null);
 
     useEffect(() => {
-        const ac = new AbortController();
-
         const fetchProfiles = async () => {
             try {
                 setLoading(true);
@@ -326,6 +325,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
     };
 
     const handleToggleStatusUpdates = async (collaborationId: string, currentStatus: boolean) => {
+        setStatusUpdateLoadingId(collaborationId);
         try {
             const token = localStorage.getItem("token");
             const response = await fetch(`${API_BASE_URL}/api/collaborations/${collaborationId}/toggle-status-updates`, {
@@ -356,6 +356,8 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                 title: "Error",
                 description: error.message,
             });
+        } finally {
+            setStatusUpdateLoadingId(null);
         }
     };
 
@@ -561,11 +563,11 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
 
                                                 <TableCell>
                                                     <div className="flex items-center space-x-2">
-                                                        <Switch
+                                                        {statusUpdateLoadingId === collaboration.id ? <Loader2 className="animate-spin flex items-center" /> : <Switch
                                                             checked={collaboration.allow_status_updates}
                                                             onCheckedChange={(checked) => handleToggleStatusUpdates(collaboration.id, checked)}
-                                                            disabled={!isAdmin()}
-                                                        />
+                                                            disabled={!isAdmin() || statusUpdateLoadingId === collaboration.id}
+                                                        />}
                                                     </div>
                                                 </TableCell>
 

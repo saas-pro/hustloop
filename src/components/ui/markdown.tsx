@@ -7,9 +7,10 @@ import { Textarea } from "./textarea";
 
 interface MarkdownEditorProps<T extends { describetheTech: string }> {
     ttForm: UseFormReturn<T>;
+    maxLength?: number;
 }
 
-function MarkdownEditor<T extends { describetheTech: string }>({ ttForm }: MarkdownEditorProps<T>) {
+function MarkdownEditor<T extends { describetheTech: string }>({ ttForm, maxLength = 5000 }: MarkdownEditorProps<T>) {
     const [isPreview, setIsPreview] = useState(false);
     const describetheTech = "describetheTech" as Path<T>;
     const errorMessage = ttForm.formState.errors.describetheTech?.message as string | undefined;
@@ -26,7 +27,7 @@ function MarkdownEditor<T extends { describetheTech: string }>({ ttForm }: Markd
                             value={ttForm.watch(describetheTech) || ""}
                             {...ttForm.register(describetheTech, {
                                 onChange: (e) => {
-                                    const value = e.target.value.slice(0, 5000);
+                                    const value = e.target.value.slice(0, maxLength);
                                     ttForm.setValue(describetheTech, value, {
                                         shouldValidate: true,
                                     });
@@ -87,7 +88,7 @@ function MarkdownEditor<T extends { describetheTech: string }>({ ttForm }: Markd
                             </span>
                         </div>
 
-                        {(ttForm.watch(describetheTech)?.length || 0)} / 5000 characters
+                        {(ttForm.watch(describetheTech)?.length || 0)} / {maxLength} characters
                     </div>
                 </div>
             </div>

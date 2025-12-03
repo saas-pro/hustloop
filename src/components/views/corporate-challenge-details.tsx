@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react'; // Import useState
+import { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award, Lock, FileText } from 'lucide-react';
+import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award, Lock, FileText, Trophy, Star, Medal, Users } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -38,6 +38,14 @@ import { API_BASE_URL } from '@/lib/api';
 import { Input } from '../ui/input';
 import { Table } from '../ui/table';
 import { Badge } from '../ui/badge';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { LoadingButton } from "../ui/loading-button";
+import TimelineCounter from '../ui/timeline-counter';
 
 interface CorporateChallengeDetailsProps {
   challenge: CorporateChallenge | null;
@@ -46,9 +54,6 @@ interface CorporateChallengeDetailsProps {
   hasSubscription: boolean;
   setActiveView: (view: View) => void;
 }
-
-import { LoadingButton } from "../ui/loading-button";
-import TimelineCounter from '../ui/timeline-counter';
 
 interface CorporateChallenge {
   id: string;
@@ -86,6 +91,8 @@ type hallOfFame = {
   contactName: string;
   points: number;
   state: string;
+  status: string;
+  rewards: string;
 }
 
 type TimelineData = {
@@ -109,6 +116,50 @@ type Announcement = {
   createdAt: string;
 }
 
+const sampleFaqs = [
+  {
+    question: "Who is eligible to participate?",
+    answer: "This challenge is open to all registered startups, students, and innovators who meet the criteria specified in the 'Who Can Participate' section."
+  },
+  {
+    question: "Can I submit as a team?",
+    answer: "Yes, you can submit as an individual or form a team of up to 5 members. Make sure to list all team members after the submission process in your dashboard."
+  },
+  {
+    question: "What is the format for submission?",
+    answer: "Submissions should include a detailed description of your solution, key features, benefits, and an implementation plan. You can also attach supporting documents (PDF/DOCX)."
+  },
+  {
+    question: "How will the winners be selected?",
+    answer: "Winners will be selected based on innovation, feasibility, impact, and alignment with the challenge problem statement. A panel of experts will review all submissions."
+  },
+  {
+    question: "Can I update my submission after submitting?",
+    answer: "Yes, you may revise your submission until the official deadline. After the cutoff time, no further edits or resubmissions will be allowed. Ensure your final version is complete and accurate."
+  },
+  {
+    question: "Will participants receive feedback?",
+    answer: "Feedback may be provided depending on reviewer availability. While detailed comments are not guaranteed, participants often receive summary insights. Additional guidance may be shared during review phases."
+  },
+  {
+    question: "Are there any restrictions on solution type?",
+    answer: "Solutions must align with the challenge theme and follow the provided guidelines. Both technical and non-technical solutions are welcome. Any content violating safety or legal standards will be disqualified."
+  },
+  {
+    question: "How will I know if my submission was received?",
+    answer: "Once submitted, you will receive a confirmation email with your submission ID. You can also verify it in your dashboard at any time. If you don’t receive confirmation, contact support."
+  },
+  {
+    question: "What happens if the deadline is extended?",
+    answer: "If the deadline changes, all registered participants will be notified immediately. The updated schedule will appear on the challenge page. Submissions will be accepted until the new cutoff date."
+  },
+  {
+    question: "Will my submission remain confidential?",
+    answer: "All submissions are kept secure and used only for evaluation purposes. Sensitive information will not be shared publicly without permission."
+  }
+];
+
+
 export function AccessMessage({ title, message }: { title: string; message: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
@@ -117,7 +168,6 @@ export function AccessMessage({ title, message }: { title: string; message: Reac
     </div>
   );
 }
-
 
 export default function CorporateChallengeDetails({
   challenge,
@@ -136,6 +186,12 @@ export default function CorporateChallengeDetails({
   const [events, setEvents] = useState<TimelineData | null>(null);
   const [data, setData] = useState<hallOfFame[]>([]);
   const [search, setSearch] = useState("");
+  const [scrolled, setScrolled] = useState(false);
+
+  const handleScrollCapture = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    setScrolled(el.scrollTop > 0);
+  };
 
   useEffect(() => {
     if (!challenge) return;
@@ -243,7 +299,6 @@ export default function CorporateChallengeDetails({
 
   const handleSubmissionSuccess = () => {
     setShowSubmissionForm(false);
-    onOpenChange(false);
   };
 
   const handleCancelSubmission = () => {
@@ -263,6 +318,11 @@ export default function CorporateChallengeDetails({
     }
   };
 
+  const winners = filtered.filter(item => item.status === "winner");
+  const scored = filtered.filter(item => item.points > 0 && item.status !== "winner");
+  const zeroPoints = filtered.filter(item => item.points === 0 && item.status !== "winner");
+
+
   const isChallengeExpiredOrStopped = challenge.status === "expired" || challenge.status === "stopped";
   const attachments = Array.isArray(challenge?.attachments)
     ? challenge.attachments
@@ -273,7 +333,7 @@ export default function CorporateChallengeDetails({
         <DialogHeader className="p-6">
           <div className="flex items-center gap-4">
             <Image
-              src={`${challenge.logo_url}`}
+              src={challenge.logo_url || "https://api.hustloop.com/static/images/building.png"}
               alt={`${challenge.company_name} logo`}
               width={80}
               height={80}
@@ -286,9 +346,8 @@ export default function CorporateChallengeDetails({
               </DialogTitle>
               <DialogDescription>
                 {challenge.company_description}<br />
-                A challenge by {challenge.company_name}.
+                A challenge by {challenge.company_name} {challenge.affiliated_by && <span className="text-muted-foreground">(Affiliated By {challenge.affiliated_by})</span>}
                 <br />
-                {challenge.affiliated_by && <span className="text-muted-foreground">Affiliated By: {challenge.affiliated_by}</span>}
               </DialogDescription>
             </div>
           </div>
@@ -330,16 +389,23 @@ export default function CorporateChallengeDetails({
                             when further updates are available. We appreciate your patience.
                           </p>
 
+                          {challenge.status === "expired" && (
+                            <p className="text-sm leading-relaxed mb-2">
+                              Explore other challenges to continue showcasing your skills.
+                            </p>
+                          )}
+
+
                           <p className="text-sm leading-relaxed mb-4">
                             If you have any questions, please reach out to support or email us at
                             <a href="mailto:support@hustloop.com" className="font-semibold underline ml-1">
-                              support@hustloop.com
-                            </a>.
+                              support[@]hustloop.com
+                            </a>
                           </p>
 
                           {challenge.stop_date && (
                             <p className="text-xs font-semibold text-red-700">
-                              Stopped on {new Date(challenge.stop_date).toUTCString()}
+                              Stopped on {new Date(challenge.stop_date).toLocaleString()}
                             </p>
                           )}
                         </div>
@@ -360,7 +426,7 @@ export default function CorporateChallengeDetails({
                         </h1>
                       </div>
                     </div>
-                    <div className='md:mr-3'>
+                    <div className='md:mr-8 md:mt-8'>
                       <TimelineCounter
                         endDate={challenge?.end_date}
                         extendedEndDate={challenge.extended_end_date}
@@ -699,84 +765,177 @@ export default function CorporateChallengeDetails({
 
 
             <TabsContent value="hof">
-              <Card className="p-4">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <Card className="border-none shadow-none bg-transparent">
+                <div className="mb-8 text-left m-3">
+                  <h2 className="text-3xl font-bold tracking-tight inline-block">
                     Hall of Fame
-                  </CardTitle>
-                  <CardDescription>
-                    Top performers and contributors of this challenge.
-                  </CardDescription>
-                </CardHeader>
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Celebrating the top innovators and contributors
+                  </p>
+                </div>
+
                 {!isLoggedIn ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                    <Lock size={"64"} />
-                    <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
-                    <p className="max-w-xs text-sm">You must be logged in to view the Hall of Fame.</p>
-                  </div>
-
-                ) : (
-                  <>
-                    <CardContent>
-                      <div className="w-full overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-muted text-left">
-                              <TableHead>Profile</TableHead>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Points</TableHead>
-                              <TableHead>State</TableHead>
-                            </TableRow>
-                          </TableHeader>
-
-                          <TableBody>
-                            {filtered.length === 0 ? (
-                              <TableRow>
-                                <TableCell
-                                  colSpan={4}
-                                  className="text-center text-muted-foreground py-4"
-                                >
-                                  No results found.
-                                </TableCell>
-                              </TableRow>
-                            ) : (
-                              filtered.map((item, index) => (
-                                <TableRow key={index}>
-                                  <TableCell>
-                                    <div
-                                      className="h-10 w-10 rounded-full text-white flex items-center justify-center text-lg font-bold"
-                                      style={(() => {
-                                        const name = item.contactName || "?"
-                                        const hash = name
-                                          .split("")
-                                          .reduce((acc, c) => acc + c.charCodeAt(0), 0)
-                                        const color1 = `hsl(${hash % 360}, 70%, 50%)`
-                                        const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`
-                                        return {
-                                          background: `linear-gradient(135deg, ${color1}, ${color2})`,
-                                        }
-                                      })()}
-                                    >
-                                      {item.contactName
-                                        ? item.contactName.charAt(0).toUpperCase()
-                                        : "?"}
-                                    </div>
-                                  </TableCell>
-
-                                  <TableCell className="font-medium">{item.contactName}</TableCell>
-                                  <TableCell className="font-semibold">{item.points}</TableCell>
-                                  <TableCell className="font-medium">{item.state}</TableCell>
-                                </TableRow>
-                              ))
-                            )}
-                          </TableBody>
-                        </Table>
+                  <Card className="p-8 border-dashed">
+                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                        <Lock className="h-8 w-8" />
                       </div>
-                    </CardContent>
-                  </>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">Access Restricted</h3>
+                      <p className="max-w-xs text-sm">`{"Please log in to view the Hall of Fame and see who's leading the challenge."}`</p>
+                    </div>
+                  </Card>
+                ) : (
+                  <div className="space-y-10">
+                    {/* 1️⃣ Winner Podium Section */}
+                    {winners.length > 0 && (
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-amber-500/5 to-yellow-500/10 blur-3xl -z-10" />
+                        <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+                          {winners.map((item, index) => (
+                            <div
+                              key={index}
+                              className="relative group w-full max-w-sm"
+                            >
+                              <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 to-amber-600 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
+                              <div className="relative flex flex-col items-center p-6 bg-card rounded-xl border border-yellow-200/50 dark:border-yellow-900/50 shadow-xl">
+                                <div className="absolute -top-5">
+                                  <div className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-4 py-1 rounded-full shadow-lg flex items-center gap-2 font-bold text-sm">
+                                    <Trophy className="h-4 w-4" />
+                                    WINNER
+                                  </div>
+                                </div>
+
+                                <div
+                                  className="h-24 w-24 rounded-full border-4 border-yellow-100 dark:border-yellow-900/30 flex items-center justify-center text-3xl font-bold text-white shadow-inner mb-4 mt-4"
+                                  style={(() => {
+                                    const name = item.contactName || "?";
+                                    const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                                    const color1 = `hsl(${hash % 360}, 70%, 50%)`;
+                                    const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`;
+                                    return { background: `linear-gradient(135deg, ${color1}, ${color2})` };
+                                  })()}
+                                >
+                                  {item.contactName ? item.contactName.charAt(0).toUpperCase() : "?"}
+                                </div>
+
+                                <h3 className="text-xl font-bold text-center mb-1">{item.contactName}</h3>
+                                <p className="text-sm text-muted-foreground mb-4">{item.state}</p>
+
+                                <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/10 px-4 py-2 rounded-lg border border-yellow-100 dark:border-yellow-900/20">
+                                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                  <span className="font-bold text-yellow-700 dark:text-yellow-400">{item.points} Points</span>
+
+                                </div>
+                                <span className="font-bold text-yellow-700 dark:text-yellow-400 mt-4">₹ {item.rewards} has been Rewarded</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2️⃣ Leaderboard Section */}
+                    {scored.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                          <Medal className="h-5 w-5 text-primary" />
+                          Top Performers
+                        </h3>
+                        <Card className="overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm">
+                          <div className="overflow-x-auto">
+                            <Table >
+                              <TableHeader>
+                                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                  <TableHead className="w-[100px]">Rank</TableHead>
+                                  <TableHead>Participant</TableHead>
+                                  <TableHead>Status</TableHead>
+                                  <TableHead className="text-right">Score</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {scored.map((item, index) => (
+                                  <TableRow key={index} className="hover:bg-muted/30 transition-colors">
+                                    <TableCell className="font-medium text-muted-foreground">
+                                      #{index + 1 + winners.length}
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-3">
+                                        <div
+                                          className="h-9 w-9 rounded-full text-white flex items-center justify-center text-sm font-bold shadow-sm"
+                                          style={(() => {
+                                            const name = item.contactName || "?";
+                                            const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                                            const color1 = `hsl(${hash % 360}, 70%, 50%)`;
+                                            const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`;
+                                            return { background: `linear-gradient(135deg, ${color1}, ${color2})` };
+                                          })()}
+                                        >
+                                          {item.contactName ? item.contactName.charAt(0).toUpperCase() : "?"}
+                                        </div>
+                                        <span className="font-medium">{item.contactName}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Badge variant="outline" className="font-normal">
+                                        {item.state}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right font-bold text-primary">
+                                      {item.points}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </Card>
+                      </div>
+                    )}
+
+                    {/* 3️⃣ Participants Grid */}
+                    {zeroPoints.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                          <Users className="h-5 w-5 text-muted-foreground" />
+                          All Participants
+                        </h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                          {zeroPoints.map((item, index) => (
+                            <div
+                              key={index}
+                              className="group flex flex-col items-center p-4 rounded-xl border bg-card/30 hover:bg-card hover:shadow-md transition-all duration-300"
+                            >
+                              <div
+                                className="h-12 w-12 rounded-full mb-3 text-white flex items-center justify-center text-lg font-bold shadow-sm group-hover:scale-110 transition-transform duration-300"
+                                style={(() => {
+                                  const name = item.contactName || "?";
+                                  const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                                  const color1 = `hsl(${hash % 360}, 70%, 50%)`;
+                                  const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`;
+                                  return { background: `linear-gradient(135deg, ${color1}, ${color2})` };
+                                })()}
+                              >
+                                {item.contactName ? item.contactName.charAt(0).toUpperCase() : "?"}
+                              </div>
+                              <p className="font-semibold text-sm text-center line-clamp-1 w-full">{item.contactName}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{item.state}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {winners.length === 0 && scored.length === 0 && zeroPoints.length === 0 && (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <p>No participants found for this challenge yet.</p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </Card>
             </TabsContent>
+
             <TabsContent value="q/a">
               {!isLoggedIn ? (
                 <Card className="p-4">
@@ -797,6 +956,31 @@ export default function CorporateChallengeDetails({
               )}
             </TabsContent>
 
+            <TabsContent value="faq">
+              <Card className="p-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">FAQ</CardTitle>
+                  <CardDescription>Answer to your questions about this challenge.</CardDescription>
+                </CardHeader>
+                <CardContent >
+                  <Accordion
+                    type="single"
+                    collapsible
+                    className="w-full md:w-[95%] mx-auto"
+                  >
+                    {sampleFaqs.map((faq, index) => (
+                      <AccordionItem key={index} value={`item-${index}`}>
+                        <AccordionTrigger className='text-left hover:no-underline'>{faq.question}</AccordionTrigger>
+                        <AccordionContent className='leading-relaxed'>
+                          {faq.answer}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+
+                </CardContent>
+              </Card>
+            </TabsContent>
           </ScrollArea>
         </Tabs >
       </DialogContent >
@@ -816,7 +1000,7 @@ export default function CorporateChallengeDetails({
             className="max-h-[40vh] border rounded-md p-4 text-sm"
           >
             <div className="pr-4 space-y-4">
-              <div className="space-y-3">
+              <div className={`space-y-3 ${!scrolledToEnd ? 'text-muted-foreground' : 'text-current'}`}>
                 <h3 className="font-semibold text-lg">Originality & Ownership</h3>
                 <p>
                   All submissions must be original work, free of plagiarism, and not infringe on third-party
@@ -851,12 +1035,13 @@ export default function CorporateChallengeDetails({
                 <p>
                   Participants must accept these terms to proceed with submission.
                 </p>
+                <p>
+                  By checking the box below, you acknowledge that you have read and agree to these
+                  terms.
+                </p>
               </div>
 
-              <p>
-                By checking the box below, you acknowledge that you have read and agree to these
-                terms.
-              </p>
+
             </div>
           </ScrollArea>
 
@@ -871,7 +1056,7 @@ export default function CorporateChallengeDetails({
               className="w-4 h-4 accent-primary cursor-pointer"
             />
             <span
-              className={`text-sm ${!scrolledToEnd ? 'text-gray-400' : 'text-muted-foreground'}`}
+              className={`text-sm ${!scrolledToEnd ? 'text-muted-foreground' : 'text-current'}`}
             >
               I agree to the Terms & Conditions
             </span>

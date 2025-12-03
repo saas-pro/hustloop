@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { View } from "@/app/types";
@@ -159,8 +158,8 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
     };
 
     return (
-        <div className={`relative z-50 ${navOpen ? '' : 'pointer-events-none'}`} >
-            <nav className="menu hidden md:flex pointer-events-auto">
+        <div className={`relative z-50 ${navOpen ? '' : 'pointer-events-none'}`}>
+            <nav className="menu menu-desktop hidden xl:flex pointer-events-auto">
                 <DesktopNav
                     activeView={activeView}
                     setActiveView={setActiveView}
@@ -171,8 +170,9 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     setNavOpen={setNavOpen}
                     heroVisible={heroVisible}
                 />
-            </nav >
-            <nav className="menu flex md:hidden">
+            </nav>
+
+            <nav className="menu menu-mobile flex xl:hidden">
                 <MobileNav
                     activeView={activeView}
                     setActiveView={setActiveView}
@@ -184,5 +184,6 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
             </nav>
         </div>
 
+
     );
-}   
+}

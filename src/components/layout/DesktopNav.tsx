@@ -358,89 +358,99 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                 </div>
             </div>
 
-            <div
+            {/* 1. Static Menu (Early Bird / Contact) */}
+            <nav
+                // Changed ID to be unique
+                id="static-menu-nav"
                 className={cn(
-                    "menu-navs flex justify-center absolute top-40 left-[25%] w-1/2 m-auto text-main-color-dark transition-all duration-300 ease-in-out",
-                    navOpen
-                        ? "opacity-100 translate-y-0 visible"
-                        : "opacity-0 translate-y-5 invisible"
+                    "flex justify-center absolute top-40 left-[25%] w-1/2 m-auto transition-all duration-300 ease-in-out",
+                    navOpen ? "opacity-100 translate-y-0 visible" : "opacity-0 translate-y-5 invisible"
                 )}
-                id="menu-navs"
+                aria-label="Secondary Navigation"
             >
+                {/* Wrap in UL for Semantic SEO */}
+                <ul className="hidden md:flex items-center gap-4 text-[18px] list-none">
+                    <li>
+                        <Button asChild className="text-[18px] font-medium">
+                            <a
+                                href="#newsletter-section"
+                                onClick={(e) => handleScrollToSection(e, "newsletter-section")}
+                            >
+                                Early Bird
+                            </a>
+                        </Button>
+                    </li>
 
-                <div className="hidden md:flex items-center gap-4 text-[18px]">
-                    <Button asChild className="text-[18px] font-medium">
+                    <li>
                         <a
-                            href="#newsletter-section"
-                            onClick={(e) => handleScrollToSection(e, "newsletter-section")}
+                            href="/contact-us"
+                            className={cn(
+                                "cursor-pointer font-medium pb-1 border-b-2 border-transparent text-muted-foreground transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary"
+                            )}
                         >
-                            Early Bird
+                            Contact Us
                         </a>
-                    </Button>
-
-                    <a
-                        onClick={(e) => handleScrollToSection(e, "contact-section")}
-                        className={cn(
-                            "menu-navs text-[18px] cursor-pointer font-medium pb-1 border-b-2 border-transparent text-muted-foreground transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary"
-                        )}
-                    >
-                        Contact Us
-                    </a>
-                </div>
-            </div>
+                    </li>
+                </ul>
+            </nav>
 
 
-            {/* Primary Menu Links */}
+            {/* 2. Primary Dynamic Menu */}
             {!isStaticPage && (
-                <div
+                <nav
+                    id="menu-navs" // ✅ Unique ID
                     className={cn(
-                        "menu-navs text-slate-200 z-50 flex justify-between absolute top-20 left-[30%] w-2/5 transition-all duration-300 ease-in-out",
-                        navOpen
-                            ? "opacity-100 translate-y-0 pointer-events-auto"
-                            : "opacity-0 translate-y-5 pointer-events-none"
+                        "z-50 flex justify-between absolute top-20 left-[30%] w-2/5 transition-all duration-300 ease-in-out",
+                        navOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-5 pointer-events-none"
                     )}
-                    id="menu-navs"
+                    aria-label="Main Navigation"
                 >
-                    {navItems
-                        .filter((item) => !item.loggedIn || isLoggedIn)
-                        .map((item, index) => {
-                            const isActive = activeView === item.id;
-
-                            const className = cn(
-                                "text-[18px] font-medium pb-1 border-b-2 transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary",
-                                isActive
-                                    ? "text-foreground border-primary"
-                                    : "text-muted-foreground border-transparent"
-                            );
-
-                            if (item.label === "Pricing") {
+                    <ul className="flex w-full justify-between list-none">
+                        {navItems
+                            .filter((item) => !item.loggedIn || isLoggedIn)
+                            .map((item, index) => {
+                                const isActive = activeView === item.id;
+                                const className = cn(
+                                    "text-[18px] font-medium pb-1 border-b-2 transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary",
+                                    isActive ? "text-foreground border-primary" : "text-muted-foreground border-transparent"
+                                );
 
                                 return (
-                                    <Link key={index} href="/pricing" className={className} onClick={() => { document.body.classList.remove('nav-open'); setNavOpen(false) }}>
-                                        {item.label}
-                                    </Link>
+                                    <li key={index}>
+                                        {item.label === "Pricing" ? (
+                                            <Link
+                                                href="/pricing"
+                                                className={className}
+                                                onClick={() => {
+                                                    document.body.classList.remove('nav-open');
+                                                    setNavOpen(false);
+                                                }}
+                                            >
+                                                {item.label}
+                                            </Link>
+                                        ) : (
+                                            /* NOTE: If these buttons just change views on the same page, 
+                                               they won't get "Sitelinks" in Google. 
+                                               Sitelinks require distinct URLs (like /pricing or /#features).
+                                            */
+                                            <button
+                                                onClick={() => setActiveView(item.id)}
+                                                className={className}
+                                            >
+                                                {item.label}
+                                            </button>
+                                        )}
+                                    </li>
                                 );
-                            }
-
-                            return (
-                                <button
-                                    key={index}
-                                    onClick={() => setActiveView(item.id)}
-                                    className={className}
-                                >
-                                    {item.label}
-                                </button>
-                            );
-                        })
-                    }
-
-                </div>
+                            })}
+                    </ul>
+                </nav>
             )}
 
 
             {/* Secondary Menu Links and Socials */}
 
-        </div>
+        </div >
     )
 }
 
