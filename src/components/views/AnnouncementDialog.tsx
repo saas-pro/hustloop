@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
@@ -16,26 +16,60 @@ import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { Upload } from "lucide-react";
 
+interface Announcement {
+    id: string;
+    title: string;
+    message: string;
+    type: string;
+    attachments: string[];
+    createdBy: string;
+    createdAt: string;
+}
+
 interface AnnouncementDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    collaborationId: number;
+    collaborationId: string;
+    editingAnnouncement?: Announcement | null;
+    onAnnouncementCreated?: () => void;
 }
 
 export function AnnouncementDialog({
     open,
     onOpenChange,
     collaborationId,
+    editingAnnouncement,
+    onAnnouncementCreated,
 }: AnnouncementDialogProps) {
+    const isEditMode = !!editingAnnouncement;
+    const hasExistingAttachments = editingAnnouncement?.attachments && editingAnnouncement.attachments.length > 0;
+
     const [announcementForm, setAnnouncementForm] = useState({
-        title: "",
-        message: "",
-        type: "general",
+        title: editingAnnouncement?.title || "",
+        message: editingAnnouncement?.message || "",
+        type: editingAnnouncement?.type || "general",
     });
 
     const [attachments, setAttachments] = useState<File[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const MAX_ATTACHMENTS = 1;
+
+    // Update form when editingAnnouncement changes
+    useEffect(() => {
+        if (editingAnnouncement) {
+            setAnnouncementForm({
+                title: editingAnnouncement.title,
+                message: editingAnnouncement.message,
+                type: editingAnnouncement.type,
+            });
+        } else {
+            setAnnouncementForm({
+                title: "",
+                message: "",
+                type: "general",
+            });
+        }
+    }, [editingAnnouncement]);
     const onDrop = (event: React.DragEvent) => {
         event.preventDefault();
         const newFiles = Array.from(event.dataTransfer.files);
@@ -78,25 +112,31 @@ export function AnnouncementDialog({
             formData.append("message", announcementForm.message);
             formData.append("type", announcementForm.type);
 
-            attachments.forEach((file) => {
-                formData.append("attachments", file);
-            });
+            // Only append attachments if not in edit mode or if editing without existing attachments
+            if (!isEditMode || !hasExistingAttachments) {
+                attachments.forEach((file) => {
+                    formData.append("attachments", file);
+                });
+            }
 
-            const res = await fetch(
-                `${API_BASE_URL}/api/announcements/${collaborationId}`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                    body: formData,
-                }
-            );
+            const url = isEditMode
+                ? `${API_BASE_URL}/api/announcements/${editingAnnouncement.id}`
+                : `${API_BASE_URL}/api/announcements/${collaborationId}`;
+
+            const method = isEditMode ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: formData,
+            });
 
             if (res.ok) {
                 toast({
-                    title: "Announcement Created",
-                    description: "Your announcement is now live.",
+                    title: isEditMode ? "Announcement Updated" : "Announcement Created",
+                    description: isEditMode ? "Your announcement has been updated." : "Your announcement is now live.",
                 });
 
                 setAnnouncementForm({
@@ -105,11 +145,12 @@ export function AnnouncementDialog({
                     type: "general",
                 });
                 setAttachments([]);
+                onAnnouncementCreated?.();
                 onOpenChange(false);
             } else {
                 toast({
                     title: "Failed",
-                    description: "Unable to create announcement.",
+                    description: isEditMode ? "Unable to update announcement." : "Unable to create announcement.",
                     variant: "destructive",
                 });
             }
@@ -125,9 +166,20 @@ export function AnnouncementDialog({
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={(open) => {
+            onOpenChange(open);
+            if (!open) {
+                // Reset form when closing
+                setAnnouncementForm({
+                    title: "",
+                    message: "",
+                    type: "general",
+                });
+                setAttachments([]);
+            }
+        }}>
             <DialogContent className=" space-y-4 p-6">
-                <DialogTitle>Create Announcement</DialogTitle>
+                <DialogTitle>{isEditMode ? "Edit Announcement" : "Create Announcement"}</DialogTitle>
 
                 <div className="space-y-2">
                     <Label className="text-sm font-medium">Title <span className="text-red-500">*</span></Label>
@@ -194,53 +246,63 @@ export function AnnouncementDialog({
                 <div className="space-y-2">
                     <Label className="text-sm font-medium">Attachment (Drag & Drop)</Label>
 
-                    <div
-
-                        onDrop={attachments.length < MAX_ATTACHMENTS ? onDrop : undefined}
-                        onDragOver={attachments.length < MAX_ATTACHMENTS ? onDragOver : undefined}
-                        className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer flex flex-col items-center justify-center
+                    {hasExistingAttachments ? (
+                        <div className="border-2 border-dashed rounded-md p-6 text-center bg-muted/30 opacity-60">
+                            <p className="text-sm text-muted-foreground">
+                                Attachments cannot be modified after submission
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                                {editingAnnouncement.attachments.length} existing attachment(s)
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <div
+                                onDrop={attachments.length < MAX_ATTACHMENTS ? onDrop : undefined}
+                                onDragOver={attachments.length < MAX_ATTACHMENTS ? onDragOver : undefined}
+                                className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer flex flex-col items-center justify-center
     ${attachments.length >= MAX_ATTACHMENTS ? "opacity-50 cursor-not-allowed" : "border-muted/50 bg-muted/30 hover:border-muted/70 hover:bg-muted/50"}
   `}
-                    >
-                        <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                        <Input
-                            type="file"
-                            multiple
-                            className="hidden"
-                            id="fileUpload"
-                            disabled={attachments.length >= MAX_ATTACHMENTS}
-                            onChange={onSelectFiles}
-                        />
+                            >
+                                <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                                <Input
+                                    type="file"
+                                    multiple
+                                    className="hidden"
+                                    id="fileUpload"
+                                    disabled={attachments.length >= MAX_ATTACHMENTS}
+                                    onChange={onSelectFiles}
+                                />
 
+                                <Label htmlFor="fileUpload" className="cursor-pointer text-sm text-muted-foreground">
+                                    Drag files here or <span className="underline">browse</span>
+                                </Label>
+                            </div>
 
-                        <Label htmlFor="fileUpload" className="cursor-pointer text-sm text-muted-foreground">
-                            Drag files here or <span className="underline">browse</span>
-                        </Label>
-                    </div>
-
-                    {attachments.length > 0 && (
-                        <div className="mt-3 space-y-2">
-                            {attachments.map((file, index) => (
-                                <div
-                                    key={index}
-                                    className="flex items-center justify-between border rounded-md p-2 bg-white"
-                                >
-                                    <span className="text-sm">{file.name}</span>
-                                    <Button
-                                        className=" text-xs"
-                                        onClick={() =>
-                                            setAttachments((prev) => prev.filter((_, i) => i !== index))
-                                        }
-                                    >
-                                        Remove
-                                    </Button>
+                            {attachments.length > 0 && (
+                                <div className="mt-3 space-y-2">
+                                    {attachments.map((file, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex items-center justify-between border rounded-md p-2 bg-white"
+                                        >
+                                            <span className="text-sm">{file.name}</span>
+                                            <Button
+                                                className=" text-xs"
+                                                onClick={() =>
+                                                    setAttachments((prev) => prev.filter((_, i) => i !== index))
+                                                }
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {attachments.length}/{MAX_ATTACHMENTS} files uploaded
+                                    </p>
                                 </div>
-                            ))}
-                            <p className="text-xs text-muted-foreground mt-1">
-                                {attachments.length}/{MAX_ATTACHMENTS} files uploaded
-                            </p>
-
-                        </div>
+                            )}
+                        </>
                     )}
                 </div>
 
@@ -249,7 +311,7 @@ export function AnnouncementDialog({
                     disabled={isSubmitting}
                     className="bg-primary text-white px-4 py-2 rounded-md w-full"
                 >
-                    {isSubmitting ? "Submitting..." : "Submit Announcement"}
+                    {isSubmitting ? (isEditMode ? "Updating..." : "Submitting...") : (isEditMode ? "Update Announcement" : "Submit Announcement")}
                 </Button>
             </DialogContent>
         </Dialog>

@@ -20,6 +20,8 @@ export default function VerticalTimeline({
     screening_started: string;
     screening_ended: string;
     extended_end_date?: string | null;
+    pitching_started?: string | null;
+    pitching_ended?: string | null;
     challengeClose?: boolean | string;
   };
 }) {
@@ -68,6 +70,16 @@ export default function VerticalTimeline({
       date: timeline.screening_ended,
       title: "Screening Ended",
     },
+    {
+      id: "pitching_started",
+      date: timeline.pitching_started,
+      title: "Pitching Started",
+    },
+    {
+      id: "pitching_ended",
+      date: timeline.pitching_ended,
+      title: "Pitching Ended",
+    }
   ].filter(Boolean) as EventItem[];
 
   const safeDate = (value: string | null) =>

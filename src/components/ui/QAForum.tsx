@@ -14,6 +14,7 @@ import QAItemViewer from './QAItemViewer';
 import { toast } from '@/hooks/use-toast';
 import { jwtDecode } from "jwt-decode";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './dialog';
+import { Skeleton } from './skeleton';
 
 interface QAItem {
     id: string;
@@ -261,18 +262,18 @@ const QAItemView = ({
 
 
     const { canEdit, canDelete } = getQAactions(item);
-    console.log(item.author);
+
     return (
-        <div className="flex gap-3 text-base ">
+        <div className="flex gap-3 text-base mt-6">
             <div className="flex-1">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                     <Avatar className="h-6 w-6">
-                        <AvatarFallback>{item.author.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{item?.author?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                     <span
                         className={`font-semibold text-[14px]  ${item.isOrganizer ? 'text-foreground' : 'text-foreground'}`}
                     >
-                        {item.author}
+                        {item?.author || 'Unknown User'}
                     </span>
                     {item.isOrganizer ? (
                         <Badge variant="secondary">Organizer</Badge>
@@ -376,7 +377,7 @@ const QAItemView = ({
                 )}
 
                 <div className="mt-4 space-y-4 border-l-2 pl-4">
-                    {item.replies.map((reply) => (
+                    {(item.replies || []).map((reply) => (
                         <QAItemView
                             key={reply.id}
                             item={reply}
@@ -477,6 +478,7 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
             }
 
             const newItem = await res.json();
+
             setQaData((prev) => [newItem, ...prev]);
             setNewQuestion('');
             setNewFile(null);
@@ -601,10 +603,15 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
     const updateItemInTree = (items: QAItem[], updatedItem: QAItem): QAItem[] => {
         return items.map((item) => {
             if (item.id === updatedItem.id) {
-                return updatedItem;
+                // Merge updated data with existing item to preserve fields like role, isOrganizer, etc.
+                return {
+                    ...item,
+                    ...updatedItem,
+                    replies: updatedItem.replies || item.replies || []
+                };
             }
-            if (item.replies.length > 0) {
-                return { ...item, replies: updateItemInTree(item.replies, updatedItem) };
+            if ((item.replies || []).length > 0) {
+                return { ...item, replies: updateItemInTree(item.replies || [], updatedItem) };
             }
             return item;
         });
@@ -648,6 +655,7 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
 
             const updatedItem = await res.json();
             setQaData((prev) => updateItemInTree(prev, updatedItem));
+            console.log(qaData)
             toast({
                 title: "Updated successfully",
                 description: "Your item has been updated.",
@@ -666,16 +674,18 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
 
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <HelpCircle className="h-6 w-6" />
-                    Q&amp;A Forum
-                </CardTitle>
-                <CardDescription>Ask questions, get answers, and engage with the community.</CardDescription>
-            </CardHeader>
+        <Card className="border shadow-sm p-4 min-h-[400px]">
+            <div className="mb-8 text-left m-3">
+                <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                    <HelpCircle className="h-8 w-8" />
+                    Q/A Forum
+                </h2>
+                <p className="text-muted-foreground">
+                    Ask questions and collaborate with others on this challenge.
+                </p>
+            </div>
 
-            <CardContent className="space-y-6">
+            <CardContent>
                 <div className="space-y-3 p-4 border rounded-lg bg-background">
                     {isExpired ? (
                         <div className="text-center py-6 text-muted-foreground">
@@ -737,18 +747,34 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
 
                 </div>
                 {newFile && <p className="text-xs text-muted-foreground">Selected: {newFile.name}</p>}
-
-                <Separator />
+                <div className='mt-4'>
+                    <Separator />
+                </div>
 
                 {loading ? (
-                    <p className="text-center text-muted-foreground">Loading Q&amp;A...</p>
+                    <div className="space-y-6 mt-5">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex gap-3">
+                                <Skeleton className="h-6 w-6 rounded-full flex-shrink-0" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-4 w-16" />
+                                        <Skeleton className="h-4 w-12" />
+                                    </div>
+                                    <Skeleton className="h-20 w-full" />
+                                    <Skeleton className="h-4 w-32" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 ) : qaData.length === 0 ? (
-                    <p className="text-center text-muted-foreground">No questions yet.</p>
+                    <p className="text-center text-muted-foreground mt-5">No questions yet.</p>
                 ) : (
                     <div className="space-y-6">
-                        {qaData.map((item) => (
+                        {qaData.map((item, id) => (
                             <QAItemView
-                                key={item.id}
+                                key={id}
                                 item={item}
                                 onReply={setReplyingTo}
                                 replyingTo={replyingTo}

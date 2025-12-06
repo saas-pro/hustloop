@@ -17,7 +17,6 @@ export const CorporateChallengeCard = ({
     ) => void;
 }) => {
     const { progress, daysRemaining } = useChallengeProgress(challenge);
-    console.log(challenge)
     const isClosed =
         challenge.status === "stopped" ||
         challenge.status === "expired";

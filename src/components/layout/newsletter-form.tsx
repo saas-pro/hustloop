@@ -64,7 +64,7 @@ export default function NewsletterForm() {
     <div className="text-center max-w-2xl mx-auto">
       <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">Stay in the loop!</h2>
       <p className="text-muted-foreground mb-8">
-        Turn your idea into impact. Join our waitlist today and get 1 year of free access when we launch!
+        Turn your idea into impact. Join our waitlist today and get 100% off your first subscription when we launch.
       </p>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start max-w-lg mx-auto gap-2">

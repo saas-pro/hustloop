@@ -83,13 +83,13 @@ export default function SectorSearchWithDropdown({
         } else {
             setSelected(null);
         }
-    }, [defaultValue, flattened,sectorFilter]);
+    }, [defaultValue, flattened, sectorFilter]);
 
     React.useEffect(() => {
-        if (data.length > 0) {
-            setSectorFilter((prev) => prev || String(data[0].id));
+        if (data.length > 0 && !sectorFilter) {
+            setSectorFilter(String(data[0].id));
         }
-    }, [data,sectorFilter]);
+    }, [data, sectorFilter]);
 
     const filtered: SelectedItem[] = React.useMemo(() => {
         const q = search.trim().toLowerCase()
@@ -193,7 +193,7 @@ export default function SectorSearchWithDropdown({
 
                 <Select value={sectorFilter} onValueChange={setSectorFilter}>
                     <SelectTrigger className="w-2/5 justify-between">
-                        <SelectValue placeholder={sectorBtnLabel} />
+                        <SelectValue placeholder="Select Sector" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup className="max-h-[220px]">

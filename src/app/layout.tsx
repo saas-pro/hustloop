@@ -19,18 +19,18 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://hustloop.com'),
   title: {
-    default: 'Hustloop',
+    default: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
     template: '%s | Hustloop',
   },
-  description: 'Open talent, Real impact. A dynamic ecosystem for problem solving and technology transfer. We connect founders, enablers, innovators, and students to collaborate, build startups, and drive meaningful innovation together.',
+  description: 'Hustloop is an open innovation and startup collaboration platform that connects founders, MSMEs, innovators, and students to solve real business challenges and drive technology transfer.',
   keywords: ['startup', 'innovation', 'team', 'incentive challenge', 'collaboration', 'founders', 'students', 'technology transfer', 'ecosystem'],
   authors: [{ name: 'Hustloop' }],
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: 'https://hustloop.com',
-    title: 'Hustloop',
-    description: 'Open talent, Real impact. A dynamic ecosystem for problem solving and technology transfer. We connect founders, enablers, innovators, and students to collaborate, build startups, and drive meaningful innovation together.',
+    title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
+    description: 'Hustloop is an open innovation and startup collaboration platform that connects founders, MSMEs, innovators, and students to solve real business challenges and drive technology transfer.',
     siteName: 'Hustloop',
     images: [
       {
@@ -43,8 +43,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hustloop',
-    description: 'Open talent, Real impact. A dynamic ecosystem for problem solving and technology transfer. We connect founders, enablers, innovators, and students to collaborate, build startups, and drive meaningful innovation together.',
+    title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
+    description: 'Hustloop is an open innovation and startup collaboration platform that connects founders, MSMEs, innovators, and students to solve real business challenges and drive technology transfer.',
     images: ['/logo.png'],
   },
   robots: {
@@ -79,27 +79,23 @@ export default function RootLayout({
           <Toaster />
         </ThemeProvider>
         <Script id="org-schema" type="application/ld+json">
-          {`
-          {
+          {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Organization",
             "name": "Hustloop",
             "url": "https://hustloop.com",
-            "description": "Open talent, real impact. Hustloop connects founders, innovators, MSMEs, and students to collaborate, solve challenges, and accelerate startup growth.",
+            "description": "Hustloop is an open innovation and startup collaboration platform that connects founders, MSMEs, innovators, and students to solve real business challenges and drive technology transfer.",
             "logo": "https://hustloop.com/logo.png"
-          }
-          `}
+          })}
         </Script>
         <Script id="website-schema" type="application/ld+json">
-          {`
-            {
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              "name": "Hustloop",
-              "description": "Open talent, real impact. Hustloop connects founders, innovators, MSMEs, and students to collaborate, solve challenges, and accelerate startup growth.",
-              "url": "https://hustloop.com"
-            }
-          `}
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Hustloop",
+            "description": "Hustloop is an open innovation and startup collaboration platform that connects founders, MSMEs, innovators, and students to solve real business challenges and drive technology transfer.",
+            "url": "https://hustloop.com"
+          })}
         </Script>
         <GoogleAnalytics />
         <MicrosoftClarity />

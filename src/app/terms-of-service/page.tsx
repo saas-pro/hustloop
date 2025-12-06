@@ -45,9 +45,9 @@ export default function TermsOfServicePage() {
   // Dummy props for Header
   const headerProps = {
     activeView: 'home' as const,
-    setActiveView: () => {},
+    setActiveView: () => { },
     isLoggedIn: false,
-    onLogout: () => {},
+    onLogout: () => { },
     isLoading: false,
     isStaticPage: true,
     navOpen,
@@ -81,9 +81,8 @@ export default function TermsOfServicePage() {
       </div>
       <Header {...headerProps} />
       <main
-        className={`flex-grow container relative z-40 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:pb-4 md:pt-14 ${
-          navOpen ? 'overflow-hidden' : 'overflow-auto'
-        } pt-20 md:pt-20`}
+        className={`flex-grow container relative z-40 ultrawide-fix m-auto pointer-events-auto px-4 py-12 md:pb-4 md:pt-14 ${navOpen ? 'overflow-hidden' : 'overflow-auto'
+          } pt-20 md:pt-20`}
         id="main-view1"
         data-alt-id="card-anchor"
       >
@@ -109,10 +108,10 @@ export default function TermsOfServicePage() {
               className="max-h-[60vh] pr-6 overflow-auto touch-auto"
               style={{
                 WebkitOverflowScrolling: 'touch',
-                overscrollBehavior: 'contain', 
+                overscrollBehavior: 'contain',
               }}
             >
-              <div className="space-y-6 prose dark:prose-invert max-w-none">
+              <div className="space-y-6 max-w-none">
                 <p>
                   Please read these Terms of Service (&quot;Terms&quot;, &quot;Terms
                   of Service&quot;) carefully before using the Hustloop website

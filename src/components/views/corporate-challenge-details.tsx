@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award, Lock, FileText, Trophy, Star, Medal, Users } from 'lucide-react';
+import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award, Lock, FileText, Trophy, Star, Medal, Users, Clock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -46,6 +46,26 @@ import {
 } from "@/components/ui/accordion"
 import { LoadingButton } from "../ui/loading-button";
 import TimelineCounter from '../ui/timeline-counter';
+import { Skeleton } from '../ui/skeleton';
+import { AnnouncementDialog } from './AnnouncementDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from '@/hooks/use-toast';
+import { string } from 'zod';
 
 interface CorporateChallengeDetailsProps {
   challenge: CorporateChallenge | null;
@@ -113,6 +133,7 @@ type Announcement = {
   message: string;
   type: string;
   attachments: string[];
+  createdBy: string;
   createdAt: string;
 }
 
@@ -187,7 +208,11 @@ export default function CorporateChallengeDetails({
   const [data, setData] = useState<hallOfFame[]>([]);
   const [search, setSearch] = useState("");
   const [scrolled, setScrolled] = useState(false);
-
+  const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
+  const [collaborationId, setCollaborationId] = useState<string>("")
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [deleteAnnouncementId, setDeleteAnnouncementId] = useState<string | null>(null);
+  const [isFetchingAnnouncements, setIsFetchingAnnouncements] = useState(false);
   const handleScrollCapture = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     setScrolled(el.scrollTop > 0);
@@ -213,6 +238,78 @@ export default function CorporateChallengeDetails({
 
     getHallOfFame();
   }, [challenge]);
+
+  const fetchAnnouncements = useCallback(async () => {
+    if (!challenge?.id) return;
+
+    setIsFetchingAnnouncements(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/announcements/${challenge.id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      const data = await res.json();
+      setAnnouncements(data.announcements || []);
+    } catch (error) {
+      console.error("Failed to fetch announcements:", error);
+    } finally {
+      setIsFetchingAnnouncements(false);
+    }
+  }, [challenge]);
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
+
+  const handleEditAnnouncement = (announcement: Announcement) => {
+    setEditingAnnouncement(announcement);
+    setIsAnnouncementDialogOpen(true);
+  };
+
+  const handleDeleteAnnouncement = async () => {
+    if (!deleteAnnouncementId) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/announcements/${deleteAnnouncementId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (res.ok) {
+        toast({
+          title: "Announcement Deleted",
+          description: "The announcement has been removed.",
+        });
+        fetchAnnouncements();
+        setDeleteAnnouncementId(null);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete announcement.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting announcement", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while deleting.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAnnouncementDialogClose = (open: boolean) => {
+    setIsAnnouncementDialogOpen(open);
+    if (!open) {
+      setEditingAnnouncement(null);
+    }
+  };
+
+  console.log(announcements)
 
 
   useEffect(() => {
@@ -264,7 +361,6 @@ export default function CorporateChallengeDetails({
   if (!challenge) return null;
   const userRole = localStorage.getItem("userRole") || "";
   const founderRole = localStorage.getItem("founder_role") || "";
-  console.log(founderRole)
 
   const isAllowedFounder =
     userRole.includes("founder") &&
@@ -357,7 +453,16 @@ export default function CorporateChallengeDetails({
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 h-fit">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="announcement">Announcements</TabsTrigger>
+            <TabsTrigger value="announcement">
+              <span className="flex items-center gap-2">
+                Announcements
+                {announcements && announcements.length >= 0 && (
+                  <span className="inline-flex items-center justify-center h-5 w-5 font-semibold rounded-full bg-primary text-primary-foreground">
+                    {announcements.length}
+                  </span>
+                )}
+              </span>
+            </TabsTrigger>
             <TabsTrigger value="hof">Hall of Fame</TabsTrigger>
             <TabsTrigger value="q/a">Q/A</TabsTrigger>
             <TabsTrigger value="faq">FAQ</TabsTrigger>
@@ -479,7 +584,7 @@ export default function CorporateChallengeDetails({
                       <CardHeader className="items-center">
                         <Timer className="h-8 w-8 text-primary mb-2" />
                         <CardTitle className="text-2xl font-bold">
-                          {new Date(challenge.end_date).toLocaleDateString("en-US")}
+                          {new Date(challenge.end_date).toLocaleDateString()}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">End Date</p>
                       </CardHeader>
@@ -629,22 +734,27 @@ export default function CorporateChallengeDetails({
             </div>
 
             <TabsContent value="timeline">
-              <Card className="p-4">
-                <CardHeader >
-                  <CardTitle>Challenge Timeline</CardTitle>
-                  <CardDescription>
+              <Card className="p-4 min-h-[400px]">
+                <div className="mb-8 text-left m-3">
+                  <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                    <Clock className="h-8 w-8" />
+                    Challenge Timeline
+                  </h2>
+                  <p className="text-muted-foreground">
                     Track the progress of the challenge from start to finish.
-                  </CardDescription>
-                </CardHeader>
+                  </p>
+                </div>
 
                 <CardContent className="flex flex-col items-center mt-6">
 
                   {!isLoggedIn ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                      <Lock size={"64"} />
-                      <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
+                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                        <Lock className="h-8 w-8" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
                       <p className="max-w-xs text-sm">
-                        You must be logged in to view the challenge timeline.
+                        Please log in to view the challenge timeline.
                       </p>
                     </div>
                   ) : (
@@ -652,7 +762,21 @@ export default function CorporateChallengeDetails({
                       {events ? (
                         <VerticalTimeline timeline={events} />
                       ) : (
-                        <p className="text-muted-foreground">Loading timeline...</p>
+                        <div className="space-y-6 w-full">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex gap-4">
+                              <div className="flex flex-col items-center">
+                                <Skeleton className="h-10 w-10 rounded-full" />
+                                {i < 3 && <Skeleton className="w-0.5 h-16 mt-2" />}
+                              </div>
+                              <div className="flex-1 space-y-2 pb-8">
+                                <Skeleton className="h-6 w-1/3" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-2/3" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </>
                   )}
@@ -663,22 +787,50 @@ export default function CorporateChallengeDetails({
 
 
             <TabsContent value="announcement">
-              <Card className="border shadow-sm p-4">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    Announcements
-                  </CardTitle>
-                  <CardDescription>
-                    Updates and important information for this challenge.
-                  </CardDescription>
-                </CardHeader>
+              <Card className="border shadow-sm p-4 min-h-[400px]">
+                <div className="mb-8 text-left m-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                        <MessageSquare className="h-8 w-8" />
+                        Announcements
+                      </h2>
+                      <p className="text-muted-foreground">
+                        Updates and important information for this challenge.
+                      </p>
+                    </div>
+                    {localStorage.getItem("userRole") === "admin" && (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setCollaborationId(challenge.id)
+                          setIsAnnouncementDialogOpen(true);
+                        }}
+                      >
+                        + Create Announcement
+                      </Button>
+                    )}
+                  </div>
+                </div>
 
                 <CardContent className="p-4">
                   {!isLoggedIn ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                      <Lock size={"64"} />
-                      <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
-                      <p className="max-w-xs text-sm">You must be logged in to view announcements.</p>
+                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                        <Lock className="h-8 w-8" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
+                      <p className="max-w-xs text-sm">Please log in to view announcements.</p>
+                    </div>
+                  ) : isFetchingAnnouncements ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <Card key={i} className="p-5">
+                          <Skeleton className="h-6 w-3/4 mb-2" />
+                          <Skeleton className="h-4 w-full mb-2" />
+                          <Skeleton className="h-4 w-5/6" />
+                        </Card>
+                      ))}
                     </div>
                   ) : (
                     <>
@@ -701,7 +853,7 @@ export default function CorporateChallengeDetails({
                   hover:border-primary/40 hover:bg-primary/5"
                             >
                               <div className="flex items-start justify-between mb-4">
-                                <div>
+                                <div className="flex-1">
                                   <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
                                     {a.type === "alert" && <span className="text-red-500">⚠️</span>}
                                     {a.type === "update" && <span className="text-blue-500">📢</span>}
@@ -712,12 +864,49 @@ export default function CorporateChallengeDetails({
                                   </h3>
                                 </div>
 
-                                <Badge
-                                  variant="secondary"
-                                  className="text-xs capitalize px-3 py-1 rounded-full"
-                                >
-                                  {a.type}
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs capitalize px-3 py-1 rounded-full"
+                                  >
+                                    {a.type}
+                                  </Badge>
+
+                                  {a.createdBy && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs px-3 py-1 rounded-full"
+                                    >
+                                      {a.createdBy}
+                                    </Badge>
+                                  )}
+
+                                  {localStorage.getItem("userRole") === "admin" && (
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                          <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                          className="cursor-pointer"
+                                          onClick={() => handleEditAnnouncement(a)}
+                                        >
+                                          <Pencil className="h-4 w-4 mr-2" />
+                                          Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          className="cursor-pointer text-destructive"
+                                          onClick={() => setDeleteAnnouncementId(a.id)}
+                                        >
+                                          <Trash2 className="h-4 w-4 mr-2" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  )}
+                                </div>
                               </div>
 
                               <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
@@ -764,10 +953,11 @@ export default function CorporateChallengeDetails({
             </TabsContent>
 
 
-            <TabsContent value="hof">
-              <Card className="border-none shadow-none bg-transparent">
+            <TabsContent value="hof" >
+              <Card className="border shadow-sm p-4 min-h-[400px]">
                 <div className="mb-8 text-left m-3">
-                  <h2 className="text-3xl font-bold tracking-tight inline-block">
+                  <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                    <Trophy className="h-8 w-8" />
                     Hall of Fame
                   </h2>
                   <p className="text-muted-foreground">
@@ -776,15 +966,13 @@ export default function CorporateChallengeDetails({
                 </div>
 
                 {!isLoggedIn ? (
-                  <Card className="p-8 border-dashed">
-                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                        <Lock className="h-8 w-8" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-foreground mb-2">Access Restricted</h3>
-                      <p className="max-w-xs text-sm">`{"Please log in to view the Hall of Fame and see who's leading the challenge."}`</p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <Lock className="h-8 w-8" />
                     </div>
-                  </Card>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
+                    <p className="max-w-xs text-sm">{"Please log in to view the Hall of Fame and see who's leading the challenge."}</p>
+                  </div>
                 ) : (
                   <div className="space-y-10">
                     {/* 1️⃣ Winner Podium Section */}
@@ -844,7 +1032,7 @@ export default function CorporateChallengeDetails({
                         </h3>
                         <Card className="overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm">
                           <div className="overflow-x-auto">
-                            <Table >
+                            <Table>
                               <TableHeader>
                                 <TableRow className="bg-muted/50 hover:bg-muted/50">
                                   <TableHead className="w-[100px]">Rank</TableHead>
@@ -927,8 +1115,11 @@ export default function CorporateChallengeDetails({
                     )}
 
                     {winners.length === 0 && scored.length === 0 && zeroPoints.length === 0 && (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <p>No participants found for this challenge yet.</p>
+                      <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                        <h3 className="text-lg font-semibold text-foreground">No Participants Yet</h3>
+                        <p className="max-w-xs text-sm">
+                          No participants have joined this challenge yet.
+                        </p>
                       </div>
                     )}
                   </div>
@@ -938,15 +1129,22 @@ export default function CorporateChallengeDetails({
 
             <TabsContent value="q/a">
               {!isLoggedIn ? (
-                <Card className="p-4">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">Q/A Forum</CardTitle>
-                    <CardDescription>Ask questions and collaborate with others on this challenge.</CardDescription>
-                  </CardHeader>
-                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                    <Lock size={"64"} />
-                    <h3 className="text-lg font-semibold text-foreground">Please Log In</h3>
-                    <p className="max-w-xs text-sm">You must be logged in to view the Q/A forum.</p>
+                <Card className="border shadow-sm p-4 min-h-[400px]">
+                  <div className="mb-8 text-left m-3">
+                    <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                      <HelpCircle className="h-8 w-8" />
+                      Q/A Forum
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Ask questions and collaborate with others on this challenge.
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <Lock className="h-8 w-8" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
+                    <p className="max-w-xs text-sm">Please log in to view the Q/A forum.</p>
                   </div>
                   <CardContent>
                   </CardContent>
@@ -957,11 +1155,16 @@ export default function CorporateChallengeDetails({
             </TabsContent>
 
             <TabsContent value="faq">
-              <Card className="p-4">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">FAQ</CardTitle>
-                  <CardDescription>Answer to your questions about this challenge.</CardDescription>
-                </CardHeader>
+              <Card className="border shadow-sm p-4 min-h-[400px]">
+                <div>
+                  <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                    <HelpCircle className="h-8 w-8" />
+                    FAQ
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Answer to your questions about this challenge.
+                  </p>
+                </div>
                 <CardContent >
                   <Accordion
                     type="single"
@@ -1091,8 +1294,37 @@ export default function CorporateChallengeDetails({
               onCancel={handleCancelSubmission}
             />
           )}
+
+
         </DialogContent>
       </Dialog>
+      <AnnouncementDialog
+        open={isAnnouncementDialogOpen}
+        onOpenChange={handleAnnouncementDialogClose}
+        collaborationId={collaborationId}
+        editingAnnouncement={editingAnnouncement}
+        onAnnouncementCreated={fetchAnnouncements}
+      />
+
+      <AlertDialog open={!!deleteAnnouncementId} onOpenChange={(open) => !open && setDeleteAnnouncementId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Announcement?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. Are you sure you want to delete this announcement?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAnnouncement}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog >
   );
 }

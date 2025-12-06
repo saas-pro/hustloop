@@ -111,7 +111,7 @@ export default function PrivacyPolicyPage() {
                 overscrollBehavior: 'contain', // Prevents scroll chaining
               }}
             >
-              <div className="space-y-6 prose dark:prose-invert">
+              <div className="space-y-6">
                 <p>
                   Hustloop (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;)
                   is committed to protecting your privacy. This Privacy Policy

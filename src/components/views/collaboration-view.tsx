@@ -3,16 +3,19 @@ import { API_BASE_URL } from '@/lib/api';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { Info, Edit, X, Save, Trash2, FileText, MoreVertical } from 'lucide-react';
+import { Info, Edit, X, Save, Trash2, FileText, MoreVertical, Upload } from 'lucide-react';
 import { MarkdownViewer } from '../ui/markdownViewer';
 import { Button } from '../ui/button';
-import { AnnouncementDialog } from './AnnouncementDialog';
+import { Skeleton } from '../ui/skeleton';
+import { Badge } from '../ui/badge';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup } from '../ui/select';
 import SectorSearchWithDropdown from '../ui/SectorSearchWithDropdown';
 import ChallengeMarkdownEditor from '../ui/ChallengeMarkdown';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
@@ -94,12 +97,22 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
 
     const [isFetching, setIsFetching] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(true);
-    const [announcementOpen, setAnnouncementOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(initialEditMode);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [sectors, setSectors] = useState<SectorData[]>([]);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [announcements, setAnnouncements] = useState<any[]>([]);
+    const [isFetchingAnnouncements, setIsFetchingAnnouncements] = useState(false);
+    const [isCreatingAnnouncement, setIsCreatingAnnouncement] = useState(false);
+    const [isSubmittingAnnouncement, setIsSubmittingAnnouncement] = useState(false);
+    const [isEditingAnnouncement, setIsEditingAnnouncement] = useState(false);
+    const [editingAnnouncementData, setEditingAnnouncementData] = useState<any>(null);
+    const [announcementForm, setAnnouncementForm] = useState({
+        title: "",
+        message: "",
+        type: "general",
+    });
+    const [announcementAttachments, setAnnouncementAttachments] = useState<File[]>([]);
 
     const [activeTab, setActiveTab] = useState("overview");
 
@@ -174,6 +187,7 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
     }, [collaborationId, editForm]);
 
     const fetchAnnouncements = useCallback(async () => {
+        setIsFetchingAnnouncements(true);
         try {
             const res = await fetch(`${API_BASE_URL}/api/announcements/${collaborationId}`, {
                 headers: {
@@ -186,6 +200,8 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
             }
         } catch (error) {
             console.error("Failed to fetch announcements", error);
+        } finally {
+            setIsFetchingAnnouncements(false);
         }
     }, [collaborationId]);
 
@@ -194,12 +210,6 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
         fetchSectors();
         fetchAnnouncements();
     }, [collaborationId, fetchCollabDetails, fetchAnnouncements]);
-
-    useEffect(() => {
-        if (announcements.length === 0 && activeTab === "announcements") {
-            setActiveTab("overview");
-        }
-    }, [announcements, activeTab]);
 
 
     const safeParse = (jsonString: string | any[]) => {
@@ -321,6 +331,93 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
         }
     };
 
+    const handleSubmitAnnouncement = async () => {
+        if (!announcementForm.title.trim() || !announcementForm.message.trim()) {
+            toast({
+                title: "Validation Error",
+                description: "Title and message are required.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsSubmittingAnnouncement(true);
+
+        try {
+            const formData = new FormData();
+            formData.append("title", announcementForm.title);
+            formData.append("message", announcementForm.message);
+            formData.append("type", announcementForm.type);
+
+            announcementAttachments.forEach((file) => {
+                formData.append("attachments", file);
+            });
+
+            // Determine if we're editing or creating
+            const isEditing = isEditingAnnouncement && editingAnnouncementData;
+            const url = isEditing
+                ? `${API_BASE_URL}/api/announcements/${editingAnnouncementData.id}`
+                : `${API_BASE_URL}/api/announcements/${collaborationId}`;
+            const method = isEditing ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method: method,
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: formData,
+            });
+
+            if (res.ok) {
+                toast({
+                    title: isEditing ? "Announcement Updated" : "Announcement Created",
+                    description: isEditing ? "Your announcement has been updated." : "Your announcement is now live.",
+                });
+
+                // Reset form and states
+                setAnnouncementForm({
+                    title: "",
+                    message: "",
+                    type: "general",
+                });
+                setAnnouncementAttachments([]);
+                setIsCreatingAnnouncement(false);
+                setIsEditingAnnouncement(false);
+                setEditingAnnouncementData(null);
+
+                // Refresh announcements
+                await fetchAnnouncements();
+            } else {
+                toast({
+                    title: "Failed",
+                    description: isEditing ? "Unable to update announcement." : "Unable to create announcement.",
+                    variant: "destructive",
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Server error occurred.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubmittingAnnouncement(false);
+        }
+    };
+
+    const handleEditAnnouncement = (announcement: any) => {
+        setEditingAnnouncementData(announcement);
+        setAnnouncementForm({
+            title: announcement.title,
+            message: announcement.message,
+            type: announcement.type || "general",
+        });
+        // Note: Can't pre-populate file attachments from URLs
+        setAnnouncementAttachments([]);
+        setIsEditingAnnouncement(true);
+        setIsCreatingAnnouncement(true); // Reuse the same form UI
+    };
+
     function formatPrettyDate(date: Date) {
         const months = [
             "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -362,7 +459,7 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                     </DialogTitle>
 
                 </div>
-                <div className='flex justify-end gap-2'>
+                {activeTab === "overview" && <div className='flex justify-end gap-2'>
                     {!isEditMode && (
                         <Button
                             variant="destructive"
@@ -408,14 +505,12 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                             </>
                         )}
                     </Button>
-                </div>
+                </div>}
                 <div className="flex-grow overflow-y-auto px-4 pb-4 space-y-4">
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className={`grid w-full ${announcements.length > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                        <TabsList className={`grid w-full grid-cols-2`}>
                             <TabsTrigger value="overview">Overview</TabsTrigger>
-                            {(announcements.length > 0) && (
-                                <TabsTrigger value="announcements">Announcements</TabsTrigger>
-                            )}
+                            <TabsTrigger value="announcements">Announcements</TabsTrigger>
                         </TabsList>
                         <TabsContent value="overview">
                             {!isEditMode ? (
@@ -482,16 +577,6 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                                             </CardContent>
                                         </Card>
                                     )}
-                                    {/* Floating Button */}
-                                    {collabDetails?.status !== 'stopped' && <Button
-                                        onClick={() => setAnnouncementOpen(true)}
-                                        className="
-    bg-primary text-white px-4 py-2 rounded-md 
-    absolute bottom-4 right-4 shadow-lg z-50
-  "
-                                    >
-                                        + Create Announcement
-                                    </Button>}
                                 </>
                             ) : (
                                 // Edit Mode
@@ -657,95 +742,331 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                                 </Card>
                             )}
                         </TabsContent>
-                        {announcements.length > 0 && (
-                            <TabsContent value="announcements">
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <h2 className="text-lg font-semibold">Announcements</h2>
-                                        {collabDetails?.status !== 'stopped' && <Button onClick={() => setAnnouncementOpen(true)} >
+                        <TabsContent value="announcements">
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-lg font-semibold">Announcements</h2>
+                                    {collabDetails?.status !== 'stopped' && !isCreatingAnnouncement && (
+                                        <Button onClick={() => setIsCreatingAnnouncement(true)}>
                                             + New Announcement
-                                        </Button>}
-                                    </div>
-
-                                    {announcements.length === 0 ? (
-                                        <p className="text-center text-muted-foreground py-8">
-                                            No announcements yet.
-                                        </p>
-                                    ) : (
-                                        announcements.map((announcement) => (
-                                            <Card key={announcement.id} className="relative">
-                                                <CardHeader className="pb-2">
-                                                    <div className="flex justify-between items-start">
-                                                        <div>
-                                                            <CardTitle className="text-base font-bold">
-                                                                {announcement.title}
-                                                            </CardTitle>
-                                                            <CardDescription>
-                                                                {formatPrettyDate(new Date(announcement.createdAt))}
-                                                            </CardDescription>
-                                                        </div>
-                                                        <AlertDialog>
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                                        <MoreVertical className="h-4 w-4" />
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    <AlertDialogTrigger asChild>
-                                                                        <DropdownMenuItem className="text-red-600">
-                                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                                            Delete
-                                                                        </DropdownMenuItem>
-                                                                    </AlertDialogTrigger>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Delete Announcement?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        This action cannot be undone. This will permanently remove the announcement.
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction
-                                                                        className="bg-red-600 hover:bg-red-700"
-                                                                        onClick={() => handleDeleteAnnouncement(announcement.id)}
-                                                                    >
-                                                                        Confirm
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <p className="text-sm whitespace-pre-wrap">{announcement.message}</p>
-                                                    {safeParse(announcement.attachments).length > 0 && (
-                                                        <div className="mt-2 flex flex-wrap gap-2">
-                                                            {safeParse(announcement.attachments).map((url: string, idx: number) => (
-                                                                <a
-                                                                    key={idx}
-                                                                    href={url}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="text-xs bg-muted px-2 py-1 rounded-md hover:bg-muted/80 flex items-center gap-1"
-                                                                >
-                                                                    <FileText className="h-3 w-3" />
-                                                                    Attachment {idx + 1}
-                                                                </a>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </CardContent>
-                                            </Card>
-                                        ))
+                                        </Button>
                                     )}
                                 </div>
-                            </TabsContent>
-                        )}
+
+                                {/* Inline Announcement Creation Form */}
+                                {isCreatingAnnouncement && (
+                                    <Card className="border-primary/50 bg-primary-foreground/20">
+                                        <CardHeader className="p-4">
+                                            <div className="flex justify-between items-center">
+                                                <CardTitle className="text-lg font-bold">
+                                                    {isEditingAnnouncement ? "Edit Announcement" : "Create Announcement"}
+                                                </CardTitle>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setIsCreatingAnnouncement(false);
+                                                        setIsEditingAnnouncement(false);
+                                                        setEditingAnnouncementData(null);
+                                                        setAnnouncementForm({ title: "", message: "", type: "general" });
+                                                        setAnnouncementAttachments([]);
+                                                    }}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="p-4 pt-0 space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium">
+                                                    Title <span className="text-red-500">*</span>
+                                                </Label>
+                                                <div className="relative">
+                                                    <Input
+                                                        type="text"
+                                                        placeholder="Enter announcement title..."
+                                                        className="w-full pr-16"
+                                                        value={announcementForm.title}
+                                                        maxLength={300}
+                                                        onChange={(e) =>
+                                                            setAnnouncementForm((f) => ({ ...f, title: e.target.value }))
+                                                        }
+                                                    />
+                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                                                        {announcementForm.title.length}/300
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium">
+                                                    Message <span className="text-red-500">*</span>
+                                                </Label>
+                                                <div className="relative">
+                                                    <Textarea
+                                                        placeholder="Write the announcement message..."
+                                                        className="w-full h-28 pb-6"
+                                                        value={announcementForm.message}
+                                                        maxLength={300}
+                                                        onChange={(e) =>
+                                                            setAnnouncementForm((f) => ({ ...f, message: e.target.value }))
+                                                        }
+                                                    />
+                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                        {announcementForm.message.length}/300
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium">Type</Label>
+                                                <Select
+                                                    value={announcementForm.type}
+                                                    onValueChange={(value) =>
+                                                        setAnnouncementForm((f) => ({ ...f, type: value }))
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select announcement type" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectGroup>
+                                                            <SelectItem value="general">General</SelectItem>
+                                                            <SelectItem value="update">Update</SelectItem>
+                                                            <SelectItem value="alert">Alert</SelectItem>
+                                                            <SelectItem value="deadline">Deadline</SelectItem>
+                                                            <SelectItem value="result">Result</SelectItem>
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-medium">Attachment (Drag & Drop)</Label>
+                                                <div
+                                                    onDrop={(e) => {
+                                                        e.preventDefault();
+                                                        if (announcementAttachments.length >= 1) return;
+                                                        const newFiles = Array.from(e.dataTransfer.files);
+                                                        if (announcementAttachments.length + newFiles.length > 1) {
+                                                            toast({
+                                                                title: "Limit Exceeded",
+                                                                description: "You can upload a maximum of 1 attachment.",
+                                                                variant: "destructive",
+                                                            });
+                                                            return;
+                                                        }
+                                                        setAnnouncementAttachments((prev) => [...prev, ...newFiles]);
+                                                    }}
+                                                    onDragOver={(e) => e.preventDefault()}
+                                                    className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer flex flex-col items-center justify-center ${announcementAttachments.length >= 1
+                                                        ? "opacity-50 cursor-not-allowed"
+                                                        : "border-muted/50 bg-muted/30 hover:border-muted/70 hover:bg-muted/50"
+                                                        }`}
+                                                >
+                                                    <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                                                    <Input
+                                                        type="file"
+                                                        className="hidden"
+                                                        id="announcementFileUpload"
+                                                        disabled={announcementAttachments.length >= 1}
+                                                        onChange={(e) => {
+                                                            const newFiles = Array.from(e.target.files || []);
+                                                            if (announcementAttachments.length + newFiles.length > 1) {
+                                                                toast({
+                                                                    title: "Limit Exceeded",
+                                                                    description: "Only 1 attachment is allowed.",
+                                                                    variant: "destructive",
+                                                                });
+                                                                return;
+                                                            }
+                                                            setAnnouncementAttachments((prev) => [...prev, ...newFiles]);
+                                                        }}
+                                                    />
+                                                    <Label
+                                                        htmlFor="announcementFileUpload"
+                                                        className="cursor-pointer text-sm text-muted-foreground"
+                                                    >
+                                                        Drag files here or <span className="underline">browse</span>
+                                                    </Label>
+                                                </div>
+
+                                                {announcementAttachments.length > 0 && (
+                                                    <div className="mt-3 space-y-2">
+                                                        {announcementAttachments.map((file, index) => (
+                                                            <div
+                                                                key={index}
+                                                                className="flex items-center justify-between border rounded-md p-2 bg-background"
+                                                            >
+                                                                <span className="text-sm">{file.name}</span>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="text-xs"
+                                                                    onClick={() =>
+                                                                        setAnnouncementAttachments((prev) =>
+                                                                            prev.filter((_, i) => i !== index)
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Remove
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                            {announcementAttachments.length}/1 files uploaded
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex gap-2 pt-2">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setIsCreatingAnnouncement(false);
+                                                        setIsEditingAnnouncement(false);
+                                                        setEditingAnnouncementData(null);
+                                                        setAnnouncementForm({ title: "", message: "", type: "general" });
+                                                        setAnnouncementAttachments([]);
+                                                    }}
+                                                    className="flex-1"
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    onClick={handleSubmitAnnouncement}
+                                                    disabled={isSubmittingAnnouncement}
+                                                    className="flex-1"
+                                                >
+                                                    {isSubmittingAnnouncement
+                                                        ? (isEditingAnnouncement ? "Updating..." : "Submitting...")
+                                                        : (isEditingAnnouncement ? "Update Announcement" : "Submit Announcement")}
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* Loading Skeleton */}
+                                {(isFetchingAnnouncements || isSubmittingAnnouncement) && !isCreatingAnnouncement && (
+                                    <div className="space-y-4">
+                                        {[1, 2, 3].map((i) => (
+                                            <Card key={i}>
+                                                <CardHeader className="pb-2">
+                                                    <Skeleton className="h-5 w-3/4" />
+                                                    <Skeleton className="h-4 w-1/4 mt-2" />
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <Skeleton className="h-16 w-full" />
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Announcement List */}
+                                {!isFetchingAnnouncements && !isSubmittingAnnouncement && !isCreatingAnnouncement && (
+                                    <>
+                                        {announcements.length === 0 ? (
+                                            <p className="text-center text-muted-foreground py-8">
+                                                No announcements yet.
+                                            </p>
+                                        ) : (
+                                            announcements.map((announcement) => (
+                                                <Card key={announcement.id} className="relative">
+                                                    <CardHeader className="pb-2">
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex-1">
+                                                                <CardTitle className="text-base font-bold">
+                                                                    {announcement.title}
+                                                                </CardTitle>
+                                                                <CardDescription>
+                                                                    {formatPrettyDate(new Date(announcement.createdAt))}
+                                                                </CardDescription>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                {announcement.createdBy && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="text-xs px-3 py-1 rounded-full"
+                                                                    >
+                                                                        {announcement.createdBy}
+                                                                    </Badge>
+                                                                )}
+
+                                                                {(localStorage.getItem("userRole") === "msme" && announcement.createdBy !== "Admin") && (
+                                                                    <AlertDialog>
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
+                                                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                                                    <MoreVertical className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </DropdownMenuTrigger>
+                                                                            <DropdownMenuContent align="end">
+                                                                                <DropdownMenuItem
+                                                                                    onClick={() => handleEditAnnouncement(announcement)}
+                                                                                >
+                                                                                    <Edit className="mr-2 h-4 w-4" />
+                                                                                    Edit
+                                                                                </DropdownMenuItem>
+                                                                                <AlertDialogTrigger asChild>
+                                                                                    <DropdownMenuItem className="text-red-600">
+                                                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                                                        Delete
+                                                                                    </DropdownMenuItem>
+                                                                                </AlertDialogTrigger>
+                                                                            </DropdownMenuContent>
+                                                                        </DropdownMenu>
+                                                                        <AlertDialogContent>
+                                                                            <AlertDialogHeader>
+                                                                                <AlertDialogTitle>Delete Announcement?</AlertDialogTitle>
+                                                                                <AlertDialogDescription>
+                                                                                    This action cannot be undone. This will permanently remove the announcement.
+                                                                                </AlertDialogDescription>
+                                                                            </AlertDialogHeader>
+
+                                                                            <AlertDialogFooter>
+                                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                                <AlertDialogAction
+                                                                                    className="bg-red-600 hover:bg-red-700"
+                                                                                    onClick={() => handleDeleteAnnouncement(announcement.id)}
+                                                                                >
+                                                                                    Confirm
+                                                                                </AlertDialogAction>
+                                                                            </AlertDialogFooter>
+                                                                        </AlertDialogContent>
+                                                                    </AlertDialog>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardContent>
+                                                        <p className="text-sm whitespace-pre-wrap">{announcement.message}</p>
+                                                        {safeParse(announcement.attachments).length > 0 && (
+                                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                                {safeParse(announcement.attachments).map((url: string, idx: number) => (
+                                                                    <a
+                                                                        key={idx}
+                                                                        href={url}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-xs bg-muted px-2 py-1 rounded-md hover:bg-muted/80 flex items-center gap-1"
+                                                                    >
+                                                                        <FileText className="h-3 w-3" />
+                                                                        Attachment {idx + 1}
+                                                                    </a>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            ))
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </TabsContent>
                     </Tabs>
                 </div>
             </DialogContent>
@@ -768,14 +1089,7 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                 </AlertDialogContent>
             </AlertDialog>
 
-            <AnnouncementDialog
-                open={announcementOpen}
-                onOpenChange={(open) => {
-                    setAnnouncementOpen(open);
-                    if (!open) fetchAnnouncements();
-                }}
-                collaborationId={collaborationId}
-            />
+
         </Dialog >
     );
 };
