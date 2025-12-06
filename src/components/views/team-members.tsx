@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "../ui/card";
 import { Trash2, UserPlus, Users, Repeat } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,9 +19,10 @@ type TeamProps = {
     isOwner: boolean;
     currentUserId: string;
     onMemberRemoved: (userId: string) => void;
+    challengeStatus?: string;
 };
 
-export default function TeamMembers({ solutionId, isOwner, currentUserId, onMemberRemoved }: TeamProps) {
+export default function TeamMembers({ solutionId, isOwner, currentUserId, onMemberRemoved, challengeStatus }: TeamProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -327,10 +329,28 @@ export default function TeamMembers({ solutionId, isOwner, currentUserId, onMemb
 
                             {isOwner && (
                                 <div className="mt-4">
-                                    <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto" variant="outline">
-                                        <UserPlus className="mr-2 h-4 w-4" />
-                                        Add Team Member
-                                    </Button>
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <span className="inline-block w-full sm:w-auto">
+                                                    <Button
+                                                        onClick={() => setIsAddDialogOpen(true)}
+                                                        className="w-full sm:w-auto"
+                                                        variant="outline"
+                                                        disabled={challengeStatus === "expired" || challengeStatus === "stopped"}
+                                                    >
+                                                        <UserPlus className="mr-2 h-4 w-4" />
+                                                        Add Team Member
+                                                    </Button>
+                                                </span>
+                                            </TooltipTrigger>
+                                            {(challengeStatus === "expired" || challengeStatus === "stopped") && (
+                                                <TooltipContent>
+                                                    <p>Cannot add team members. Challenge is {challengeStatus}.</p>
+                                                </TooltipContent>
+                                            )}
+                                        </Tooltip>
+                                    </TooltipProvider>
                                 </div>
                             )}
                         </AccordionContent>

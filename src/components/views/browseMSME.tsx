@@ -586,14 +586,15 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                     </Button>
                                                                 </PopoverTrigger>
 
-                                                                <PopoverContent className='w-fit p-0' align='end' alignOffset={-10} onFocusOutside={(e) => e.preventDefault()}>
+                                                                <PopoverContent onFocusOutside={(e) => e.preventDefault()}>
                                                                     <Calendar
                                                                         mode="single"
                                                                         selected={selectedDate}
-                                                                        className="flex flex-col items-center w-full h-[40vh] overflow-y-scroll"
+                                                                        className="w-full h-[350px]"
                                                                         onSelect={setSelectedDate}
                                                                         disabled={(date) => date < new Date(collaboration.end_date)}
                                                                         defaultMonth={new Date(collaboration.end_date)}
+                                                                        fixedWeeks
                                                                     />
 
                                                                     <div className="flex justify-between items-center">

@@ -15,7 +15,7 @@ function VerifyContent() {
     const router = useRouter()
     const { toast } = useToast()
 
-    const [status, setStatus] = useState<"loading" | "invalid" | "expired" | "error" | "success" | "already_registered">("loading")
+    const [status, setStatus] = useState<"loading" | "invalid" | "expired" | "error" | "success" | "already_invited">("loading")
     const [expiredData, setExpiredData] = useState<{ email: string; solution_id: string } | null>(null)
     const [isResending, setIsResending] = useState(false)
 
@@ -44,27 +44,41 @@ function VerifyContent() {
             return
         }
 
-        function decodeToken(token: string) {
-            try {
-                const base64Url = token.split(".")[1];
-                const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-                return JSON.parse(atob(base64));
-            } catch {
-                return null;
-            }
-        }
-
         const verify = async () => {
             try {
                 const res = await fetch(`${API_BASE_URL}/api/verify-team-member?token=${token}`);
                 const data = await res.json();
 
-                if (data.message.status === "expired") {
-                    const decoded = decodeToken(token);
+                // Handle error responses
+                if (!data.success) {
+                    // Check for specific "already_invited" error
+                    if (data.error === "already_invited") {
+                        setStatus("already_invited");
+                        toast({
+                            variant: "destructive",
+                            title: "Already invited",
+                        });
+                        setTimeout(() => {
+                            router.push("/");
+                        }, 1000);
+                        return;
+                    }
+
+                    // Generic error handling
+                    setStatus("error");
+                    toast({
+                        variant: "destructive",
+                        title: data.message || "Verification failed",
+                    });
+                    return;
+                }
+
+                // Handle success responses with nested message object
+                if (data.message?.status === "expired") {
                     setStatus("expired");
                     setExpiredData({
-                        email: decoded?.email,
-                        solution_id: decoded?.solution_id
+                        email: data.message.email,
+                        solution_id: data.message.solution_id
                     });
 
                     toast({
@@ -74,7 +88,7 @@ function VerifyContent() {
                     return;
                 }
 
-                if (data.message.status === "success") {
+                if (data.message?.status === "success") {
                     setStatus("success");
                     toast({
                         title: "Verification successful",
@@ -82,24 +96,12 @@ function VerifyContent() {
                     });
 
                     setTimeout(() => {
-                        router.push(data.redirect_to || "/");
+                        router.push(data.message.redirect_to || "/");
                     }, 1500);
                     return;
                 }
 
-                if (data.message.status === "already_registered") {
-                    setStatus("already_registered");
-                    toast({
-                        variant: "destructive",
-                        title: "You are already registered",
-                    });
-                    setTimeout(() => {
-                        router.push(data.redirect_to || "/");
-                    }, 1000);
-                    return;
-                }
-
-
+                // Fallback for unexpected responses
                 setStatus("error");
                 toast({
                     variant: "destructive",
@@ -120,13 +122,13 @@ function VerifyContent() {
 
     const handleResend = async () => {
         if (!expiredData) return
-
+        const id = token;
         setIsResending(true)
         try {
             const res = await fetch(`${API_BASE_URL}/api/resend-invite-team-member`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(expiredData)
+                body: JSON.stringify({ id: id })
             })
 
             if (res.ok) {
@@ -171,12 +173,12 @@ function VerifyContent() {
                         {status === "expired" && "Your invitation link has expired."}
                         {status === "error" && "Verification failed."}
                         {status === "success" && "Verified successfully! Redirecting..."}
-                        {status === "already_registered" && "You are already registered! Redirecting..."}
+                        {status === "already_invited" && "Already invited! Redirecting..."}
                     </CardDescription>
                 </CardHeader>
 
                 <CardContent className="flex flex-col items-center justify-center gap-4">
-                    {(status === "loading" || status === "success" || status === "already_registered") && (
+                    {(status === "loading" || status === "success" || status === "already_invited") && (
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     )}
 

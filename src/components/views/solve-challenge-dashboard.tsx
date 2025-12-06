@@ -1778,6 +1778,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                 isOwner={sub.isOwner ?? false}
                                                 currentUserId={sub.user_id}
                                                 onMemberRemoved={(userId) => handleMemberRemoved(sub.solutionId, userId)}
+                                                challengeStatus={sub.challenge?.status}
                                             />
                                         ))}
                                     </div>
