@@ -97,8 +97,8 @@ const profileFormSchema = z.object({
     sector: z.string().min(1, "Sector is required"),
     affiliated_by: z.string().optional().or(z.literal('')),
     short_description: z.string().min(1, "A short description is required"),
-    website_url: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
-    phone_number: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Please enter a valid phone number").optional().or(z.literal('')),
+    website_url: z.string().regex(/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/, "Please enter a valid URL.").optional().or(z.literal('')),
+    phone_number: z.string().regex(/^\+?[1-9]\d{1,10}$/, "Please enter a valid phone number").optional().or(z.literal('')),
     x_url: z.string().optional().or(z.literal('')),
     instagram_username: z.string().optional().or(z.literal('')),
     linkedin_url: z.string().optional().or(z.literal('')),
@@ -1058,7 +1058,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                         </DialogHeader>
                         <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
                             <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as MsmeDashboardTab)} className="flex flex-col flex-grow min-h-0">
-                                <TabsList className="grid w-full grid-cols-5">
+                                <TabsList className="grid w-full h-fit grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
                                     <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
                                     <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
                                     <TabsTrigger value="engagement"><Handshake className="mr-2 h-4 w-4" /> Engagement</TabsTrigger>
@@ -1495,7 +1495,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                         <Input
                                                                             {...field}
                                                                             type="tel"
-                                                                            placeholder="+1234567890"
+                                                                            placeholder="9876543210"
                                                                         />
                                                                     </FormControl>
                                                                     <FormMessage />
@@ -1511,7 +1511,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     <FormLabel>X (Twitter) Username</FormLabel>
                                                                     <FormControl>
                                                                         <VanityUrlInput
-                                                                            baseUrl="https://x.com/"
+                                                                            baseUrl="x.com"
                                                                             value={field.value || ""}
                                                                             onChange={field.onChange}
                                                                             placeholder="username"
@@ -1530,7 +1530,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     <FormLabel>Instagram Username</FormLabel>
                                                                     <FormControl>
                                                                         <VanityUrlInput
-                                                                            baseUrl="https://instagram.com/"
+                                                                            baseUrl="instagram.com"
                                                                             value={field.value || ""}
                                                                             onChange={field.onChange}
                                                                             placeholder="username"
@@ -1549,7 +1549,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     <FormLabel>LinkedIn Username</FormLabel>
                                                                     <FormControl>
                                                                         <VanityUrlInput
-                                                                            baseUrl="https://linkedin.com/company/"
+                                                                            baseUrl="linkedin.com/company"
                                                                             value={field.value || ""}
                                                                             onChange={field.onChange}
                                                                             placeholder="username"
@@ -1780,14 +1780,14 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     </FormLabel>
 
                                                                     <FormControl>
-                                                                        <div className="flex items-center gap-4">
+                                                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
 
                                                                             {/* ✅ CUSTOM DROPDOWN USING POPOVER */}
                                                                             <Popover>
                                                                                 <PopoverTrigger asChild>
                                                                                     <button
                                                                                         type="button"
-                                                                                        className="w-[130px] h-10 flex items-center justify-between rounded-md border px-3 text-sm"
+                                                                                        className="w-full sm:w-[130px] h-10 flex items-center justify-between rounded-md border px-3 text-sm"
                                                                                         disabled={isFieldDisabled('rewardType')}
                                                                                     >
                                                                                         {rewardOptions.find((opt) => opt.value === field.value)?.label ??
@@ -1830,17 +1830,17 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                         placeholder="Enter amount"
                                                                                         {...collaborationForm.register("rewardAmount", { valueAsNumber: true })}
                                                                                         min={0}
-                                                                                        className="no-spin w-48"
+                                                                                        className="no-spin w-full sm:w-48"
                                                                                         disabled={isFieldDisabled('rewardType')}
                                                                                     />
                                                                                 </>
                                                                             ) : (
-                                                                                <div className="flex items-center gap-2">
+                                                                                <div className="flex items-center gap-2 w-full sm:w-auto">
                                                                                     <Input
                                                                                         type="number"
                                                                                         placeholder="Min"
                                                                                         {...collaborationForm.register("rewardMin", { valueAsNumber: true })}
-                                                                                        className="no-spin w-24"
+                                                                                        className="no-spin w-full sm:w-24"
                                                                                         disabled={isFieldDisabled('rewardType')}
                                                                                     />
                                                                                     <span>-</span>
@@ -1848,7 +1848,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                         type="number"
                                                                                         placeholder="Max"
                                                                                         {...collaborationForm.register("rewardMax", { valueAsNumber: true })}
-                                                                                        className="no-spin w-24"
+                                                                                        className="no-spin w-full sm:w-24"
                                                                                         disabled={isFieldDisabled('rewardType')}
                                                                                     />
                                                                                 </div>
@@ -1876,7 +1876,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                             onValueChange={field.onChange}
                                                                             defaultValue={field.value}
                                                                             value={field.value}
-                                                                            className="flex gap-5"
+                                                                            className="flex flex-col sm:flex-row gap-3 sm:gap-5"
                                                                         >
                                                                             <FormItem className="flex items-center space-x-3 space-y-0">
                                                                                 <FormControl>
@@ -1907,32 +1907,32 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                             name="startDate"
 
                                                             render={() => (
-                                                                <div className="w-[60%] py-4">
+                                                                <div className="w-full sm:w-[80%] lg:w-[60%] py-4">
                                                                     <FormItem className="flex flex-col gap-2">
                                                                         <FormLabel>Start / End Date <span className="text-red-500">*</span></FormLabel>
                                                                         <Button
                                                                             type="button"
                                                                             variant="outline"
-                                                                            className="pl-3 text-left font-normal"
+                                                                            className="pl-3 text-left font-normal w-full justify-start"
                                                                             onClick={() => setDatePickerOpen((prev) => !prev)}
                                                                             disabled={isFieldDisabled('startDate')}
                                                                         >
                                                                             {collaborationForm.watch("startDate") && collaborationForm.watch("endDate") ? (
-                                                                                <>
-                                                                                    {format(collaborationForm.watch("startDate") as Date, "PPP")} →{" "}
-                                                                                    {format(collaborationForm.watch("endDate") as Date, "PPP")}
-                                                                                </>
+                                                                                <span className="truncate">
+                                                                                    {format(collaborationForm.watch("startDate") as Date, "PP")} →{" "}
+                                                                                    {format(collaborationForm.watch("endDate") as Date, "PP")}
+                                                                                </span>
                                                                             ) : (
                                                                                 <span>Pick date range</span>
                                                                             )}
-                                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50 flex-shrink-0" />
                                                                         </Button>
 
                                                                         {datePickerOpen && !isFieldDisabled('startDate') && (
-                                                                            <div className="mt-2 border rounded-md p-3 shadow-md z-50 w-fit">
+                                                                            <div className="mt-2 border rounded-md p-3 shadow-md z-50 w-full sm:w-fit max-w-full overflow-x-auto">
                                                                                 <Calendar
                                                                                     mode="range"
-                                                                                    numberOfMonths={2}
+                                                                                    numberOfMonths={typeof window !== 'undefined' && window.innerWidth < 640 ? 1 : 2}
                                                                                     selected={{
                                                                                         from: collaborationForm.watch("startDate"),
                                                                                         to: collaborationForm.watch("endDate"),
@@ -2058,7 +2058,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
                                                         {/* Contact Person */}
                                                         <h3 className="text-lg font-medium">Contact Person</h3>
-                                                        <div className="grid grid-cols-2 gap-4">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                             <FormField
                                                                 control={collaborationForm.control}
                                                                 name="contact.name"

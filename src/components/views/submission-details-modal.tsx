@@ -435,11 +435,7 @@ export default function SubmissionDetailsModal({
                                                 <span className="font-semibold">
                                                     {submission.contactName} to {submission.challenge?.postedBy?.companyName}
                                                 </span>
-
                                             </p>
-                                            <span className="px-3 py-2 text-xs font-semibold border rounded-sm">
-                                                {submission.status}
-                                            </span>
                                         </div>
 
 
