@@ -32,12 +32,12 @@ export const TimelineItem = React.forwardRef<
   // --------------------------------------------
   // 🔥 GLOBAL OVERRIDE IF CHALLENGE CLOSED
   // --------------------------------------------
-  const forcedRed = challengeClose && !isCurrent;
+  const forcedRed = challengeClose;
   // --------------------------------------------
 
   // DOT STYLE
   const dotClasses = forcedRed
-    ? "bg-red-600 border-red-600"
+    ? "bg-red-600 border-red-600 text-red-800"
     : state === "current"
       ? "bg-primary border-2 border-primary"
       : state === "past"
@@ -86,7 +86,12 @@ export const TimelineItem = React.forwardRef<
             {date ? format(new Date(date), "PPP") : "—"}
           </div>
 
-          <div className={cn("font-semibold", isCurrent && "text-primary")}>
+          <div
+            className={cn(
+              "font-semibold",
+              isCurrent && !forcedRed && "text-primary"
+            )}
+          >
             {title}
           </div>
 
