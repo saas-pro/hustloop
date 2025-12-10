@@ -270,15 +270,6 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
     // Instant feedback
     setResetBtnState("sending");
 
-    setTimeout(() => {
-      setResetBtnState("sent");
-      toast({
-        title: "Password Reset Email Sent",
-        description:
-          "If this email is registered, a reset link has been sent.",
-      });
-    }, 1000);
-
     try {
       const response = await fetch(`${API_BASE_URL}/api/forgot-password`, {
         method: "POST",
@@ -287,19 +278,24 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
       });
 
       const result = await response.json();
-
-
-
-      if (!(response.ok)) {
+      setTimeout(() => {
+        setResetBtnState("sent");
         toast({
-          variant: "destructive",
-          title: "Error",
+          title: "Password Reset Email Sent",
           description:
-            result.message ||
-            "If this email is registered, a password reset link has been sent. If not, your account may not exist.",
+            "If this email is registered, a reset link has been sent.",
         });
-        setResetBtnState("idle");
-      }
+      }, 1000);
+
+      // if (!(response.ok)) {
+      //   toast({
+      //     variant: "destructive",
+      //     title: "Not Found",
+      //     description:
+      //       result.error
+      //   });
+      //   setResetBtnState("idle");
+      // }
 
     } catch (error: any) {
       toast({

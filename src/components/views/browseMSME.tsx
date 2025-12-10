@@ -147,7 +147,6 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
 
     useEffect(() => {
         const fetchCollaborations = async () => {
-            console.log(selectedProfile)
             if (!selectedProfile) return;
             try {
                 setCollabLoading(true);

@@ -1,9 +1,5 @@
-# *
+# Hustloop robots.txt
 User-agent: *
-Allow: /
 
-# Host
-Host: https://hustloop.com
 
-# Sitemaps
 Sitemap: https://hustloop.com/sitemap.xml

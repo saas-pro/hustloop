@@ -56,6 +56,7 @@ import { Badge } from "../ui/badge";
 import { useDropzone } from "react-dropzone";
 import { X } from "lucide-react";
 import { LoadingButton } from "../ui/loading-button";
+import { VanityUrlInput } from "../ui/vanity-url-input";
 
 
 
@@ -97,8 +98,10 @@ const profileFormSchema = z.object({
     affiliated_by: z.string().optional().or(z.literal('')),
     short_description: z.string().min(1, "A short description is required"),
     website_url: z.string().url("Please enter a valid URL.").optional().or(z.literal('')),
-    x_url: z.string().url("Please enter a valid URL for your X profile.").optional().or(z.literal('')),
-    linkedin_url: z.string().url("Please enter a valid URL for your LinkedIn profile.").optional().or(z.literal('')),
+    phone_number: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Please enter a valid phone number").optional().or(z.literal('')),
+    x_url: z.string().optional().or(z.literal('')),
+    instagram_username: z.string().optional().or(z.literal('')),
+    linkedin_url: z.string().optional().or(z.literal('')),
     logo: z.any().optional()
 });
 
@@ -251,7 +254,9 @@ const emptyProfile: ProfileFormValues = {
     short_description: "",
     affiliated_by: "",
     website_url: "",
+    phone_number: "",
     x_url: "",
+    instagram_username: "",
     linkedin_url: "",
 };
 
@@ -448,9 +453,14 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         formData.append("short_description", profileData.short_description || "");
         formData.append("affiliated_by", profileData.affiliated_by || "");
         formData.append("website_url", profileData.website_url || "");
-        formData.append("linkedin_url", profileData.linkedin_url || "");
-        formData.append("x_url", profileData.x_url || "");
+        formData.append("phone_number", profileData.phone_number || "");
+        const linkedinUrl = profileData.linkedin_url ? `https://linkedin.com/company/${profileData.linkedin_url}` : "";
+        const xUrl = profileData.x_url ? `https://x.com/${profileData.x_url}` : "";
+        const instagramUrl = profileData.instagram_username ? `https://instagram.com/${profileData.instagram_username}` : "";
 
+        formData.append("linkedin_url", linkedinUrl);
+        formData.append("x_url", xUrl);
+        formData.append("instagram_url", instagramUrl);
         if (profileData.logo instanceof File) {
             formData.append("logo", profileData.logo);
         }
@@ -933,7 +943,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            profileForm.setValue('logo', file);
+            profileForm.setValue('logo', file, { shouldValidate: true, shouldDirty: true });
             const reader = new FileReader();
             reader.onloadend = () => {
                 setLogoPreview(reader.result as string);
@@ -952,7 +962,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         e.stopPropagation();
         const file = e.dataTransfer.files?.[0];
         if (file) {
-            profileForm.setValue('logo', file);
+            profileForm.setValue('logo', file, { shouldValidate: true, shouldDirty: true });
             const reader = new FileReader();
             reader.onloadend = () => {
                 setLogoPreview(reader.result as string);
@@ -1122,7 +1132,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                 "
                                                 onClick={() => setActiveTab("submissions")} >
                                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Accepted Solutions</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                                                <CardContent><div className="text-2xl font-bold">{overviewStats.solutionAcceptedPoints}</div><p className="text-xs text-muted-foreground">Marked as valid for collaboration</p></CardContent>
+                                                <CardContent><div className="text-2xl font-bold">{overviewStats.solutionAcceptedPoints}</div><p className="text-xs text-muted-foreground">Marked as valid for challenge</p></CardContent>
                                             </Card>
                                         </div>
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -1331,7 +1341,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                     </TabsContent>
 
                                     <TabsContent value="profile" className="mt-0">
-                                        <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/25 backdrop-blur-sm border-border/50`}>
+                                        <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/50 backdrop-blur-sm border-border/50`}>
                                             <CardHeader>
                                                 <CardTitle>Create MSME Profile</CardTitle>
                                                 <CardDescription>
@@ -1477,56 +1487,77 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
                                                         <FormField
                                                             control={profileForm.control}
+                                                            name="phone_number"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Phone Number</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input
+                                                                            {...field}
+                                                                            type="tel"
+                                                                            placeholder="+1234567890"
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
+                                                        <FormField
+                                                            control={profileForm.control}
                                                             name="x_url"
-                                                            render={({ field }) => {
-                                                                const value = profileForm.watch("x_url") || "";
-                                                                return (
-                                                                    <FormItem>
-                                                                        <FormLabel>X (Twitter) URL</FormLabel>
-                                                                        <FormControl>
-                                                                            <div className="relative">
-                                                                                <Input
-                                                                                    {...field}
-                                                                                    maxLength={MAX_CHARS}
-                                                                                    placeholder="https://x.com/username"
-                                                                                    className="pr-20"
-                                                                                />
-                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                    {value.length}/{MAX_CHARS}
-                                                                                </span>
-                                                                            </div>
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                );
-                                                            }}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>X (Twitter) Username</FormLabel>
+                                                                    <FormControl>
+                                                                        <VanityUrlInput
+                                                                            baseUrl="https://x.com/"
+                                                                            value={field.value || ""}
+                                                                            onChange={field.onChange}
+                                                                            placeholder="username"
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
+                                                        <FormField
+                                                            control={profileForm.control}
+                                                            name="instagram_username"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Instagram Username</FormLabel>
+                                                                    <FormControl>
+                                                                        <VanityUrlInput
+                                                                            baseUrl="https://instagram.com/"
+                                                                            value={field.value || ""}
+                                                                            onChange={field.onChange}
+                                                                            placeholder="username"
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
                                                         />
 
                                                         <FormField
                                                             control={profileForm.control}
                                                             name="linkedin_url"
-                                                            render={({ field }) => {
-                                                                const value = profileForm.watch("linkedin_url") || "";
-                                                                return (
-                                                                    <FormItem>
-                                                                        <FormLabel>LinkedIn URL</FormLabel>
-                                                                        <FormControl>
-                                                                            <div className="relative">
-                                                                                <Input
-                                                                                    {...field}
-                                                                                    maxLength={MAX_CHARS}
-                                                                                    placeholder="https://linkedin.com/in/username"
-                                                                                    className="pr-20"
-                                                                                />
-                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                    {value.length}/{MAX_CHARS}
-                                                                                </span>
-                                                                            </div>
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                );
-                                                            }}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>LinkedIn Username</FormLabel>
+                                                                    <FormControl>
+                                                                        <VanityUrlInput
+                                                                            baseUrl="https://linkedin.com/company/"
+                                                                            value={field.value || ""}
+                                                                            onChange={field.onChange}
+                                                                            placeholder="username"
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
                                                         />
 
                                                         <FormField

@@ -470,7 +470,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
             const result = await response.json();
             setSubmissions(result.solutions);
-            console.log(result);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });
         }

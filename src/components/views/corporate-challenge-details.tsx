@@ -309,7 +309,6 @@ export default function CorporateChallengeDetails({
     }
   };
 
-  console.log(announcements)
 
 
   useEffect(() => {

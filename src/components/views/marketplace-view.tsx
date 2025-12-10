@@ -55,7 +55,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
             </TabsList>
 
             <TabsContent value="challenges">
-              <Card className='h-[35vh] md:h-[25vh] flex flex-col justify-center'>
+              <Card className='min-h-[26vh] flex flex-col justify-center'>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Puzzle />
@@ -63,7 +63,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                   </CardTitle>
                 </CardHeader>
 
-                <CardContent>
+                <CardContent >
                   <p className="text-muted-foreground mb-4">
                     Apply your skills to solve real-world problems posted by companies and MSMEs. Get rewarded and gain valuable experience.
                   </p>
@@ -83,7 +83,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
             </TabsContent>
 
             <TabsContent value="tech">
-              <Card className='h-[35vh] md:h-[25vh] flex flex-col justify-center'>
+              <Card className='min-h-[26vh] flex flex-col justify-center'>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Microscope />
@@ -108,7 +108,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
             </TabsContent>
 
             <TabsContent value="incubators">
-              <Card className='h-[35vh] md:h-[25vh] flex flex-col justify-center'>
+              <Card className='min-h-[26vh] flex flex-col justify-center'>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Lightbulb />

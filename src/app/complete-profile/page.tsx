@@ -202,7 +202,7 @@ function CompleteProfileForm() {
                                                 </FormControl>
                                                 <SelectContent>
                                                     <TooltipProvider >
-                                                        <SelectItem value="Solve MSME's challenge">
+                                                        <SelectItem value="Solve MSME&#39;s challenge">
                                                             <div className="flex items-center gap-2 ">
                                                                 {"Solve MSME's challenge"}
                                                                 <Tooltip >

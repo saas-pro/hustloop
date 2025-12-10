@@ -655,7 +655,6 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
 
             const updatedItem = await res.json();
             setQaData((prev) => updateItemInTree(prev, updatedItem));
-            console.log(qaData)
             toast({
                 title: "Updated successfully",
                 description: "Your item has been updated.",

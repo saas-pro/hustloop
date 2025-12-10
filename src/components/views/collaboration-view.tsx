@@ -547,23 +547,22 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                                                 {attachments && attachments.length > 0 && (
                                                     <div className="mt-6">
                                                         <h2 className="text-lg font-semibold mb-2">Attachments</h2>
-
-                                                        <div className="space-y-2 bg-accent/50 hover:bg-accent p-2 rounded-md">
+                                                        <div className="space-y-2">
                                                             {attachments.map((fileUrl: string, index: number) => {
                                                                 const fileName = fileUrl.split('/').pop();
-
                                                                 return (
-                                                                    <a
-                                                                        key={index}
-                                                                        href={fileUrl}
-                                                                        download
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="flex items-center gap-2 text-primary hover:text-primary/80"
-                                                                    >
-                                                                        <FileText className="h-4 w-4" />
-                                                                        {fileName}
-                                                                    </a>
+                                                                    <div key={index} className="bg-accent/50 hover:bg-accent p-2 rounded-md">
+                                                                        <a
+                                                                            href={fileUrl}
+                                                                            download
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="flex items-center gap-2 text-primary hover:text-primary/80"
+                                                                        >
+                                                                            <FileText className="h-4 w-4" />
+                                                                            {fileName}
+                                                                        </a>
+                                                                    </div>
                                                                 );
                                                             })}
                                                         </div>
