@@ -312,7 +312,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
               loop
               smartBackspace
               cursorChar="|"
-              className="bg-gradient-to-r from-blue-600 via-primary to-blue-400 bg-clip-text text-transparent"
+              className="bg-primary bg-clip-text text-transparent"
             />
           </div>
 

@@ -94,7 +94,6 @@ export default function ContactClient() {
 
   return (
     <div className="flex flex-col">
-      {/* Logo + Home Button */}
       <div className="absolute top-4 left-4 z-50 flex items-center gap-4">
         <div onClick={() => router.push("/")} className="cursor-pointer">
           <Image src="/logo.png" alt="Hustloop Logo" width={120} height={120} />
@@ -105,10 +104,6 @@ export default function ContactClient() {
           </Button>
         </Link>
       </div>
-
-      <Header {...headerProps} />
-
-
       <main className="flex-grow container relative z-40 ultrawide-fix m-auto px-4 py-12 md:pt-14 mt-16">
         <section className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12">
           <Card className="p-8 lg:p-12 flex-col justify-center flex">

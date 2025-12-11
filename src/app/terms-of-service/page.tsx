@@ -9,6 +9,7 @@ import Link from 'next/link';
 import Footer from '@/components/layout/footer';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export default function TermsOfServicePage() {
   const [lastUpdated, setLastUpdated] = useState('');
@@ -59,25 +60,14 @@ export default function TermsOfServicePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <div className="absolute top-4 left-4 z-50 flex items-center gap-4">
-        <div onClick={() => router.push('/')} className="cursor-pointer">
-          <Image src="/logo.png" alt="Hustloop Logo" width={120} height={120} className="h-12 w-auto min-w-[120px] max-w-[200px] object-contain" />
+        <div onClick={() => router.push("/")} className="cursor-pointer">
+          <Image src="/logo.png" alt="Hustloop Logo" width={120} height={120} />
         </div>
-        <Link
-          href="/"
-          passHref
-          className="
-                          relative pointer-events-auto typeform-trigger rounded-xl 
-                          md:w-[3.5rem] md:h-[3.5rem] 
-                          bg-white/10 flex items-center justify-center cursor-pointer 
-                          hover:bg-accent/20 transition-colors 
-                          z-10 
-                          md:border md:border-solid md:box-border md:backdrop-blur-md
-                          ">
-          <button className="w-14 h-14 flex items-center justify-center">
-            <Home className="h-6 w-6" />
-          </button>
+        <Link href="/" passHref>
+          <Button variant="outline" size="icon" aria-label="Home">
+            <Home className="h-5 w-5" />
+          </Button>
         </Link>
-
       </div>
       <Header {...headerProps} />
       <main

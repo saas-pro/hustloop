@@ -42,6 +42,8 @@ import { useSearchParams } from "next/navigation";
 import SubmissionDetailsModal from "./submission-details-modal";
 import TeamMembers from "./team-members";
 import { LoadingButton } from "../ui/loading-button";
+import { ContributionGraph } from "../ui/contribution-graph";
+import removeMarkdown from "remove-markdown";
 
 const settingsFormSchema = z.object({
     name: z
@@ -125,10 +127,22 @@ interface ipDataItem {
     approvalStatus: string;
 }
 
+interface SolutionDataItem {
+    id: string;
+    challenge_title: string;
+    description: string;
+    date: string;
+    status: string;
+    is_winner: boolean;
+    reward_amount?: number;
+    points?: number;
+}
+
 interface ExistingFile {
     url: string;
     name: string;
 }
+
 
 interface RestoreIP {
     id: string;
@@ -1219,6 +1233,11 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
     };
     const [chartData, setChartData] = useState<ChartDataItem[]>([]);
     const [ipData, setIpData] = useState<ipDataItem[]>([]);
+    const [solutionChartData, setSolutionChartData] = useState<ChartDataItem[]>([]);
+    const [solutionData, setSolutionData] = useState<SolutionDataItem[]>([]);
+    const [dailySubmissions, setDailySubmissions] = useState<{ date: string; count: number }[]>([]);
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [availableYears, setAvailableYears] = useState<number[]>([]);
     const [summary, setSummary] = useState("");
     const maxChars = 1000;
     const summaryValue = ttForm.watch("summary") || "";
@@ -1281,6 +1300,95 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
         }
 
     }, [toast, isipOverview]);
+
+    // Fetch solution graph data for overview tab
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (activeTab === "overview") {
+            fetch(`${API_BASE_URL}/api/solutions/myGraph`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.error) {
+                        toast({ title: "Error", description: data.error, variant: "destructive" })
+                        return
+                    }
+
+                    // Format year data
+                    const formattedData = data.solutions.map((item: any) => ({
+                        year: item.year.toString(),
+                        activity: item.total_submissions,
+                    }));
+
+                    // Store daily submissions for contribution graph
+                    if (data.daily_submissions) {
+                        setDailySubmissions(data.daily_submissions);
+
+                        // Extract unique years from daily submissions
+                        const years = new Set<number>();
+                        data.daily_submissions.forEach((item: any) => {
+                            const year = new Date(item.date).getFullYear();
+                            years.add(year);
+                        });
+                        const sortedYears = Array.from(years).sort((a, b) => b - a); // Sort descending
+                        setAvailableYears(sortedYears);
+
+                        // Set selected year to the most recent if not already set
+                        if (sortedYears.length > 0 && !sortedYears.includes(selectedYear)) {
+                            setSelectedYear(sortedYears[0]);
+                        }
+                    }
+
+                    // Format solution details
+                    const formattedSolutionDetails = data.solutions_details.map((item: any) => ({
+                        id: item.id,
+                        challenge_title: item.challenge_title,
+                        description: item.description,
+                        date: item.date,
+                        status: item.status,
+                        is_winner: item.is_winner,
+                        reward_amount: item.reward_amount,
+                        points: item.points
+                    }))
+
+                    setSolutionData(formattedSolutionDetails)
+
+                    // Fill in missing years
+                    const START_YEAR = 2023;
+                    const TOTAL_YEARS = 5;
+
+                    const baseData = Array.from({ length: TOTAL_YEARS }, (_, i) => {
+                        const year = (START_YEAR + i).toString();
+                        return {
+                            year: year,
+                            activity: 0
+                        };
+                    });
+
+                    const finalChartData = baseData.map((baseItem: ChartDataItem) => {
+                        const match = formattedData.find((item: ChartDataItem) => item.year === baseItem.year);
+
+                        if (match) {
+                            return {
+                                ...baseItem,
+                                activity: match.activity
+                            };
+                        }
+                        return baseItem;
+                    });
+                    setSolutionChartData(finalChartData);
+                })
+                .catch((error) => {
+                    console.error("Error fetching solution graph:", error);
+                });
+        }
+
+    }, [toast, activeTab, selectedYear]);
 
 
     const [expandedAccordion, setExpandedAccordion] = useState<string | undefined>(undefined);
@@ -1640,23 +1748,115 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                             <TabsContent value="overview" className="mt-0 space-y-6">
                                 <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                     <CardHeader>
-                                        <CardTitle>Activity Overview</CardTitle>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex flex-col gap-y-2">
+                                                <CardTitle>Solution Submission Activity</CardTitle>
+                                                <CardDescription>
+                                                    Your Solution submission history over the years
+                                                </CardDescription>
+                                            </div>
+                                            {availableYears.length > 0 && (
+                                                <Select
+                                                    value={selectedYear.toString()}
+                                                    onValueChange={(value) => setSelectedYear(parseInt(value))}
+                                                >
+                                                    <SelectTrigger className="w-[120px]">
+                                                        <SelectValue placeholder="Select year" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {availableYears.map((year) => (
+                                                            <SelectItem key={year} value={year.toString()}>
+                                                                {year}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        {availableYears.length > 0 ? (
+                                            <div className="flex justify-center py-4">
+                                                <ContributionGraph data={dailySubmissions} year={selectedYear} />
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-8 text-muted-foreground">
+                                                <p>No submission data available yet.</p>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Recent Submissions */}
+                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                    <CardHeader>
+                                        <CardTitle>Recent Submissions</CardTitle>
+                                        <CardDescription>
+                                            Your latest solution submissions and achievements
+                                        </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                            <RechartsBarChart data={staticChartData}>
-                                                <CartesianGrid vertical={false} />
-                                                <XAxis
-                                                    dataKey="year"
-                                                    tickLine={false}
-                                                    tickMargin={10}
-                                                    axisLine={false}
-                                                />
-                                                <YAxis />
-                                                <Tooltip cursor={false} />
-                                                <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
-                                            </RechartsBarChart>
-                                        </ChartContainer>
+                                        {solutionData.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {solutionData.slice(0, 5).map((solution) => (
+                                                    <div
+                                                        key={solution.id}
+                                                        className="flex items-start justify-between p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                                                    >
+                                                        <div className="flex-1 space-y-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <h4 className="font-semibold text-sm">
+                                                                    {solution.challenge_title}
+                                                                </h4>
+                                                                {solution.is_winner && (
+                                                                    <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-xs">
+                                                                        🏆 Winner
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-sm text-muted-foreground line-clamp-1">
+                                                                {removeMarkdown(solution.description,
+                                                                    {
+                                                                        stripListLeaders: true,
+                                                                        listUnicodeChar: '',
+                                                                        gfm: true,
+                                                                        useImgAltText: true,
+                                                                    }
+                                                                ).replace(/[\[\]]/g, '')}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {solution.date}
+                                                            </p>
+                                                        </div>
+                                                        <div className="ml-4 text-right">
+                                                            {solution.is_winner ? (
+                                                                <div className="space-y-1">
+                                                                    <div className="text-lg font-bold text-green-600">
+                                                                        ₹{solution.reward_amount?.toLocaleString()}
+                                                                    </div>
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        Reward + {solution.points} pts
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="space-y-1">
+                                                                    <div className="text-lg font-bold text-primary">
+                                                                        {solution.points} pts
+                                                                    </div>
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        Points
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-8 text-muted-foreground">
+                                                <p>No submissions yet. Start participating in challenges!</p>
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </TabsContent>
