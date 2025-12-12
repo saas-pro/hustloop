@@ -379,6 +379,25 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
         return `${month} ${day}${suffix} ${year}`;
     }
 
+    function formatRelativeTime(dateString: string): string {
+        const now = new Date();
+        const past = new Date(dateString);
+        const diff = (now.getTime() - past.getTime()) / 1000; // difference in seconds
+
+        const minutes = Math.floor(diff / 60);
+        const hours = Math.floor(diff / 3600);
+        const days = Math.floor(diff / 86400);
+        const months = Math.floor(diff / 2592000);
+        const years = Math.floor(diff / 31536000);
+
+        if (diff < 60) return 'just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        if (days < 30) return `${days}d ago`;
+        if (months < 12) return `${months}mo ago`;
+        return `${years}y ago`;
+    }
+
 
     const fetchSubscribers = useCallback(async () => {
         setIsLoadingSubscribers(true);
@@ -1242,7 +1261,6 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
     const maxChars = 1000;
     const summaryValue = ttForm.watch("summary") || "";
 
-
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (isipOverview) {
@@ -1318,33 +1336,23 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                         toast({ title: "Error", description: data.error, variant: "destructive" })
                         return
                     }
-
-                    // Format year data
                     const formattedData = data.solutions.map((item: any) => ({
                         year: item.year.toString(),
                         activity: item.total_submissions,
                     }));
-
-                    // Store daily submissions for contribution graph
                     if (data.daily_submissions) {
                         setDailySubmissions(data.daily_submissions);
-
-                        // Extract unique years from daily submissions
                         const years = new Set<number>();
                         data.daily_submissions.forEach((item: any) => {
                             const year = new Date(item.date).getFullYear();
                             years.add(year);
                         });
-                        const sortedYears = Array.from(years).sort((a, b) => b - a); // Sort descending
+                        const sortedYears = Array.from(years).sort((a, b) => b - a);
                         setAvailableYears(sortedYears);
-
-                        // Set selected year to the most recent if not already set
                         if (sortedYears.length > 0 && !sortedYears.includes(selectedYear)) {
                             setSelectedYear(sortedYears[0]);
                         }
                     }
-
-                    // Format solution details
                     const formattedSolutionDetails = data.solutions_details.map((item: any) => ({
                         id: item.id,
                         challenge_title: item.challenge_title,
@@ -1358,7 +1366,6 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
 
                     setSolutionData(formattedSolutionDetails)
 
-                    // Fill in missing years
                     const START_YEAR = 2023;
                     const TOTAL_YEARS = 5;
 

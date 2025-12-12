@@ -49,10 +49,9 @@ const QAReplyForm = ({
     const [text, setText] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [newFile, setNewFile] = useState<File | null>(null);
 
-    const handleCancel = () => {
-        setNewFile(null);
+    const handleCancelFile = () => {
+        setFile(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -61,7 +60,11 @@ const QAReplyForm = ({
     const handleSubmit = () => {
         if (text.trim() || file) {
             onAddReply(text, file);
-            onCancel();
+            setText('');
+            setFile(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         }
     };
 
@@ -79,14 +82,14 @@ const QAReplyForm = ({
                     ref={fileInputRef}
                     type="file"
                     className="hidden"
-                    onChange={(e) => setNewFile(e.target.files?.[0] || null)}
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
                 />
                 <div className='flex items-center gap-2'>
                     <div className='flex flex-col md:flex-row items-center gap-2'>
                         <Button
                             className='flex gap-2'
                             onClick={() => fileInputRef.current?.click()}
-                            disabled={!!newFile}
+                            disabled={!!file}
                         >
                             <Paperclip className="h-4 w-4" />
                             <p>Attachment</p>
@@ -96,14 +99,14 @@ const QAReplyForm = ({
                         </span>
                     </div>
 
-                    {newFile && <p className="text-xs text-muted-foreground">Selected: {newFile.name}</p>}
-                    {newFile && (
+                    {file && <p className="text-xs text-muted-foreground">Selected: {file.name}</p>}
+                    {file && (
                         <Button
                             variant="destructive"
-                            onClick={handleCancel}
+                            onClick={handleCancelFile}
                             className="text-xs"
                         >
-                            Cancel
+                            Remove File
                         </Button>
                     )}
                 </div>
@@ -370,7 +373,7 @@ const QAItemView = ({
                 {replyingTo === item.id && (
                     <QAReplyForm
                         parentId={item.id}
-                        onCancel={() => setReplyingTo(isPostingReply ? null : replyingTo)}
+                        onCancel={() => setReplyingTo(null)}
                         onAddReply={(text, file) => onAddReply(item.id, text, file)}
                         isPostingReply={isPostingReply}
                     />
@@ -596,6 +599,7 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
 
     const handleCancel = () => {
         setNewFile(null);
+        setNewQuestion('');
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -603,7 +607,6 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
     const updateItemInTree = (items: QAItem[], updatedItem: QAItem): QAItem[] => {
         return items.map((item) => {
             if (item.id === updatedItem.id) {
-                // Merge updated data with existing item to preserve fields like role, isOrganizer, etc.
                 return {
                     ...item,
                     ...updatedItem,

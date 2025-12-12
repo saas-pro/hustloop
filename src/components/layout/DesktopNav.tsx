@@ -9,7 +9,6 @@ import { Sun, Moon, Palette, Check, Loader2, UserCircle, LogOut, Droplet, Leaf, 
 import { View } from '@/app/types';
 import { cn } from '@/lib/utils';
 import { useRouter, usePathname } from "next/navigation";
-import { Separator } from '@radix-ui/react-separator';
 import gsap from 'gsap';
 import Link from 'next/link';
 
@@ -360,10 +359,9 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
 
             {/* 1. Static Menu (Early Bird / Contact) */}
             <nav
-                // Changed ID to be unique
                 id="static-menu-nav"
                 className={cn(
-                    "flex justify-center absolute top-40 left-[25%] w-1/2 m-auto transition-all duration-300 ease-in-out",
+                    "flex justify-center absolute top-[10rem] lg:top-[8.75rem] left-1/2 -translate-x-1/2 transition-all duration-300 ease-in-out",
                     navOpen ? "opacity-100 translate-y-0 visible" : "opacity-0 translate-y-5 invisible"
                 )}
                 aria-label="Secondary Navigation"
@@ -395,12 +393,11 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
             </nav>
 
 
-            {/* 2. Primary Dynamic Menu */}
             {!isStaticPage && (
                 <nav
-                    id="menu-navs" // ✅ Unique ID
+                    id="menu-navs"
                     className={cn(
-                        "z-50 flex justify-between absolute top-20 left-[30%] w-2/5 transition-all duration-300 ease-in-out",
+                        "z-50 flex justify-center absolute top-[3.75rem] lg:top-[5rem] left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 transition-all duration-300 ease-in-out",
                         navOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-5 pointer-events-none"
                     )}
                     aria-label="Main Navigation"
@@ -429,10 +426,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                                                 {item.label}
                                             </Link>
                                         ) : (
-                                            /* NOTE: If these buttons just change views on the same page, 
-                                               they won't get "Sitelinks" in Google. 
-                                               Sitelinks require distinct URLs (like /pricing or /#features).
-                                            */
+
                                             <button
                                                 onClick={() => setActiveView(item.id)}
                                                 className={className}
@@ -446,9 +440,6 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                     </ul>
                 </nav>
             )}
-
-
-            {/* Secondary Menu Links and Socials */}
 
         </div >
     )

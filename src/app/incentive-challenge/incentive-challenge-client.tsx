@@ -434,7 +434,7 @@ export default function IncentiveChallengeClient() {
                                     <div className="space-y-3">
                                         <h4 className="text-lg font-semibold text-primary">Recognition for All</h4>
                                         <p className="text-sm text-muted-foreground leading-relaxed">
-                                            Whether you&apos;re a team or an individual, whether you&apos;re just starting out or have won multiple challenges, the Hall of Fame celebrates your journey. Only winners and solution-accepted participants are publicly showcased to inspire others.
+                                            Whether you&apos;re a team or an individual, whether you&apos;re just starting out or have won multiple challenges, the Hall of Fame celebrates your journey.Participants are publicly showcased to inspire others.
                                         </p>
                                     </div>
                                 </CardContent>

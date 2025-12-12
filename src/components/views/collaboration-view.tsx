@@ -448,7 +448,7 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
         >
             <DialogContent
                 className={`
-          relative flex flex-col border bg-background transition-all duration-500 p-0 
+        flex flex-col border bg-background transition-all duration-500 p-0 
           w-[90vw] max-w-[90vw] shadow-lg text-base h-[90vh] fixed
           rounded-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
         `}

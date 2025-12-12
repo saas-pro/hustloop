@@ -61,10 +61,8 @@ export function ContributionGraph({ data, year }: ContributionGraphProps) {
     // Get color based on contribution count
     const getColor = (count: number) => {
         if (count === 0) return 'bg-muted';
-        if (count === 1) return 'bg-green-200 dark:bg-green-900';
-        if (count === 2) return 'bg-green-300 dark:bg-green-800';
-        if (count === 3) return 'bg-green-400 dark:bg-green-700';
-        return 'bg-green-500 dark:bg-green-600';
+        if (count === 1) return 'bg-accent/80';
+        return 'bg-primary/80';
     };
 
     // Month labels
@@ -84,7 +82,7 @@ export function ContributionGraph({ data, year }: ContributionGraphProps) {
     const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
-        <div className="w-full overflow-x-auto px-2 md:px-[20%]">
+        <div className="w-full overflow-x-auto md:overflow-hidden px-2 md:px-[20%]">
             <div className="inline-block w-full">
                 <div className="flex gap-1 justify-start md:justify-center">
                     {/* Day labels */}
@@ -116,7 +114,11 @@ export function ContributionGraph({ data, year }: ContributionGraphProps) {
                             {weeks.map((week, weekIndex) => (
                                 <div key={weekIndex} className="flex flex-col gap-[13px] md:gap-[18px]">
                                     {week.map((date, dayIndex) => {
-                                        const dateStr = date.toISOString().split('T')[0];
+                                        const year = date.getFullYear();
+                                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                                        const day = String(date.getDate()).padStart(2, '0');
+                                        const dateStr = `${year}-${month}-${day}`;
+
                                         const count = dataMap.get(dateStr) || 0;
                                         const isInYear = date.getFullYear() === displayYear;
 
@@ -147,19 +149,6 @@ export function ContributionGraph({ data, year }: ContributionGraphProps) {
                                     })}
                                 </div>
                             ))}
-                        </div>
-
-                        {/* Legend */}
-                        <div className="flex items-center gap-2 mt-4 text-[10px] md:text-xs text-muted-foreground">
-                            <span>Less</span>
-                            <div className="flex gap-1">
-                                <div className="w-[10px] h-[10px] md:w-[12px] md:h-[12px] rounded-sm bg-muted" />
-                                <div className="w-[10px] h-[10px] md:w-[12px] md:h-[12px] rounded-sm bg-green-200 dark:bg-green-900" />
-                                <div className="w-[10px] h-[10px] md:w-[12px] md:h-[12px] rounded-sm bg-green-300 dark:bg-green-800" />
-                                <div className="w-[10px] h-[10px] md:w-[12px] md:h-[12px] rounded-sm bg-green-400 dark:bg-green-700" />
-                                <div className="w-[10px] h-[10px] md:w-[12px] md:h-[12px] rounded-sm bg-green-500 dark:bg-green-600" />
-                            </div>
-                            <span>More</span>
                         </div>
                     </div>
                 </div>
