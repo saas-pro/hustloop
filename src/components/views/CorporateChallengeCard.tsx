@@ -3,8 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "../ui/progress";
 import Image from "next/image";
-import { MarkdownViewer } from "../ui/markdownViewer";
 import { useChallengeProgress } from "@/components/ui/useChallengeProgress";
+import removeMarkdown from "remove-markdown";
 
 export const CorporateChallengeCard = ({
     challenge,
@@ -38,7 +38,7 @@ export const CorporateChallengeCard = ({
                         className="rounded-lg"
                     />
                     <div>
-                        <CardTitle className={`text-base ${isClosed ? "text-red-600" : ""}`}>
+                        <CardTitle className={`text-base line-clamp-2 ${isClosed ? "text-red-600" : ""}`}>
                             {challenge.title}
                         </CardTitle>
 
@@ -46,7 +46,7 @@ export const CorporateChallengeCard = ({
                             {challenge.company_name}
                         </CardDescription>
 
-                        {<Badge variant={isClosed ? "destructive" : "secondary"}>
+                        {<Badge variant={isClosed ? "destructive" : "secondary"} className="line-clamp-1 w-[50%]">
                             {challenge.company_sector}
                         </Badge>}
                     </div>
@@ -55,7 +55,7 @@ export const CorporateChallengeCard = ({
 
             <CardContent className="flex-grow">
                 <div className="text-sm text-muted-foreground line-clamp-3">
-                    <MarkdownViewer content={challenge.description} />
+                    {removeMarkdown(challenge.description)}
                 </div>
             </CardContent>
 

@@ -32,6 +32,7 @@ import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import PricingData from '../BillingCard/billing-card';
 import { DashboardTab } from '@/app/types';
+import * as THREE from 'three';
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters.").max(300, "Full name must not exceed 300 characters."),
@@ -177,6 +178,30 @@ export const solutionSteps = {
 
 
 
+const WayArrow = () => {
+  return (
+    <div className="flex justify-center items-center py-8 md:py-12">
+      <div className="relative w-full max-w-md">
+        <svg
+          viewBox="0 0 400 200"
+          className="w-full h-auto animate-pulse"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M 100,100 C 100,60 60,40 40,40 C 20,40 0,60 0,100 C 0,140 20,160 40,160 C 60,160 100,140 100,100 M 100,100 C 100,60 140,40 160,40 C 180,40 200,60 200,100 C 200,140 180,160 160,160 C 140,160 100,140 100,100"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="16"
+            strokeLinecap="round"
+            className="text-accent"
+            transform="translate(100, 20) scale(1)"
+          />
+        </svg>
+      </div>
+    </div>
+  );
+};
+
 const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
   const router = useRouter();
   const handleLogoClick = () => {
@@ -209,6 +234,25 @@ const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
 
 const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroSection) => {
   const [currentStateIndex, setCurrentStateIndex] = useState(0);
+  const [themeKey, setThemeKey] = useState(0); // Track theme changes
+  const vantaRef = useRef<HTMLDivElement>(null);
+  const vantaEffect = useRef<any>(null);
+
+  // Watch for theme changes and trigger re-render
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setThemeKey(prev => prev + 1); // Increment to trigger Vanta re-initialization
+    });
+
+    const targetNode = document.documentElement || document.body;
+    observer.observe(targetNode, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentStateIndex((prevIndex) => (prevIndex + 1) % dynamicHeroStates.length);
@@ -217,9 +261,123 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (!vantaRef.current) return;
+
+    const loadVanta = async () => {
+      try {
+        if (typeof window !== 'undefined') {
+          (window as any).THREE = THREE;
+        }
+
+        const VANTA = await import('vanta/dist/vanta.dots.min');
+
+        const heroSection = document.getElementById('hero');
+        const computedStyle = heroSection ? window.getComputedStyle(heroSection) : null;
+        const bgColor = computedStyle?.backgroundColor || 'rgb(255, 255, 255)';
+
+        const rgbMatch = bgColor.match(/\d+/g);
+        const backgroundColor = rgbMatch
+          ? parseInt(rgbMatch[0]) * 65536 + parseInt(rgbMatch[1]) * 256 + parseInt(rgbMatch[2])
+          : 0xffffff;
+
+        const accentElement = document.createElement('div');
+        accentElement.className = 'bg-accent';
+        document.body.appendChild(accentElement);
+        const accentColor = window.getComputedStyle(accentElement).backgroundColor;
+        document.body.removeChild(accentElement);
+
+        const accentRgbMatch = accentColor.match(/\d+/g);
+        const dotColor = accentRgbMatch
+          ? parseInt(accentRgbMatch[0]) * 65536 + parseInt(accentRgbMatch[1]) * 256 + parseInt(accentRgbMatch[2])
+          : 0xdebb64;
+
+        vantaEffect.current = (VANTA as any).default({
+          el: vantaRef.current,
+          THREE: THREE,
+          mouseControls: false,
+          touchControls: false,
+          gyroControls: false,
+          minHeight: 200.00,
+          minWidth: 200.00,
+          scale: 2.00,
+          scaleMobile: 2.00,
+          size: 5.10,
+          spacing: 30.00,
+          showLines: false,
+          backgroundColor: backgroundColor,
+          color: dotColor,
+        });
+      } catch (error) {
+        console.error('Failed to load Vanta effect:', error);
+      }
+    };
+
+    loadVanta();
+
+    let debounceTimer: NodeJS.Timeout;
+    const observer = new MutationObserver(() => {
+
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (vantaEffect.current) {
+          const heroSection = document.getElementById('hero');
+          const computedStyle = heroSection ? window.getComputedStyle(heroSection) : null;
+          const bgColor = computedStyle?.backgroundColor || 'rgb(255, 255, 255)';
+
+          const rgbMatch = bgColor.match(/\d+/g);
+          const newBackgroundColor = rgbMatch
+            ? parseInt(rgbMatch[0]) * 65536 + parseInt(rgbMatch[1]) * 256 + parseInt(rgbMatch[2])
+            : 0xffffff;
+
+          const accentElement = document.createElement('div');
+          accentElement.className = 'bg-accent';
+          document.body.appendChild(accentElement);
+          const accentColor = window.getComputedStyle(accentElement).backgroundColor;
+          document.body.removeChild(accentElement);
+
+          const accentRgbMatch = accentColor.match(/\d+/g);
+          const newDotColor = accentRgbMatch
+            ? parseInt(accentRgbMatch[0]) * 65536 + parseInt(accentRgbMatch[1]) * 256 + parseInt(accentRgbMatch[2])
+            : 0xdebb64;
+
+
+          if (vantaEffect.current.options) {
+            vantaEffect.current.options.backgroundColor = newBackgroundColor;
+            vantaEffect.current.options.color = newDotColor;
+          }
+
+
+          if (vantaEffect.current.setOptions) {
+            vantaEffect.current.setOptions({
+              backgroundColor: newBackgroundColor,
+              color: newDotColor,
+            });
+          }
+        }
+      }, 100);
+    });
+
+    const targetNode = document.documentElement || document.body;
+    observer.observe(targetNode, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme', 'style'],
+    });
+    setTimeout(() => {
+      vantaRef.current?.classList.remove("opacity-0")
+    }, 6000)
+
+    return () => {
+      clearTimeout(debounceTimer);
+      observer.disconnect();
+      if (vantaEffect.current) {
+        vantaEffect.current.destroy();
+      }
+    };
+  }, [themeKey]);
 
   useEffect(() => {
-    const hero = document.getElementById("hero-sentinel") as HTMLElement | null;
+    const hero = document.getElementById("hero") as HTMLElement | null;
     const video = hero?.querySelector("video") as HTMLVideoElement | null;
 
     if (!hero || !video) return;
@@ -241,6 +399,14 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       className={`hidden-scroll h-screen relative bg-background w-full`}
       id="hero"
     >
+      {/* Accent background layer */}
+      <div className="xl:hidden absolute top-0 left-0 w-full h-full z-0 bg-accent opacity-0 transition-opacity duration-1000 animate-in fade-in" />
+
+      {/* Vanta.js animation layer */}
+      <div
+        ref={vantaRef}
+        className="xl:hidden absolute top-0 left-0 w-full h-full z-[1] opacity-0 transition-opacity duration-1000"
+      />
 
       <video
         autoPlay
@@ -254,13 +420,10 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         Your browser does not support the video tag.
       </video>
 
-
       <div className="hidden absolute inset-0 md:bg-black/40 z-10 xl:block"></div>
 
-      {/* Logo */}
       <BrandLogo />
 
-      {/* Content */}
       <section className="relative text-center w-full xl:text-left z-20 h-screen flex flex-col xl:flex-row items-center justify-center">
         <div className="xl:flex-1 flex-0 xl:text-left relative xl:left-16 xl:top-4">
           <h1 className="text-5xl lg:text-[60px] xl:text-[80px] font-bold font-headline leading-tight text-current xl:text-white">
@@ -268,7 +431,6 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
             <br />
             <span className="relative inline-block text-primary">
               Innovators
-              {/* underline svg */}
               <svg
                 className="absolute right-0 mx-auto w-[100px] xl:w-[142px] -bottom-1 xl:-bottom-1 lg:bottom-0"
                 aria-hidden="true"
@@ -316,7 +478,6 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
             />
           </div>
 
-          {/* CTA */}
           {isLoggedIn ? (
             <Button
               size="lg"
@@ -337,7 +498,6 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         </div>
       </section>
 
-      {/* 🔽 Scroll Down Indicator */}
       <div className="absolute bottom-6 w-full flex justify-center z-20 mb-6 md:mb-0">
         <div
           className="flex flex-col items-center text-black xl:text-white"
@@ -417,34 +577,43 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
     }
   }
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreen = () => setIsMobile(window.innerWidth <= 768);
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
+
   const whatWeOffer = [
     {
-      icon: <Handshake className="h-8 w-8" />,
+      icon: <Image src={isMobile ? "/icons/msme-sol.png" : "/icons/msme-sol.gif"} alt="msme" width={100} height={100} />,
       title: "MSME Solution",
       description: "Partner with MSMEs to solve real business challenges, gain market insights, and unlock growth through crowdsourced innovation."
     },
     {
-      icon: <Link className="h-8 w-8" />,
+      icon: <Image src={isMobile ? "/icons/intellectual-tech.png" : "/icons/intellectual-tech.gif"} alt="tech" width={100} height={100} />,
       title: "Technology Transfer",
       description: "Access a curated portfolio of innovative technologies from top research institutions, universities, and industry partners. Easily browse, select, and license solutions through Hustloop to accelerate your growth."
     },
     {
-      icon: <Building className="h-8 w-8" />,
+      icon: <Image src={isMobile ? "/icons/corporate-incu.png" : "/icons/corporate-incu.gif"} alt="incubation" width={100} height={100} />,
       title: "Incubation & Innovation Hub",
-      description: "Connect with leading incubators and industry partners to submit your ideas, access expert mentorship, build your MVP, and accelerate your startup’s growth through tailored resources and collaborative opportunities."
+      description: "Connect with leading incubators and industry partners to submit your ideas, access expert mentorship, build your MVP, and accelerate your startup's growth through tailored resources and collaborative opportunities."
     },
     {
-      icon: <Users className="h-8 w-8" />,
+      icon: <Image src={isMobile ? "/icons/mentor.png" : "/icons/mentor.gif"} alt="mentor" width={100} height={100} />,
       title: "Mentor Network",
       description: "Engage with experienced mentors, host or join sessions, and receive personalized guidance tailored to your entrepreneurial journey."
     },
     {
-      icon: <BookOpen className="h-8 w-8" />,
+      icon: <Image src={isMobile ? "/icons/book.png" : "/icons/book.gif"} alt="learning" width={100} height={100} />,
       title: "Learning Sessions",
       description: "Participate in regular workshops, webinars, and expert-led sessions to stay updated on trends and best practices."
     },
     {
-      icon: <Group className="h-8 w-8" />,
+      icon: <Image src={isMobile ? "/icons/organigram.png" : "/icons/organigram.gif"} alt="networking" width={100} height={100} />,
       title: "Exclusive Networking",
       description: "Join curated events to connect with founders, investors, MSMEs, and industry leaders, expanding your professional network."
     }
@@ -507,7 +676,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
     };
   }, []);
 
-  // IntersectionObserver to reveal journey cards smoothly
   useEffect(() => {
     const section = journeyRef.current;
     if (!section) return;
@@ -542,14 +710,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
     return () => observer.disconnect();
   }, []);
 
-  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const checkScreen = () => setIsMobile(window.innerWidth <= 768);
-    checkScreen();
-    window.addEventListener("resize", checkScreen);
-    return () => window.removeEventListener("resize", checkScreen);
-  }, []);
 
 
 
@@ -560,7 +721,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
         }`}
     >
       {/* Hero Section */}
-      <section id="hero-section" className={`h-screen md:min-h-screen sticky top-0 ${navOpen ? 'relative' : 'sticky top-0'}`}>
+      <section id="hero-section" className={`h-screen md:min-h-screen sticky top-0 overflow-hidden ${navOpen ? 'relative' : 'sticky top-0'}`}>
         <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
       </section>
 
@@ -781,22 +942,22 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               <Card className="group text-center p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
-                <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Target className="h-8 w-8" />
+                <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:text-primary-foreground">
+                  <Image src={isMobile ? "/icons/target.png" : "/icons/target.gif"} alt="msme" width={100} height={100} />
                 </div>
                 <CardTitle className="mb-2">Our Mission</CardTitle>
                 <p className="text-muted-foreground">To empower entrepreneurs by providing the resources, guidance, and connections they need to transform innovative ideas into successful ventures.</p>
               </Card>
               <Card className="group text-center p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
-                <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
-                  <BrainCircuit className="h-8 w-8" />
+                <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:text-primary-foreground">
+                  <Image src={isMobile ? "/icons/growth.png" : "/icons/growth.gif"} alt="msme" width={100} height={100} />
                 </div>
                 <CardTitle className="mb-2">Our Vision</CardTitle>
                 <p className="text-muted-foreground">To create a thriving ecosystem where startups, MSMEs, and incubators collaborate seamlessly to drive innovation and economic growth.</p>
               </Card>
               <Card className="group text-center p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
-                <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Heart className="h-8 w-8" />
+                <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:text-primary-foreground">
+                  <Image src={isMobile ? "/icons/diamond.png" : "/icons/diamond.gif"} alt="msme" width={100} height={100} />
                 </div>
                 <CardTitle className="mb-2">Our Values</CardTitle>
                 <p className="text-muted-foreground">Innovation, collaboration, integrity, and excellence guide everything we do as we help shape the future of entrepreneurship.</p>
@@ -810,23 +971,30 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
           <div className="container mx-auto px-4">
             <Card className="bg-card text-card-foreground rounded-2xl shadow-2xl shadow-primary/20 overflow-hidden">
               <div className="p-8 md:p-12">
-                <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div className="grid md:grid-cols-2 gap-8 items-center relative">
                   <div className="space-y-4">
-                    <p className="font-semibold text-primary">5-Minute Tour</p>
-                    <h2 className="text-4xl font-bold font-headline text-card-foreground">Unlock the thriving <span className="text-primary">Ecosystem</span></h2>
-                    <p className="text-muted-foreground max-w-md">
+                    <p className="font-semibold text-primary relative z-10">5-Minute Tour</p>
+                    <h2 className="text-4xl font-bold font-headline text-card-foreground relative z-10">Unlock the thriving <span className="text-primary">Ecosystem</span></h2>
+                    <p className="text-muted-foreground max-w-md relative z-10">
                       Take a virtual tour and experience how the Hustloop Platform connects founders, mentors, and investors to build the future.
                     </p>
                   </div>
-                  <div className="relative h-48 md:h-full">
-                    <Image
-                      src="https://placehold.co/1280x720.png"
-                      alt="Decorative abstract image"
-                      layout="fill"
-                      objectFit="cover"
-                      className="rounded-lg absolute z-10 shadow-lg top-48"
-                      data-ai-hint="orange abstract cubes"
-                    />
+                  <div className="hidden sm:block h-full rotate-6 z-0 pointer-events-none absolute top-0 right-0">
+                    <svg
+                      viewBox="0 0 400 200"
+                      className="w-full h-full"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M 100,100 C 100,60 60,40 40,40 C 20,40 0,60 0,100 C 0,140 20,160 40,160 C 60,160 100,140 100,100 M 100,100 C 100,60 140,40 160,40 C 180,40 200,60 200,100 C 200,140 180,160 160,160 C 140,160 100,140 100,100"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="16"
+                        strokeLinecap="round"
+                        className="text-accent"
+                        transform="translate(100, 20) scale(1)"
+                      />
+                    </svg>
                   </div>
                 </div>
                 <div className="mt-8 relative group">

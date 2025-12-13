@@ -319,7 +319,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
     if (isLoading) {
       return (
         <Tabs defaultValue="CorporateChallenges" className="flex flex-col flex-grow min-h-0 px-6 pb-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 h-fit">
             <TabsTrigger value="CorporateChallenges">Corporate Challenges</TabsTrigger>
             <TabsTrigger value="MSMECollaboration">MSME Collaboration</TabsTrigger>
             <TabsTrigger value="Governmentchallenges">Government Challenges</TabsTrigger>

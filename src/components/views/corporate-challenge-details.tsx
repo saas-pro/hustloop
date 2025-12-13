@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -256,11 +256,11 @@ export default function CorporateChallengeDetails({
     } finally {
       setIsFetchingAnnouncements(false);
     }
-  }, [challenge]);
+  }, [challenge?.id]);
 
   useEffect(() => {
     fetchAnnouncements();
-  }, [fetchAnnouncements]);
+  }, [challenge, fetchAnnouncements]);
 
   const handleEditAnnouncement = (announcement: Announcement) => {
     setEditingAnnouncement(announcement);
@@ -309,6 +309,7 @@ export default function CorporateChallengeDetails({
     }
   };
 
+  console.log(announcements)
 
 
   useEffect(() => {
@@ -436,14 +437,15 @@ export default function CorporateChallengeDetails({
             />
             <div>
 
-              <DialogTitle className="text-3xl font-bold font-headline">
+              <DialogTitle className="text-3xl font-bold font-headline text-left">
                 {challenge.company_name}
               </DialogTitle>
-              <DialogDescription>
-                {challenge.company_description}<br />
-                A challenge by {challenge.company_name} {challenge.affiliated_by && <span className="text-muted-foreground">(Affiliated By {challenge.affiliated_by})</span>}
-                <br />
-              </DialogDescription>
+              <div className="text-left flex flex-col gap-2">
+                <DialogDescription className="line-clamp-3">
+                  {challenge.company_description}
+                </DialogDescription>
+                <p className="text-sm text-muted-foreground">A challenge by {challenge.company_name} {challenge.affiliated_by && <span className="text-muted-foreground font-bold">(Affiliated By {challenge.affiliated_by})</span>}</p>
+              </div>
             </div>
           </div>
         </DialogHeader>
@@ -640,53 +642,61 @@ export default function CorporateChallengeDetails({
 
                   <div className="text-center rounded-lg my-12 py-10">
 
-                    {isChallengeExpiredOrStopped ? (
-                      <div className="w-full text-left bg-red-100 border-l-8 border-red-600 p-5 rounded text-red-900 shadow-sm">
-                        <div className="flex items-start space-x-3">
-                          <div className="text-red-600 text-xl">❗</div>
-                          <div>
-                            <h2 className="text-lg font-bold mb-1">
-                              {challenge.status === "stopped" && "This challenge has been Stopped"}
-                              {challenge.status === "expired" && "This challenge has been Ended"}
-                            </h2>
+                    {
+                      isChallengeExpiredOrStopped ? (
+                        <div className="w-full text-left bg-red-100 border-l-8 border-red-600 p-5 rounded text-red-900 shadow-sm">
+                          <div className="flex items-start space-x-3">
+                            <div className="text-red-600 text-xl">❗</div>
+                            <div>
+                              <h2 className="text-lg font-bold mb-1">
+                                {challenge.status === "stopped" && "This challenge has been Stopped"}
+                                {challenge.status === "expired" && "This challenge has been Ended"}
+                              </h2>
 
-                            <p className="text-sm leading-relaxed mb-2">
-                              All activity related to this challenge should be halted until further notice.
-                            </p>
-
-                            <p className="text-sm leading-relaxed mb-2">
-                              Effective immediately, this challenge is no longer accepting submissions.
-                              Our team is reviewing operational and safety requirements and will notify you
-                              when updates are available.
-                            </p>
-
-                            <p className="text-sm leading-relaxed mb-4">
-                              If you have any questions, please reach out to support or email us at
-                              <a href="mailto:support@hustloop.com" className="font-semibold underline ml-1">
-                                support@hustloop.com
-                              </a>.
-                            </p>
-
-                            {challenge.stop_date && (
-                              <p className="text-xs font-semibold text-red-700">
-                                Stopped on {new Date(challenge.stop_date).toUTCString()}
+                              <p className="text-sm leading-relaxed mb-2">
+                                All activity related to this challenge should be halted until further notice.
                               </p>
-                            )}
+
+                              <p className="text-sm leading-relaxed mb-2">
+                                Effective immediately, this challenge is no longer accepting submissions.
+                                Our team is reviewing operational and safety requirements and will notify you
+                                when further updates are available. We appreciate your patience.
+                              </p>
+
+                              {challenge.status === "expired" && (
+                                <p className="text-sm leading-relaxed mb-2">
+                                  Explore other challenges to continue showcasing your skills.
+                                </p>
+                              )}
+
+
+                              <p className="text-sm leading-relaxed mb-4">
+                                If you have any questions, please reach out to support or email us at
+                                <a href="mailto:support@hustloop.com" className="font-semibold underline ml-1">
+                                  support[@]hustloop.com
+                                </a>
+                              </p>
+
+                              {challenge.stop_date && (
+                                <p className="text-xs font-semibold text-red-700">
+                                  Stopped on {new Date(challenge.stop_date).toLocaleString()}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <>
-                        <h2 className="text-3xl font-bold mb-4 font-headline">
-                          Ready to Solve This Challenge?
-                        </h2>
+                      ) : (
+                        <>
+                          <h2 className="text-3xl font-bold mb-4 font-headline">
+                            Ready to Solve This Challenge?
+                          </h2>
 
-                        <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
-                          Submit your innovative solution and get a chance to win exciting rewards
-                          and partnerships.
-                        </p>
-                      </>
-                    )}
+                          <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
+                            Submit your innovative solution and get a chance to win exciting rewards
+                            and partnerships.
+                          </p>
+                        </>
+                      )}
 
                     <TooltipProvider>
                       <Tooltip>
@@ -788,25 +798,27 @@ export default function CorporateChallengeDetails({
             <TabsContent value="announcement">
               <Card className="border shadow-sm p-4 min-h-[400px]">
                 <div className="mb-8 text-left m-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                      <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                        <MessageSquare className="h-8 w-8" />
+                      <h2 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
+                        <MessageSquare className="h-6 w-6 md:h-8 md:w-8" />
                         Announcements
                       </h2>
-                      <p className="text-muted-foreground">
+                      <p className="text-sm md:text-base text-muted-foreground">
                         Updates and important information for this challenge.
                       </p>
                     </div>
                     {localStorage.getItem("userRole") === "admin" && (
                       <Button
                         size="sm"
+                        className="w-full md:w-auto"
                         onClick={() => {
                           setCollaborationId(challenge.id)
                           setIsAnnouncementDialogOpen(true);
                         }}
                       >
-                        + Create Announcement
+                        <span className="md:hidden">+ Create</span>
+                        <span className="hidden md:inline">+ Create Announcement</span>
                       </Button>
                     )}
                   </div>
@@ -970,7 +982,7 @@ export default function CorporateChallengeDetails({
                       <Lock className="h-8 w-8" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
-                    <p className="max-w-xs text-sm">{"Please log in to view the Hall of Fame and see who's leading the challenge."}</p>
+                    <p className="max-w-xs text-sm">Please log in to view the Hall of Fame and see who&apos;s leading the challenge.</p>
                   </div>
                 ) : (
                   <div className="space-y-10">

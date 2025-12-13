@@ -12,8 +12,6 @@ import { useRouter, usePathname } from "next/navigation";
 import gsap from 'gsap';
 import Link from 'next/link';
 
-
-
 interface DesktopNavProps {
     activeView: View;
     setActiveView: (view: View) => void;

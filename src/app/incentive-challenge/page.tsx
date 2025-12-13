@@ -17,7 +17,6 @@ export const metadata: Metadata = {
         'tech challenge',
         'entrepreneurship competition',
         'innovation rewards',
-        'demo day',
         'Hall of Fame',
         'MSME collaboration',
         'corporate innovation challenge'

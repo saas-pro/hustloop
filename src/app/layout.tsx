@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     default: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
     template: '%s | Hustloop',
   },
-  description: 'Hustloop is an open innovation and startup collaboration platform that connects founders, MSMEs, innovators, and students to solve real business challenges and drive technology transfer.',
+  description: 'Hustloop is an open innovation and startup collaboration platform that connects founders, corporates, innovators, and students to solve real business challenges and drive technology transfer.',
   keywords: ['startup', 'innovation', 'team', 'incentive challenge', 'collaboration', 'founders', 'students', 'technology transfer', 'ecosystem'],
   authors: [{ name: 'Hustloop' }],
   openGraph: {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://hustloop.com',
     title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
-    description: 'Hustloop is an open innovation and startup collaboration platform that connects founders, MSMEs, innovators, and students to solve real business challenges and drive technology transfer.',
+    description: 'Hustloop is an open innovation and startup collaboration platform that connects founders, corporates, innovators, and students to solve real business challenges and drive technology transfer.',
     siteName: 'Hustloop',
     images: [
       {
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Hustloop | Connect, Collaborate, Build Stronger Startup & Innovators Meet',
-    description: 'Hustloop is an open innovation and startup collaboration platform that connects founders, MSMEs, innovators, and students to solve real business challenges and drive technology transfer.',
+    description: 'Hustloop is an open innovation and startup collaboration platform that connects founders, corporate, innovators, and students to solve real business challenges and drive technology transfer.',
     images: ['/logo.png'],
   },
   robots: {
@@ -84,7 +84,7 @@ export default function RootLayout({
             "@type": "Organization",
             "name": "Hustloop",
             "url": "https://hustloop.com",
-            "description": "Hustloop is an open innovation and startup collaboration platform that connects founders, MSMEs, innovators, and students to solve real business challenges and drive technology transfer.",
+            "description": "Hustloop is an open innovation and startup collaboration platform that connects founders, corporate, innovators, and students to solve real business challenges and drive technology transfer.",
             "logo": "https://hustloop.com/logo.png"
           })}
         </Script>
@@ -93,7 +93,7 @@ export default function RootLayout({
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "Hustloop",
-            "description": "Hustloop is an open innovation and startup collaboration platform that connects founders, MSMEs, innovators, and students to solve real business challenges and drive technology transfer.",
+            "description": "Hustloop is an open innovation and startup collaboration platform that connects founders, corporate, innovators, and students to solve real business challenges and drive technology transfer.",
             "url": "https://hustloop.com"
           })}
         </Script>
