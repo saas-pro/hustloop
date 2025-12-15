@@ -231,7 +231,7 @@ export default function TeamMembers({ solutionId, isOwner, currentUserId, onMemb
                     ))
                 ) : (
                     <AccordionItem value={solutionId}>
-                        <AccordionTrigger className="text-lg font-semibold hover:no-underline px-1">
+                        <AccordionTrigger className="text-lg font-semibold hover:no-underline px-1 text-left">
                             {challengeTitle}
                         </AccordionTrigger>
                         <AccordionContent className="px-1 pb-4">

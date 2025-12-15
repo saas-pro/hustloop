@@ -252,6 +252,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
     const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
     const [userToBan, setUserToBan] = useState<AppUser | null>(null);
+    const [selectedUserForDetails, setSelectedUserForDetails] = useState<AppUser | null>(null);
+    const [userDetailsData, setUserDetailsData] = useState<any>(null);
+    const [isLoadingUserDetails, setIsLoadingUserDetails] = useState(false);
+
 
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
     const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
@@ -366,6 +370,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     }, [toast]);
 
 
+
     const handlePageChange = (page: number) => {
         fetchUsers(page, itemsPerPage);
     };
@@ -452,6 +457,36 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             toast({ title: "Failed to delete selected subscribers", variant: "destructive" });
         }
     };
+
+    const fetchUserDetails = async (userId: string) => {
+        setIsLoadingUserDetails(true);
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'No token found. Please log in again.' });
+            setIsLoadingUserDetails(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/user/${userId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch user details');
+            }
+
+            const data = await response.json();
+            setUserDetailsData(data.user_details);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch user details.' });
+            setUserDetailsData(null);
+        } finally {
+            setIsLoadingUserDetails(false);
+        }
+    };
+
 
     const getSubmissions = useCallback(async () => {
         const token = localStorage.getItem('token');
@@ -2143,6 +2178,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                     <TableHead>User</TableHead>
                                                                     <TableHead>Role</TableHead>
                                                                     <TableHead>Status</TableHead>
+                                                                    <TableHead>Details</TableHead>
                                                                     <TableHead>Actions</TableHead>
                                                                 </TableRow>
                                                             </TableHeader>
@@ -2150,10 +2186,25 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                 {users.map(u => (
                                                                     <TableRow key={u.uid}>
                                                                         <TableCell>
-                                                                            <div className="font-medium">{u.name}</div>
-                                                                            <div className="text-sm text-muted-foreground">{u.email}</div>
+                                                                            <div>
+                                                                                <div className="font-medium">{u.name}</div>
+                                                                                <div className="text-sm text-muted-foreground">{u.email}</div>
+                                                                            </div>
                                                                         </TableCell>
                                                                         <TableCell className="capitalize">{u.role}</TableCell>
+                                                                        <TableCell>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-9 w-9"
+                                                                                onClick={() => {
+                                                                                    setSelectedUserForDetails(u);
+                                                                                    fetchUserDetails(u.uid);
+                                                                                }}
+                                                                            >
+                                                                                <LucideIcons.Info className="h-5 w-5" />
+                                                                            </Button>
+                                                                        </TableCell>
                                                                         <TableCell>
                                                                             <div className="flex flex-col gap-1">
                                                                                 {u.status === 'banned' ? (
@@ -3430,6 +3481,266 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+
+                <Dialog open={!!selectedUserForDetails} onOpenChange={(open) => !open && setSelectedUserForDetails(null)}>
+                    <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+                        <DialogHeader>
+                            <DialogTitle>User Details</DialogTitle>
+                            <DialogDescription>
+                                Detailed information about {selectedUserForDetails?.name}
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        {isLoadingUserDetails ? (
+                            <div className="flex justify-center items-center h-48">
+                                <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                            </div>
+                        ) : userDetailsData ? (
+                            <div className="space-y-6 overflow-y-auto pr-2">
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-3">Account Information</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Name</p>
+                                            <p className="font-medium">{userDetailsData.name}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Email</p>
+                                            <p className="font-medium">{userDetailsData.email}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Role</p>
+                                            <Badge className="lowercase">{userDetailsData.role}</Badge>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Status</p>
+                                            <Badge variant={
+                                                userDetailsData.status === 'banned' ? 'destructive' :
+                                                    userDetailsData.status === 'active' ? 'default' : 'secondary'
+                                            } className="lowercase">
+                                                {userDetailsData.status}
+                                            </Badge>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Auth Provider</p>
+                                            <p className="font-medium capitalize">{userDetailsData.auth_provider || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Founder Role</p>
+                                            {
+                                                userDetailsData.founder_role === "Solve MSME&#39;s challenge" ? (
+                                                    <p className="font-medium">{"Solve MSME's challenge"}</p>
+                                                ) : (
+                                                    <p className="font-medium">{userDetailsData.founder_role || 'N/A'}</p>
+                                                )
+                                            }
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Created At</p>
+                                            <p className="font-medium">
+                                                {userDetailsData.created_at ? new Date(userDetailsData.created_at).toLocaleDateString() : 'N/A'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Last Login</p>
+                                            <p className="font-medium">
+                                                {userDetailsData.last_login ? new Date(userDetailsData.last_login).toLocaleDateString() : 'N/A'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                {/* Payment Information */}
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
+                                    {userDetailsData.payment_info ? (
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-sm text-muted-foreground">Payment Method</p>
+                                                <Badge className="uppercase">{userDetailsData.payment_info.payment_method}</Badge>
+                                            </div>
+                                            {userDetailsData.payment_info.paypal_email && (
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">PayPal Email</p>
+                                                    <p className="font-medium">{userDetailsData.payment_info.paypal_email}</p>
+                                                </div>
+                                            )}
+                                            {userDetailsData.payment_info.account_holder && (
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">Account Holder</p>
+                                                    <p className="font-medium">{userDetailsData.payment_info.account_holder}</p>
+                                                </div>
+                                            )}
+                                            {userDetailsData.payment_info.account_number && (
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">Account Number</p>
+                                                    <p className="font-medium">{userDetailsData.payment_info.account_number}</p>
+                                                </div>
+                                            )}
+                                            {userDetailsData.payment_info.ifsc_code && (
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">IFSC Code</p>
+                                                    <p className="font-medium">{userDetailsData.payment_info.ifsc_code}</p>
+                                                </div>
+                                            )}
+                                            {userDetailsData.payment_info.upi_id && (
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">UPI ID</p>
+                                                    <p className="font-medium">{userDetailsData.payment_info.upi_id}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="text-muted-foreground">No payment method configured</p>
+                                    )}
+                                </div>
+
+                                <Separator />
+
+                                {/* Activity Statistics */}
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-3">Activity Statistics</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Challenge Submissions</p>
+                                            <p className="text-2xl font-bold">{userDetailsData.activity.submission_count}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Challenge Solutions</p>
+                                            <p className="text-2xl font-bold">{userDetailsData.activity.solution_count}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* MSME Profile Information (if applicable) */}
+                                {userDetailsData.msme_profile && (
+                                    <>
+                                        <Separator />
+                                        <div>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h3 className="text-lg font-semibold">MSME Profile</h3>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-muted-foreground">Profile Edit Access:</span>
+                                                    <label className="relative inline-flex items-center cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={userDetailsData.msme_profile.is_editable || false}
+                                                            onChange={async (e) => {
+                                                                const newValue = e.target.checked;
+                                                                try {
+                                                                    const token = localStorage.getItem('token');
+                                                                    const response = await fetch(`${API_BASE_URL}/api/admin/msme-profile/${userDetailsData.uid}/toggle-editable`, {
+                                                                        method: 'PUT',
+                                                                        headers: {
+                                                                            'Authorization': `Bearer ${token}`,
+                                                                            'Content-Type': 'application/json'
+                                                                        },
+                                                                        body: JSON.stringify({ is_editable: newValue })
+                                                                    });
+
+                                                                    if (response.ok) {
+                                                                        setUserDetailsData({
+                                                                            ...userDetailsData,
+                                                                            msme_profile: {
+                                                                                ...userDetailsData.msme_profile,
+                                                                                is_editable: newValue
+                                                                            }
+                                                                        });
+                                                                        toast({
+                                                                            title: "Success",
+                                                                            description: `Profile editing ${newValue ? 'enabled' : 'disabled'} for this MSME user.`
+                                                                        });
+                                                                    } else {
+                                                                        throw new Error('Failed to update');
+                                                                    }
+                                                                } catch (error) {
+                                                                    toast({
+                                                                        variant: 'destructive',
+                                                                        title: "Error",
+                                                                        description: "Failed to update profile edit access."
+                                                                    });
+                                                                }
+                                                            }}
+                                                            className="sr-only peer"
+                                                        />
+                                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">Company Name</p>
+                                                    <p className="font-medium">{userDetailsData.msme_profile.company_name || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">Affiliated By</p>
+                                                    <p className="font-medium">{userDetailsData.msme_profile.affiliated_by || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">Phone</p>
+                                                    <p className="font-medium">{userDetailsData.msme_profile.phone_number || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">Website</p>
+                                                    {userDetailsData.msme_profile.website_url ? (
+                                                        <a
+                                                            href={
+                                                                userDetailsData.msme_profile.website_url.startsWith('http://') ||
+                                                                    userDetailsData.msme_profile.website_url.startsWith('https://')
+                                                                    ? userDetailsData.msme_profile.website_url
+                                                                    : `https://${userDetailsData.msme_profile.website_url}`
+                                                            }
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="font-medium text-primary hover:underline"
+                                                        >
+                                                            {userDetailsData.msme_profile.website_url}
+                                                        </a>
+                                                    ) : (
+                                                        <p className="font-medium">N/A</p>
+                                                    )}
+                                                </div>
+                                                {userDetailsData.msme_profile.description && (
+                                                    <div className="col-span-2">
+                                                        <p className="text-sm text-muted-foreground">Description</p>
+                                                        <p className="font-medium line-clamp-3">{userDetailsData.msme_profile.description}</p>
+                                                    </div>
+                                                )}
+                                                {(userDetailsData.msme_profile.linkedin_url || userDetailsData.msme_profile.x_url || userDetailsData.msme_profile.instagram_url) && (
+                                                    <div className="col-span-2">
+                                                        <p className="text-sm text-muted-foreground mb-2">Social Media</p>
+                                                        <div className="flex gap-2">
+                                                            {userDetailsData.msme_profile.linkedin_url && (
+                                                                <a href={userDetailsData.msme_profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                                                    LinkedIn
+                                                                </a>
+                                                            )}
+                                                            {userDetailsData.msme_profile.x_url && (
+                                                                <a href={userDetailsData.msme_profile.x_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                                                    X (Twitter)
+                                                                </a>
+                                                            )}
+                                                            {userDetailsData.msme_profile.instagram_url && (
+                                                                <a href={userDetailsData.msme_profile.instagram_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                                                    Instagram
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-center text-muted-foreground py-8">Failed to load user details</p>
+                        )}
+                    </DialogContent>
+                </Dialog>
+
             </DialogContent >
         </Dialog >
     );

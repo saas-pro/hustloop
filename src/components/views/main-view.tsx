@@ -25,8 +25,6 @@ import ListTechnologyDashboard from "./list-a-tech-dashboard";
 import InnovativeIdeaDashboard from "./innovative-dashboard";
 
 
-
-
 const ModalSkeleton = () => (
   <Dialog open={true}>
     <DialogContent className="flex items-center justify-center h-64 bg-transparent border-none shadow-none">
@@ -240,69 +238,6 @@ export default function MainView() {
   // }, [auth]);
 
   const [navOpen, setNavOpen] = useState<boolean>(false);
-
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setTokenStatus({ valid: false, error: "No token found" });
-        return;
-      }
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/check-token`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        const data: TokenStatus = await response.json();
-        if (!response.ok) {
-          if (data.expired) {
-            toast({
-              title: "Session expired",
-              description: "Your session has expired. Please log in again.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Invalid token",
-              description: "Your authentication token is invalid. Please log in again.",
-              variant: "destructive",
-            });
-          }
-          setLoggedIn(false);
-          setUserRole(null);
-          setUser(null);
-          setHasSubscription(false);
-          setAppliedPrograms({});
-          setAuthProvider(null);
-          localStorage.removeItem('isLoggedIn');
-          localStorage.removeItem('userRole');
-          localStorage.removeItem('user');
-          localStorage.removeItem('hasSubscription');
-          localStorage.removeItem('appliedPrograms');
-          localStorage.removeItem('token');
-          localStorage.removeItem('authProvider');
-          localStorage.removeItem('founder_role');
-          setActiveView('home');
-          router.push('/');
-          setTokenStatus(data);
-          return;
-        }
-        setTokenStatus(data);
-      } catch (error) {
-        console.error("Token check failed:", error);
-        toast({
-          title: "Network error",
-          description: "Unable to verify token. Please try again later.",
-          variant: "destructive",
-        });
-        localStorage.removeItem("access_token");
-      }
-    };
-    checkToken();
-  }, [toast, router]);
 
   useEffect(() => {
     const from = searchParams.get('from');

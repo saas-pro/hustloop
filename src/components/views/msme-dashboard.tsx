@@ -476,10 +476,13 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
             if (response.ok) {
                 toast({
-                    title: "Profile Created",
-                    description: "Your public MSME profile has been saved and is now visible.",
+                    title: isProfileSubmitted ? "Profile Updated" : "Profile Created",
+                    description: isProfileSubmitted
+                        ? "Your MSME profile has been updated successfully."
+                        : "Your public MSME profile has been saved and is now visible.",
                 });
                 setIsProfileSubmitted(true);
+                setIsEditable(false);
                 setOpen(false);
             } else {
                 const errorData = await response.json();
@@ -652,7 +655,8 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
     const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
     const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isEditable, setIsEditable] = useState(false);
 
     async function onCollaborationSubmit(data: collaborationFormValues) {
         const token = localStorage.getItem("token");
@@ -875,6 +879,10 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                 });
                 const data = await response.json();
                 setIsProfileSubmitted(data.status === "submitted");
+                // Set isEditable from the API response
+                if (data.profile && data.profile.is_editable !== undefined) {
+                    setIsEditable(data.profile.is_editable);
+                }
             } catch (err) {
                 console.error("Network error:", err);
             }
@@ -884,8 +892,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
         checkProfile();
     }, [getUsersCollaboration]);
-
-
 
     const [open, setOpen] = useState(false);
 
@@ -1341,11 +1347,14 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                     </TabsContent>
 
                                     <TabsContent value="profile" className="mt-0">
-                                        <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/50 backdrop-blur-sm border-border/50`}>
+                                        <Card className={`${isProfileSubmitted && !isEditable ? "hidden" : "block"} bg-card/50 backdrop-blur-sm border-border/50`}>
                                             <CardHeader>
-                                                <CardTitle>Create MSME Profile</CardTitle>
+                                                <CardTitle>{isProfileSubmitted ? "Edit MSME Profile" : "Create MSME Profile"}</CardTitle>
                                                 <CardDescription>
-                                                    This information will be publicly visible to potential collaborators.
+                                                    {isProfileSubmitted
+                                                        ? "Update your profile information. Changes will be saved immediately."
+                                                        : "This information will be publicly visible to potential collaborators."
+                                                    }
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
@@ -1629,7 +1638,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     isLoading={isSubmitting}
                                                                     disabled={isProfileSubmitting}
                                                                 >
-                                                                    {isProfileSubmitted ? "Profile Already Submitted" : "Save Profile"}
+                                                                    {isProfileSubmitted ? "Update Profile" : "Save Profile"}
                                                                 </LoadingButton>
                                                             </DialogTrigger>
 

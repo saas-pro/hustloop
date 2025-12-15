@@ -27,6 +27,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
@@ -53,6 +54,48 @@ const settingsFormSchema = z.object({
     email: z.string().email("Invalid email address"),
 });
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
+
+const paymentMethodSchema = z.object({
+    paymentMethod: z.enum(["paypal", "bank", "upi"], {
+        required_error: "You must select a payment method."
+    }),
+    paypalEmail: z.string().optional(),
+    accountHolder: z.string().optional(),
+    accountNumber: z.string().optional(),
+    ifscCode: z.string().optional(),
+    upiId: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if (data.paymentMethod === 'paypal') {
+        if (!data.paypalEmail || !z.string().email().safeParse(data.paypalEmail).success) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['paypalEmail'],
+                message: 'A valid PayPal email is required.',
+            });
+        }
+    } else if (data.paymentMethod === 'bank') {
+        if (!data.accountHolder) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['accountHolder'], message: 'Account holder name is required.' });
+        }
+        if (!data.accountNumber) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['accountNumber'], message: 'Account number is required.' });
+        }
+        if (!data.ifscCode) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['ifscCode'], message: 'IFSC code is required.' });
+        }
+    } else if (data.paymentMethod === 'upi') {
+        if (!data.upiId || !/^[a-zA-Z0-9.\-_]+@[a-zA-Z]+$/.test(data.upiId)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['upiId'],
+                message: 'A valid UPI ID is required (e.g., yourname@okbank).',
+            });
+        }
+    }
+});
+
+type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>;
+
 
 const blogPostSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters"),
@@ -256,6 +299,8 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
     const [adminContentTab, setAdminContentTab] = useState('blog');
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [emailChangeRequested, setEmailChangeRequested] = useState(false);
+    const [isEditingPayment, setIsEditingPayment] = useState(false);
+    const [isLoadingPayment, setIsLoadingPayment] = useState(false);
     const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
 
 
@@ -309,6 +354,19 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
         }
     }
     )
+
+    const paymentForm = useForm<PaymentMethodFormValues>({
+        resolver: zodResolver(paymentMethodSchema),
+        defaultValues: {
+            paymentMethod: undefined,
+            paypalEmail: "",
+            accountHolder: "",
+            accountNumber: "",
+            ifscCode: "",
+            upiId: "",
+        },
+    });
+
 
     const { fields: sessionFields, append: appendSession, remove: removeSession } = useFieldArray({ control: programForm.control, name: "sessions" });
     const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({ control: programForm.control, name: "features" });
@@ -1020,6 +1078,82 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
             setLoadingResend(false);
         }
     }
+
+    // Fetch payment method data on component mount
+    const fetchPaymentMethod = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/payment-method`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const paymentData = data.payment_data;
+
+                if (paymentData && paymentData.payment_method) {
+                    // Pre-fill the form with existing payment data
+                    paymentForm.reset({
+                        paymentMethod: paymentData.payment_method,
+                        paypalEmail: paymentData.paypal_email || "",
+                        accountHolder: paymentData.account_holder || "",
+                        accountNumber: paymentData.account_number || "",
+                        ifscCode: paymentData.ifsc_code || "",
+                        upiId: paymentData.upi_id || "",
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch payment method:', error);
+        }
+    }, [paymentForm]);
+
+    useEffect(() => {
+        if (activeTab === 'settings') {
+            fetchPaymentMethod();
+        }
+    }, [activeTab, fetchPaymentMethod]);
+
+    // Submit payment method
+    async function onPaymentMethodSubmit(data: PaymentMethodFormValues) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+
+        setIsLoadingPayment(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/payment-method`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                toast({ title: 'Payment Method Saved', description: result.message || 'Your payment information has been saved successfully.' });
+                setIsEditingPayment(false); // Disable edit mode after successful save
+            } else {
+                toast({ variant: 'destructive', title: 'Save Failed', description: result.error || 'Failed to save payment method.' });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save payment method. Please try again later.' });
+        } finally {
+            setIsLoadingPayment(false);
+        }
+    }
+
+
 
     const deleteSubmission = async (
         id: string | number,
@@ -2114,6 +2248,119 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                 </Button>
                                             </form>
                                         </Form>
+
+                                        <Separator />
+
+                                        <div>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-lg font-medium">Payment Method</h3>
+                                                {!isEditingPayment && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setIsEditingPayment(true)}
+                                                    >
+                                                        Edit
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            <Form {...paymentForm}>
+                                                <form onSubmit={paymentForm.handleSubmit(onPaymentMethodSubmit)} className="space-y-4">
+                                                    <FormField
+                                                        control={paymentForm.control}
+                                                        name="paymentMethod"
+                                                        render={({ field }) => (
+                                                            <FormItem className="space-y-3">
+                                                                <FormLabel>Select Method</FormLabel>
+                                                                <FormControl>
+                                                                    <RadioGroup
+                                                                        onValueChange={field.onChange}
+                                                                        value={field.value}
+                                                                        disabled={!isEditingPayment}
+                                                                        className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4"
+                                                                    >
+                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                            <FormControl><RadioGroupItem value="paypal" disabled={!isEditingPayment} /></FormControl>
+                                                                            <FormLabel className="font-normal">PayPal</FormLabel>
+                                                                        </FormItem>
+                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                            <FormControl><RadioGroupItem value="bank" disabled={!isEditingPayment} /></FormControl>
+                                                                            <FormLabel className="font-normal">Bank Account</FormLabel>
+                                                                        </FormItem>
+                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                            <FormControl><RadioGroupItem value="upi" disabled={!isEditingPayment} /></FormControl>
+                                                                            <FormLabel className="font-normal">UPI</FormLabel>
+                                                                        </FormItem>
+                                                                    </RadioGroup>
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    {paymentForm.watch("paymentMethod") === "paypal" && (
+                                                        <FormField
+                                                            control={paymentForm.control}
+                                                            name="paypalEmail"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>PayPal Email</FormLabel>
+                                                                    <FormControl><Input type="email" placeholder="you@paypal.com" {...field} disabled={!isEditingPayment} /></FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    )}
+                                                    {paymentForm.watch("paymentMethod") === "bank" && (
+                                                        <div className="space-y-4">
+                                                            <FormField control={paymentForm.control} name="accountHolder" render={({ field }) => (
+                                                                <FormItem><FormLabel>Account Holder Name</FormLabel><FormControl><Input placeholder="Full name on account" {...field} disabled={!isEditingPayment} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                            <FormField control={paymentForm.control} name="accountNumber" render={({ field }) => (
+                                                                <FormItem><FormLabel>Account Number</FormLabel><FormControl><Input placeholder="Your bank account number" {...field} disabled={!isEditingPayment} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                            <FormField control={paymentForm.control} name="ifscCode" render={({ field }) => (
+                                                                <FormItem><FormLabel>IFSC Code</FormLabel><FormControl><Input placeholder="Bank's IFSC code" {...field} disabled={!isEditingPayment} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                        </div>
+                                                    )}
+                                                    {paymentForm.watch("paymentMethod") === "upi" && (
+                                                        <FormField control={paymentForm.control} name="upiId" render={({ field }) => (
+                                                            <FormItem><FormLabel>UPI ID</FormLabel><FormControl><Input placeholder="yourname@okbank" {...field} disabled={!isEditingPayment} /></FormControl><FormMessage /></FormItem>
+                                                        )} />
+                                                    )}
+                                                    {isEditingPayment && (
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                type="submit"
+                                                                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                                                                disabled={isLoadingPayment}
+                                                            >
+                                                                {isLoadingPayment ? (
+                                                                    <>
+                                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                        Saving...
+                                                                    </>
+                                                                ) : (
+                                                                    'Save Payment Method'
+                                                                )}
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                onClick={() => {
+                                                                    setIsEditingPayment(false);
+                                                                    fetchPaymentMethod(); // Reset form to saved values
+                                                                }}
+                                                                disabled={isLoadingPayment}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </form>
+                                            </Form>
+                                        </div>
 
                                         {(authProvider === 'local') && (
                                             <>

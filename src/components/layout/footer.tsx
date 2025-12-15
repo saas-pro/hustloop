@@ -48,7 +48,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Right: Social Icons */}
           <div className="flex-1 flex justify-center md:justify-end">
             <div className="flex items-center gap-4">
               <a href="https://x.com/hustloop" target="_blank" aria-label="X" className="text-muted-foreground hover:text-primary transition-colors">

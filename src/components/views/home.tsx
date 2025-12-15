@@ -234,14 +234,13 @@ const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
 
 const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroSection) => {
   const [currentStateIndex, setCurrentStateIndex] = useState(0);
-  const [themeKey, setThemeKey] = useState(0); // Track theme changes
+  const [themeKey, setThemeKey] = useState(0);
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
 
-  // Watch for theme changes and trigger re-render
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      setThemeKey(prev => prev + 1); // Increment to trigger Vanta re-initialization
+      setThemeKey(prev => prev + 1);
     });
 
     const targetNode = document.documentElement || document.body;
@@ -302,8 +301,8 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
           minWidth: 200.00,
           scale: 2.00,
           scaleMobile: 2.00,
-          size: 5.10,
-          spacing: 30.00,
+          size: 2.50,
+          spacing: 25.00,
           showLines: false,
           backgroundColor: backgroundColor,
           color: dotColor,
@@ -363,9 +362,6 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       attributes: true,
       attributeFilter: ['class', 'data-theme', 'style'],
     });
-    setTimeout(() => {
-      vantaRef.current?.classList.remove("opacity-0")
-    }, 6000)
 
     return () => {
       clearTimeout(debounceTimer);
@@ -405,7 +401,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       {/* Vanta.js animation layer */}
       <div
         ref={vantaRef}
-        className="xl:hidden absolute top-0 left-0 w-full h-full z-[1] opacity-0 transition-opacity duration-1000"
+        className="xl:hidden absolute top-0 left-0 w-full h-full z-[1]"
       />
 
       <video
