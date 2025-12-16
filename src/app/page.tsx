@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import MainView from "@/components/views/main-view";
 import PageLoader from "@/components/layout/page-loader";
+import { useTokenVerification } from "@/hooks/use-token-verification";
 import type { UserRole, View } from "@/app/types";
 
 type AuthProvider = 'local' | 'google';
@@ -16,7 +17,6 @@ type User = {
 export default function Home() {
   const [showLoader, setShowLoader] = useState(true);
 
-  // Auth state - lifted to top level for PageLoader
   const [isLoggedIn, setLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -25,40 +25,30 @@ export default function Home() {
   const [appliedPrograms, setAppliedPrograms] = useState<Record<string, string>>({});
   const [activeView, setActiveView] = useState<View>("home");
 
+  useTokenVerification({
+    setLoggedIn,
+    setUserRole,
+    setUser,
+    setHasSubscription,
+    setAppliedPrograms,
+    setAuthProvider,
+    setActiveView
+  });
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowLoader(false);
-    }, 2500);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, []);
 
   if (showLoader) {
-    return (
-      <PageLoader
-        setLoggedIn={setLoggedIn}
-        setUserRole={setUserRole}
-        setUser={setUser}
-        setHasSubscription={setHasSubscription}
-        setAppliedPrograms={setAppliedPrograms}
-        setAuthProvider={setAuthProvider}
-        setActiveView={setActiveView}
-      />
-    );
+    return <PageLoader />;
   }
 
   return (
-    <Suspense fallback={
-      <PageLoader
-        setLoggedIn={setLoggedIn}
-        setUserRole={setUserRole}
-        setUser={setUser}
-        setHasSubscription={setHasSubscription}
-        setAppliedPrograms={setAppliedPrograms}
-        setAuthProvider={setAuthProvider}
-        setActiveView={setActiveView}
-      />
-    }>
+    <Suspense fallback={<PageLoader />}>
       <MainView />
     </Suspense>
   );
