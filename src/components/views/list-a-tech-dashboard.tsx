@@ -40,6 +40,7 @@ import MarkdownEditor from "../ui/markdown";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from "remark-gfm";
 import { useSearchParams } from "next/navigation";
+import { ContributionGraph } from "../ui/contribution-graph";
 
 const settingsFormSchema = z.object({
     name: z
@@ -1184,6 +1185,9 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
         return { groupedIps, setGroupedIps, statusUpdates, handleActionClick, handleUpdateStatus, isUpdating };
     };
     const [chartData, setChartData] = useState<ChartDataItem[]>([]);
+    const [dailySubmissions, setDailySubmissions] = useState<any[]>([]);
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [availableYears, setAvailableYears] = useState<number[]>([]);
     const [ipData, setIpData] = useState<ipDataItem[]>([]);
     const [summary, setSummary] = useState("");
     const maxChars = 5000;
@@ -1219,6 +1223,11 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
                     }))
 
                     setIpData(formatedIpsDetails)
+                    setDailySubmissions(data.daily_submissions || []);
+
+                    // Get available years from the data
+                    const years = data.ips.map((item: any) => item.year);
+                    setAvailableYears(years);
 
                     const START_YEAR = 2023;
                     const TOTAL_YEARS = 5;
@@ -1548,22 +1557,42 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
                                 {isipOverview ? (<div>
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                         <CardHeader>
-                                            <CardTitle>Activity Overview</CardTitle>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex flex-col gap-y-2">
+                                                    <CardTitle>Activity Overview</CardTitle>
+                                                    <CardDescription>Your IP submission history over time</CardDescription>
+                                                </div>
+                                                {availableYears.length > 0 && (
+                                                    <Select
+                                                        value={selectedYear.toString()}
+                                                        onValueChange={(value) => setSelectedYear(parseInt(value))}
+                                                    >
+                                                        <SelectTrigger className="w-[120px]">
+                                                            <SelectValue placeholder="Select year" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {availableYears.map((year) => (
+                                                                <SelectItem key={year} value={year.toString()}>
+                                                                    {year}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            </div>
                                         </CardHeader>
-                                        <CardContent>
-                                            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                                <RechartsBarChart data={chartData}>
-                                                    <CartesianGrid vertical={false} />
-                                                    <XAxis
-                                                        dataKey="year"
-                                                        tickLine={false}
-                                                        tickMargin={10}
-                                                        axisLine={false}
-                                                    />
-                                                    <Tooltip cursor={false} />
-                                                    <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
-                                                </RechartsBarChart>
-                                            </ChartContainer>
+                                        <CardContent className="space-y-6">
+                                            {availableYears.length > 0 ? (
+                                                <div className="overflow-x-auto">
+                                                    <div className="flex justify-center py-4 min-w-max">
+                                                        <ContributionGraph data={dailySubmissions} year={selectedYear} />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center py-8 text-muted-foreground">
+                                                    <p>No submission data available yet.</p>
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">

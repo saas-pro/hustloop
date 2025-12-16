@@ -524,20 +524,20 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                     </DialogHeader>
                     <div className="py-4 space-y-4">
                         <p className="text-sm text-muted-foreground">Choose whether to submit as an individual or create a team and follow the wizard.</p>
-                        <div className="flex gap-3">
-                            <Button className="flex-1 rounded-sm">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <Button className="flex-1 rounded-sm" disabled={loading}>
                                 Submit as Individual
                             </Button>
-                            <Button variant="outline" onClick={startTeamWizard} className="flex-1 rounded-sm">
+                            <Button variant="outline" onClick={startTeamWizard} className="flex-1 rounded-sm" disabled={loading}>
                                 Create a Team
                             </Button>
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setChoiceDialogOpen(false)}>
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+                        <Button variant="ghost" onClick={() => setChoiceDialogOpen(false)} disabled={loading} className="w-full sm:w-auto">
                             Cancel
                         </Button>
-                        <Button onClick={confirmIndividual} disabled={loading}>
+                        <Button onClick={confirmIndividual} disabled={loading} className="w-full sm:w-auto">
                             {loading ? "Submitting..." : "Submit Solution"}
                         </Button>
                     </DialogFooter>
@@ -557,14 +557,14 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                         <DialogTitle>Create Team — Step {wizardStep} of 5</DialogTitle>
                     </DialogHeader>
 
-                    <div className="py-4 min-h-[260px]">
-                        <div className="grid md:grid-cols-2 gap-6 items-center">
-                            <div>
-                                <h3 className="text-lg font-semibold">{wizardStepContent[wizardStep - 1].title}</h3>
-                                <p className="text-sm text-muted-foreground mt-2">{wizardStepContent[wizardStep - 1].text}</p>
+                    <div className="py-4 h-[400px] md:h-[450px] overflow-y-auto">
+                        <div className="flex flex-col md:grid md:grid-cols-2 gap-4 md:gap-6 items-start md:items-center">
+                            <div className="w-full">
+                                <h3 className="text-base md:text-lg font-semibold">{wizardStepContent[wizardStep - 1].title}</h3>
+                                <p className="text-xs md:text-sm text-muted-foreground mt-2">{wizardStepContent[wizardStep - 1].text}</p>
                                 {/* for step 4 and 5 we keep explanatory bullets */}
                                 {wizardStep === 4 && (
-                                    <ul className="mt-3 list-disc list-inside text-sm">
+                                    <ul className="mt-3 list-disc list-inside text-xs md:text-sm">
                                         <li>{`Open the solution details page.`}</li>
                                         <li>{`Click "Add Team Member" and enter the member's email.`}</li>
                                         <li>{`Invites are sent automatically by the system.`}</li>
@@ -572,7 +572,7 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                                 )}
 
                                 {wizardStep === 5 && (
-                                    <ul className="mt-3 list-disc list-inside text-sm">
+                                    <ul className="mt-3 list-disc list-inside text-xs md:text-sm">
                                         <li>{`Members receive a verification email.`}</li>
                                         <li>{`Once clicked, they'll be added to the team.`}</li>
                                         <li>{`You can manage members from the Team tab.`}</li>
@@ -581,11 +581,11 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
 
                             </div>
 
-                            <div className="flex items-center justify-center">
+                            <div className="flex items-center justify-center w-full">
                                 <Image
                                     src={wizardStepContent[wizardStep - 1].img}
                                     alt={wizardStepContent[wizardStep - 1].title}
-                                    className="w-full max-w-md rounded border shadow-sm"
+                                    className="w-full max-w-sm md:max-w-md rounded border shadow-sm"
                                     width={500}
                                     height={500}
                                 />
@@ -593,18 +593,18 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                         </div>
                     </div>
 
-                    <DialogFooter className="flex justify-between">
-                        <div>{wizardStep > 1 && <Button variant="outline" onClick={wizardBack}>Back</Button>}</div>
-                        <div className="flex gap-2">
-                            {wizardStep < 5 && <Button onClick={wizardNext}>Next</Button>}
+                    <DialogFooter className="flex flex-col sm:flex-row justify-between gap-2">
+                        <div className="w-full sm:w-auto">{wizardStep > 1 && <Button variant="outline" onClick={wizardBack} disabled={loading} className="w-full sm:w-auto">Back</Button>}</div>
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            {wizardStep < 5 && <Button onClick={wizardNext} disabled={loading} className="w-full sm:w-auto">Next</Button>}
                             {wizardStep === 5 && (
-                                <Button onClick={confirmTeamSubmit} disabled={loading}>
+                                <Button onClick={confirmTeamSubmit} disabled={loading} className="w-full sm:w-auto">
                                     {loading ? "Submitting..." : "Create Solution & Send Invites"}
                                 </Button>
                             )}
-                            <Button variant="ghost" onClick={() => { setTeamWizardOpen(false); setWizardStep(1); }}>
+                            {wizardStep <= 4 && <Button variant="ghost" onClick={() => { setTeamWizardOpen(false); setWizardStep(1); }} disabled={loading} className="w-full sm:w-auto">
                                 Cancel
-                            </Button>
+                            </Button>}
                         </div>
                     </DialogFooter>
                 </DialogContent>

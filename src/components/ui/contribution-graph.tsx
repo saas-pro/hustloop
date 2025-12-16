@@ -62,7 +62,7 @@ export function ContributionGraph({ data, year }: ContributionGraphProps) {
     const getColor = (count: number) => {
         if (count === 0) return 'bg-muted';
         if (count === 1) return 'bg-accent/80';
-        return 'bg-primary/80';
+        return 'bg-accent/80';
     };
 
     // Month labels
@@ -134,7 +134,7 @@ export function ContributionGraph({ data, year }: ContributionGraphProps) {
                                                     {isInYear && (
                                                         <TooltipContent>
                                                             <p className="text-xs">
-                                                                <span className="font-semibold">{count}</span> submission{count !== 1 ? 's' : ''} on{' '}
+                                                                <span className="font-semibold">{count}</span> sub{count !== 1 ? 's' : ''} on{' '}
                                                                 {date.toLocaleDateString('en-US', {
                                                                     month: 'short',
                                                                     day: 'numeric',

@@ -1887,6 +1887,37 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                         </TabsList>
                         <div className="flex-grow overflow-y-auto pb-6 w-full" >
                             <TabsContent value="overview" className="mt-0 space-y-6">
+                                {/* Total Rewards Card */}
+                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                    <CardHeader>
+                                        <CardTitle>Total Rewards Earned</CardTitle>
+                                        <CardDescription>Cumulative rewards from winning solutions</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <p className="text-4xl font-bold text-green-600">
+                                                    ₹{solutionData
+                                                        .filter(s => s.is_winner && s.reward_amount)
+                                                        .reduce((total, s) => total + (s.reward_amount || 0), 0)
+                                                        .toLocaleString()}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    From {solutionData.filter(s => s.is_winner).length} winning solution{solutionData.filter(s => s.is_winner).length !== 1 ? 's' : ''}
+                                                </p>
+                                            </div>
+                                            <div className="text-right space-y-1">
+                                                <p className="text-2xl font-bold text-primary">
+                                                    {solutionData.reduce((total, s) => total + (s.points || 0), 0).toLocaleString()} pts
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Total Points Earned
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
                                 <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                     <CardHeader>
                                         <div className="flex items-center justify-between">

@@ -74,16 +74,13 @@ export default function SectorSearchWithDropdown({
             );
             if (foundItem) {
                 setSelected(foundItem);
-                if (foundItem.sectorId !== sectorFilter) {
-                    setSectorFilter(foundItem.sectorId);
-                }
             } else {
                 setSelected(null);
             }
         } else {
             setSelected(null);
         }
-    }, [defaultValue, flattened, sectorFilter]);
+    }, [defaultValue, flattened]);
 
     React.useEffect(() => {
         if (data.length > 0 && !sectorFilter) {
@@ -191,7 +188,10 @@ export default function SectorSearchWithDropdown({
                     />
                 </div>
 
-                <Select value={sectorFilter} onValueChange={setSectorFilter}>
+                <Select value={sectorFilter} onValueChange={(value) => {
+                    setSectorFilter(value);
+                    setSelected(null);
+                }}>
                     <SelectTrigger className="w-2/5 justify-between">
                         <SelectValue placeholder="Select Sector" />
                     </SelectTrigger>
@@ -201,7 +201,7 @@ export default function SectorSearchWithDropdown({
                                 const sid = String(s.id);
                                 return (
                                     <SelectItem key={sid} value={sid}>
-                                        {s.name}
+                                        <span className="block max-w-[40px] md:max-w-full truncate">{s.name}</span>
                                     </SelectItem>
                                 );
                             })}
@@ -224,7 +224,7 @@ export default function SectorSearchWithDropdown({
                                         onSelect={() => handleChoose(item)}
                                         className="flex items-center justify-between"
                                     >
-                                        <div className="truncate">
+                                        <div className="w-[280px] truncate md:w-full">
                                             <span className="text-muted-foreground">{item.sector}</span>
                                             {"  →  "}
                                             <span className="font-medium">{item.label}</span>

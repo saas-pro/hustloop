@@ -242,6 +242,7 @@ export default function SubmissionDetailsModal({
     const handleSaveEdit = async () => {
         if (!editingText.trim() || !editingCommentId) return;
 
+        setIsLoading(true);
         const token = localStorage.getItem('token');
 
         try {
@@ -296,6 +297,8 @@ export default function SubmissionDetailsModal({
                 description: 'Failed to edit comment',
                 variant: 'destructive',
             });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -357,11 +360,11 @@ export default function SubmissionDetailsModal({
             key={key}
             className="flex items-center gap-2 p-2 mt-2 border border-dashed rounded-md bg-accent/30 hover:bg-accent transition-colors"
         >
-            <Paperclip className="h-4 w-4 text-primary" />
-            <span className="font-medium text-sm text-primary truncate">
+            <Paperclip className="h-4 w-4 text-primary flex-shrink-0" />
+            <span className="font-medium text-sm text-primary break-words">
                 {fileName || 'Attached File'}
             </span>
-            <span className="text-xs text-muted-foreground ml-auto">
+            <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap flex-shrink-0">
                 (Click to View)
             </span>
         </a>
@@ -477,10 +480,10 @@ export default function SubmissionDetailsModal({
                                     return (
                                         <div key={comment.id} className="my-6 flex items-center w-full select-none">
                                             <div className="h-2 w-2 ml-[17.5px] z-10 bg-accent rounded-full"></div>
-                                            <div className='flex items-center w-full'>
-                                                <div className="w-6 border-t border-muted-foreground"></div>
+                                            <div className='flex items-center w-full overflow-hidden'>
+                                                <div className="w-6 border-t border-muted-foreground flex-shrink-0"></div>
 
-                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full">
+                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full truncate">
                                                     {comment.text}
                                                 </span>
                                                 {/* 
@@ -495,10 +498,10 @@ export default function SubmissionDetailsModal({
                                     return (
                                         <div key={comment.id} className="my-6 flex items-center w-full select-none">
                                             <div className="h-2 w-2 ml-[17.5px] z-10 bg-yellow-500 rounded-full"></div>
-                                            <div className='flex items-center w-full'>
-                                                <div className="w-6 border-t border-muted-foreground"></div>
+                                            <div className='flex items-center w-full overflow-hidden'>
+                                                <div className="w-6 border-t border-muted-foreground flex-shrink-0"></div>
 
-                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full">
+                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full truncate">
                                                     {comment.text} By {comment.authorName}
                                                 </span>
                                                 {/* 
@@ -513,10 +516,10 @@ export default function SubmissionDetailsModal({
                                     return (
                                         <div key={comment.id} className="my-6 flex items-center w-full select-none">
                                             <div className="h-2 w-2 ml-[17.5px] z-10 bg-destructive rounded-full"></div>
-                                            <div className='flex items-center w-full'>
-                                                <div className="w-6 border-t border-muted-foreground"></div>
+                                            <div className='flex items-center w-full overflow-hidden'>
+                                                <div className="w-6 border-t border-muted-foreground flex-shrink-0"></div>
 
-                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full">
+                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full truncate">
                                                     {comment.text}
                                                 </span>
                                                 {/* 
@@ -532,9 +535,9 @@ export default function SubmissionDetailsModal({
                                     return (
                                         <div key={comment.id} className="my-6 flex items-center w-full select-none">
                                             <div className="h-2 w-2 ml-[17.5px] z-10 bg-primary rounded-full"></div>
-                                            <div className='flex items-center w-full'>
-                                                <div className="w-6 border-t border-muted-foreground"></div>
-                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full">
+                                            <div className='flex items-center w-full overflow-hidden'>
+                                                <div className="w-6 border-t border-muted-foreground flex-shrink-0"></div>
+                                                <span className="mx-3 px-1 py-1 text-xs font-medium text-muted-foreground rounded-full truncate">
                                                     {comment.text} By {comment.authorName}
                                                 </span>
 
@@ -565,15 +568,15 @@ export default function SubmissionDetailsModal({
                                         </Avatar>
 
                                         {/* COMMENT BODY */}
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-center mb-2">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
 
-                                                <div className='flex gap-2 items-center'>
-                                                    <p className="font-semibold text-sm flex items-center gap-2">
-                                                        <span className="text-foreground">{comment.authorName}</span>
+                                                <div className='flex flex-col sm:flex-row gap-1 sm:gap-2 sm:items-center flex-wrap'>
+                                                    <p className="font-semibold text-sm flex items-center gap-2 flex-wrap">
+                                                        <span className="text-foreground break-words">{comment.authorName}</span>
 
                                                         {comment.authorRole && (
-                                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
                                                                 {comment.authorRole.toLowerCase() === "msme"
                                                                     ? `${submission.challenge?.postedBy?.companyName || "Unknown Company"} - MSME`
                                                                     : comment.authorRole.toLowerCase() === "admin"
@@ -583,17 +586,17 @@ export default function SubmissionDetailsModal({
                                                         )}
 
                                                         {comment.isUpdated && (
-                                                            <span className="text-xs italic text-muted-foreground">(edited)</span>
+                                                            <span className="text-xs italic text-muted-foreground whitespace-nowrap">(edited)</span>
                                                         )}
                                                     </p>
 
-                                                    <small className="text-xs text-muted-foreground">
+                                                    <small className="text-xs text-muted-foreground whitespace-nowrap">
                                                         {formatTime(new Date(comment.timestamp))}
                                                     </small>
                                                 </div>
 
 
-                                                <div className="flex items-center my-auto  text-xs">
+                                                <div className="flex items-center justify-end text-xs flex-shrink-0">
 
                                                     {/* Reply button */}
                                                     {!isCommentsDisabled && (
@@ -721,19 +724,20 @@ export default function SubmissionDetailsModal({
                                                         value={editingText}
                                                         onChange={(e) => setEditingText(e.target.value)}
                                                         className="mb-2"
+                                                        disabled={isLoading}
                                                     />
                                                     <div className="flex gap-2">
-                                                        <Button size="sm" onClick={handleSaveEdit}>
-                                                            <Save className="h-4 w-4 mr-2" /> Save
+                                                        <Button size="sm" onClick={handleSaveEdit} disabled={isLoading}>
+                                                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />} Save
                                                         </Button>
-                                                        <Button variant="outline" size="sm" onClick={() => setEditingCommentId(null)}>
+                                                        <Button variant="outline" size="sm" onClick={() => setEditingCommentId(null)} disabled={isLoading}>
                                                             Cancel
                                                         </Button>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <p>{comment.text}</p>
+                                                    <p className="break-words whitespace-pre-wrap overflow-wrap-anywhere">{comment.text}</p>
                                                     {comment.fileURL && (
                                                         comment.fileName &&
                                                         renderFileAttachment(comment.fileURL, comment.fileName, comment.fileName)
@@ -784,19 +788,20 @@ export default function SubmissionDetailsModal({
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
                                 rows={3}
+                                disabled={isLoading}
                             />
                             {attachedFile && (
                                 <div className="mt-2 flex items-center gap-2 p-2 rounded-md border bg-muted text-sm">
                                     <FileIcon className="h-4 w-4 text-muted-foreground" />
                                     <span className="font-medium truncate">{attachedFile.name}</span>
                                     <span className="text-xs text-muted-foreground ml-auto">({(attachedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 ml-2 shrink-0" onClick={() => setAttachedFile(null)}>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 ml-2 shrink-0" onClick={() => setAttachedFile(null)} disabled={isLoading}>
                                         <X className="h-4 w-4" />
                                     </Button>
                                 </div>
                             )}
                             <div className="flex justify-between mt-2">
-                                <Button size="sm" className='flex items-center gap-2' onClick={() => fileInputRef.current?.click()}>
+                                <Button size="sm" className='flex items-center gap-2' onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
                                     <Paperclip className="h-5 w-5" />
                                     <span>Attachment</span>
                                 </Button>

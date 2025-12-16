@@ -44,6 +44,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import { ContributionGraph } from "../ui/contribution-graph";
 import {
     Command,
     CommandEmpty,
@@ -57,6 +58,13 @@ import { useDropzone } from "react-dropzone";
 import { X } from "lucide-react";
 import { LoadingButton } from "../ui/loading-button";
 import { VanityUrlInput } from "../ui/vanity-url-input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 
 
@@ -163,6 +171,12 @@ const collaborationSchema = z.object({
                     message: "Please enter a valid reward amount.",
                     path: ["rewardAmount"],
                 });
+            } else if (data.rewardAmount <= 0) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Reward amount must be greater than 0.",
+                    path: ["rewardAmount"],
+                });
             }
         } else if (data.rewardType === "range") {
             if (data.rewardMin === undefined || isNaN(data.rewardMin)) {
@@ -171,11 +185,23 @@ const collaborationSchema = z.object({
                     message: "Please enter a valid minimum reward.",
                     path: ["rewardMin"],
                 });
+            } else if (data.rewardMin <= 0) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Minimum reward must be greater than 0.",
+                    path: ["rewardMin"],
+                });
             }
             if (data.rewardMax === undefined || isNaN(data.rewardMax)) {
                 ctx.addIssue({
                     code: "custom",
                     message: "Please enter a valid maximum reward.",
+                    path: ["rewardMax"],
+                });
+            } else if (data.rewardMax <= 0) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Maximum reward must be greater than 0.",
                     path: ["rewardMax"],
                 });
             }
@@ -314,8 +340,14 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<MsmeDashboardTab>("overview");
     const [confirmText, setConfirmText] = useState("");
-    const [submissions, setSubmissions] = useState<Submission[]>([]);
+    const [submissions, setSubmissions] = useState<Submission[]>(initialSubmissionsData);
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+    const [graphData, setGraphData] = useState<any[]>([]);
+    const [dailySubmissions, setDailySubmissions] = useState<any[]>([]);
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [availableYears, setAvailableYears] = useState<number[]>([]);
+    const [graphType, setGraphType] = useState<'accepted_points' | 'winners'>('accepted_points');
+    const [summaryStats, setSummaryStats] = useState<{ total_accepted_points: number, total_winners: number, total_collaborations: number }>({ total_accepted_points: 0, total_winners: 0, total_collaborations: 0 });
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [selectedCollabId, setSelectedCollabId] = useState<number | null>(null);
@@ -532,7 +564,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
         }
     }
-
 
     const handleStatusChange = (id: string, newStatus: SolutionStatus) => {
         setStatusUpdates((prev) => ({ ...prev, [id]: newStatus }));
@@ -1001,6 +1032,37 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         }
     }, []);
 
+    // Fetch collaboration graph data
+    useEffect(() => {
+        const fetchGraphData = async () => {
+            if (activeTab !== 'overview') return;
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE_URL}/api/collaborations/myGraph`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    setGraphData(data.solutions || []);
+                    setDailySubmissions(data.daily_submissions || []);
+
+                    // Get available years
+                    const years = (data.solutions || []).map((item: any) => item.year);
+                    setAvailableYears(years);
+                }
+            } catch (error) {
+                console.error('Error fetching graph data:', error);
+            }
+        };
+
+        fetchGraphData();
+    }, [activeTab, selectedYear]);
+
 
     return (
         <>
@@ -1049,7 +1111,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                             <DialogDescription className="text-center">
                                 <span className="text-accent">{"Your business, your potential."}</span><br />
                                 Browse technology profiles from various organizations seeking collaboration.
-
                             </DialogDescription>
                         </DialogHeader>
                         <div className="h-screen flex flex-col justify-center items-center">
@@ -1071,8 +1132,8 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                     <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
                                     <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
                                 </TabsList>
-                                <ScrollArea className="flex-grow mt-4">
-                                    <TabsContent value="overview" className="mt-0 space-y-6">
+                                <div className="flex-grow overflow-y-auto pb-6 w-full" >
+                                    <TabsContent value="overview" className="mt-4 space-y-6">
                                         <div className="grid gap-6 md:grid-cols-4">
                                             <Card className="
                                                     bg-card/50 
@@ -1143,23 +1204,44 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                         </div>
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader>
-                                                <CardTitle>Solutions Overview</CardTitle>
-                                                <CardDescription>Accepted solutions over the last 6 months.</CardDescription>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex flex-col gap-y-2">
+                                                        <CardTitle>Solutions Overview</CardTitle>
+                                                        <CardDescription>Accepted solutions over the last 6 months.</CardDescription>
+                                                    </div>
+                                                    {availableYears.length > 0 && (
+                                                        <Select
+                                                            value={selectedYear.toString()}
+                                                            onValueChange={(value) => setSelectedYear(parseInt(value))}
+                                                        >
+                                                            <SelectTrigger className="w-[120px]">
+                                                                <SelectValue placeholder="Select year" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {availableYears.map((year) => (
+                                                                    <SelectItem key={year} value={year.toString()}>
+                                                                        {year}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
+                                                </div>
                                             </CardHeader>
-                                            <CardContent>
-                                                <ChartContainer config={msmeChartConfig} className="h-[250px] w-full">
-                                                    <RechartsBarChart data={msmeChartData}>
-                                                        <CartesianGrid vertical={false} />
-                                                        <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
-                                                        <YAxis />
-                                                        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                                        <Bar dataKey="solutions" fill="var(--color-solutions)" radius={4} />
-                                                    </RechartsBarChart>
-                                                </ChartContainer>
+                                            <CardContent className="space-y-6">
+                                                {availableYears.length > 0 ? (
+                                                    <div className="flex justify-center py-4">
+                                                        <ContributionGraph data={dailySubmissions} year={selectedYear} />
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-center py-8 text-muted-foreground">
+                                                        <p>No submission data available yet.</p>
+                                                    </div>
+                                                )}
                                             </CardContent>
                                         </Card>
                                     </TabsContent>
-                                    <TabsContent value="submissions" className="mt-0 space-y-4">
+                                    <TabsContent value="submissions" className="mt-4 space-y-4">
                                         {submissions.length > 0 ? submissions.map((sub, id) => (
                                             <Card
                                                 key={id}
@@ -1284,7 +1366,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                         )
                                         }
                                     </TabsContent >
-                                    <TabsContent value="engagement" className="mt-0 space-y-4">
+                                    <TabsContent value="engagement" className="mt-4 space-y-4">
                                         {getUsersCollaborationData?.length > 0 ? getUsersCollaborationData.map((sub) => (
                                             <Card
                                                 key={sub.id}
@@ -1346,7 +1428,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                         )}
                                     </TabsContent>
 
-                                    <TabsContent value="profile" className="mt-0">
+                                    <TabsContent value="profile" className="mt-4">
                                         <Card className={`${isProfileSubmitted && !isEditable ? "hidden" : "block"} bg-card/50 backdrop-blur-sm border-border/50`}>
                                             <CardHeader>
                                                 <CardTitle>{isProfileSubmitted ? "Edit MSME Profile" : "Create MSME Profile"}</CardTitle>
@@ -1359,277 +1441,281 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                             </CardHeader>
                                             <CardContent>
                                                 <Form {...profileForm}>
-                                                    <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
-                                                        <FormField
-                                                            control={profileForm.control}
-                                                            name="name"
-                                                            render={({ field }) => {
-                                                                const value = profileForm.watch("name") || "";
-                                                                return (
-                                                                    <FormItem>
-                                                                        <FormLabel>Company Name <span className="text-red-600">*</span></FormLabel>
-                                                                        <FormControl>
-                                                                            <div className="relative">
-                                                                                <Input
-                                                                                    {...field}
-                                                                                    maxLength={MAX_CHARS}
-                                                                                    placeholder="Enter company name"
-                                                                                    className="pr-16"
-                                                                                />
-                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                    {value.length}/{MAX_CHARS}
-                                                                                </span>
-                                                                            </div>
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-                                                        <FormField
-                                                            control={profileForm.control}
-                                                            name="affiliated_by"
-                                                            render={({ field }) => {
-                                                                const value = profileForm.watch("affiliated_by") || "";
-                                                                return (
-                                                                    <FormItem>
-                                                                        <FormLabel>Affiliated By</FormLabel>
-                                                                        <FormControl>
-                                                                            <div className="relative">
-                                                                                <Input
-                                                                                    {...field}
-                                                                                    maxLength={MAX_CHARS}
-                                                                                    placeholder="Eg: Company / Institution Name"
-                                                                                    className="pr-16"
-                                                                                />
-                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                    {value.length}/{MAX_CHARS}
-                                                                                </span>
-                                                                            </div>
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-
-                                                        <FormField
-                                                            control={profileForm.control}
-                                                            name="sector"
-                                                            render={({ field }) => {
-                                                                const value = profileForm.watch("sector") || "";
-                                                                return (
-                                                                    <FormItem>
-                                                                        <FormLabel>Sector <span className="text-red-600">*</span></FormLabel>
-                                                                        <FormControl>
-                                                                            <div className="relative">
-                                                                                <Input
-                                                                                    {...field}
-                                                                                    maxLength={MAX_CHARS}
-                                                                                    placeholder="e.g., FinTech, Health, AI"
-                                                                                    className="pr-16"
-                                                                                />
-                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                    {value.length}/{MAX_CHARS}
-                                                                                </span>
-                                                                            </div>
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-
-                                                        <FormField
-                                                            control={profileForm.control}
-                                                            name="short_description"
-                                                            render={({ field }) => {
-                                                                const value = profileForm.watch("short_description") || "";
-                                                                return (
-                                                                    <FormItem>
-                                                                        <FormLabel>Short Description <span className="text-red-600">*</span></FormLabel>
-                                                                        <FormControl>
-                                                                            <div className="relative">
-                                                                                <Textarea
-                                                                                    {...field}
-                                                                                    maxLength={MAX_CHARS}
-                                                                                    placeholder="A brief one-sentence pitch for your company."
-                                                                                    className="pr-16"
-                                                                                />
-                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                    {value.length}/{MAX_CHARS}
-                                                                                </span>
-                                                                            </div>
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-
-                                                        <FormField
-                                                            control={profileForm.control}
-                                                            name="website_url"
-                                                            render={({ field }) => {
-                                                                const value = profileForm.watch("website_url") || "";
-                                                                return (
-                                                                    <FormItem>
-                                                                        <FormLabel>Website URL</FormLabel>
-                                                                        <FormControl>
-                                                                            <div className="relative">
-                                                                                <Input
-                                                                                    {...field}
-                                                                                    maxLength={MAX_CHARS}
-                                                                                    placeholder="https://example.com"
-                                                                                    className="pr-20"
-                                                                                />
-                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                    {value.length}/{MAX_CHARS}
-                                                                                </span>
-                                                                            </div>
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-
-                                                        <FormField
-                                                            control={profileForm.control}
-                                                            name="phone_number"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Phone Number</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input
-                                                                            {...field}
-                                                                            type="tel"
-                                                                            placeholder="9876543210"
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-
-                                                        <FormField
-                                                            control={profileForm.control}
-                                                            name="x_url"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>X (Twitter) Username</FormLabel>
-                                                                    <FormControl>
-                                                                        <VanityUrlInput
-                                                                            baseUrl="x.com"
-                                                                            value={field.value || ""}
-                                                                            onChange={field.onChange}
-                                                                            placeholder="username"
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-
-                                                        <FormField
-                                                            control={profileForm.control}
-                                                            name="instagram_username"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Instagram Username</FormLabel>
-                                                                    <FormControl>
-                                                                        <VanityUrlInput
-                                                                            baseUrl="instagram.com"
-                                                                            value={field.value || ""}
-                                                                            onChange={field.onChange}
-                                                                            placeholder="username"
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-
-                                                        <FormField
-                                                            control={profileForm.control}
-                                                            name="linkedin_url"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>LinkedIn Username</FormLabel>
-                                                                    <FormControl>
-                                                                        <VanityUrlInput
-                                                                            baseUrl="linkedin.com/company"
-                                                                            value={field.value || ""}
-                                                                            onChange={field.onChange}
-                                                                            placeholder="username"
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-
-                                                        <FormField
-                                                            control={profileForm.control}
-                                                            name="logo"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Company Logo <span className="text-red-500">*</span></FormLabel>
-                                                                    <FormControl>
-                                                                        <div
-                                                                            onClick={() => fileInputRef.current?.click()}
-                                                                            onDragOver={handleDragOver}
-                                                                            onDrop={handleDrop}
-                                                                            className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
-                                                                        >
-                                                                            {logoPreview ? (
-                                                                                <>
-                                                                                    <Image
-                                                                                        src={logoPreview}
-                                                                                        alt="Logo preview"
-                                                                                        layout="fill"
-                                                                                        objectFit="contain"
-                                                                                        className="rounded-lg"
+                                                    <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="name"
+                                                                render={({ field }) => {
+                                                                    const value = profileForm.watch("name") || "";
+                                                                    return (
+                                                                        <FormItem>
+                                                                            <FormLabel>Company Name <span className="text-red-600">*</span></FormLabel>
+                                                                            <FormControl>
+                                                                                <div className="relative">
+                                                                                    <Input
+                                                                                        {...field}
+                                                                                        maxLength={MAX_CHARS}
+                                                                                        placeholder="Enter company name"
+                                                                                        className="pr-16"
                                                                                     />
-                                                                                    <Button
-                                                                                        type="button"
-                                                                                        variant="destructive"
-                                                                                        size="icon"
-                                                                                        className="absolute top-2 right-2 z-10"
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            removeLogo();
-                                                                                        }}
-                                                                                    >
-                                                                                        <Trash2 className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                </>
-                                                                            ) : (
-                                                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                                                    <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                                                                                    <p className="mb-2 text-sm text-muted-foreground">
-                                                                                        <span className="font-semibold">Click to upload</span> or drag and drop
-                                                                                    </p>
-                                                                                    <p className="text-xs text-muted-foreground">
-                                                                                        PNG, JPG, or GIF (MAX. 800x400px)
-                                                                                    </p>
+                                                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                        {value.length}/{MAX_CHARS}
+                                                                                    </span>
                                                                                 </div>
-                                                                            )}
-                                                                            <Input
-                                                                                ref={fileInputRef}
-                                                                                id="dropzone-file"
-                                                                                type="file"
-                                                                                className="hidden"
-                                                                                accept="image/*"
-                                                                                onChange={handleFileChange}
-                                                                            />
-                                                                        </div>
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    );
+                                                                }}
+                                                            />
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="affiliated_by"
+                                                                render={({ field }) => {
+                                                                    const value = profileForm.watch("affiliated_by") || "";
+                                                                    return (
+                                                                        <FormItem>
+                                                                            <FormLabel>Affiliated By</FormLabel>
+                                                                            <FormControl>
+                                                                                <div className="relative">
+                                                                                    <Input
+                                                                                        {...field}
+                                                                                        maxLength={MAX_CHARS}
+                                                                                        placeholder="Eg: Company / Institution Name"
+                                                                                        className="pr-16"
+                                                                                    />
+                                                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                        {value.length}/{MAX_CHARS}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    );
+                                                                }}
+                                                            />
 
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="sector"
+                                                                render={({ field }) => {
+                                                                    const value = profileForm.watch("sector") || "";
+                                                                    return (
+                                                                        <FormItem>
+                                                                            <FormLabel>Sector <span className="text-red-600">*</span></FormLabel>
+                                                                            <FormControl>
+                                                                                <div className="relative">
+                                                                                    <Input
+                                                                                        {...field}
+                                                                                        maxLength={MAX_CHARS}
+                                                                                        placeholder="e.g., FinTech, Health, AI"
+                                                                                        className="pr-16"
+                                                                                    />
+                                                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                        {value.length}/{MAX_CHARS}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    );
+                                                                }}
+                                                            />
+
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="short_description"
+                                                                render={({ field }) => {
+                                                                    const value = profileForm.watch("short_description") || "";
+                                                                    return (
+                                                                        <FormItem>
+                                                                            <FormLabel>Short Description <span className="text-red-600">*</span></FormLabel>
+                                                                            <FormControl>
+                                                                                <div className="relative">
+                                                                                    <Textarea
+                                                                                        {...field}
+                                                                                        maxLength={MAX_CHARS}
+                                                                                        placeholder="A brief one-sentence pitch for your company."
+                                                                                        className="pr-16"
+                                                                                    />
+                                                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                        {value.length}/{MAX_CHARS}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    );
+                                                                }}
+                                                            />
+
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="website_url"
+                                                                render={({ field }) => {
+                                                                    const value = profileForm.watch("website_url") || "";
+                                                                    return (
+                                                                        <FormItem>
+                                                                            <FormLabel>Website URL</FormLabel>
+                                                                            <FormControl>
+                                                                                <div className="relative">
+                                                                                    <Input
+                                                                                        {...field}
+                                                                                        maxLength={MAX_CHARS}
+                                                                                        placeholder="https://example.com"
+                                                                                        className="pr-20"
+                                                                                    />
+                                                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                        {value.length}/{MAX_CHARS}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    );
+                                                                }}
+                                                            />
+
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="phone_number"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>Phone Number</FormLabel>
+                                                                        <FormControl>
+                                                                            <Input
+                                                                                {...field}
+                                                                                type="tel"
+                                                                                placeholder="9876543210"
+                                                                            />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+
+                                                        </div>
+
+                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="x_url"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>X (Twitter) Username</FormLabel>
+                                                                        <FormControl>
+                                                                            <VanityUrlInput
+                                                                                baseUrl="x.com"
+                                                                                value={field.value || ""}
+                                                                                onChange={field.onChange}
+                                                                                placeholder="username"
+                                                                            />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="instagram_username"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>Instagram Username</FormLabel>
+                                                                        <FormControl>
+                                                                            <VanityUrlInput
+                                                                                baseUrl="instagram.com"
+                                                                                value={field.value || ""}
+                                                                                onChange={field.onChange}
+                                                                                placeholder="username"
+                                                                            />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="linkedin_url"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>LinkedIn Username</FormLabel>
+                                                                        <FormControl>
+                                                                            <VanityUrlInput
+                                                                                baseUrl="linkedin.com/company"
+                                                                                value={field.value || ""}
+                                                                                onChange={field.onChange}
+                                                                                placeholder="username"
+                                                                            />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="logo"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>Company Logo <span className="text-red-500">*</span></FormLabel>
+                                                                        <FormControl>
+                                                                            <div
+                                                                                onClick={() => fileInputRef.current?.click()}
+                                                                                onDragOver={handleDragOver}
+                                                                                onDrop={handleDrop}
+                                                                                className="relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
+                                                                            >
+                                                                                {logoPreview ? (
+                                                                                    <>
+                                                                                        <Image
+                                                                                            src={logoPreview}
+                                                                                            alt="Logo preview"
+                                                                                            layout="fill"
+                                                                                            objectFit="contain"
+                                                                                            className="rounded-lg"
+                                                                                        />
+                                                                                        <Button
+                                                                                            type="button"
+                                                                                            variant="destructive"
+                                                                                            size="icon"
+                                                                                            className="absolute top-2 right-2 z-10"
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                removeLogo();
+                                                                                            }}
+                                                                                        >
+                                                                                            <Trash2 className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                                        <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                                                                                        <p className="mb-2 text-sm text-muted-foreground">
+                                                                                            <span className="font-semibold">Click to upload</span> or drag and drop
+                                                                                        </p>
+                                                                                        <p className="text-xs text-muted-foreground">
+                                                                                            PNG, JPG, or GIF (MAX. 800x400px)
+                                                                                        </p>
+                                                                                    </div>
+                                                                                )}
+                                                                                <Input
+                                                                                    ref={fileInputRef}
+                                                                                    id="dropzone-file"
+                                                                                    type="file"
+                                                                                    className="hidden"
+                                                                                    accept="image/*"
+                                                                                    onChange={handleFileChange}
+                                                                                />
+                                                                            </div>
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                        </div>
                                                         <Dialog open={open} onOpenChange={setOpen}>
                                                             <DialogTrigger asChild>
                                                                 <LoadingButton
@@ -1688,7 +1774,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                         </Card>
 
 
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50 mt-4">
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50 mt-4 max-w-full">
                                             <CardHeader>
                                                 <CardTitle>Incentive Challenges</CardTitle>
                                                 <CardDescription>
@@ -1697,7 +1783,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                             </CardHeader>
                                             <CardContent>
                                                 <Form {...collaborationForm}>
-                                                    <form onSubmit={collaborationForm.handleSubmit(onCollaborationSubmit)} className="space-y-4">
+                                                    <form onSubmit={collaborationForm.handleSubmit(onCollaborationSubmit)} className="space-y-4 w-full">
 
                                                         <FormField
                                                             control={collaborationForm.control}
@@ -1709,7 +1795,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                         <FormLabel>Title <span className="text-red-500">*</span></FormLabel>
                                                                         <FormControl>
                                                                             <div className="relative">
-                                                                                <Input placeholder="Give your collaboration a title" {...field} />
+                                                                                <Input placeholder="Give your collaboration a title" {...field} disabled={collaborationForm.formState.isSubmitting} />
                                                                                 <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
                                                                                     {titleValue.length}/{MAX_CHARS}
                                                                                 </span>
@@ -1797,7 +1883,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                     <button
                                                                                         type="button"
                                                                                         className="w-full sm:w-[130px] h-10 flex items-center justify-between rounded-md border px-3 text-sm"
-                                                                                        disabled={isFieldDisabled('rewardType')}
+                                                                                        disabled={isFieldDisabled('rewardType') || collaborationForm.formState.isSubmitting}
                                                                                     >
                                                                                         {rewardOptions.find((opt) => opt.value === field.value)?.label ??
                                                                                             "Select type"}
@@ -1831,35 +1917,87 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                 </PopoverContent>
                                                                             </Popover>
 
-                                                                            {/* ✅ CONDITIONAL INPUTS */}
+
                                                                             {collaborationForm.watch("rewardType") === "fixed" ? (
-                                                                                <>
-                                                                                    <Input
-                                                                                        type="number"
-                                                                                        placeholder="Enter amount"
-                                                                                        {...collaborationForm.register("rewardAmount", { valueAsNumber: true })}
-                                                                                        min={0}
-                                                                                        className="no-spin w-full sm:w-48"
-                                                                                        disabled={isFieldDisabled('rewardType')}
-                                                                                    />
-                                                                                </>
+                                                                                <FormField
+                                                                                    control={collaborationForm.control}
+                                                                                    name="rewardAmount"
+                                                                                    render={({ field }) => (
+                                                                                        <FormItem className="flex-1 md:flex-none">
+                                                                                            <FormControl>
+                                                                                                <Input
+                                                                                                    type="number"
+                                                                                                    placeholder="Enter amount"
+                                                                                                    {...field}
+                                                                                                    value={field.value ?? ''}
+                                                                                                    onChange={(e) => {
+                                                                                                        const val = e.target.valueAsNumber;
+                                                                                                        field.onChange(isNaN(val) ? undefined : val);
+                                                                                                    }}
+                                                                                                    min={0}
+                                                                                                    className="no-spin w-full sm:w-48"
+                                                                                                    disabled={isFieldDisabled('rewardType') || collaborationForm.formState.isSubmitting}
+                                                                                                />
+                                                                                            </FormControl>
+                                                                                            <FormMessage />
+                                                                                        </FormItem>
+                                                                                    )}
+                                                                                />
                                                                             ) : (
-                                                                                <div className="flex items-center gap-2 w-full sm:w-auto">
-                                                                                    <Input
-                                                                                        type="number"
-                                                                                        placeholder="Min"
-                                                                                        {...collaborationForm.register("rewardMin", { valueAsNumber: true })}
-                                                                                        className="no-spin w-full sm:w-24"
-                                                                                        disabled={isFieldDisabled('rewardType')}
-                                                                                    />
-                                                                                    <span>-</span>
-                                                                                    <Input
-                                                                                        type="number"
-                                                                                        placeholder="Max"
-                                                                                        {...collaborationForm.register("rewardMax", { valueAsNumber: true })}
-                                                                                        className="no-spin w-full sm:w-24"
-                                                                                        disabled={isFieldDisabled('rewardType')}
-                                                                                    />
+                                                                                <div className="flex flex-col gap-2 w-full sm:w-auto">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <FormField
+                                                                                            control={collaborationForm.control}
+                                                                                            name="rewardMin"
+                                                                                            render={({ field }) => (
+                                                                                                <FormItem className="flex-1 md:flex-none">
+                                                                                                    <FormControl>
+                                                                                                        <Input
+                                                                                                            type="number"
+                                                                                                            placeholder="Min"
+                                                                                                            {...field}
+                                                                                                            value={field.value ?? ''}
+                                                                                                            onChange={(e) => {
+                                                                                                                const val = e.target.valueAsNumber;
+                                                                                                                field.onChange(isNaN(val) ? undefined : val);
+                                                                                                            }}
+                                                                                                            className="no-spin w-full sm:w-24"
+                                                                                                            disabled={isFieldDisabled('rewardType')}
+                                                                                                        />
+                                                                                                    </FormControl>
+                                                                                                    <div className="w-full">
+                                                                                                        <FormMessage />
+                                                                                                    </div>
+                                                                                                </FormItem>
+                                                                                            )}
+                                                                                        />
+                                                                                        <span>-</span>
+                                                                                        <FormField
+                                                                                            control={collaborationForm.control}
+                                                                                            name="rewardMax"
+                                                                                            render={({ field }) => (
+                                                                                                <FormItem className="flex-1 md:flex-none">
+                                                                                                    <FormControl>
+                                                                                                        <Input
+                                                                                                            type="number"
+                                                                                                            placeholder="Max"
+                                                                                                            {...field}
+                                                                                                            value={field.value ?? ''}
+                                                                                                            onChange={(e) => {
+                                                                                                                const val = e.target.valueAsNumber;
+                                                                                                                field.onChange(isNaN(val) ? undefined : val);
+                                                                                                            }}
+                                                                                                            className="no-spin w-full sm:w-24"
+                                                                                                            disabled={isFieldDisabled('rewardType') || collaborationForm.formState.isSubmitting}
+                                                                                                        />
+                                                                                                    </FormControl>
+                                                                                                    <div className="w-full">
+                                                                                                        <FormMessage />
+                                                                                                    </div>
+                                                                                                </FormItem>
+                                                                                            )}
+                                                                                        />
+                                                                                    </div>
                                                                                 </div>
                                                                             )}
                                                                         </div>
@@ -1886,6 +2024,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                             defaultValue={field.value}
                                                                             value={field.value}
                                                                             className="flex flex-col sm:flex-row gap-3 sm:gap-5"
+                                                                            disabled={collaborationForm.formState.isSubmitting}
                                                                         >
                                                                             <FormItem className="flex items-center space-x-3 space-y-0">
                                                                                 <FormControl>
@@ -1924,7 +2063,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                             variant="outline"
                                                                             className="pl-3 text-left font-normal w-full justify-start"
                                                                             onClick={() => setDatePickerOpen((prev) => !prev)}
-                                                                            disabled={isFieldDisabled('startDate')}
+                                                                            disabled={isFieldDisabled('startDate') || collaborationForm.formState.isSubmitting}
                                                                         >
                                                                             {collaborationForm.watch("startDate") && collaborationForm.watch("endDate") ? (
                                                                                 <span className="truncate">
@@ -1995,9 +2134,10 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                             {...getRootProps()}
                                                                             className={cn(
                                                                                 "border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-3 hover:bg-muted/30",
-                                                                                isDragActive ? "bg-accent/30" : "bg-muted/20"
+                                                                                isDragActive ? "bg-accent/30" : "bg-muted/20",
+                                                                                collaborationForm.formState.isSubmitting && "opacity-50 cursor-not-allowed"
                                                                             )}
-                                                                            onClick={openFileDialog}
+                                                                            onClick={collaborationForm.formState.isSubmitting ? undefined : openFileDialog}
                                                                         >
                                                                             <input {...getInputProps()} />
 
@@ -2042,6 +2182,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                             variant="ghost"
                                                                                             size="icon"
                                                                                             onClick={() => removeFile(index)}
+                                                                                            disabled={collaborationForm.formState.isSubmitting}
                                                                                         >
                                                                                             <X className="h-4 w-4" />
                                                                                         </Button>
@@ -2080,6 +2221,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                     {...field}
                                                                                     maxLength={300}
                                                                                     placeholder="Enter the Name"
+                                                                                    disabled={collaborationForm.formState.isSubmitting}
                                                                                     onChange={(e) => {
                                                                                         field.onChange(e);
                                                                                     }}
@@ -2106,6 +2248,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                     {...field}
                                                                                     maxLength={300}
                                                                                     placeholder="Enter the Role"
+                                                                                    disabled={collaborationForm.formState.isSubmitting}
                                                                                     onChange={(e) => {
                                                                                         field.onChange(e);
                                                                                     }}
@@ -2122,7 +2265,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                             />
                                                         </div>
 
-                                                        <Button type="submit" disabled={collaborationForm.formState.isSubmitting}>
+                                                        <Button type="submit" disabled={collaborationForm.formState.isSubmitting} className="w-full sm:w-auto">
                                                             {collaborationForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                                             {isEditingCollaboration ? "Update Collaboration" : "Save Collaboration Info"}
                                                         </Button>
@@ -2131,7 +2274,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                             </CardContent>
                                         </Card>
                                     </TabsContent>
-                                    <TabsContent value="settings" className="mt-0">
+                                    <TabsContent value="settings" className="mt-4">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader><CardTitle>Account Settings</CardTitle><CardDescription>Manage your account settings.</CardDescription></CardHeader>
                                             <CardContent className="space-y-8">
@@ -2174,7 +2317,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                             </CardContent>
                                         </Card>
                                     </TabsContent>
-                                </ScrollArea >
+                                </div >
                             </Tabs >
                         </div >
                     </>)

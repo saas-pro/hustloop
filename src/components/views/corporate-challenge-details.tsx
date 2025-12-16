@@ -309,8 +309,6 @@ export default function CorporateChallengeDetails({
     }
   };
 
-  console.log(announcements)
-
 
   useEffect(() => {
     const getEvents = async () => {
