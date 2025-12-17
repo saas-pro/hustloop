@@ -190,6 +190,7 @@ export function AnnouncementDialog({
                             className="w-full border rounded-md p-2 pr-16"
                             value={announcementForm.title}
                             maxLength={300}
+                            disabled={isSubmitting}
                             onChange={(e) =>
                                 setAnnouncementForm((f) => ({ ...f, title: e.target.value }))
                             }
@@ -208,6 +209,7 @@ export function AnnouncementDialog({
                             className="w-full border rounded-md p-2 h-28 pb-6"
                             value={announcementForm.message}
                             maxLength={300}
+                            disabled={isSubmitting}
                             onChange={(e) =>
                                 setAnnouncementForm((f) => ({ ...f, message: e.target.value }))
                             }
@@ -223,6 +225,7 @@ export function AnnouncementDialog({
 
                     <Select
                         value={announcementForm.type}
+                        disabled={isSubmitting}
                         onValueChange={(value) =>
                             setAnnouncementForm((f) => ({ ...f, type: value }))
                         }
@@ -258,10 +261,10 @@ export function AnnouncementDialog({
                     ) : (
                         <>
                             <div
-                                onDrop={attachments.length < MAX_ATTACHMENTS ? onDrop : undefined}
-                                onDragOver={attachments.length < MAX_ATTACHMENTS ? onDragOver : undefined}
+                                onDrop={attachments.length < MAX_ATTACHMENTS && !isSubmitting ? onDrop : undefined}
+                                onDragOver={attachments.length < MAX_ATTACHMENTS && !isSubmitting ? onDragOver : undefined}
                                 className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer flex flex-col items-center justify-center
-    ${attachments.length >= MAX_ATTACHMENTS ? "opacity-50 cursor-not-allowed" : "border-muted/50 bg-muted/30 hover:border-muted/70 hover:bg-muted/50"}
+    ${attachments.length >= MAX_ATTACHMENTS || isSubmitting ? "opacity-50 cursor-not-allowed" : "border-muted/50 bg-muted/30 hover:border-muted/70 hover:bg-muted/50"}
   `}
                             >
                                 <Upload className="w-6 h-6 text-muted-foreground mb-2" />
@@ -270,7 +273,7 @@ export function AnnouncementDialog({
                                     multiple
                                     className="hidden"
                                     id="fileUpload"
-                                    disabled={attachments.length >= MAX_ATTACHMENTS}
+                                    disabled={attachments.length >= MAX_ATTACHMENTS || isSubmitting}
                                     onChange={onSelectFiles}
                                 />
 
@@ -289,6 +292,7 @@ export function AnnouncementDialog({
                                             <span className="text-sm">{file.name}</span>
                                             <Button
                                                 className=" text-xs"
+                                                disabled={isSubmitting}
                                                 onClick={() =>
                                                     setAttachments((prev) => prev.filter((_, i) => i !== index))
                                                 }

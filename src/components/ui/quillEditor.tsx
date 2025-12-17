@@ -25,7 +25,7 @@ export default function QuillEditor({
 
   useEffect(() => {
     const getTheme = localStorage.getItem("theme");
-    if (getTheme === "light" || !getTheme) {
+    if (getTheme === "light" || getTheme === "blue" || getTheme === "green" || getTheme === "purple" || !getTheme) {
       setisDarkTheme(false)
     } else {
       setisDarkTheme(true)

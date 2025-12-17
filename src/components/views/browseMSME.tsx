@@ -45,6 +45,7 @@ import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Collaboration {
     id: string;
@@ -455,27 +456,31 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
 
             <Dialog open={!!selectedProfile} onOpenChange={() => { setSelectedProfile(null); setCollaborations([]) }}>
                 {selectedProfile && (
-                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>{selectedProfile.company_name}</DialogTitle>
-                            <DialogDescription>{selectedProfile.sector}</DialogDescription>
+                    <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[85vh] flex flex-col p-0">
+                        <DialogHeader className="space-y-4 pb-4 border-b pr-10 px-6 pt-6">
+                            <div className="flex flex-col items-start gap-3">
+                                {selectedProfile.logo_url && (
+                                    <Image
+                                        width={64}
+                                        height={64}
+                                        src={selectedProfile.logo_url}
+                                        alt={selectedProfile.company_name}
+                                        className="w-16 h-16 rounded-full object-cover"
+                                    />
+                                )}
+                                <div className="text-left space-y-1">
+                                    <DialogTitle className="text-2xl">{selectedProfile.company_name}</DialogTitle>
+                                    <DialogDescription className="text-base">{selectedProfile.sector}</DialogDescription>
+                                </div>
+                            </div>
                         </DialogHeader>
-                        <div className="space-y-4">
-                            {selectedProfile.logo_url && (
-                                <Image
-                                    width={25}
-                                    height={25}
-                                    src={selectedProfile.logo_url}
-                                    alt={selectedProfile.company_name}
-                                    className="w-24 h-24 rounded-full mx-auto object-cover"
-                                />
-                            )}
+                        <div className="overflow-scroll px-6 pb-6 space-y-4">
                             <p className="text-sm text-muted-foreground">
                                 {selectedProfile.description}
                             </p>
                             <div className="flex flex-wrap gap-2">
                                 {selectedProfile.website_url && (
-                                    <Button asChild>
+                                    <Button asChild size="sm">
                                         <a
                                             href={selectedProfile.website_url}
                                             target="_blank"
@@ -486,7 +491,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                     </Button>
                                 )}
                                 {selectedProfile.linkedin_url && (
-                                    <Button variant="outline" asChild>
+                                    <Button variant="outline" asChild size="sm">
                                         <a
                                             href={selectedProfile.linkedin_url}
                                             target="_blank"
@@ -497,7 +502,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                     </Button>
                                 )}
                                 {selectedProfile.x_url && (
-                                    <Button variant="outline" asChild>
+                                    <Button variant="outline" asChild size="sm">
                                         <a
                                             href={selectedProfile.x_url}
                                             target="_blank"
@@ -511,154 +516,138 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
 
                             <h3 className="text-lg font-semibold">Challenges</h3>
                             {collabLoading ? (
-                                <p>Loading challenges...</p>
+                                <div className="overflow-x-auto -mx-6 px-6">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="min-w-[200px] sm:w-[350px]">Title</TableHead>
+                                                <TableHead className="min-w-[120px] sm:w-[150px]">End Date</TableHead>
+                                                <TableHead className="min-w-[120px] sm:w-[150px]">Extended End Date</TableHead>
+                                                <TableHead className="min-w-[100px] sm:w-[120px]">Status</TableHead>
+                                                <TableHead className="min-w-[100px] sm:w-[120px]">Allow Updates</TableHead>
+                                                <TableHead className="text-right min-w-[180px] sm:w-[220px]">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {Array.from({ length: 3 }).map((_, i) => (
+                                                <TableRow key={i}>
+                                                    <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                                                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                                                    <TableCell><Skeleton className="h-6 w-10" /></TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Skeleton className="h-8 w-20" />
+                                                            <Skeleton className="h-8 w-16" />
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             ) : collabError ? (
                                 <p className="text-red-500">Error: {collabError}</p>
                             ) : collaborations.length === 0 ? (
                                 <p>No challenges found for this MSME.</p>
                             ) : (
-                                <Table>
-                                    <TableCaption>
-                                        List of challenges by {selectedProfile.company_name}.
-                                    </TableCaption>
+                                <div className="overflow-x-auto -mx-6 px-6">
+                                    <Table>
+                                        <TableCaption>
+                                            List of challenges by {selectedProfile.company_name}.
+                                        </TableCaption>
 
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[350px]">Title</TableHead>
-                                            <TableHead className="w-[150px]">End Date</TableHead>
-                                            <TableHead className="w-[150px]">Extended End Date</TableHead>
-                                            <TableHead className="w-[120px]">Status</TableHead>
-                                            <TableHead className="w-[120px]">Allow Updates</TableHead>
-                                            <TableHead className="text-right w-[220px]">Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="min-w-[200px] sm:w-[350px]">Title</TableHead>
+                                                <TableHead className="min-w-[120px] sm:w-[150px]">End Date</TableHead>
+                                                <TableHead className="min-w-[120px] sm:w-[150px]">Extended End Date</TableHead>
+                                                <TableHead className="min-w-[100px] sm:w-[120px]">Status</TableHead>
+                                                <TableHead className="min-w-[100px] sm:w-[120px]">Allow Updates</TableHead>
+                                                <TableHead className="text-right min-w-[180px] sm:w-[220px]">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
 
-                                    <TableBody>
-                                        {collaborations.map((collaboration) => (
-                                            <TableRow key={collaboration.id}>
+                                        <TableBody>
+                                            {collaborations.map((collaboration) => (
+                                                <TableRow key={collaboration.id}>
 
-                                                {/* TITLE */}
-                                                <TableCell className="font-medium">
-                                                    {collaboration.title}
-                                                </TableCell>
+                                                    {/* TITLE */}
+                                                    <TableCell className="font-medium">
+                                                        {collaboration.title}
+                                                    </TableCell>
 
 
-                                                <TableCell>
-                                                    {collaboration.end_date
-                                                        ? new Date(collaboration.end_date).toLocaleDateString()
-                                                        : "N/A"}
-                                                </TableCell>
+                                                    <TableCell>
+                                                        {collaboration.end_date
+                                                            ? new Date(collaboration.end_date).toLocaleDateString()
+                                                            : "N/A"}
+                                                    </TableCell>
 
-                                                <TableCell>
-                                                    {collaboration.extended_end_date
-                                                        ? new Date(collaboration.extended_end_date).toLocaleDateString()
-                                                        : "N/A"}
-                                                </TableCell>
+                                                    <TableCell>
+                                                        {collaboration.extended_end_date
+                                                            ? new Date(collaboration.extended_end_date).toLocaleDateString()
+                                                            : "N/A"}
+                                                    </TableCell>
 
-                                                {/* STATUS */}
-                                                <TableCell className="capitalize">
-                                                    {collaboration.status}
-                                                </TableCell>
+                                                    {/* STATUS */}
+                                                    <TableCell className="capitalize">
+                                                        {collaboration.status}
+                                                    </TableCell>
 
-                                                <TableCell>
-                                                    <div className="flex items-center space-x-2">
-                                                        {statusUpdateLoadingId === collaboration.id ? <Loader2 className="animate-spin flex items-center" /> : <Switch
-                                                            checked={collaboration.allow_status_updates}
-                                                            onCheckedChange={(checked) => handleToggleStatusUpdates(collaboration.id, checked)}
-                                                            disabled={!isAdmin() || statusUpdateLoadingId === collaboration.id}
-                                                        />}
-                                                    </div>
-                                                </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center space-x-2">
+                                                            {statusUpdateLoadingId === collaboration.id ? <Loader2 className="animate-spin flex items-center" /> : <Switch
+                                                                checked={collaboration.allow_status_updates}
+                                                                onCheckedChange={(checked) => handleToggleStatusUpdates(collaboration.id, checked)}
+                                                                disabled={!isAdmin() || statusUpdateLoadingId === collaboration.id}
+                                                            />}
+                                                        </div>
+                                                    </TableCell>
 
-                                                {/* ACTIONS */}
-                                                <TableCell className="text-right w-[220px]">
-                                                    <div className="flex justify-end items-center gap-2">
-                                                        {collaboration.status === "expired" ? (
-                                                            <Popover>
-                                                                <PopoverTrigger asChild>
-                                                                    <Button
-                                                                        variant="default"
-                                                                        className="min-w-[100px] bg-green-600 hover:bg-green-700 text-white"
-                                                                        disabled={isExtendDateLoading && extendCollabId === collaboration.id}
-                                                                    >
-                                                                        Activate
-                                                                    </Button>
-                                                                </PopoverTrigger>
-
-                                                                <PopoverContent onFocusOutside={(e) => e.preventDefault()}>
-                                                                    <Calendar
-                                                                        mode="single"
-                                                                        selected={selectedDate}
-                                                                        className="w-full h-[350px]"
-                                                                        onSelect={setSelectedDate}
-                                                                        disabled={(date) => date < new Date(collaboration.end_date)}
-                                                                        defaultMonth={new Date(collaboration.end_date)}
-                                                                        fixedWeeks
-                                                                    />
-
-                                                                    <div className="flex justify-between items-center">
-                                                                        <LoadingButton
-                                                                            onClick={() => handleExtendCollaboration(collaboration.id)}
-                                                                            className="w-fit m-2 min-w-[140px]"
-                                                                            disabled={!selectedDate}
-                                                                            isLoading={isExtendDateLoading && extendCollabId === collaboration.id}
-                                                                        >
-                                                                            Confirm Activation
-                                                                        </LoadingButton>
-                                                                        {isAdmin() && (
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                size="default"
-                                                                                className="w-fit m-2 min-w-[140px]"
-                                                                                onClick={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    e.stopPropagation();
-                                                                                    setEditRewardCollab(collaboration);
-                                                                                }}
-                                                                            >
-                                                                                Edit Reward
-                                                                            </Button>
-                                                                        )}
-                                                                    </div>
-                                                                </PopoverContent>
-                                                            </Popover>
-                                                        ) : (
-                                                            <>
-                                                                {/* EXTEND BUTTON (active + stopped) */}
+                                                    {/* ACTIONS */}
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end items-center gap-2">
+                                                            {collaboration.status === "expired" ? (
                                                                 <Popover>
                                                                     <PopoverTrigger asChild>
                                                                         <Button
-                                                                            variant="outline"
-                                                                            className="min-w-[88px]"
+                                                                            variant="default"
+                                                                            size="sm"
+                                                                            className="min-w-[80px] bg-green-600 hover:bg-green-700 text-white"
                                                                             disabled={isExtendDateLoading && extendCollabId === collaboration.id}
                                                                         >
-                                                                            Extend
+                                                                            Activate
                                                                         </Button>
                                                                     </PopoverTrigger>
 
-                                                                    <PopoverContent className="w-auto p-0" align="end" onFocusOutside={(e) => e.preventDefault()}>
+                                                                    <PopoverContent onFocusOutside={(e) => e.preventDefault()}>
                                                                         <Calendar
                                                                             mode="single"
                                                                             selected={selectedDate}
+                                                                            className="w-full h-[350px]"
                                                                             onSelect={setSelectedDate}
                                                                             disabled={(date) => date < new Date(collaboration.end_date)}
-                                                                            defaultMonth={new Date(collaboration.extended_end_date || collaboration.end_date)}
+                                                                            defaultMonth={new Date(collaboration.end_date)}
+                                                                            fixedWeeks
                                                                         />
 
-                                                                        <div className="flex justify-between items-center">
+                                                                        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 p-2">
                                                                             <LoadingButton
                                                                                 onClick={() => handleExtendCollaboration(collaboration.id)}
-                                                                                className="w-fit m-2 min-w-[120px]"
+                                                                                className="w-full sm:w-fit"
+                                                                                size="sm"
                                                                                 disabled={!selectedDate}
                                                                                 isLoading={isExtendDateLoading && extendCollabId === collaboration.id}
                                                                             >
-                                                                                Confirm Extend
+                                                                                Confirm Activation
                                                                             </LoadingButton>
                                                                             {isAdmin() && (
                                                                                 <Button
                                                                                     variant="outline"
-                                                                                    size="default"
-                                                                                    className="w-fit m-2 min-w-[140px]"
+                                                                                    size="sm"
+                                                                                    className="w-full sm:w-fit"
                                                                                     onClick={(e) => {
                                                                                         e.preventDefault();
                                                                                         e.stopPropagation();
@@ -671,28 +660,80 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                         </div>
                                                                     </PopoverContent>
                                                                 </Popover>
+                                                            ) : (
+                                                                <>
+                                                                    <Popover>
+                                                                        <PopoverTrigger asChild>
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="sm"
+                                                                                className="min-w-[70px]"
+                                                                                disabled={isExtendDateLoading && extendCollabId === collaboration.id}
+                                                                            >
+                                                                                Extend
+                                                                            </Button>
+                                                                        </PopoverTrigger>
 
-                                                                {/* STOP / RESUME */}
-                                                                <LoadingButton
-                                                                    variant={collaboration.status === "stopped" ? "default" : "destructive"}
-                                                                    onClick={() => handleStopCollaboration(collaboration.id)}
-                                                                    disabled={isStopCollaborationLoading && stopCollabId === collaboration.id}
-                                                                    isLoading={isStopCollaborationLoading && stopCollabId === collaboration.id}
-                                                                    className="min-w-[88px]"
-                                                                >
-                                                                    {collaboration.status === "stopped" ? "Resume" : "Stop"}
-                                                                </LoadingButton>
-                                                            </>
-                                                        )}
+                                                                        <PopoverContent className="w-auto p-0" align="end" onFocusOutside={(e) => e.preventDefault()}>
+                                                                            <Calendar
+                                                                                mode="single"
+                                                                                selected={selectedDate}
+                                                                                onSelect={setSelectedDate}
+                                                                                disabled={(date) => date < new Date(collaboration.end_date)}
+                                                                                defaultMonth={new Date(collaboration.extended_end_date || collaboration.end_date)}
+                                                                            />
 
-                                                    </div>
-                                                </TableCell>
+                                                                            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 p-2">
+                                                                                <LoadingButton
+                                                                                    onClick={() => handleExtendCollaboration(collaboration.id)}
+                                                                                    className="w-full sm:w-fit"
+                                                                                    size="sm"
+                                                                                    disabled={!selectedDate}
+                                                                                    isLoading={isExtendDateLoading && extendCollabId === collaboration.id}
+                                                                                >
+                                                                                    Confirm Extend
+                                                                                </LoadingButton>
+                                                                                {isAdmin() && (
+                                                                                    <Button
+                                                                                        variant="outline"
+                                                                                        size="sm"
+                                                                                        className="w-full sm:w-fit"
+                                                                                        onClick={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            e.stopPropagation();
+                                                                                            setEditRewardCollab(collaboration);
+                                                                                        }}
+                                                                                    >
+                                                                                        Edit Reward
+                                                                                    </Button>
+                                                                                )}
+                                                                            </div>
+                                                                        </PopoverContent>
+                                                                    </Popover>
+
+                                                                    {/* STOP / RESUME */}
+                                                                    <LoadingButton
+                                                                        variant={collaboration.status === "stopped" ? "default" : "destructive"}
+                                                                        size="sm"
+                                                                        onClick={() => handleStopCollaboration(collaboration.id)}
+                                                                        disabled={isStopCollaborationLoading && stopCollabId === collaboration.id}
+                                                                        isLoading={isStopCollaborationLoading && stopCollabId === collaboration.id}
+                                                                        className="min-w-[70px]"
+                                                                    >
+                                                                        {collaboration.status === "stopped" ? "Resume" : "Stop"}
+                                                                    </LoadingButton>
+                                                                </>
+                                                            )}
+
+                                                        </div>
+                                                    </TableCell>
 
 
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             )}
                         </div>
                     </DialogContent>

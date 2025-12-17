@@ -82,6 +82,7 @@ const QAReplyForm = ({
                     ref={fileInputRef}
                     type="file"
                     className="hidden"
+                    disabled={isPostingReply}
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
                 />
                 <div className='flex items-center gap-2'>
@@ -89,7 +90,7 @@ const QAReplyForm = ({
                         <Button
                             className='flex gap-2'
                             onClick={() => fileInputRef.current?.click()}
-                            disabled={!!file}
+                            disabled={!!file || isPostingReply}
                         >
                             <Paperclip className="h-4 w-4" />
                             <p>Attachment</p>
@@ -105,6 +106,7 @@ const QAReplyForm = ({
                             variant="destructive"
                             onClick={handleCancelFile}
                             className="text-xs"
+                            disabled={isPostingReply}
                         >
                             Remove File
                         </Button>
@@ -112,7 +114,7 @@ const QAReplyForm = ({
                 </div>
 
                 <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={onCancel}>
+                    <Button variant="ghost" size="sm" onClick={onCancel} disabled={isPostingReply}>
                         Cancel
                     </Button>
                     <Button disabled={isPostingReply} size="sm" onClick={handleSubmit}>
@@ -287,7 +289,7 @@ const QAItemView = ({
                     )}
                     <span>• {formatRelativeTime(item.timestamp)}</span>
                 </div>
-                <div className='ml-2 py-1'>
+                <div className='ml-2 py-1 max-w-full break-words'>
                     <QAItemViewer html={item.text} />
                     {item.attachment && (
                         <a
@@ -309,17 +311,19 @@ const QAItemView = ({
                             onChange={setEditText}
                             placeholder="Edit your question/reply..."
                             height="150px"
+                            disabled={isUpdating}
                         />
                         <div className="flex justify-between items-center">
                             <Input
                                 ref={fileInputRef}
                                 type="file"
                                 className="hidden"
+                                disabled={isUpdating}
                                 onChange={handleFileChange}
                             />
 
                             <div className="flex gap-2">
-                                <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                                <Button variant="ghost" size="sm" onClick={handleCancelEdit} disabled={isUpdating}>
                                     Cancel
                                 </Button>
                                 <Button size="sm" onClick={handleSaveEdit} disabled={isUpdating}>
@@ -688,7 +692,7 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
             </div>
 
             <CardContent>
-                <div className="space-y-3 p-4 border rounded-lg bg-background">
+                <div className="space-y-3 p-4 border rounded-lg bg-background w-full">
                     {isExpired ? (
                         <div className="text-center py-6 text-muted-foreground">
                             <p className="font-semibold">This Q/A section is closed.</p>
@@ -702,6 +706,7 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
                                 onChange={setNewQuestion}
                                 placeholder="Ask your question here..."
                                 height="150px"
+                                disabled={isPostingQuestion}
                             />
 
                             <div className="flex gap-2 items-center justify-between">
@@ -710,6 +715,7 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
                                         ref={fileInputRef}
                                         type="file"
                                         className="hidden"
+                                        disabled={isPostingQuestion}
                                         onChange={(e) => setNewFile(e.target.files?.[0] || null)}
                                     />
 
@@ -717,7 +723,7 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
                                         <Button
                                             className='flex gap-2'
                                             onClick={() => fileInputRef.current?.click()}
-                                            disabled={!!newFile}
+                                            disabled={!!newFile || isPostingQuestion}
                                         >
                                             <Paperclip className="h-4 w-4" />
                                             <p>Attachment</p>
@@ -732,6 +738,7 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
                                             variant="destructive"
                                             onClick={handleCancel}
                                             className="text-xs"
+                                            disabled={isPostingQuestion}
                                         >
                                             Cancel
                                         </Button>

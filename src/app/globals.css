@@ -1458,7 +1458,19 @@ body {
   letter-spacing: 5;
   min-height: 150px;
   line-height: 1.6;
+  overflow-wrap: break-word !important;
+  word-wrap: break-word !important;
+  word-break: break-all !important;
 }
+
+.ql-editor {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  overflow-wrap: break-word !important;
+  word-wrap: break-word !important;
+  word-break: break-all !important;
+}
+
 
 .dark .prose {
   color: #d1d5db !important;
@@ -1548,10 +1560,6 @@ body {
   font-size: small;
 }
 
-/* Ensure Tailwind Typography prose content is readable in dark mode across the app.
-   This is a defensive override for cases where `dark:prose-invert` isn't applied or
-   other styles are overriding text color. Use specific selectors to avoid leaking.
-*/
 .dark .prose,
 .quill-dark .prose {
   color: #fff !important;
@@ -1588,4 +1596,16 @@ body {
 .quill-dark .prose code {
   color: #f8fafc !important;
   background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark !important;
+    }
+}
+
+@media (forced-colors: active) {
+    :root {
+        color-scheme: dark !important;
+    }
 }

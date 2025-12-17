@@ -395,10 +395,9 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       className={`hidden-scroll h-screen relative bg-background w-full`}
       id="hero"
     >
-      {/* Accent background layer */}
+
       <div className="xl:hidden absolute top-0 left-0 w-full h-full z-0 bg-accent opacity-0 transition-opacity duration-1000 animate-in fade-in" />
 
-      {/* Vanta.js animation layer */}
       <div
         ref={vantaRef}
         className="xl:hidden absolute top-0 left-0 w-full h-full z-[1]"

@@ -796,13 +796,13 @@ export default function CorporateChallengeDetails({
             <TabsContent value="announcement">
               <Card className="border shadow-sm p-4 min-h-[400px]">
                 <div className="mb-8 text-left m-3">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
-                        <MessageSquare className="h-6 w-6 md:h-8 md:w-8" />
+                      <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                        <MessageSquare className="h-8 w-8" />
                         Announcements
                       </h2>
-                      <p className="text-sm md:text-base text-muted-foreground">
+                      <p className="text-muted-foreground">
                         Updates and important information for this challenge.
                       </p>
                     </div>
@@ -815,14 +815,13 @@ export default function CorporateChallengeDetails({
                           setIsAnnouncementDialogOpen(true);
                         }}
                       >
-                        <span className="md:hidden">+ Create</span>
-                        <span className="hidden md:inline">+ Create Announcement</span>
+                        + Create Announcement
                       </Button>
                     )}
                   </div>
                 </div>
 
-                <CardContent className="p-4">
+                <CardContent className="p-4 pt-0">
                   {!isLoggedIn ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                       <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
