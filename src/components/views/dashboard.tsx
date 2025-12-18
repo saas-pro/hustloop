@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from 'lucide-react';
@@ -256,6 +256,15 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [userDetailsData, setUserDetailsData] = useState<any>(null);
     const [isLoadingUserDetails, setIsLoadingUserDetails] = useState(false);
 
+    // Dashboard stats state
+    const [dashboardStats, setDashboardStats] = useState<any>(null);
+    const [isLoadingStats, setIsLoadingStats] = useState(false);
+
+    // Active pie chart segment indices for legend hover
+    const [activeTechTransferIndex, setActiveTechTransferIndex] = useState<number | undefined>(undefined);
+    const [activeCollaborationIndex, setActiveCollaborationIndex] = useState<number | undefined>(undefined);
+    const [activeSolutionIndex, setActiveSolutionIndex] = useState<number | undefined>(undefined);
+    const [activeUserIndex, setActiveUserIndex] = useState<number | undefined>(undefined);
 
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
     const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
@@ -291,6 +300,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [pitchPage, setPitchPage] = useState(1);
     const [pitchPerPage, setPitchPerPage] = useState(10);
     const [isDeletingPitch, setIsDeletingPitch] = useState(false);
+    const [pitchSearchQuery, setPitchSearchQuery] = useState("");
 
     const searchParams = useSearchParams()
 
@@ -366,6 +376,37 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could not connect to the server or retrieve data.' });
         } finally {
             setIsLoadingUsers(false);
+        }
+    }, [toast]);
+
+    const fetchDashboardStats = useCallback(async () => {
+        setIsLoadingStats(true);
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'No token found. Please log in again.' });
+            setIsLoadingStats(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/dashboard-stats`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                toast({ variant: 'destructive', title: 'Network Error', description: `Failed to fetch dashboard stats: ${response.status}` });
+                setIsLoadingStats(false);
+                return;
+            }
+
+            const data = await response.json();
+            setDashboardStats(data);
+
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not fetch dashboard statistics.' });
+        } finally {
+            setIsLoadingStats(false);
         }
     }, [toast]);
 
@@ -505,6 +546,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
             const result = await response.json();
             setSubmissions(result.solutions);
+            console.log(result);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });
         }
@@ -855,6 +897,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     useEffect(() => {
         if (userRole === 'admin') {
+            if (activeTab === 'overview') fetchDashboardStats();
             if (activeTab === 'users') fetchUsers(1, 10);
             if (activeTab === 'aignite') fetchRegistrations(1);
             // if (activeTab === 'connex') fetchConnex(1);
@@ -864,7 +907,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             // if (activeTab === 'subscribers') fetchSubscribers();
             if (activeTab === 'pitch-details') fetchPitchingDetails();
         }
-    }, [activeTab, userRole, fetchUsers, fetchPitchingDetails, fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations]);
+    }, [activeTab, userRole, fetchUsers, fetchPitchingDetails, fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations, fetchDashboardStats]);
 
 
 
@@ -1164,10 +1207,12 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 throw new Error(data.error || "Failed to delete submission");
             }
             setMySubmissions((prev) => prev.filter((s) => s.id !== id));
-            fetchIps()
+            // fetchIps() // Function not defined - relying on state update instead
             toast({ title: "success", description: "Submission deleted successfully" });
         } catch (error: any) {
             toast({ title: "error", description: "Failed to delete submission" });
+        } finally {
+            fetchIps()
         }
     };
 
@@ -1603,6 +1648,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     const [hasDraft, setHasDraft] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
     const [existingFile, setExistingFile] = useState<ExistingFile | null>(null);
 
 
@@ -1846,98 +1892,404 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         </TabsList>
                         <div className="flex-grow overflow-y-auto pb-6 w-full" >
                             <TabsContent value="overview" className="mt-0 space-y-6">
-                                {isipOverview ? (<div>
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>Activity Overview</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                                <RechartsBarChart data={chartData}>
-                                                    <CartesianGrid vertical={false} />
-                                                    <XAxis
-                                                        dataKey="year"
-                                                        tickLine={false}
-                                                        tickMargin={10}
-                                                        axisLine={false}
-                                                    />
-                                                    <Tooltip cursor={false} />
-                                                    <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
-                                                </RechartsBarChart>
-                                            </ChartContainer>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>Submissions</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            {loading ? (
-                                                <p>Loading...</p>
-                                            ) : ipData.length === 0 ? (
-                                                <p>You have no active submissions.</p>
-                                            ) : (
-                                                <div className="space-y-4">
-                                                    {ipData.map((submission, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className="p-4 border rounded-lg flex justify-between items-center transition-all cursor-pointer hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-ring"
-                                                            tabIndex={0}
-                                                        >
-                                                            <div className="flex items-center space-x-4">
-                                                                <div className="flex flex-col items-center text-sm text-muted-foreground w-24 flex-shrink-0">
-                                                                    <span className="font-medium text-xs capitalize tracking-wider">
-                                                                        {submission.date}
-                                                                    </span>
-                                                                    <span
-                                                                        className={`mt-1 px-2 py-0.5 rounded-full text-xs font-semibold 
-                            ${submission.approvalStatus === 'approved' ? 'bg-green-100 text-green-700' :
-                                                                                submission.approvalStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                                                    'bg-red-100 text-red-700'
-                                                                            }`
-                                                                        }
+                                {userRole === 'admin' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
+                                        {/* Tech Transfer IPs Pie Chart */}
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <CardHeader>
+                                                <CardTitle>Tech Transfer IPs</CardTitle>
+                                                <CardDescription>Status breakdown</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                {isLoadingStats ? (
+                                                    <div className="flex justify-center items-center h-[300px]">
+                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                    </div>
+                                                ) : dashboardStats?.tech_transfer ? (
+                                                    <>
+                                                        <div className="relative">
+                                                            <ResponsiveContainer width="100%" height={280}>
+                                                                <PieChart>
+                                                                    <Pie
+                                                                        data={dashboardStats.tech_transfer.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.tech_transfer.by_status).map(([status, count]) => ({
+                                                                            name: status.replace(/_/g, ' '),
+                                                                            value: count
+                                                                        }))}
+                                                                        dataKey="value"
+                                                                        nameKey="name"
+                                                                        cx="50%"
+                                                                        cy="45%"
+                                                                        innerRadius={90}
+                                                                        outerRadius={120}
+                                                                        paddingAngle={2}
+                                                                        activeIndex={activeTechTransferIndex}
+                                                                        activeShape={{
+                                                                            outerRadius: 125,
+                                                                            strokeWidth: 1,
+                                                                            cursor: 'pointer'
+                                                                        } as any}
+                                                                        inactiveShape={{
+                                                                            opacity: 0.6
+                                                                        } as any}
+                                                                        isAnimationActive={true}
+
+                                                                        animationBegin={0}
+                                                                        animationDuration={400}
+                                                                        animationEasing="ease-in-out"
                                                                     >
-                                                                        {submission.approvalStatus}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex-grow">
-                                                                    <p className="font-semibold">{submission.title}</p>
-                                                                    <p className="text-sm text-muted-foreground mt-1">Summary:</p>
-                                                                    <div className="line-clamp-2 text-sm">
-                                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                                            {submission.summary}
-                                                                        </ReactMarkdown>
-                                                                    </div>
-                                                                </div>
+                                                                        {dashboardStats.tech_transfer.total === 0 ? (
+                                                                            <Cell fill="#e5e7eb" />
+                                                                        ) : (
+                                                                            Object.keys(dashboardStats.tech_transfer.by_status).map((status, index) => {
+                                                                                const colors: Record<string, string> = {
+                                                                                    'pending': '#f59e0b',
+                                                                                    'approved': '#10b981',
+                                                                                    'rejected': '#ef4444',
+                                                                                    'need_info': '#3b82f6',
+                                                                                    'monitized': '#8b5cf6'
+                                                                                };
+                                                                                return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
+                                                                            })
+                                                                        )}
+                                                                    </Pie>
+                                                                    <Tooltip
+                                                                        contentStyle={{
+                                                                            borderRadius: 12,
+                                                                        }}
+                                                                    />
+                                                                </PieChart>
+                                                            </ResponsiveContainer>
+                                                            <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                <p className="text-3xl font-bold">{dashboardStats.tech_transfer.total}</p>
+                                                                <p className="text-xs text-muted-foreground whitespace-nowrap">Total Submissions</p>
                                                             </div>
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                </div>) :
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>Activity Overview</CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                                <RechartsBarChart data={staticChartData}>
-                                                    <CartesianGrid vertical={false} />
-                                                    <XAxis
-                                                        dataKey="year"
-                                                        tickLine={false}
-                                                        tickMargin={10}
-                                                        axisLine={false}
-                                                    />
-                                                    <YAxis />
-                                                    <Tooltip cursor={false} />
-                                                    <Bar dataKey="activity" fill="var(--color-activity)" radius={4} />
-                                                </RechartsBarChart>
-                                            </ChartContainer>
-                                        </CardContent>
-                                    </Card>}
+                                                        {dashboardStats.tech_transfer.total > 0 && (
+                                                            <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                {Object.entries(dashboardStats.tech_transfer.by_status).map(([status, count], index) => (
+                                                                    <div
+                                                                        key={status}
+                                                                        className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                        style={{ opacity: activeTechTransferIndex === undefined || activeTechTransferIndex === index ? 1 : 0.6 }}
+                                                                        onMouseEnter={() => setActiveTechTransferIndex(index)}
+                                                                        onMouseLeave={() => setActiveTechTransferIndex(undefined)}
+                                                                    >
+                                                                        <div className="w-3 h-3 rounded-full" style={{
+                                                                            backgroundColor: {
+                                                                                'pending': '#f59e0b',
+                                                                                'approved': '#10b981',
+                                                                                'rejected': '#ef4444',
+                                                                                'need_info': '#3b82f6',
+                                                                                'monitized': '#8b5cf6'
+                                                                            }[status] || '#6366f1'
+                                                                        }} />
+                                                                        <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : null}
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Challenge Pie Chart */}
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <CardHeader>
+                                                <CardTitle>Challenge</CardTitle>
+                                                <CardDescription>Status breakdown</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                {isLoadingStats ? (
+                                                    <div className="flex justify-center items-center h-[300px]">
+                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                    </div>
+                                                ) : dashboardStats?.collaborations ? (
+                                                    <>
+                                                        <div className="relative">
+                                                            <ResponsiveContainer width="100%" height={280}>
+                                                                <PieChart>
+                                                                    <Pie
+                                                                        data={dashboardStats.collaborations.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.collaborations.by_status).map(([status, count]) => ({
+                                                                            name: status.replace(/_/g, ' '),
+                                                                            value: count
+                                                                        }))}
+                                                                        dataKey="value"
+                                                                        nameKey="name"
+                                                                        cx="50%"
+                                                                        cy="45%"
+                                                                        innerRadius={90}
+                                                                        outerRadius={120}
+                                                                        paddingAngle={2}
+                                                                        activeIndex={activeCollaborationIndex}
+                                                                        activeShape={{
+                                                                            outerRadius: 125,
+                                                                            strokeWidth: 1,
+                                                                            cursor: 'pointer'
+                                                                        } as any}
+                                                                        inactiveShape={{
+                                                                            opacity: 0.6
+                                                                        } as any}
+                                                                        isAnimationActive={true}
+                                                                        animationBegin={0}
+                                                                        animationDuration={400}
+                                                                        animationEasing="ease-in-out"
+                                                                    >
+                                                                        {dashboardStats.collaborations.total === 0 ? (
+                                                                            <Cell fill="#e5e7eb" />
+                                                                        ) : (
+                                                                            Object.keys(dashboardStats.collaborations.by_status).map((status, index) => {
+                                                                                const colors: Record<string, string> = {
+                                                                                    'active': '#10b981',
+                                                                                    'completed': '#6366f1',
+                                                                                    'stopped': '#f59e0b',
+                                                                                    'expired': '#ef4444'
+                                                                                };
+                                                                                return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
+                                                                            })
+                                                                        )}
+                                                                    </Pie>
+                                                                    <Tooltip
+                                                                        contentStyle={{
+                                                                            borderRadius: 12,
+                                                                        }}
+                                                                    />
+                                                                </PieChart>
+                                                            </ResponsiveContainer>
+                                                            <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                <p className="text-3xl font-bold">{dashboardStats.collaborations.total}</p>
+                                                                <p className="text-xs text-muted-foreground whitespace-nowrap">Total Challenges</p>
+                                                            </div>
+                                                        </div>
+                                                        {dashboardStats.collaborations.total > 0 && (
+                                                            <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                {Object.entries(dashboardStats.collaborations.by_status).map(([status, count], index) => (
+                                                                    <div
+                                                                        key={status}
+                                                                        className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                        style={{ opacity: activeCollaborationIndex === undefined || activeCollaborationIndex === index ? 1 : 0.6 }}
+                                                                        onMouseEnter={() => setActiveCollaborationIndex(index)}
+                                                                        onMouseLeave={() => setActiveCollaborationIndex(undefined)}
+                                                                    >
+                                                                        <div className="w-3 h-3 rounded-full" style={{
+                                                                            backgroundColor: {
+                                                                                'active': '#10b981',
+                                                                                'completed': '#6366f1',
+                                                                                'stopped': '#f59e0b',
+                                                                                'expired': '#ef4444'
+                                                                            }[status] || '#6366f1'
+                                                                        }} />
+                                                                        <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : null}
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Solutions Pie Chart */}
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <CardHeader>
+                                                <CardTitle>Solutions</CardTitle>
+                                                <CardDescription>Status breakdown</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                {isLoadingStats ? (
+                                                    <div className="flex justify-center items-center h-[300px]">
+                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                    </div>
+                                                ) : dashboardStats?.solutions ? (
+                                                    <>
+                                                        <div className="relative">
+                                                            <ResponsiveContainer width="100%" height={280}>
+                                                                <PieChart>
+                                                                    <Pie
+                                                                        data={dashboardStats.solutions.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.solutions.by_status).map(([status, count]) => ({
+                                                                            name: status.replace(/_/g, ' '),
+                                                                            value: count
+                                                                        }))}
+                                                                        dataKey="value"
+                                                                        nameKey="name"
+                                                                        cx="50%"
+                                                                        cy="45%"
+                                                                        innerRadius={90}
+                                                                        outerRadius={120}
+                                                                        paddingAngle={2}
+                                                                        activeIndex={activeSolutionIndex}
+                                                                        activeShape={{
+                                                                            outerRadius: 125,
+                                                                            strokeWidth: 1,
+                                                                            cursor: 'pointer'
+                                                                        } as any}
+                                                                        inactiveShape={{
+                                                                            opacity: 0.6
+                                                                        } as any}
+                                                                        isAnimationActive={true}
+                                                                        animationBegin={0}
+                                                                        animationDuration={400}
+                                                                        animationEasing="ease-in-out"
+                                                                    >
+                                                                        {dashboardStats.solutions.total === 0 ? (
+                                                                            <Cell fill="#e5e7eb" />
+                                                                        ) : (
+                                                                            Object.keys(dashboardStats.solutions.by_status).map((status, index) => {
+                                                                                const colors: Record<string, string> = {
+                                                                                    'new': '#3b82f6',
+                                                                                    'under_review': '#f59e0b',
+                                                                                    'duplicate': '#a855f7',
+                                                                                    'rejected': '#ef4444',
+                                                                                    'solution_accepted_points': '#10b981',
+                                                                                    'triaged': '#f97316',
+                                                                                    'need_info': '#06b6d4',
+                                                                                    'winner': '#eab308'
+                                                                                };
+                                                                                return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
+                                                                            })
+                                                                        )}
+                                                                    </Pie>
+                                                                    <Tooltip contentStyle={{
+                                                                        borderRadius: 12,
+                                                                    }} />
+                                                                </PieChart>
+                                                            </ResponsiveContainer>
+                                                            <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                <p className="text-3xl font-bold">{dashboardStats.solutions.total}</p>
+                                                                <p className="text-xs text-muted-foreground whitespace-nowrap">Total Submissions</p>
+                                                            </div>
+                                                        </div>
+                                                        {dashboardStats.solutions.total > 0 && (
+                                                            <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                {Object.entries(dashboardStats.solutions.by_status).map(([status, count], index) => (
+                                                                    <div
+                                                                        key={status}
+                                                                        className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                        style={{ opacity: activeSolutionIndex === undefined || activeSolutionIndex === index ? 1 : 0.6 }}
+                                                                        onMouseEnter={() => setActiveSolutionIndex(index)}
+                                                                        onMouseLeave={() => setActiveSolutionIndex(undefined)}
+                                                                    >
+                                                                        <div className="w-3 h-3 rounded-full" style={{
+                                                                            backgroundColor: {
+                                                                                'new': '#3b82f6',
+                                                                                'under_review': '#f59e0b',
+                                                                                'duplicate': '#a855f7',
+                                                                                'rejected': '#ef4444',
+                                                                                'solution_accepted_points': '#10b981',
+                                                                                'triaged': '#f97316',
+                                                                                'need_info': '#06b6d4',
+                                                                                'winner': '#eab308'
+                                                                            }[status] || '#6366f1'
+                                                                        }} />
+                                                                        <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : null}
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Users Pie Chart */}
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <CardHeader>
+                                                <CardTitle>Users</CardTitle>
+                                                <CardDescription>Role breakdown</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                {isLoadingStats ? (
+                                                    <div className="flex justify-center items-center h-[300px]">
+                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                    </div>
+                                                ) : dashboardStats?.users ? (
+                                                    <>
+                                                        <div className="relative">
+                                                            <ResponsiveContainer width="100%" height={280}>
+                                                                <PieChart>
+                                                                    <Pie
+                                                                        data={dashboardStats.users.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.users.by_role).map(([role, count]) => ({
+                                                                            name: role.replace(/_/g, ' '),
+                                                                            value: count
+                                                                        }))}
+                                                                        dataKey="value"
+                                                                        nameKey="name"
+                                                                        cx="50%"
+                                                                        cy="45%"
+                                                                        innerRadius={90}
+                                                                        outerRadius={120}
+                                                                        paddingAngle={2}
+                                                                        activeIndex={activeUserIndex}
+                                                                        activeShape={{
+                                                                            outerRadius: 125,
+                                                                            strokeWidth: 1,
+                                                                            cursor: 'pointer'
+                                                                        } as any}
+                                                                        inactiveShape={{
+                                                                            opacity: 0.6
+                                                                        } as any}
+                                                                        isAnimationActive={true}
+                                                                        animationBegin={0}
+                                                                        animationDuration={400}
+                                                                        animationEasing="ease-in-out"
+                                                                    >
+                                                                        {dashboardStats.users.total === 0 ? (
+                                                                            <Cell fill="#e5e7eb" />
+                                                                        ) : (
+                                                                            Object.keys(dashboardStats.users.by_role).map((role, index) => {
+                                                                                const colors: Record<string, string> = {
+                                                                                    'founder': '#8b5cf6',
+                                                                                    'msme': '#ec4899',
+                                                                                    'mentor': '#14b8a6',
+                                                                                    'incubator': '#f97316',
+                                                                                    'admin': '#6366f1'
+                                                                                };
+                                                                                return <Cell key={`cell-${index}`} fill={colors[role] || '#6366f1'} />;
+                                                                            })
+                                                                        )}
+                                                                    </Pie>
+                                                                    <Tooltip
+                                                                        contentStyle={{
+                                                                            borderRadius: 12,
+                                                                        }}
+                                                                    />
+                                                                </PieChart>
+                                                            </ResponsiveContainer>
+                                                            <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                <p className="text-3xl font-bold">{dashboardStats.users.total}</p>
+                                                                <p className="text-xs text-muted-foreground whitespace-nowrap">Total Users</p>
+                                                            </div>
+                                                        </div>
+                                                        {dashboardStats.users.total > 0 && (
+                                                            <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                {Object.entries(dashboardStats.users.by_role).map(([role, count], index) => (
+                                                                    <div
+                                                                        key={role}
+                                                                        className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                        style={{ opacity: activeUserIndex === undefined || activeUserIndex === index ? 1 : 0.6 }}
+                                                                        onMouseEnter={() => setActiveUserIndex(index)}
+                                                                        onMouseLeave={() => setActiveUserIndex(undefined)}
+                                                                    >
+                                                                        <div className="w-3 h-3 rounded-full" style={{
+                                                                            backgroundColor: {
+                                                                                'founder': '#8b5cf6',
+                                                                                'msme': '#ec4899',
+                                                                                'mentor': '#14b8a6',
+                                                                                'incubator': '#f97316',
+                                                                                'admin': '#6366f1'
+                                                                            }[role] || '#6366f1'
+                                                                        }} />
+                                                                        <span className="text-sm capitalize">{role.replace(/_/g, ' ')}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : null}
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                )}
                             </TabsContent>
                             <TabsContent value="msmes" className="mt-0">
                                 {hasSubscription || userRole === 'admin' ? (
@@ -2167,9 +2519,38 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             </CardHeader>
                                             <CardContent>
                                                 {isLoadingUsers ? (
-                                                    <div className="flex justify-center items-center h-48">
-                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                    </div>
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>User</TableHead>
+                                                                <TableHead>Role</TableHead>
+                                                                <TableHead>Status</TableHead>
+                                                                <TableHead>Details</TableHead>
+                                                                <TableHead>Actions</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {Array.from({ length: 10 }).map((_, i) => (
+                                                                <TableRow key={i}>
+                                                                    <TableCell>
+                                                                        <div className="space-y-2">
+                                                                            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                            <div className="h-3 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                        </div>
+                                                                    </TableCell>
+                                                                    <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                    <TableCell><div className="h-4 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                    <TableCell><div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                    <TableCell>
+                                                                        <div className="flex gap-2">
+                                                                            <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                            <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                        </div>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
                                                 ) : (
                                                     <>
                                                         <Table>
@@ -2256,7 +2637,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                             </TableBody>
                                                         </Table>
 
-                                                        {/* Pagination Controls */}
+                                                        {/* Optimized Pagination Controls */}
                                                         {totalPages > 1 && (
                                                             <div className="flex justify-center mt-6">
                                                                 <Pagination>
@@ -2272,25 +2653,73 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             />
                                                                         </PaginationItem>
 
-                                                                        {/* Page Numbers */}
-                                                                        {Array.from({ length: totalPages }, (_, i) => {
-                                                                            const pageNumber = i + 1;
-                                                                            return (
-                                                                                <PaginationItem key={pageNumber}>
+                                                                        {/* Show first page */}
+                                                                        <PaginationItem>
+                                                                            <PaginationLink
+                                                                                href="#"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    handlePageChange(1);
+                                                                                }}
+                                                                                isActive={currentPage === 1}
+                                                                                className="cursor-pointer"
+                                                                            >
+                                                                                1
+                                                                            </PaginationLink>
+                                                                        </PaginationItem>
+
+                                                                        {/* Show ellipsis if needed */}
+                                                                        {currentPage > 3 && (
+                                                                            <PaginationItem>
+                                                                                <PaginationEllipsis />
+                                                                            </PaginationItem>
+                                                                        )}
+
+                                                                        {/* Show pages around current page */}
+                                                                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                                                            .filter(page => {
+                                                                                // Show pages within 1 of current page, excluding first and last
+                                                                                return page > 1 && page < totalPages && Math.abs(page - currentPage) <= 1;
+                                                                            })
+                                                                            .map(page => (
+                                                                                <PaginationItem key={page}>
                                                                                     <PaginationLink
                                                                                         href="#"
                                                                                         onClick={(e) => {
                                                                                             e.preventDefault();
-                                                                                            handlePageChange(pageNumber);
+                                                                                            handlePageChange(page);
                                                                                         }}
-                                                                                        isActive={currentPage === pageNumber}
+                                                                                        isActive={currentPage === page}
                                                                                         className="cursor-pointer"
                                                                                     >
-                                                                                        {pageNumber}
+                                                                                        {page}
                                                                                     </PaginationLink>
                                                                                 </PaginationItem>
-                                                                            );
-                                                                        })}
+                                                                            ))}
+
+                                                                        {/* Show ellipsis if needed */}
+                                                                        {currentPage < totalPages - 2 && (
+                                                                            <PaginationItem>
+                                                                                <PaginationEllipsis />
+                                                                            </PaginationItem>
+                                                                        )}
+
+                                                                        {/* Show last page */}
+                                                                        {totalPages > 1 && (
+                                                                            <PaginationItem>
+                                                                                <PaginationLink
+                                                                                    href="#"
+                                                                                    onClick={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        handlePageChange(totalPages);
+                                                                                    }}
+                                                                                    isActive={currentPage === totalPages}
+                                                                                    className="cursor-pointer"
+                                                                                >
+                                                                                    {totalPages}
+                                                                                </PaginationLink>
+                                                                            </PaginationItem>
+                                                                        )}
 
                                                                         <PaginationItem>
                                                                             <PaginationNext
@@ -2317,8 +2746,26 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         >
                                             <TabsContent value="ip/technologies" className="mt-0">
                                                 {isLoadingIps ? (
-                                                    <div className="flex justify-center items-center h-48">
-                                                        <Loader2 className="h-8 w-8 animate-spin" />
+                                                    <div className="space-y-4">
+                                                        {[1, 2, 3].map((i) => (
+                                                            <div key={i} className="border rounded-md p-4 space-y-3 animate-pulse">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div className="space-y-2 flex-1">
+                                                                        <div className="h-6 bg-muted rounded w-2/3"></div>
+                                                                        <div className="h-4 bg-muted rounded w-1/3"></div>
+                                                                    </div>
+                                                                    <div className="h-6 w-20 bg-muted rounded"></div>
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    <div className="h-4 bg-muted rounded w-full"></div>
+                                                                    <div className="h-4 bg-muted rounded w-5/6"></div>
+                                                                </div>
+                                                                <div className="flex justify-end gap-2">
+                                                                    <div className="h-9 w-24 bg-muted rounded"></div>
+                                                                    <div className="h-9 w-32 bg-muted rounded"></div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 ) : techTransferIps.length === 0 ? (
                                                     <p className="text-center text-muted-foreground py-8">
@@ -2385,18 +2832,17 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                                     </Button>
                                                                                                 </DropdownMenuTrigger>
                                                                                                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                                                                                    <DropdownMenuItem onClick={() => setDialogOpen(true)}>
+                                                                                                    <DropdownMenuItem
+                                                                                                        onClick={(e) => {
+                                                                                                            e.stopPropagation()
+                                                                                                            setDeleteTargetId(ip.id)
+                                                                                                        }}
+                                                                                                    >
                                                                                                         <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
                                                                                                         Delete
                                                                                                     </DropdownMenuItem>
                                                                                                 </DropdownMenuContent>
                                                                                             </DropdownMenu>
-                                                                                            <DeleteConfirmationDialog
-                                                                                                open={dialogOpen}
-                                                                                                onOpenChange={setDialogOpen}
-                                                                                                submissionId={ip.id}
-                                                                                                onDelete={(id) => deleteSubmission(id, setMySubmissions)}
-                                                                                            />
                                                                                         </div>
 
                                                                                     </div>
@@ -2493,6 +2939,17 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         ))}
                                                     </Accordion>
                                                 )}
+                                                <DeleteConfirmationDialog
+                                                    open={!!deleteTargetId}
+                                                    onOpenChange={(open) => {
+                                                        if (!open) setDeleteTargetId(null)
+                                                    }}
+                                                    submissionId={deleteTargetId || ""}
+                                                    onDelete={(id) => {
+                                                        deleteSubmission(String(id), setMySubmissions)
+                                                        setDeleteTargetId(null)
+                                                    }}
+                                                />
                                                 <div className="absolute bottom-4 right-4">
                                                     <Button
                                                         size="sm"
@@ -2588,7 +3045,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         </Tabs>
                                     </TabsContent>
 
-                                    {/* <TabsContent value="subscribers" className="mt-0">
+                                    <TabsContent value="subscribers" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader>
                                                 <CardTitle>Newsletter Subscribers</CardTitle>
@@ -2680,7 +3137,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 )}
                                             </CardContent>
                                         </Card>
-                                    </TabsContent> */}
+                                    </TabsContent>
 
                                     {/* <TabsContent value="subscribers" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -3108,30 +3565,18 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm text-muted-foreground">Show</span>
-                                                        <Select
-                                                            value={pitchPerPage.toString()}
-                                                            onValueChange={(val) => {
-                                                                setPitchPerPage(Number(val));
-                                                                setPitchPage(1);
-                                                            }}
-                                                        >
-                                                            <SelectTrigger className="w-[70px]">
-                                                                <SelectValue placeholder="10" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="10">10</SelectItem>
-                                                                <SelectItem value="25">25</SelectItem>
-                                                                <SelectItem value="50">50</SelectItem>
-                                                                <SelectItem value="100">100</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <span className="text-sm text-muted-foreground">entries</span>
+                                                {/* Search Input */}
+                                                <div className="mb-4">
+                                                    <div className="relative">
+                                                        <LucideIcons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            placeholder="Search by solution title or company name..."
+                                                            value={pitchSearchQuery}
+                                                            onChange={(e) => setPitchSearchQuery(e.target.value)}
+                                                            className="pl-10"
+                                                        />
                                                     </div>
                                                 </div>
-
                                                 <div className="rounded-md border">
                                                     <Table>
                                                         <TableHeader>
@@ -3139,18 +3584,33 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                 <TableHead className="w-[50px]">
                                                                     <input
                                                                         type="checkbox"
-                                                                        checked={paginatedPitchingDetails.length > 0 && selectedPitchIds.length === paginatedPitchingDetails.length}
-                                                                        onChange={selectAllPitch}
+                                                                        checked={(() => {
+                                                                            const filtered = pitchingDetails.filter(p =>
+                                                                                p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                            );
+                                                                            return filtered.length > 0 && selectedPitchIds.length === filtered.length;
+                                                                        })()}
+                                                                        onChange={() => {
+                                                                            const filtered = pitchingDetails.filter(p =>
+                                                                                p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                            );
+                                                                            if (selectedPitchIds.length === filtered.length) {
+                                                                                setSelectedPitchIds([]);
+                                                                            } else {
+                                                                                setSelectedPitchIds(filtered.map(p => p.id));
+                                                                            }
+                                                                        }}
                                                                         className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                                                                     />
                                                                 </TableHead>
                                                                 <TableHead>Founder Name</TableHead>
                                                                 <TableHead>Solution Title</TableHead>
                                                                 <TableHead>Company</TableHead>
+                                                                <TableHead>Requirements</TableHead>
                                                                 <TableHead>Pitch Date</TableHead>
                                                                 <TableHead>Pitch Time</TableHead>
-                                                                <TableHead>Submitted</TableHead>
-                                                                <TableHead>Created At</TableHead>
                                                                 <TableHead className="text-right">Actions</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
@@ -3162,109 +3622,109 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                         <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
                                                                         <TableCell><div className="h-4 w-32 bg-gray-200 rounded animate-pulse" /></TableCell>
                                                                         <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                        <TableCell><div className="h-4 w-40 bg-gray-200 rounded animate-pulse" /></TableCell>
                                                                         <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
                                                                         <TableCell><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                        <TableCell><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                        <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
                                                                         <TableCell><div className="h-4 w-8 bg-gray-200 rounded animate-pulse ml-auto" /></TableCell>
                                                                     </TableRow>
                                                                 ))
-                                                            ) : paginatedPitchingDetails.length === 0 ? (
+                                                            ) : (() => {
+                                                                const filtered = pitchingDetails.filter(p =>
+                                                                    p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                    p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                );
+                                                                return filtered.length === 0;
+                                                            })() ? (
                                                                 <TableRow>
                                                                     <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                                                                         No pitching details found.
                                                                     </TableCell>
                                                                 </TableRow>
                                                             ) : (
-                                                                paginatedPitchingDetails.map((pitch) => (
-                                                                    <TableRow key={pitch.id}>
-                                                                        <TableCell>
-                                                                            <input
-                                                                                type="checkbox"
-                                                                                checked={selectedPitchIds.includes(pitch.id)}
-                                                                                onChange={() => togglePitchSelect(pitch.id)}
-                                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                                            />
-                                                                        </TableCell>
-                                                                        <TableCell className="font-medium">{pitch.founder_name}</TableCell>
-                                                                        <TableCell>{pitch.solution_title}</TableCell>
-                                                                        <TableCell>{pitch.company_name}</TableCell>
-                                                                        <TableCell>{pitch.pitch_date}</TableCell>
-                                                                        <TableCell>{pitch.pitch_time}</TableCell>
-                                                                        <TableCell>
-                                                                            <Badge variant={pitch.submitted ? "default" : "secondary"}>
-                                                                                {pitch.submitted ? "Yes" : "No"}
-                                                                            </Badge>
-                                                                        </TableCell>
-                                                                        <TableCell className="text-muted-foreground text-sm">{pitch.created_at}</TableCell>
-                                                                        <TableCell className="text-right">
-                                                                            <AlertDialog>
-                                                                                <AlertDialogTrigger asChild>
-                                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive/90">
-                                                                                        <LucideIcons.Trash2 className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                </AlertDialogTrigger>
-                                                                                <AlertDialogContent>
-                                                                                    <AlertDialogHeader>
-                                                                                        <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
-                                                                                        <AlertDialogDescription>
-                                                                                            This will permanently delete the pitching details for {pitch.solution_title}.
-                                                                                        </AlertDialogDescription>
-                                                                                    </AlertDialogHeader>
-                                                                                    <AlertDialogFooter>
-                                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                                        <AlertDialogAction
-                                                                                            onClick={async () => {
-                                                                                                setIsDeletingPitch(true);
-                                                                                                const token = localStorage.getItem('token');
-                                                                                                try {
-                                                                                                    await fetch(`${API_BASE_URL}/api/pitching/delete/${pitch.id}`, {
-                                                                                                        method: 'DELETE',
-                                                                                                        headers: { 'Authorization': `Bearer ${token}` }
-                                                                                                    });
-                                                                                                    toast({ title: "Deleted", description: "Pitching detail deleted." });
-                                                                                                    fetchPitchingDetails();
-                                                                                                } catch (e) {
-                                                                                                    toast({ variant: 'destructive', title: "Error", description: "Failed to delete." });
-                                                                                                } finally {
-                                                                                                    setIsDeletingPitch(false);
-                                                                                                }
-                                                                                            }}
-                                                                                        >
-                                                                                            Delete
-                                                                                        </AlertDialogAction>
-                                                                                    </AlertDialogFooter>
-                                                                                </AlertDialogContent>
-                                                                            </AlertDialog>
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                ))
+                                                                pitchingDetails
+                                                                    .filter(p =>
+                                                                        p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                        p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                    )
+                                                                    .map((pitch) => (
+                                                                        <TableRow key={pitch.id}>
+                                                                            <TableCell>
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={selectedPitchIds.includes(pitch.id)}
+                                                                                    onChange={() => togglePitchSelect(pitch.id)}
+                                                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                                                />
+                                                                            </TableCell>
+                                                                            <TableCell className="font-medium">{pitch.founder_name}</TableCell>
+                                                                            <TableCell>{pitch.solution_title}</TableCell>
+                                                                            <TableCell>{pitch.company_name}</TableCell>
+                                                                            <TableCell className="max-w-xs">
+                                                                                <div className="line-clamp-2 text-sm text-muted-foreground">
+                                                                                    {pitch.requirements || 'N/A'}
+                                                                                </div>
+                                                                            </TableCell>
+                                                                            <TableCell>
+                                                                                {(() => {
+                                                                                    const date = new Date(pitch.pitch_date);
+                                                                                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                                                                    return `${months[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}`;
+                                                                                })()}
+                                                                            </TableCell>
+                                                                            <TableCell>
+                                                                                {(() => {
+                                                                                    const [hours, minutes] = pitch.pitch_time.split(':');
+                                                                                    const hour = parseInt(hours);
+                                                                                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                                                                                    const displayHour = hour % 12 || 12;
+                                                                                    return `${displayHour}:${minutes} ${ampm}`;
+                                                                                })()}
+                                                                            </TableCell>
+                                                                            <TableCell className="text-right">
+                                                                                <AlertDialog>
+                                                                                    <AlertDialogTrigger asChild>
+                                                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive/90">
+                                                                                            <LucideIcons.Trash2 className="h-4 w-4" />
+                                                                                        </Button>
+                                                                                    </AlertDialogTrigger>
+                                                                                    <AlertDialogContent>
+                                                                                        <AlertDialogHeader>
+                                                                                            <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                                                                                            <AlertDialogDescription>
+                                                                                                This will permanently delete the pitching details for {pitch.solution_title}.
+                                                                                            </AlertDialogDescription>
+                                                                                        </AlertDialogHeader>
+                                                                                        <AlertDialogFooter>
+                                                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                                            <AlertDialogAction
+                                                                                                onClick={async () => {
+                                                                                                    setIsDeletingPitch(true);
+                                                                                                    const token = localStorage.getItem('token');
+                                                                                                    try {
+                                                                                                        await fetch(`${API_BASE_URL}/api/pitching/delete/${pitch.id}`, {
+                                                                                                            method: 'DELETE',
+                                                                                                            headers: { 'Authorization': `Bearer ${token}` }
+                                                                                                        });
+                                                                                                        toast({ title: "Deleted", description: "Pitching detail deleted." });
+                                                                                                        fetchPitchingDetails();
+                                                                                                    } catch (e) {
+                                                                                                        toast({ variant: 'destructive', title: "Error", description: "Failed to delete." });
+                                                                                                    } finally {
+                                                                                                        setIsDeletingPitch(false);
+                                                                                                    }
+                                                                                                }}
+                                                                                            >
+                                                                                                Delete
+                                                                                            </AlertDialogAction>
+                                                                                        </AlertDialogFooter>
+                                                                                    </AlertDialogContent>
+                                                                                </AlertDialog>
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    ))
                                                             )}
                                                         </TableBody>
                                                     </Table>
-                                                </div>
-
-                                                {/* Pagination Controls */}
-                                                <div className="flex items-center justify-end space-x-2 py-4">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => setPitchPage(p => Math.max(1, p - 1))}
-                                                        disabled={pitchPage === 1 || isLoadingPitching}
-                                                    >
-                                                        Previous
-                                                    </Button>
-                                                    <div className="text-sm font-medium">
-                                                        Page {pitchPage} of {totalPitchPages || 1}
-                                                    </div>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => setPitchPage(p => Math.min(totalPitchPages, p + 1))}
-                                                        disabled={pitchPage >= totalPitchPages || isLoadingPitching}
-                                                    >
-                                                        Next
-                                                    </Button>
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -3454,7 +3914,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                             </TabsContent>
                         </div>
                     </Tabs>
-                </div >
+                </div>
                 {
                     commentingSubmissionId !== null && (
                         <CommentSection
@@ -3506,7 +3966,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         </div>
                                         <div>
                                             <p className="text-sm text-muted-foreground">Email</p>
-                                            <p className="font-medium">{userDetailsData.email}</p>
+                                            <p className="font-medium break-words">{userDetailsData.email}</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-muted-foreground">Role</p>
@@ -3555,45 +4015,60 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                 {/* Payment Information */}
                                 <div>
                                     <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
-                                    {userDetailsData.payment_info ? (
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-sm text-muted-foreground">Payment Method</p>
-                                                <Badge className="uppercase">{userDetailsData.payment_info.payment_method}</Badge>
-                                            </div>
-                                            {userDetailsData.payment_info.paypal_email && (
-                                                <div>
-                                                    <p className="text-sm text-muted-foreground">PayPal Email</p>
-                                                    <p className="font-medium">{userDetailsData.payment_info.paypal_email}</p>
-                                                </div>
-                                            )}
-                                            {userDetailsData.payment_info.account_holder && (
-                                                <div>
-                                                    <p className="text-sm text-muted-foreground">Account Holder</p>
-                                                    <p className="font-medium">{userDetailsData.payment_info.account_holder}</p>
-                                                </div>
-                                            )}
-                                            {userDetailsData.payment_info.account_number && (
-                                                <div>
-                                                    <p className="text-sm text-muted-foreground">Account Number</p>
-                                                    <p className="font-medium">{userDetailsData.payment_info.account_number}</p>
-                                                </div>
-                                            )}
-                                            {userDetailsData.payment_info.ifsc_code && (
-                                                <div>
-                                                    <p className="text-sm text-muted-foreground">IFSC Code</p>
-                                                    <p className="font-medium">{userDetailsData.payment_info.ifsc_code}</p>
-                                                </div>
-                                            )}
-                                            {userDetailsData.payment_info.upi_id && (
-                                                <div>
-                                                    <p className="text-sm text-muted-foreground">UPI ID</p>
-                                                    <p className="font-medium">{userDetailsData.payment_info.upi_id}</p>
-                                                </div>
-                                            )}
+                                    {userDetailsData.payment_methods && userDetailsData.payment_methods.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {userDetailsData.payment_methods
+                                                .sort((a: any, b: any) => {
+                                                    const order = { 'primary': 1, 'secondary': 2, 'others': 3 };
+                                                    return (order[a.payment_category as keyof typeof order] || 99) - (order[b.payment_category as keyof typeof order] || 99);
+                                                })
+                                                .map((payment: any) => (
+                                                    <div key={payment.id} className="border rounded-lg p-4">
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <Badge variant="outline" className="uppercase font-semibold">
+                                                                {payment.payment_category}
+                                                            </Badge>
+                                                            <Badge className="uppercase">
+                                                                {payment.payment_method}
+                                                            </Badge>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            {payment.paypal_email && (
+                                                                <div>
+                                                                    <p className="text-sm text-muted-foreground">PayPal Email</p>
+                                                                    <p className="font-medium">{payment.paypal_email}</p>
+                                                                </div>
+                                                            )}
+                                                            {payment.account_holder && (
+                                                                <div>
+                                                                    <p className="text-sm text-muted-foreground">Account Holder</p>
+                                                                    <p className="font-medium">{payment.account_holder}</p>
+                                                                </div>
+                                                            )}
+                                                            {payment.account_number && (
+                                                                <div>
+                                                                    <p className="text-sm text-muted-foreground">Account Number</p>
+                                                                    <p className="font-medium">{payment.account_number}</p>
+                                                                </div>
+                                                            )}
+                                                            {payment.ifsc_code && (
+                                                                <div>
+                                                                    <p className="text-sm text-muted-foreground">IFSC Code</p>
+                                                                    <p className="font-medium">{payment.ifsc_code}</p>
+                                                                </div>
+                                                            )}
+                                                            {payment.upi_id && (
+                                                                <div>
+                                                                    <p className="text-sm text-muted-foreground">UPI ID</p>
+                                                                    <p className="font-medium">{payment.upi_id}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
                                         </div>
                                     ) : (
-                                        <p className="text-muted-foreground">No payment method configured</p>
+                                        <p className="text-muted-foreground">No payment methods configured</p>
                                     )}
                                 </div>
 

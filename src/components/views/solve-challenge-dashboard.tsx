@@ -59,6 +59,9 @@ const paymentMethodSchema = z.object({
     paymentMethod: z.enum(["paypal", "bank", "upi"], {
         required_error: "You must select a payment method."
     }),
+    paymentCategory: z.enum(["primary", "secondary", "others"], {
+        required_error: "You must select a payment category."
+    }),
     paypalEmail: z.string().optional(),
     accountHolder: z.string().optional(),
     accountNumber: z.string().optional(),
@@ -301,6 +304,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
     const [emailChangeRequested, setEmailChangeRequested] = useState(false);
     const [isEditingPayment, setIsEditingPayment] = useState(false);
     const [isLoadingPayment, setIsLoadingPayment] = useState(false);
+    const [allPaymentMethods, setAllPaymentMethods] = useState<any[]>([]);
     const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
 
 
@@ -1079,13 +1083,13 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
         }
     }
 
-    // Fetch payment method data on component mount
-    const fetchPaymentMethod = useCallback(async () => {
+    // Fetch all payment methods
+    const fetchAllPaymentMethods = useCallback(async () => {
         const token = localStorage.getItem('token');
         if (!token) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/payment-method`, {
+            const response = await fetch(`${API_BASE_URL}/api/payment-methods`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1094,30 +1098,72 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
 
             if (response.ok) {
                 const data = await response.json();
-                const paymentData = data.payment_data;
-
-                if (paymentData && paymentData.payment_method) {
-                    // Pre-fill the form with existing payment data
-                    paymentForm.reset({
-                        paymentMethod: paymentData.payment_method,
-                        paypalEmail: paymentData.paypal_email || "",
-                        accountHolder: paymentData.account_holder || "",
-                        accountNumber: paymentData.account_number || "",
-                        ifscCode: paymentData.ifsc_code || "",
-                        upiId: paymentData.upi_id || "",
-                    });
-                }
+                const paymentMethods = data.payment_methods || [];
+                setAllPaymentMethods(paymentMethods);
             }
         } catch (error) {
-            console.error('Failed to fetch payment method:', error);
+            console.error('Failed to fetch payment methods:', error);
         }
-    }, [paymentForm]);
+    }, []);
 
+    // Load payment data for the selected category
+    const loadPaymentDataForCategory = useCallback((category: string) => {
+        if (!category || allPaymentMethods.length === 0) return;
+
+        const categoryPayment = allPaymentMethods.find(
+            (pm: any) => pm.payment_category === category
+        );
+
+        if (categoryPayment) {
+            // Pre-fill the form with existing payment data for this category
+            paymentForm.setValue('paymentMethod', categoryPayment.payment_method);
+            paymentForm.setValue('paypalEmail', categoryPayment.paypal_email || "");
+            paymentForm.setValue('accountHolder', categoryPayment.account_holder || "");
+            paymentForm.setValue('accountNumber', categoryPayment.account_number || "");
+            paymentForm.setValue('ifscCode', categoryPayment.ifsc_code || "");
+            paymentForm.setValue('upiId', categoryPayment.upi_id || "");
+        } else {
+            // Clear form fields if no payment method exists for this category
+            paymentForm.setValue('paymentMethod', undefined as any);
+            paymentForm.setValue('paypalEmail', "");
+            paymentForm.setValue('accountHolder', "");
+            paymentForm.setValue('accountNumber', "");
+            paymentForm.setValue('ifscCode', "");
+            paymentForm.setValue('upiId', "");
+        }
+    }, [allPaymentMethods, paymentForm]);
+
+    // Fetch payment methods when settings tab is opened
     useEffect(() => {
         if (activeTab === 'settings') {
-            fetchPaymentMethod();
+            fetchAllPaymentMethods();
         }
-    }, [activeTab, fetchPaymentMethod]);
+    }, [activeTab, fetchAllPaymentMethods]);
+
+    // Load initial payment data when payment methods are fetched
+    useEffect(() => {
+        if (allPaymentMethods.length > 0 && !paymentForm.getValues('paymentCategory')) {
+            // Load the first available payment method
+            const firstPayment = allPaymentMethods[0];
+            paymentForm.setValue('paymentCategory', firstPayment.payment_category);
+            paymentForm.setValue('paymentMethod', firstPayment.payment_method);
+            paymentForm.setValue('paypalEmail', firstPayment.paypal_email || "");
+            paymentForm.setValue('accountHolder', firstPayment.account_holder || "");
+            paymentForm.setValue('accountNumber', firstPayment.account_number || "");
+            paymentForm.setValue('ifscCode', firstPayment.ifsc_code || "");
+            paymentForm.setValue('upiId', firstPayment.upi_id || "");
+        }
+    }, [allPaymentMethods, paymentForm]);
+
+    // Watch for category changes and load the appropriate payment data
+    useEffect(() => {
+        const subscription = paymentForm.watch((value, { name }) => {
+            if (name === 'paymentCategory' && value.paymentCategory) {
+                loadPaymentDataForCategory(value.paymentCategory);
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [paymentForm, loadPaymentDataForCategory]);
 
     // Submit payment method
     async function onPaymentMethodSubmit(data: PaymentMethodFormValues) {
@@ -1142,7 +1188,8 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
 
             if (response.ok) {
                 toast({ title: 'Payment Method Saved', description: result.message || 'Your payment information has been saved successfully.' });
-                setIsEditingPayment(false); // Disable edit mode after successful save
+                setIsEditingPayment(false);
+                await fetchAllPaymentMethods();
             } else {
                 toast({ variant: 'destructive', title: 'Save Failed', description: result.error || 'Failed to save payment method.' });
             }
@@ -2298,6 +2345,35 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                             </div>
                                             <Form {...paymentForm}>
                                                 <form onSubmit={paymentForm.handleSubmit(onPaymentMethodSubmit)} className="space-y-4">
+                                                    {/* Payment Category - Always visible */}
+                                                    <FormField
+                                                        control={paymentForm.control}
+                                                        name="paymentCategory"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Payment Category</FormLabel>
+                                                                <Select
+                                                                    onValueChange={field.onChange}
+                                                                    value={field.value}
+                                                                    disabled={!isEditingPayment}
+                                                                >
+                                                                    <FormControl>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Select category" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="primary">Primary</SelectItem>
+                                                                        <SelectItem value="secondary">Secondary</SelectItem>
+                                                                        <SelectItem value="others">Others</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    {/* Payment Method Selection - Always visible */}
                                                     <FormField
                                                         control={paymentForm.control}
                                                         name="paymentMethod"
@@ -2329,6 +2405,8 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                             </FormItem>
                                                         )}
                                                     />
+
+                                                    {/* PayPal Fields */}
                                                     {paymentForm.watch("paymentMethod") === "paypal" && (
                                                         <FormField
                                                             control={paymentForm.control}
@@ -2342,6 +2420,8 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                             )}
                                                         />
                                                     )}
+
+                                                    {/* Bank Account Fields */}
                                                     {paymentForm.watch("paymentMethod") === "bank" && (
                                                         <div className="space-y-4">
                                                             <FormField control={paymentForm.control} name="accountHolder" render={({ field }) => (
@@ -2355,11 +2435,15 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                             )} />
                                                         </div>
                                                     )}
+
+                                                    {/* UPI Fields */}
                                                     {paymentForm.watch("paymentMethod") === "upi" && (
                                                         <FormField control={paymentForm.control} name="upiId" render={({ field }) => (
                                                             <FormItem><FormLabel>UPI ID</FormLabel><FormControl><Input placeholder="yourname@okbank" {...field} disabled={!isEditingPayment} /></FormControl><FormMessage /></FormItem>
                                                         )} />
                                                     )}
+
+                                                    {/* Action Buttons */}
                                                     {isEditingPayment && (
                                                         <div className="flex gap-2">
                                                             <Button
@@ -2381,7 +2465,10 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                                 variant="outline"
                                                                 onClick={() => {
                                                                     setIsEditingPayment(false);
-                                                                    fetchPaymentMethod(); // Reset form to saved values
+                                                                    const currentCategory = paymentForm.getValues('paymentCategory');
+                                                                    if (currentCategory) {
+                                                                        loadPaymentDataForCategory(currentCategory);
+                                                                    }
                                                                 }}
                                                                 disabled={isLoadingPayment}
                                                             >
