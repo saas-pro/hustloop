@@ -1598,14 +1598,14 @@ body {
   background-color: rgba(255, 255, 255, 0.04) !important;
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: white) {
     :root {
-        color-scheme: dark !important;
+        color-scheme: white !important;
     }
 }
 
 @media (forced-colors: active) {
     :root {
-        color-scheme: dark !important;
+        color-scheme: white !important;
     }
 }

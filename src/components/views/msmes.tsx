@@ -29,6 +29,7 @@ export type CorporateChallenge = {
   title: string;
   description: string;
   affiliated_by: string | null;
+  submission_count: number;
   reward_amount: number;
   reward_min: number;
   reward_max: number;
@@ -63,6 +64,7 @@ export type MSMEChallenge = {
   reward_amount: number;
   reward_min: number;
   reward_max: number;
+  submission_count: number;
   challenge_type: string;
   start_date: string;
   end_date: string;
@@ -92,6 +94,7 @@ export type Governmentchallenges = {
   description: string;
   reward_amount: number;
   reward_min: number;
+  submission_count: number;
   reward_max: number;
   challenge_type: string;
   start_date: string;

@@ -32,14 +32,14 @@ export default function VerticalTimeline({
 
   const events: EventItem[] = [
     {
-      id: "application_started",
+      id: "challenge_started",
       date: timeline.application_started,
-      title: "Application Started",
+      title: "Challenge Started",
     },
     {
-      id: "application_ended",
+      id: "challenge_ended",
       date: timeline.application_ended,
-      title: "Application Ended",
+      title: "Challenge Ended",
     },
 
     timeline.extended_end_date

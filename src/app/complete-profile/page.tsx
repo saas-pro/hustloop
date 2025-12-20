@@ -40,7 +40,7 @@ import {
 
 const profileSchema = z.object({
     role: z.string({ required_error: "Please select a role." }),
-    founder_role: z.string().optional(), // conditionally required below
+    founder_role: z.string().optional(), 
 }).refine(
     (data) => data.role !== "founder" || !!data.founder_role,
     {
@@ -68,7 +68,7 @@ function CompleteProfileForm() {
     const { formState: { isSubmitting } } = form;
 
     const onLoginSuccess = (data: { role: UserRole, token: string, founder_role: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
-        const { role, token: loginToken, hasSubscription, name, email, authProvider } = data;
+        const { role, token: loginToken, hasSubscription, name, email, authProvider,founder_role } = data;
         const userData = { name, email };
 
         localStorage.setItem('isLoggedIn', 'true');
@@ -78,7 +78,7 @@ function CompleteProfileForm() {
         localStorage.setItem('hasSubscription', String(hasSubscription));
         localStorage.setItem('token', loginToken);
         localStorage.setItem('authProvider', authProvider);
-
+        localStorage.setItem('founder_role',founder_role);
         toast({ title: "Profile Complete!", description: `Welcome to Hustloop, ${name}!` });
         router.push('/');
         setTimeout(() => window.location.reload(), 500);
@@ -106,8 +106,6 @@ function CompleteProfileForm() {
 
             if (response.ok) {
                 onLoginSuccess(data);
-                localStorage.setItem("founder_role", values.founder_role ?? "");
-
             } else {
                 toast({
                     variant: "destructive",
@@ -146,10 +144,7 @@ function CompleteProfileForm() {
                 className="flex items-center gap-2 cursor-pointer mb-8"
                 onClick={() => router.push('/')}
             >
-                {/* Logo image removed */}
-
-                <Image src="/logo.png" alt="Logo" width={120} height={40} />
-
+                <Image src="/logo.png" alt="Logo" width={200} height={160} />
             </div>
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">

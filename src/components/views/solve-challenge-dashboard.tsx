@@ -1869,8 +1869,10 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                         {userRole} Dashboard
                     </DialogTitle>
                     <DialogDescription>
-                        Welcome back, {user.name}! Here&apos;s an overview of your startup journey.
+                        Welcome back, {user.name}! Here&apos;s an overview of your startup journey. <br />
+                        <p className="text-xs text-muted-foreground">{"Solve MSME's Challenge"}</p>
                     </DialogDescription>
+
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-4 pt-0">
                     <Tabs value={activeTab} className="flex flex-col flex-grow min-h-0">
@@ -1994,15 +1996,9 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                         </div>
                                     </CardHeader>
                                     <CardContent className="space-y-6">
-                                        {availableYears.length > 0 ? (
-                                            <div className="flex justify-center py-4">
-                                                <ContributionGraph data={dailySubmissions} year={selectedYear} />
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-8 text-muted-foreground">
-                                                <p>No submission data available yet.</p>
-                                            </div>
-                                        )}
+                                        <div className="flex justify-center py-4">
+                                            <ContributionGraph data={dailySubmissions} year={selectedYear} />
+                                        </div>
                                     </CardContent>
                                 </Card>
 

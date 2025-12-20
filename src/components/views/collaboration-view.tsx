@@ -449,8 +449,8 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
             <DialogContent
                 className={`
         flex flex-col border bg-background transition-all duration-500 p-0 
-          w-[90vw] max-w-[90vw] shadow-lg text-base h-[90vh] fixed
-          rounded-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+        w-[90vw] max-w-[90vw] shadow-lg text-base h-[90vh] fixed
+        rounded-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
         `}
             >
                 <div className="flex justify-between items-center p-4 pr-14 rounded-t-lg border-b bg-muted/50 dark:bg-muted/20 flex-shrink-0">
@@ -506,6 +506,14 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                         )}
                     </Button>
                 </div>}
+
+                {collabDetails?.status !== 'stopped' && !isCreatingAnnouncement && activeTab === 'announcements' && (
+                    <div className="flex justify-end mr-2 gap-2">
+                        <Button onClick={() => setIsCreatingAnnouncement(true)}>
+                            + New Announcement
+                        </Button>
+                    </div>
+                )}
                 <div className="flex-grow overflow-y-auto px-4 pb-4 space-y-4">
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList className={`grid w-full grid-cols-2`}>
@@ -568,11 +576,17 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                                                         </div>
                                                     </div>
                                                 )}
-
-                                                <p className="mt-4 text-xs text-muted-foreground">
-                                                    Created on: {new Date(collabDetails.created_at).toLocaleString()}
+                                                <p className="text-sm mt-3 text-muted-foreground">
+                                                    Created on {new Date(collabDetails.created_at).toLocaleDateString('en-GB', {
+                                                        day: 'numeric',
+                                                        month: 'short',
+                                                        year: 'numeric'
+                                                    })} {new Date(collabDetails.created_at).toLocaleTimeString('en-US', {
+                                                        hour: 'numeric',
+                                                        minute: '2-digit',
+                                                        hour12: true
+                                                    }).toLowerCase()}
                                                 </p>
-
                                             </CardContent>
                                         </Card>
                                     )}
@@ -744,12 +758,8 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                         <TabsContent value="announcements">
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <h2 className="text-lg font-semibold">Announcements</h2>
-                                    {collabDetails?.status !== 'stopped' && !isCreatingAnnouncement && (
-                                        <Button onClick={() => setIsCreatingAnnouncement(true)}>
-                                            + New Announcement
-                                        </Button>
-                                    )}
+                                    <h2 className="text-lg font-semibold mt-3 ml-2">Announcements</h2>
+
                                 </div>
 
                                 {/* Inline Announcement Creation Form */}

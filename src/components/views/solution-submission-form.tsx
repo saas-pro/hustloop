@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useId, useEffect, useRef } from "react";
+import { useState, useId, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import SolutionMarkdown from "../ui/SolutionMarkdown";
 import { API_BASE_URL } from "@/lib/api";
@@ -66,6 +65,8 @@ interface SolutionSubmissionFormProps {
 export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCancel }: SolutionSubmissionFormProps) {
     const [loading, setLoading] = useState(false);
     const [isEditingName, setIsEditingName] = useState(false);
+    const [hasDraft, setHasDraft] = useState(false);
+    const [confirmLoadDraft, setConfirmLoadDraft] = useState(false);
     const fileInputId = useId();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -123,31 +124,96 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
         setValue("files", updatedFiles, { shouldValidate: true });
     };
 
-    const handleAddTeamMemberExternally = () => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(emailInput)) {
-            toast({ variant: "destructive", title: "Invalid Email", description: "Please enter a valid email address." });
-            return;
+    const saveDraft = useCallback((data: SolutionSubmissionSchema) => {
+        const draft = { ...data };
+        localStorage.setItem(`draft_${challengeId}`, JSON.stringify(draft));
+        setHasDraft(true);
+        toast({ title: "Draft saved", description: "Your progress has been saved as a draft." });
+    }, [challengeId]);
+
+    const loadDraft = () => {
+        try {
+            const draft = localStorage.getItem(`draft_${challengeId}`);
+            if (!draft) {
+                toast({
+                    title: "No draft found",
+                    description: "No saved draft was found for this challenge.",
+                });
+                return;
+            }
+
+            const parsedDraft = JSON.parse(draft);
+
+            form.reset();
+
+            Object.entries(parsedDraft).forEach(([key, value]) => {
+                if (key !== 'files') {
+                    console.log(`Setting ${key}:`, value);
+                    form.setValue(key as any, value, { shouldValidate: true });
+                }
+            });
+
+            if (parsedDraft.teamMembers) {
+                setTeamList(parsedDraft.teamMembers);
+            }
+
+            setHasDraft(false);
+            localStorage.removeItem(`draft_${challengeId}`)
+            toast({
+                title: "Draft loaded",
+                description: "Your draft has been loaded successfully.",
+            });
+        } catch (error) {
+            console.error("Error loading draft:", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to load draft. The draft data might be corrupted.",
+            });
         }
-        if (teamList.includes(emailInput)) {
-            toast({ variant: "destructive", title: "Duplicate Email", description: "This email is already in the list." });
-            return;
-        }
-        if (teamList.length >= 5) {
-            toast({ variant: "destructive", title: "Max 5 members", description: "You can invite up to 5 members." });
-            return;
-        }
-        setTeamList((t) => [...t, emailInput]);
-        setEmailInput("");
     };
 
+    useEffect(() => {
+        setHasDraft(!!localStorage.getItem(`draft_${challengeId}`));
 
-    const startSubmitFlow = (data: SolutionSubmissionSchema) => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            const formValues = form.getValues();
+            if (formValues.description || formValues.contactName || (formValues.files && formValues.files.length > 0)) {
+                e.preventDefault();
+                saveDraft(formValues);
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [challengeId, form, saveDraft]);
+
+
+    const startSubmitFlow = async (data: SolutionSubmissionSchema) => {
         if (!agreeToTerms) {
-            toast({ variant: "destructive", title: "Agreement required", description: "You must agree to Terms & Conditions to submit." });
-            return;
+            toast({
+                variant: "destructive",
+                title: "Agreement required",
+                description: "You must agree to Terms & Conditions to submit."
+            });
+            throw new Error("Agreement required");
         }
         setChoiceDialogOpen(true);
+    };
+
+    const handleLoadDraftClick = () => {
+        const formValues = form.getValues();
+        const hasFormData = Object.values(formValues).some(value =>
+            (Array.isArray(value) ? value.length > 0 : Boolean(value))
+        );
+
+        if (hasFormData) {
+            setConfirmLoadDraft(true);
+        } else {
+            loadDraft();
+        }
     };
 
     const performSubmit = async (data: SolutionSubmissionSchema & { submissionType?: "individual" | "team" }) => {
@@ -201,8 +267,15 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
         }
     };
 
-    const onSubmit = handleSubmit((data) => {
-        startSubmitFlow(data);
+    const onSubmit = handleSubmit(async (data) => {
+        try {
+            await startSubmitFlow(data);
+            localStorage.removeItem(`draft_${challengeId}`);
+            setHasDraft(false);
+        } catch (error) {
+            console.error('Submission error:', error);
+            throw error;
+        }
     });
 
     const confirmIndividual = async () => {
@@ -506,13 +579,34 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                     </Label>
                 </div>
 
-                <div className="flex justify-end gap-4">
-                    <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-                        Cancel
-                    </Button>
-                    <Button type="submit" className={`bg-accent hover:bg-accent/90 text-accent-foreground ${!agreeToTerms ? "opacity-50 cursor-not-allowed" : ""}`} disabled={loading || !agreeToTerms}>
-                        {loading ? "Submitting..." : "Submit Solution"}
-                    </Button>
+                <div className="flex justify-between w-full">
+                    <div className="space-x-2">
+                        {hasDraft && (
+                            <Button onClick={() => {
+                                loadDraft();
+                                setConfirmLoadDraft(false);
+                            }}>
+                                Load Draft
+                            </Button>
+                        )}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => saveDraft(form.getValues())}
+                            disabled={loading}
+                        >
+                            Save Draft
+                        </Button>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" className={`bg-accent hover:bg-accent/90 text-accent-foreground ${!agreeToTerms ? "opacity-50 cursor-not-allowed" : ""}`} disabled={loading || !agreeToTerms}>
+                            {loading ? "Submitting..." : "Submit Solution"}
+                        </Button>
+                    </div>
+
                 </div>
             </form>
 

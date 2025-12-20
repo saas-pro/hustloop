@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award, Lock, FileText, Trophy, Star, Medal, Users, Clock, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Workflow, IndianRupee, Rocket, User, Timer, AlertCircle, Check, Globe, Twitter, Linkedin, HelpCircle, UserCircle, MessageSquare, Book, Award, Lock, FileText, Trophy, Star, Medal, Users, Clock, MoreVertical, Pencil, Trash2, Mail } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -66,6 +66,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
 import { string } from 'zod';
+import { Avatar } from '@radix-ui/react-avatar';
 
 interface CorporateChallengeDetailsProps {
   challenge: CorporateChallenge | null;
@@ -80,6 +81,7 @@ interface CorporateChallenge {
   title: string;
   description: string;
   reward_amount: number;
+  submission_count: number;
   reward_min: number;
   reward_max: number;
   challenge_type: string;
@@ -213,6 +215,8 @@ export default function CorporateChallengeDetails({
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [deleteAnnouncementId, setDeleteAnnouncementId] = useState<string | null>(null);
   const [isFetchingAnnouncements, setIsFetchingAnnouncements] = useState(false);
+  const [hasAgreed, setHasAgreed] = useState(false);
+
   const handleScrollCapture = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     setScrolled(el.scrollTop > 0);
@@ -380,7 +384,7 @@ export default function CorporateChallengeDetails({
   //   );
   else if (isOtherUsers) {
     tooltipContent = (
-      <p>{"MSME Didn't allow to submit solution"}</p>
+      <p>{"Solution submission is not allowed for your role."}</p>
     )
   }
 
@@ -400,6 +404,8 @@ export default function CorporateChallengeDetails({
   };
 
   const handleAgreeAndProceed = () => {
+    sessionStorage.setItem('hasAgreedToTerms', 'true');
+    setHasAgreed(true);
     setShowTermsDialog(false);
     setShowSubmissionForm(true);
   };
@@ -548,22 +554,23 @@ export default function CorporateChallengeDetails({
                   {attachments?.length > 0 && (
                     <div>
                       <h2 className="text-lg font-semibold mb-2">Attachments</h2>
-
-                      <div className="space-y-2 text-sm bg-accent/50 hover:bg-accent p-3 rounded-md">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {attachments.map((fileUrl: string, index: number) => {
                           const fileName = fileUrl.split("/").pop();
                           return (
-                            <a
-                              key={index}
-                              href={fileUrl}
-                              download
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-primary hover:text-primary/80 break-all"
-                            >
-                              <FileText className="h-4 w-4" />
-                              {fileName}
-                            </a>
+                            <div className="text-sm bg-accent/50 hover:bg-accent p-3 rounded-md flex items-center" key={index}>
+                              <a
+                                key={index}
+                                href={fileUrl}
+                                download
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-primary hover:text-primary/80 break-all w-full"
+                              >
+                                <FileText className="h-4 w-4 flex-shrink-0" />
+                                <span className="truncate">{fileName}</span>
+                              </a>
+                            </div>
                           );
                         })}
                       </div>
@@ -573,9 +580,9 @@ export default function CorporateChallengeDetails({
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                     <Card className="bg-card/50 backdrop-blur-sm border">
                       <CardHeader className="items-center">
-                        <Workflow className="h-8 w-8 text-primary mb-2" />
-                        <CardTitle className="text-3xl font-bold">{challenge?.stage}</CardTitle>
-                        <p className="text-sm text-muted-foreground">Challenge Stage</p>
+                        <FileText className="h-8 w-8 text-primary mb-2" />
+                        <CardTitle className="text-3xl font-bold">{challenge?.submission_count}</CardTitle>
+                        <p className="text-sm text-muted-foreground">Soltuion Count</p>
                       </CardHeader>
                     </Card>
 
@@ -583,7 +590,11 @@ export default function CorporateChallengeDetails({
                       <CardHeader className="items-center">
                         <Timer className="h-8 w-8 text-primary mb-2" />
                         <CardTitle className="text-2xl font-bold">
-                          {new Date(challenge.end_date).toLocaleDateString()}
+                          {new Date(challenge.end_date).toLocaleDateString('en-GB', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">End Date</p>
                       </CardHeader>
@@ -592,7 +603,7 @@ export default function CorporateChallengeDetails({
                     <Card className="bg-card/50 backdrop-blur-sm border">
                       <CardHeader className="items-center">
                         <IndianRupee className="h-8 w-8 text-primary mb-2" />
-                        <CardTitle className="text-xl font-bold">
+                        <CardTitle className="text-2xl font-bold">
                           {challenge.reward_amount ??
                             `${challenge.reward_min} - ${challenge.reward_max}`}
                         </CardTitle>
@@ -600,42 +611,29 @@ export default function CorporateChallengeDetails({
                       </CardHeader>
                     </Card>
                   </div>
-
-                  <Separator />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <h3 className="text-2xl font-bold mb-4">Mission</h3>
-                      <ul className="space-y-3">
-                        {Array.isArray(challenge.scope) && challenge.scope.map((s, i) => (<li key={i} className="flex items-start gap-3"> <Check className="h-5 w-5 text-green-500 mt-1 shrink-0" /> <span>{s}</span> </li>))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <h3 className="text-2xl font-bold mb-4">Who Can Participate</h3>
-                      <p className="text-muted-foreground break-words">
-                        {challenge.looking_for}
-                      </p>
-                    </div>
-                  </div>
                   <Separator />
                   <div>
-                    <h3 className="text-2xl font-bold mb-4 font-headline">Primary Contact</h3>
-
-                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                      <CardContent className="p-6 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                          <User className="h-8 w-8 text-primary" />
-
-                          <div>
-                            <p className="font-semibold">{challenge.contact_name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {challenge.contact_role}
-                            </p>
-                          </div>
+                    <h3 className="text-xl font-semibold mb-3">Primary Contact</h3>
+                    <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border w-full md:w-1/2">
+                      <Avatar className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary font-medium rounded-full">
+                        {'B'}
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">Boopathi S</p>
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            CEO & Founder
+                          </span>
                         </div>
-                      </CardContent>
-                    </Card>
+                        <a
+                          href="mailto:boopathi.s@hustloop.com"
+                          className="text-sm mt-0.5 text-muted-foreground hover:text-primary flex items-center gap-1"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                          boopathi.s@hustloop.com
+                        </a>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="text-center rounded-lg my-12 py-10">
@@ -711,7 +709,14 @@ export default function CorporateChallengeDetails({
                             <Button
                               size="lg"
                               className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                              onClick={() => handleApplyClick(challenge.id)}
+                              onClick={() => {
+                                if (hasAgreed) {
+                                  setShowSubmissionForm(true);
+                                } else {
+                                  setShowTermsDialog(true);
+                                }
+                                handleApplyClick(challenge.id)
+                              }}
                               disabled={isDisabled}
                             >
                               <Rocket className="mr-2 h-5 w-5" />
@@ -1196,7 +1201,12 @@ export default function CorporateChallengeDetails({
         </Tabs >
       </DialogContent >
 
-      <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
+      <Dialog
+        open={!hasAgreed && showTermsDialog}
+        onOpenChange={(open) => {
+          if (!open) setShowTermsDialog(false);
+        }}
+      >
         <DialogContent className="max-w-[600px] max-h-[80vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">Terms & Conditions</DialogTitle>
@@ -1287,7 +1297,12 @@ export default function CorporateChallengeDetails({
       </Dialog>
 
       <Dialog open={showSubmissionForm} onOpenChange={setShowSubmissionForm}>
-        <DialogContent className="max-w-[90vw] w-[90vw] max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          className="max-w-[90vw] w-[90vw] max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold font-headline">Submit Your Solution</DialogTitle>
             <DialogDescription>

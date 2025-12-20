@@ -405,11 +405,6 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                 </Card>
                             ))}
                         </div>
-                    ) : error ? (
-                        <div className="space-y-2">
-                            <p className="text-red-600">Error: {error}</p>
-                            <Button onClick={() => window.location.reload()}>Retry</Button>
-                        </div>
                     ) : profiles.length === 0 ? (
                         <div className="text-center text-muted-foreground">
                             No MSME profiles found.
@@ -437,7 +432,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                 <span>{p.company_name}</span>
 
                                             </CardTitle>
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="text-sm mt-1 text-muted-foreground">
                                                 {p.sector}
                                             </p>
                                         </div>
@@ -547,8 +542,6 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                         </TableBody>
                                     </Table>
                                 </div>
-                            ) : collabError ? (
-                                <p className="text-red-500">Error: {collabError}</p>
                             ) : collaborations.length === 0 ? (
                                 <p>No challenges found for this MSME.</p>
                             ) : (
@@ -623,14 +616,12 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                     </PopoverTrigger>
 
                                                                     <PopoverContent onFocusOutside={(e) => e.preventDefault()}>
-                                                                        <Calendar
-                                                                            mode="single"
-                                                                            selected={selectedDate}
-                                                                            className="w-full h-[350px]"
-                                                                            onSelect={setSelectedDate}
-                                                                            disabled={(date) => date < new Date(collaboration.end_date)}
-                                                                            defaultMonth={new Date(collaboration.end_date)}
-                                                                            fixedWeeks
+                                                                        <input
+                                                                            type="date"
+                                                                            value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
+                                                                            onChange={(e) => setSelectedDate(e.target.value ? new Date(e.target.value) : undefined)}
+                                                                            min={new Date(collaboration.end_date).toISOString().split('T')[0]}
+                                                                            className="w-full p-2 border rounded-md"
                                                                         />
 
                                                                         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 p-2">
@@ -674,13 +665,13 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                             </Button>
                                                                         </PopoverTrigger>
 
-                                                                        <PopoverContent className="w-auto p-0" align="end" onFocusOutside={(e) => e.preventDefault()}>
-                                                                            <Calendar
-                                                                                mode="single"
-                                                                                selected={selectedDate}
-                                                                                onSelect={setSelectedDate}
-                                                                                disabled={(date) => date < new Date(collaboration.end_date)}
-                                                                                defaultMonth={new Date(collaboration.extended_end_date || collaboration.end_date)}
+                                                                        <PopoverContent className="w-auto p-0" align="center" side="top" alignOffset={-10} onFocusOutside={(e) => e.preventDefault()}>
+                                                                            <input
+                                                                                type="date"
+                                                                                value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
+                                                                                onChange={(e) => setSelectedDate(e.target.value ? new Date(e.target.value) : undefined)}
+                                                                                min={new Date(collaboration.end_date).toISOString().split('T')[0]}
+                                                                                className="w-full p-2 border rounded-md"
                                                                             />
 
                                                                             <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 p-2">

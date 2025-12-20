@@ -546,7 +546,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
             const result = await response.json();
             setSubmissions(result.solutions);
-            console.log(result);
+
         } catch (error) {
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });
         }
@@ -2587,7 +2587,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             </Button>
                                                                         </TableCell>
                                                                         <TableCell>
-                                                                            <div className="flex flex-col gap-1">
+                                                                            <div>
                                                                                 {u.status === 'banned' ? (
                                                                                     <Badge variant="destructive">Banned</Badge>
                                                                                 ) : u.status === 'active' ? (

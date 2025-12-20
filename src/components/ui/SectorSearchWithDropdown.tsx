@@ -243,12 +243,12 @@ export default function SectorSearchWithDropdown({
                 {selected && <p>Selected Sector : {selected.value}</p>}
             </div>
 
-            <div>
+            {!selected && <div>
                 <p>
                     If the sector and technology area is not there {" "}
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button className="px-6 py-2 rounded-sm">click here to add</Button>
+                            <Button variant="outline" size="sm">Add New</Button>
                         </DialogTrigger>
 
                         <DialogContent>
@@ -321,7 +321,7 @@ export default function SectorSearchWithDropdown({
                         </DialogContent>
                     </Dialog>
                 </p>
-            </div>
+            </div>}
         </div>
     )
 }

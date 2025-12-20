@@ -65,6 +65,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 
 
@@ -359,6 +365,11 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     const [statusUpdates, setStatusUpdates] = useState<Record<string, SolutionStatus>>({});
     const [isUpdating, setIsUpdating] = useState<Record<string, boolean>>({});
     const MAX_FILES = 5;
+    const [getUsersCollaborationData, setGetUserCollaborationData] = useState<getUsersCollaborationSchema[]>([]);
+
+    const [isEditingCollaboration, setIsEditingCollaboration] = useState(false);
+    const [currentEditingCollaborationId, setCurrentEditingCollaborationId] = useState<number | null>(null);
+    const [selectedCollaborationToEdit, setSelectedCollaborationToEdit] = useState<getUsersCollaborationSchema | null>(null);
 
     const [files, setFiles] = useState<File[]>([]);
     const [uploadError, setUploadError] = useState("");
@@ -402,6 +413,52 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         return "just now";
     }
 
+    const getUsersCollaboration = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/get-users-collaboration`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const result = await response.json();
+
+            setGetUserCollaborationData(Array.isArray(result.collaborations) ? result.collaborations : []);
+            if (result.length > 0) {
+                setSubmissionsLength(result.length);
+            }
+        } catch (error) {
+            setGetUserCollaborationData([]);
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
+        }
+    }, [setGetUserCollaborationData, toast]);
+
+    const checkProfile = useCallback(async () => {
+        const token = localStorage.getItem("token");
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/isProfileSubmitted`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            setIsProfileSubmitted(data.status === "submitted");
+
+            if (data.profile && data.profile.is_editable !== undefined) {
+                setIsEditable(data.profile.is_editable);
+            }
+        } catch (err) {
+            console.error("Network error:", err);
+        }
+
+        await getUsersCollaboration();
+    }, [getUsersCollaboration])
+
     useEffect(() => {
         if (isMsmeRole === "msme") {
             setisMsmeRole(true)
@@ -412,6 +469,61 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         const userRole = localStorage.getItem("userRole");
         setIsAdmin(userRole === "admin");
     }, []);
+    
+    useEffect(() => {
+        if (isMsmeRole) {
+            checkProfile();
+        }
+    }, [isMsmeRole, checkProfile]);
+
+    const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
+    const [isEditable, setIsEditable] = useState(false);
+    const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [isEditingProfile, setIsEditingProfile] = useState(false)
+
+    const profileForm = useForm<ProfileFormValues>({
+        resolver: zodResolver(profileFormSchema),
+        defaultValues: emptyProfile,
+    });
+
+    const fetchProfileData = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/msme-profiles`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                const formData = data.profile;
+                // Populate form with fetched data
+                profileForm.reset({
+                    name: formData.name || '',
+                    sector: formData.sector || '',
+                    short_description: formData.short_description || '',
+                    affiliated_by: formData.affiliated_by || '',
+                    website_url: formData.website_url || '',
+                    phone_number: formData.phone_number || '',
+                    linkedin_url: formData.linkedin_url || '',
+                    x_url: formData.x_url || '',
+                    instagram_username: formData.instagram_username || '',
+                    logo: null
+                });
+                if (formData.logo_url) {
+                    setLogoPreview(formData.logo_url);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+        }
+    }, [profileForm, setLogoPreview])
+
+    useEffect(() => {
+        if (isProfileSubmitted && activeTab === 'settings') {
+            fetchProfileData();
+        }
+    }, [isProfileSubmitted, activeTab, fetchProfileData]);
+
 
     // Helper function to check if a field should be disabled in edit mode
     const isFieldDisabled = (fieldName: string) => {
@@ -423,10 +535,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         return !editableFields.includes(fieldName);
     };
 
-    const profileForm = useForm<ProfileFormValues>({
-        resolver: zodResolver(profileFormSchema),
-        defaultValues: emptyProfile,
-    });
+
 
     const collaborationForm = useForm<collaborationFormValues>({
         resolver: zodResolver(collaborationSchema),
@@ -465,13 +574,12 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     });
 
 
-    const [getUsersCollaborationData, setGetUserCollaborationData] = useState<getUsersCollaborationSchema[]>([]);
-
-    const [isEditingCollaboration, setIsEditingCollaboration] = useState(false);
-    const [currentEditingCollaborationId, setCurrentEditingCollaborationId] = useState<number | null>(null);
-    const [selectedCollaborationToEdit, setSelectedCollaborationToEdit] = useState<getUsersCollaborationSchema | null>(null);
 
     const MAX_CHARS = 300;
+
+    // Profile management states
+    ;
+
 
     async function onProfileSubmit(data: ProfileFormValues) {
         const token = localStorage.getItem('token');
@@ -510,12 +618,15 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                 toast({
                     title: isProfileSubmitted ? "Profile Updated" : "Profile Created",
                     description: isProfileSubmitted
-                        ? "Your MSME profile has been updated successfully."
-                        : "Your public MSME profile has been saved and is now visible.",
+                        ? "Your Organisation profile has been updated successfully."
+                        : "Your public Organisation profile has been saved and is now visible.",
                 });
                 setIsProfileSubmitted(true);
                 setIsEditable(false);
+                setIsEditingProfile(false); // Exit edit mode
                 setOpen(false);
+                // Switch to settings tab after successful profile submission
+                setActiveTab("settings");
             } else {
                 const errorData = await response.json();
                 toast({
@@ -534,6 +645,19 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
             setIsProfileSubmitting(false);
         }
     }
+
+
+
+    const handleOpenDialog = async () => {
+        const isValid = await profileForm.trigger();
+
+        if (isValid) {
+            setOpen(true);
+        }
+    };
+
+
+
 
     async function onSettingsSubmit(data: SettingsFormValues) {
         const token = localStorage.getItem('token');
@@ -684,10 +808,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         collaborationForm.setValue("attachments", updated);
     };
 
-    const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
-    const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isEditable, setIsEditable] = useState(false);
 
     async function onCollaborationSubmit(data: collaborationFormValues) {
         const token = localStorage.getItem("token");
@@ -761,10 +882,10 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
             if (response.ok) {
                 toast({
-                    title: isEditingCollaboration ? "Collaboration Updated" : "Collaboration Saved",
+                    title: isEditingCollaboration ? "Challenge Updated" : "Challenge Saved",
                     description: isEditingCollaboration
-                        ? "Your collaboration details have been updated."
-                        : "Your collaboration details have been saved.",
+                        ? "Your Challenge details have been updated."
+                        : "Your Challenge details have been saved.",
                 });
 
                 getUsersCollaboration();
@@ -793,7 +914,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                 const errorData = await response.json();
                 toast({
                     variant: "destructive",
-                    title: `Failed to ${isEditingCollaboration ? "update" : "save"} collaboration`,
+                    title: `Failed to ${isEditingCollaboration ? "update" : "save"} Challenge`,
                     description: errorData.error || "An unknown error occurred.",
                 });
             }
@@ -802,7 +923,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                 variant: "destructive",
                 title: "Network Error",
                 description: `Could not ${isEditingCollaboration ? "update" : "save"
-                    } collaboration info. Please try again later.`,
+                    } Challenge info. Please try again later.`,
             });
         } finally {
             setIsSubmitting(false);
@@ -874,32 +995,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         getSubmissions()
     }, [getSubmissions])
 
-    const getUsersCollaboration = useCallback(async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
-            return;
-        }
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/get-users-collaboration`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
 
-            const result = await response.json();
-
-            setGetUserCollaborationData(Array.isArray(result.collaborations) ? result.collaborations : []);
-            if (result.length > 0) {
-                setSubmissionsLength(result.length);
-            }
-        } catch (error) {
-            setGetUserCollaborationData([]);
-            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
-        }
-    }, [setGetUserCollaborationData, toast]);
 
     useEffect(() => {
         const checkProfile = async () => {
@@ -910,7 +1006,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                 });
                 const data = await response.json();
                 setIsProfileSubmitted(data.status === "submitted");
-                // Set isEditable from the API response
                 if (data.profile && data.profile.is_editable !== undefined) {
                     setIsEditable(data.profile.is_editable);
                 }
@@ -923,8 +1018,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
         checkProfile();
     }, [getUsersCollaboration]);
-
-    const [open, setOpen] = useState(false);
 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [collaborationToDeleteId, setCollaborationToDeleteId] = useState<number | null>(null);
@@ -951,8 +1044,8 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
             if (response.ok) {
                 toast({
-                    title: "Collaboration Deleted",
-                    description: "The collaboration has been successfully removed.",
+                    title: "Challenge Deleted",
+                    description: "The Challenge has been successfully removed.",
                 });
 
                 setGetUserCollaborationData(prev => prev.filter(collab => collab.id !== collaborationToDeleteId));
@@ -962,7 +1055,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                 const errorData = await response.json();
                 toast({
                     variant: "destructive",
-                    title: "Failed to delete collaboration",
+                    title: "Failed to delete Challenge",
                     description: errorData.error || "An unknown error occurred.",
                 });
             }
@@ -970,7 +1063,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
             toast({
                 variant: "destructive",
                 title: "Network Error",
-                description: "Could not delete collaboration. Please try again later.",
+                description: "Could not delete Challenge. Please try again later.",
             });
         } finally {
             setIsDeleting(false);
@@ -980,12 +1073,20 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            profileForm.setValue('logo', file, { shouldValidate: true, shouldDirty: true });
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setLogoPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+            const allowedExtensions = ['.pdf', '.doc', '.docx'];
+            const fileExtension = file.name.split('.').pop()?.toLowerCase();
+
+            if (fileExtension && allowedExtensions.includes(`.${fileExtension}`)) {
+                profileForm.setValue('logo', file, { shouldValidate: true, shouldDirty: true });
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setLogoPreview(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                setUploadError('Only PDF, DOC, and DOCX files are allowed');
+                e.target.value = ''; // Reset the file input
+            }
         }
     };
 
@@ -1011,15 +1112,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
     const removeLogo = () => {
         profileForm.setValue('logo', null);
         setLogoPreview(null);
-    };
-
-
-    const handleOpenDialog = async () => {
-        const isValid = await profileForm.trigger();
-
-        if (isValid) {
-            setOpen(true);
-        }
     };
 
     const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -1071,7 +1163,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                     <DialogHeader>
                         <DialogTitle>Confirm Deletion</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete this collaboration? This action cannot be undone.
+                            Are you sure you want to delete this Challenge? This action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -1092,35 +1184,9 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
                 <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
-                    {!isLoggedIn ? (
-                        <>
-                            <DialogHeader className="p-6">
-                                <DialogTitle className="text-3xl font-bold text-center  font-headline">Join as an MSME</DialogTitle>
-                                <DialogDescription className="text-center">
-                                    <span className="text-accent">{"Your business, your potential."}</span><br />
-                                    Browse technology profiles from various organizations seeking collaboration.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="h-[90vh] flex flex-col justify-center items-center">
-                                <LoginPrompt setActiveView={setActiveView} contentType="Join as an MSME" />
-                            </div>
-                        </>
-                    ) : !isMsmeRole ? (<>
-                        <DialogHeader className="p-6 m-auto flex items-center">
-                            <DialogTitle className="text-3xl font-bold font-headline">Join as an MSME</DialogTitle>
-                            <DialogDescription className="text-center">
-                                <span className="text-accent">{"Your business, your potential."}</span><br />
-                                Browse technology profiles from various organizations seeking collaboration.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="h-screen flex flex-col justify-center items-center">
-                            <p>You do not have MSME access.</p>
-                        </div>
-                    </>
-
-                    ) : (<>
+                    <>
                         <DialogHeader className="p-6">
-                            <DialogTitle className="text-3xl font-bold font-headline">MSME Dashboard</DialogTitle>
+                            <DialogTitle className="text-3xl font-bold font-headline">Organisation Dashboard</DialogTitle>
                             <DialogDescription>Welcome, {user.name}. Manage your challenges, submissions, and profile.</DialogDescription>
                         </DialogHeader>
                         <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
@@ -1129,7 +1195,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                     <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
                                     <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
                                     <TabsTrigger value="engagement"><Handshake className="mr-2 h-4 w-4" /> Engagement</TabsTrigger>
-                                    <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
+                                    <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> {isProfileSubmitted ? "Challenge" : "Edit Profile"}</TabsTrigger>
                                     <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
                                 </TabsList>
                                 <div className="flex-grow overflow-y-auto pb-6 w-full" >
@@ -1229,15 +1295,9 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                 </div>
                                             </CardHeader>
                                             <CardContent className="space-y-6">
-                                                {availableYears.length > 0 ? (
-                                                    <div className="flex justify-center py-4">
-                                                        <ContributionGraph data={dailySubmissions} year={selectedYear} />
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-center py-8 text-muted-foreground">
-                                                        <p>No submission data available yet.</p>
-                                                    </div>
-                                                )}
+                                                <div className="flex justify-center py-4">
+                                                    <ContributionGraph data={dailySubmissions} year={selectedYear} />
+                                                </div>
                                             </CardContent>
                                         </Card>
                                     </TabsContent>
@@ -1417,85 +1477,96 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
                                                 <CardFooter>
                                                     <p className="text-sm text-muted-foreground">
-                                                        Submitted on {new Date(sub.created_at).toLocaleString()}
+                                                        Submitted on {new Date(sub.created_at).toLocaleDateString('en-GB', {
+                                                            day: 'numeric',
+                                                            month: 'short',
+                                                            year: 'numeric'
+                                                        })} {new Date(sub.created_at).toLocaleTimeString('en-US', {
+                                                            hour: 'numeric',
+                                                            minute: '2-digit',
+                                                            hour12: true
+                                                        }).toLowerCase()}
                                                     </p>
                                                 </CardFooter>
                                             </Card>
                                         )) : (
                                             <Card className="text-center text-muted-foreground py-16">
-                                                <CardContent>You have not submit any Collaboration.</CardContent>
+                                                <CardContent>You have not submit any Challenge.</CardContent>
                                             </Card>
                                         )}
                                     </TabsContent>
 
                                     <TabsContent value="profile" className="mt-4">
-                                        <Card className={`${isProfileSubmitted && !isEditable ? "hidden" : "block"} bg-card/50 backdrop-blur-sm border-border/50`}>
-                                            <CardHeader>
-                                                <CardTitle>{isProfileSubmitted ? "Edit MSME Profile" : "Create MSME Profile"}</CardTitle>
-                                                <CardDescription>
-                                                    {isProfileSubmitted
-                                                        ? "Update your profile information. Changes will be saved immediately."
-                                                        : "This information will be publicly visible to potential collaborators."
-                                                    }
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <Form {...profileForm}>
-                                                    <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            <FormField
-                                                                control={profileForm.control}
-                                                                name="name"
-                                                                render={({ field }) => {
-                                                                    const value = profileForm.watch("name") || "";
-                                                                    return (
-                                                                        <FormItem>
-                                                                            <FormLabel>Company Name <span className="text-red-600">*</span></FormLabel>
-                                                                            <FormControl>
-                                                                                <div className="relative">
-                                                                                    <Input
-                                                                                        {...field}
-                                                                                        maxLength={MAX_CHARS}
-                                                                                        placeholder="Enter company name"
-                                                                                        className="pr-16"
-                                                                                    />
-                                                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                        {value.length}/{MAX_CHARS}
-                                                                                    </span>
-                                                                                </div>
-                                                                            </FormControl>
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    );
-                                                                }}
-                                                            />
-                                                            <FormField
-                                                                control={profileForm.control}
-                                                                name="affiliated_by"
-                                                                render={({ field }) => {
-                                                                    const value = profileForm.watch("affiliated_by") || "";
-                                                                    return (
-                                                                        <FormItem>
-                                                                            <FormLabel>Affiliated By</FormLabel>
-                                                                            <FormControl>
-                                                                                <div className="relative">
-                                                                                    <Input
-                                                                                        {...field}
-                                                                                        maxLength={MAX_CHARS}
-                                                                                        placeholder="Eg: Company / Institution Name"
-                                                                                        className="pr-16"
-                                                                                    />
-                                                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                        {value.length}/{MAX_CHARS}
-                                                                                    </span>
-                                                                                </div>
-                                                                            </FormControl>
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    );
-                                                                }}
-                                                            />
+                                        {!isProfileSubmitted && (
+                                            <Card className={`${isProfileSubmitted && !isEditable ? "hidden" : "block"} bg-card/50 backdrop-blur-sm border-border/50`}>
+                                                <CardHeader>
+                                                    <CardTitle>{isProfileSubmitted ? "Edit Organisation Profile" : "Create Organisation Profile"}</CardTitle>
+                                                    <CardDescription>
+                                                        {isProfileSubmitted
+                                                            ? "Update your profile information. Changes will be saved immediately."
+                                                            : "This information will be publicly visible to potential collaborators."
+                                                        }
+                                                    </CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <Form {...profileForm}>
+                                                        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="name"
+                                                                    render={({ field }) => {
+                                                                        const value = profileForm.watch("name") || "";
+                                                                        return (
+                                                                            <FormItem>
+                                                                                <FormLabel>Company Name <span className="text-red-600">*</span></FormLabel>
+                                                                                <FormControl>
+                                                                                    <div className="relative">
+                                                                                        <Input
+                                                                                            {...field}
+                                                                                            maxLength={MAX_CHARS}
+                                                                                            placeholder="Enter company name"
+                                                                                            className="pr-16"
+                                                                                        />
+                                                                                        <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
+                                                                                            {value.length}/{MAX_CHARS}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </FormControl>
+                                                                                <FormMessage />
+                                                                            </FormItem>
+                                                                        );
+                                                                    }}
+                                                                />
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="affiliated_by"
+                                                                    render={({ field }) => {
+                                                                        const value = profileForm.watch("affiliated_by") || "";
+                                                                        return (
+                                                                            <FormItem>
+                                                                                <FormLabel>Affiliated By</FormLabel>
+                                                                                <FormControl>
+                                                                                    <div className="relative">
+                                                                                        <Input
+                                                                                            {...field}
+                                                                                            maxLength={MAX_CHARS}
+                                                                                            placeholder="Eg: Company / Institution Name"
+                                                                                            className="pr-16"
+                                                                                        />
+                                                                                        <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
+                                                                                            {value.length}/{MAX_CHARS}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </FormControl>
+                                                                                <FormMessage />
+                                                                            </FormItem>
+                                                                        );
+                                                                    }}
+                                                                />
 
+
+                                                            </div>
                                                             <FormField
                                                                 control={profileForm.control}
                                                                 name="sector"
@@ -1512,7 +1583,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                         placeholder="e.g., FinTech, Health, AI"
                                                                                         className="pr-16"
                                                                                     />
-                                                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                    <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
                                                                                         {value.length}/{MAX_CHARS}
                                                                                     </span>
                                                                                 </div>
@@ -1522,7 +1593,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     );
                                                                 }}
                                                             />
-
                                                             <FormField
                                                                 control={profileForm.control}
                                                                 name="short_description"
@@ -1550,111 +1620,109 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                 }}
                                                             />
 
-                                                            <FormField
-                                                                control={profileForm.control}
-                                                                name="website_url"
-                                                                render={({ field }) => {
-                                                                    const value = profileForm.watch("website_url") || "";
-                                                                    return (
+                                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="website_url"
+                                                                    render={({ field }) => {
+                                                                        const value = profileForm.watch("website_url") || "";
+                                                                        return (
+                                                                            <FormItem>
+                                                                                <FormLabel>Website URL</FormLabel>
+                                                                                <FormControl>
+                                                                                    <div className="relative">
+                                                                                        <Input
+                                                                                            {...field}
+                                                                                            maxLength={MAX_CHARS}
+                                                                                            placeholder="https://example.com"
+                                                                                            className="pr-20"
+                                                                                        />
+                                                                                        <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
+                                                                                            {value.length}/{MAX_CHARS}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </FormControl>
+                                                                                <FormMessage />
+                                                                            </FormItem>
+                                                                        );
+                                                                    }}
+                                                                />
+
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="phone_number"
+                                                                    render={({ field }) => (
                                                                         <FormItem>
-                                                                            <FormLabel>Website URL</FormLabel>
+                                                                            <FormLabel>Phone Number</FormLabel>
                                                                             <FormControl>
-                                                                                <div className="relative">
-                                                                                    <Input
-                                                                                        {...field}
-                                                                                        maxLength={MAX_CHARS}
-                                                                                        placeholder="https://example.com"
-                                                                                        className="pr-20"
-                                                                                    />
-                                                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
-                                                                                        {value.length}/{MAX_CHARS}
-                                                                                    </span>
-                                                                                </div>
+                                                                                <Input
+                                                                                    {...field}
+                                                                                    type="tel"
+                                                                                    placeholder="9876543210"
+                                                                                />
                                                                             </FormControl>
                                                                             <FormMessage />
                                                                         </FormItem>
-                                                                    );
-                                                                }}
-                                                            />
+                                                                    )}
+                                                                />
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="x_url"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel>X (Twitter) Username</FormLabel>
+                                                                            <FormControl>
+                                                                                <VanityUrlInput
+                                                                                    baseUrl="x.com"
+                                                                                    value={field.value || ""}
+                                                                                    onChange={field.onChange}
+                                                                                    placeholder="username"
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="instagram_username"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel>Instagram Username</FormLabel>
+                                                                            <FormControl>
+                                                                                <VanityUrlInput
+                                                                                    baseUrl="instagram.com"
+                                                                                    value={field.value || ""}
+                                                                                    onChange={field.onChange}
+                                                                                    placeholder="username"
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
 
-                                                            <FormField
-                                                                control={profileForm.control}
-                                                                name="phone_number"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel>Phone Number</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input
-                                                                                {...field}
-                                                                                type="tel"
-                                                                                placeholder="9876543210"
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-
-                                                        </div>
-
-                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                                            <FormField
-                                                                control={profileForm.control}
-                                                                name="x_url"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel>X (Twitter) Username</FormLabel>
-                                                                        <FormControl>
-                                                                            <VanityUrlInput
-                                                                                baseUrl="x.com"
-                                                                                value={field.value || ""}
-                                                                                onChange={field.onChange}
-                                                                                placeholder="username"
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-
-                                                            <FormField
-                                                                control={profileForm.control}
-                                                                name="instagram_username"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel>Instagram Username</FormLabel>
-                                                                        <FormControl>
-                                                                            <VanityUrlInput
-                                                                                baseUrl="instagram.com"
-                                                                                value={field.value || ""}
-                                                                                onChange={field.onChange}
-                                                                                placeholder="username"
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-
-                                                            <FormField
-                                                                control={profileForm.control}
-                                                                name="linkedin_url"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel>LinkedIn Username</FormLabel>
-                                                                        <FormControl>
-                                                                            <VanityUrlInput
-                                                                                baseUrl="linkedin.com/company"
-                                                                                value={field.value || ""}
-                                                                                onChange={field.onChange}
-                                                                                placeholder="username"
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="linkedin_url"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel>LinkedIn Username</FormLabel>
+                                                                            <FormControl>
+                                                                                <VanityUrlInput
+                                                                                    baseUrl="linkedin.com/company"
+                                                                                    value={field.value || ""}
+                                                                                    onChange={field.onChange}
+                                                                                    placeholder="username"
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                            </div>
                                                             <FormField
                                                                 control={profileForm.control}
                                                                 name="logo"
@@ -1715,63 +1783,66 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     </FormItem>
                                                                 )}
                                                             />
-                                                        </div>
-                                                        <Dialog open={open} onOpenChange={setOpen}>
-                                                            <DialogTrigger asChild>
-                                                                <LoadingButton
-                                                                    type="button"
-                                                                    onClick={handleOpenDialog}
-                                                                    isLoading={isSubmitting}
-                                                                    disabled={isProfileSubmitting}
-                                                                >
-                                                                    {isProfileSubmitted ? "Update Profile" : "Save Profile"}
-                                                                </LoadingButton>
-                                                            </DialogTrigger>
-
-                                                            <DialogContent>
-                                                                <DialogHeader>
-                                                                    <DialogTitle>Confirm Submission</DialogTitle>
-                                                                    <DialogDescription>
-                                                                        Are you sure you want to submit your profile? You can only submit once.
-                                                                        <br />
-                                                                        <span className="text-red-500">Please type <strong>{"confirm"}</strong> below to proceed.</span>
-                                                                    </DialogDescription>
-                                                                </DialogHeader>
-
-                                                                <div className="py-4">
-                                                                    <Input
-                                                                        placeholder='Type "confirm" to proceed'
-                                                                        value={confirmText}
-                                                                        onChange={(e) => setConfirmText(e.target.value)}
-                                                                    />
-                                                                </div>
-
-                                                                <DialogFooter className="flex justify-end gap-2">
-                                                                    <Button variant="outline" onClick={() => setOpen(false)}>
-                                                                        Cancel
-                                                                    </Button>
-
-                                                                    <Button
-                                                                        onClick={() => {
-                                                                            profileForm.handleSubmit(onProfileSubmit)();
-                                                                        }}
-                                                                        disabled={
-                                                                            profileForm.formState.isSubmitting ||
-                                                                            confirmText.toLowerCase() !== "confirm"
-                                                                        }
+                                                            <Dialog open={open} onOpenChange={setOpen}>
+                                                                <DialogTrigger asChild>
+                                                                    <LoadingButton
+                                                                        type="button"
+                                                                        onClick={handleOpenDialog}
+                                                                        isLoading={isSubmitting}
+                                                                        disabled={isProfileSubmitting}
                                                                     >
-                                                                        {profileForm.formState.isSubmitting && (
-                                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                                        )}
-                                                                        Confirm
-                                                                    </Button>
-                                                                </DialogFooter>
-                                                            </DialogContent>
-                                                        </Dialog>
-                                                    </form>
-                                                </Form>
-                                            </CardContent>
-                                        </Card>
+                                                                        {isProfileSubmitted ? "Update Profile" : "Save Profile"}
+                                                                    </LoadingButton>
+                                                                </DialogTrigger>
+
+                                                                <DialogContent>
+                                                                    <DialogHeader>
+                                                                        <DialogTitle>Confirm Submission</DialogTitle>
+                                                                        <DialogDescription>
+                                                                            Are you sure you want to submit your profile?
+                                                                            <br />
+                                                                            <span className="text-red-500">Please type <strong>{"confirm"}</strong> below to proceed.</span>
+                                                                        </DialogDescription>
+                                                                    </DialogHeader>
+
+                                                                    <div className="py-4">
+                                                                        <Input
+                                                                            placeholder='Type "confirm" to proceed'
+                                                                            value={confirmText}
+                                                                            onChange={(e) => setConfirmText(e.target.value)}
+                                                                            disabled={
+                                                                                profileForm.formState.isSubmitting
+                                                                            }
+                                                                        />
+                                                                    </div>
+
+                                                                    <DialogFooter className="flex justify-end gap-2">
+                                                                        <Button variant="outline" onClick={() => setOpen(false)}>
+                                                                            Cancel
+                                                                        </Button>
+
+                                                                        <Button
+                                                                            onClick={() => {
+                                                                                profileForm.handleSubmit(onProfileSubmit)();
+                                                                            }}
+                                                                            disabled={
+                                                                                profileForm.formState.isSubmitting ||
+                                                                                confirmText.toLowerCase() !== "confirm"
+                                                                            }
+                                                                        >
+                                                                            {profileForm.formState.isSubmitting && (
+                                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                            )}
+                                                                            Confirm
+                                                                        </Button>
+                                                                    </DialogFooter>
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        </form>
+                                                    </Form>
+                                                </CardContent>
+                                            </Card>
+                                        )}
 
 
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50 mt-4 max-w-full">
@@ -1795,8 +1866,8 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                         <FormLabel>Title <span className="text-red-500">*</span></FormLabel>
                                                                         <FormControl>
                                                                             <div className="relative">
-                                                                                <Input placeholder="Give your collaboration a title" {...field} disabled={collaborationForm.formState.isSubmitting} />
-                                                                                <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                <Input placeholder="Enter the Challenge title" {...field} disabled={collaborationForm.formState.isSubmitting} />
+                                                                                <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
                                                                                     {titleValue.length}/{MAX_CHARS}
                                                                                 </span>
                                                                             </div>
@@ -2144,12 +2215,12 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
                                                                             <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
 
-                                                                            <p className="text-sm text-muted-foreground mt-1" >
-                                                                                Click to upload or Drag & drop PDF or DOCX here
+                                                                            <p className="text-sm text-muted-foreground mt-1">
+                                                                                Click to upload or Drag & drop PDF, DOC, or DOCX here
                                                                             </p>
 
                                                                             <p className="text-xs text-muted-foreground">
-                                                                                Max 5 files • Allowed: PDF, DOCX
+                                                                                Max 5 files • Allowed: PDF, DOC, DOCX
                                                                             </p>
                                                                         </div>
                                                                     </FormControl>
@@ -2166,7 +2237,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                 return (
                                                                                     <div
                                                                                         key={index}
-                                                                                        className="flex justify-between items-center border rounded p-2 bg-muted/40"
+                                                                                        className="flex justify-between items-center border rounded rounded-lg p-2 bg-muted/40"
                                                                                     >
                                                                                         <div className="flex items-center gap-3">
                                                                                             <div>
@@ -2226,7 +2297,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                         field.onChange(e);
                                                                                     }}
                                                                                 />
-                                                                                <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                                                                                <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
                                                                                     {field.value?.length || 0}/300
                                                                                 </span>
                                                                             </div>
@@ -2253,7 +2324,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                         field.onChange(e);
                                                                                     }}
                                                                                 />
-                                                                                <span className="absolute right-2 bottom-2 text-xs text-gray-500">
+                                                                                <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
                                                                                     {field.value?.length || 0}/300
                                                                                 </span>
                                                                             </div>
@@ -2265,16 +2336,34 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                             />
                                                         </div>
 
-                                                        <Button type="submit" disabled={collaborationForm.formState.isSubmitting} className="w-full sm:w-auto">
-                                                            {collaborationForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                            {isEditingCollaboration ? "Update Collaboration" : "Save Collaboration Info"}
-                                                        </Button>
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <div className="w-full sm:w-auto">
+                                                                        <Button
+                                                                            type="submit"
+                                                                            disabled={!isProfileSubmitted || collaborationForm.formState.isSubmitting}
+                                                                            className="w-full sm:w-auto"
+                                                                        >
+                                                                            {collaborationForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                                            {isEditingCollaboration ? "Update Challenge" : "Save Challenge"}
+                                                                        </Button>
+                                                                    </div>
+                                                                </TooltipTrigger>
+                                                                {!isProfileSubmitted && (
+                                                                    <TooltipContent side="top" align="start">
+                                                                        <p>Please submit your Organisation profile first before uploading challenges</p>
+                                                                    </TooltipContent>
+                                                                )}
+                                                            </Tooltip>
+                                                        </TooltipProvider>
                                                     </form>
                                                 </Form>
                                             </CardContent>
                                         </Card>
                                     </TabsContent>
                                     <TabsContent value="settings" className="mt-4">
+
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader><CardTitle>Account Settings</CardTitle><CardDescription>Manage your account settings.</CardDescription></CardHeader>
                                             <CardContent className="space-y-8">
@@ -2316,12 +2405,324 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                 )}
                                             </CardContent>
                                         </Card>
+                                        {isProfileSubmitted && (
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50 mb-4 mt-4">
+                                                <CardHeader>
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="space-y-1.5">
+                                                            <CardTitle>Organisation Profile</CardTitle>
+                                                            <CardDescription>
+                                                                This information will be publicly visible to potential collaborators.
+                                                            </CardDescription>
+                                                        </div>
+                                                        {!isEditingProfile && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => setIsEditingProfile(true)}
+                                                            >
+                                                                <Pencil className="h-4 w-4 mr-2" />
+                                                                Edit Profile
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <Form {...profileForm}>
+                                                        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="name"
+                                                                    render={({ field }) => {
+                                                                        const value = profileForm.watch("name") || "";
+                                                                        return (
+                                                                            <FormItem>
+                                                                                <FormLabel>Company Name <span className="text-red-600">*</span></FormLabel>
+                                                                                <FormControl>
+                                                                                    <div className="relative">
+                                                                                        <Input
+                                                                                            {...field}
+                                                                                            maxLength={MAX_CHARS}
+                                                                                            placeholder="Enter company name"
+                                                                                            className="pr-16"
+                                                                                            disabled={!isEditingProfile}
+                                                                                        />
+                                                                                        <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
+                                                                                            {value.length}/{MAX_CHARS}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </FormControl>
+                                                                                <FormMessage />
+                                                                            </FormItem>
+                                                                        );
+                                                                    }}
+                                                                />
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="affiliated_by"
+                                                                    render={({ field }) => {
+                                                                        const value = profileForm.watch("affiliated_by") || "";
+                                                                        return (
+                                                                            <FormItem>
+                                                                                <FormLabel>Affiliated By</FormLabel>
+                                                                                <FormControl>
+                                                                                    <div className="relative">
+                                                                                        <Input
+                                                                                            {...field}
+                                                                                            maxLength={MAX_CHARS}
+                                                                                            placeholder="Eg: Company / Institution Name"
+                                                                                            className="pr-16"
+                                                                                            disabled={!isEditingProfile}
+                                                                                        />
+                                                                                        <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
+                                                                                            {value.length}/{MAX_CHARS}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </FormControl>
+                                                                                <FormMessage />
+                                                                            </FormItem>
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            </div>
+
+
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="sector"
+                                                                render={({ field }) => {
+                                                                    const value = profileForm.watch("sector") || "";
+                                                                    return (
+                                                                        <FormItem>
+                                                                            <FormLabel>Sector <span className="text-red-600">*</span></FormLabel>
+                                                                            <FormControl>
+                                                                                <div className="relative">
+                                                                                    <Input
+                                                                                        {...field}
+                                                                                        maxLength={MAX_CHARS}
+                                                                                        placeholder="e.g., FinTech, Health, AI"
+                                                                                        className="pr-16"
+                                                                                        disabled={!isEditingProfile}
+                                                                                    />
+                                                                                    <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
+                                                                                        {value.length}/{MAX_CHARS}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    );
+                                                                }}
+                                                            />
+
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="website_url"
+                                                                    render={({ field }) => {
+                                                                        const value = profileForm.watch("website_url") || "";
+                                                                        return (
+                                                                            <FormItem>
+                                                                                <FormLabel>Website URL</FormLabel>
+                                                                                <FormControl>
+                                                                                    <div className="relative">
+                                                                                        <VanityUrlInput
+                                                                                            baseUrl="https://"
+                                                                                            value={field.value || ""}
+                                                                                            onChange={field.onChange}
+                                                                                            placeholder="https://example.com"
+                                                                                            disabled={!isEditingProfile}
+                                                                                        />
+                                                                                        <span className="absolute right-2 bottom-2 top-3 text-xs text-muted-foreground">
+                                                                                            {value.length}/{MAX_CHARS}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </FormControl>
+                                                                                <FormMessage />
+                                                                            </FormItem>
+                                                                        );
+                                                                    }}
+                                                                />
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="phone_number"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel>Phone Number</FormLabel>
+                                                                            <FormControl>
+                                                                                <Input
+                                                                                    {...field}
+                                                                                    type="tel"
+                                                                                    placeholder="9876543210"
+                                                                                    disabled={!isEditingProfile}
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="x_url"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel>X (Twitter) Username</FormLabel>
+                                                                            <FormControl>
+                                                                                <VanityUrlInput
+                                                                                    baseUrl="x.com"
+                                                                                    value={field.value || ""}
+                                                                                    onChange={field.onChange}
+                                                                                    placeholder="username"
+                                                                                    disabled={!isEditingProfile}
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="instagram_username"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel>Instagram Username</FormLabel>
+                                                                            <FormControl>
+                                                                                <VanityUrlInput
+                                                                                    baseUrl="instagram.com"
+                                                                                    value={field.value || ""}
+                                                                                    onChange={field.onChange}
+                                                                                    placeholder="username"
+                                                                                    disabled={!isEditingProfile}
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+
+                                                                <FormField
+                                                                    control={profileForm.control}
+                                                                    name="linkedin_url"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel>LinkedIn Username</FormLabel>
+                                                                            <FormControl>
+                                                                                <VanityUrlInput
+                                                                                    baseUrl="linkedin.com/company"
+                                                                                    value={field.value || ""}
+                                                                                    onChange={field.onChange}
+                                                                                    placeholder="username"
+                                                                                    disabled={!isEditingProfile}
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="logo"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel>Company Logo <span className="text-red-500">*</span></FormLabel>
+                                                                        <FormControl>
+                                                                            <div
+                                                                                onClick={isEditingProfile ? () => fileInputRef.current?.click() : undefined}
+                                                                                onDragOver={isEditingProfile ? handleDragOver : undefined}
+                                                                                onDrop={isEditingProfile ? handleDrop : undefined}
+                                                                                className={`relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg ${isEditingProfile ? 'cursor-pointer hover:bg-muted/50' : 'cursor-not-allowed opacity-60'}`}
+                                                                            >
+                                                                                {logoPreview ? (
+                                                                                    <>
+                                                                                        <Image
+                                                                                            src={logoPreview}
+                                                                                            alt="Logo preview"
+                                                                                            layout="fill"
+                                                                                            objectFit="contain"
+                                                                                            className="rounded-lg"
+                                                                                        />
+                                                                                        {isEditingProfile && (
+                                                                                            <Button
+                                                                                                type="button"
+                                                                                                variant="destructive"
+                                                                                                size="icon"
+                                                                                                className="absolute top-2 right-2 z-10"
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    removeLogo();
+                                                                                                }}
+                                                                                            >
+                                                                                                <Trash2 className="h-4 w-4" />
+                                                                                            </Button>
+                                                                                        )}
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                                        <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                                                                                        <p className="mb-2 text-sm text-muted-foreground">
+                                                                                            <span className="font-semibold">Click to upload</span> or drag and drop
+                                                                                        </p>
+                                                                                        <p className="text-xs text-muted-foreground">
+                                                                                            PNG, JPG, or GIF (MAX. 800x400px)
+                                                                                        </p>
+                                                                                    </div>
+                                                                                )}
+                                                                                <Input
+                                                                                    ref={fileInputRef}
+                                                                                    id="dropzone-file"
+                                                                                    type="file"
+                                                                                    className="hidden"
+                                                                                    accept=".pdf,.doc,.docx"
+                                                                                    onChange={handleFileChange}
+                                                                                    disabled={!isEditingProfile}
+                                                                                />
+                                                                            </div>
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            {isEditingProfile && (
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        onClick={() => {
+                                                                            setIsEditingProfile(false);
+                                                                            fetchProfileData();
+                                                                        }}
+                                                                    >
+                                                                        Cancel
+                                                                    </Button>
+                                                                    <Button
+                                                                        type="submit"
+                                                                        disabled={isProfileSubmitting}
+                                                                    >
+                                                                        {isProfileSubmitting && (
+                                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                        )}
+                                                                        Save Changes
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </form>
+                                                    </Form>
+                                                </CardContent>
+                                            </Card>
+                                        )}
                                     </TabsContent>
                                 </div >
                             </Tabs >
                         </div >
-                    </>)
-                    }
+                    </>
                 </DialogContent >
             </Dialog >
             <SubmissionDetailsModal
