@@ -192,7 +192,7 @@ export default function ContactView({ isOpen, onOpenChange }: ContactViewProps) 
                                                             <SelectItem value="general">General Inquiry</SelectItem>
                                                             <SelectItem value="mentorship">Mentorship Programs</SelectItem>
                                                             <SelectItem value="incubation">Incubation Support</SelectItem>
-                                                            <SelectItem value="msme">MSME Partnerships</SelectItem>
+                                                            <SelectItem value="msme">Organisation Partnerships</SelectItem>
                                                             <SelectItem value="support">Support</SelectItem>
                                                         </SelectContent>
                                                     </Select>

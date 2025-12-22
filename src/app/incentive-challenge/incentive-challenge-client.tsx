@@ -129,7 +129,7 @@ export default function IncentiveChallengeClient() {
                                             <div>
                                                 <strong className="text-lg">Networking & Collaboration</strong>
                                                 <p className="text-muted-foreground mt-1">
-                                                    Connect with fellow founders, MSMEs, innovators, investors, and potential customers, opening doors to partnerships and future opportunities.
+                                                    Connect with fellow founders, organisation, innovators, investors, and potential customers, opening doors to partnerships and future opportunities.
                                                 </p>
                                             </div>
                                         </li>
@@ -462,7 +462,7 @@ export default function IncentiveChallengeClient() {
                                     </CardHeader>
                                     <CardContent>
                                         <p className="text-muted-foreground">
-                                            Anyone with an innovative solution can apply! This includes students, researchers, innovators, early-stage founders, MSMEs, professionals, and technology enthusiasts. Some challenges may have specific eligibility criteria such as geographic location, industry focus, or experience level—always check the individual challenge details for any additional requirements.
+                                            Anyone with an innovative solution can apply! This includes students, researchers, innovators, early-stage founders, organisation, professionals, and technology enthusiasts. Some challenges may have specific eligibility criteria such as geographic location, industry focus, or experience level—always check the individual challenge details for any additional requirements.
                                         </p>
                                     </CardContent>
                                 </Card>

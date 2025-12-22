@@ -67,8 +67,7 @@ interface TokenStatus {
   error?: string;
 }
 
-// Version for localStorage data
-const LOCAL_STORAGE_VERSION = '1.2'; // bump to invalidate old data
+const LOCAL_STORAGE_VERSION = '1.2'; 
 
 function safeParse<T>(value: string | null, fallback: T, key?: string, validate: (obj: any) => boolean = () => true): T {
   try {
@@ -141,7 +140,7 @@ export default function MainView() {
     const parsedUser = safeParse<User | null>(savedUser, null, 'user', isValidUser);
     const parsedAppliedPrograms = safeParse<Record<string, string>>(savedAppliedPrograms, {}, 'appliedPrograms', isValidAppliedPrograms);
 
-    const validRoles: UserRole[] = ['admin', 'mentor', 'msme', 'incubator', 'founder'];
+    const validRoles: UserRole[] = ['admin', 'mentor', 'organisation', 'incubator', 'founder'];
     if (savedIsLoggedIn === 'true' && validRoles.includes(savedUserRole as UserRole) && parsedUser) {
       setLoggedIn(true);
       setUserRole(savedUserRole);
@@ -423,10 +422,11 @@ export default function MainView() {
             onOpenChange={() => setActiveView('home')}
             setActiveView={setActiveView}
             user={user}
+            setUser={setUser}
             authProvider={authProvider}
           />
         );
-      case 'msme':
+      case 'organisation':
         return (
           <MsmeDashboardView
             isOpen={true}
@@ -434,6 +434,7 @@ export default function MainView() {
             isLoggedIn={isLoggedIn}
             setActiveView={setActiveView}
             user={user}
+            setUser={setUser}
             authProvider={authProvider}
           />
         );
@@ -443,6 +444,7 @@ export default function MainView() {
             isOpen={true}
             onOpenChange={() => setActiveView('home')}
             user={user}
+            setUser={setUser}
             authProvider={authProvider}
           />
         );
@@ -463,7 +465,7 @@ export default function MainView() {
         );
       case 'founder':
         switch (founderRole) {
-          case "Solve MSME&#39;s challenge":
+          case "Solve Organisation's challenge":
             return (
               <SolveChallengeDashboard
                 isOpen={true}

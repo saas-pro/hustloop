@@ -378,10 +378,10 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
                 <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
                     <DialogHeader className="p-6">
-                        <DialogTitle className="text-3xl font-bold text-center  font-headline">MSME Profiles</DialogTitle>
+                        <DialogTitle className="text-3xl font-bold text-center  font-headline">Organisation Profiles</DialogTitle>
                         <DialogDescription className="text-center">
                             <span className="text-accent">{"Your business, your potential."}</span><br />
-                            Browse MSME profiles from various organizations seeking collaboration.
+                            Browse Organisation profiles from various organizations seeking collaboration.
 
                         </DialogDescription>
                     </DialogHeader>
@@ -407,7 +407,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                         </div>
                     ) : profiles.length === 0 ? (
                         <div className="text-center text-muted-foreground">
-                            No MSME profiles found.
+                            No Organisation profiles found.
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-5">
@@ -543,7 +543,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                     </Table>
                                 </div>
                             ) : collaborations.length === 0 ? (
-                                <p>No challenges found for this MSME.</p>
+                                <p>No challenges found for this Organisation.</p>
                             ) : (
                                 <div className="overflow-x-auto -mx-6 px-6">
                                     <Table>

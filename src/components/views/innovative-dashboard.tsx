@@ -40,6 +40,8 @@ import MarkdownEditor from "../ui/markdown";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from "remark-gfm";
 import { useSearchParams } from "next/navigation";
+import { EmailUpdateForm } from "../ui/EmailUpdateForm";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
 const settingsFormSchema = z.object({
     name: z
@@ -49,6 +51,51 @@ const settingsFormSchema = z.object({
     email: z.string().email("Invalid email address"),
 });
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
+
+
+const paymentMethodSchema = z.object({
+    paymentMethod: z.enum(["paypal", "bank", "upi"], {
+        required_error: "You must select a payment method."
+    }),
+    paymentCategory: z.enum(["primary", "secondary", "others"], {
+        required_error: "You must select a payment category."
+    }),
+    paypalEmail: z.string().optional(),
+    accountHolder: z.string().optional(),
+    accountNumber: z.string().optional(),
+    ifscCode: z.string().optional(),
+    upiId: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if (data.paymentMethod === 'paypal') {
+        if (!data.paypalEmail || !z.string().email().safeParse(data.paypalEmail).success) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['paypalEmail'],
+                message: 'A valid PayPal email is required.',
+            });
+        }
+    } else if (data.paymentMethod === 'bank') {
+        if (!data.accountHolder) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['accountHolder'], message: 'Account holder name is required.' });
+        }
+        if (!data.accountNumber) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['accountNumber'], message: 'Account number is required.' });
+        }
+        if (!data.ifscCode) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['ifscCode'], message: 'IFSC code is required.' });
+        }
+    } else if (data.paymentMethod === 'upi') {
+        if (!data.upiId || !/^[a-zA-Z0-9.\-_]+@[a-zA-Z]+$/.test(data.upiId)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['upiId'],
+                message: 'A valid UPI ID is required (e.g., yourname@okbank).',
+            });
+        }
+    }
+});
+
+type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>;
 
 const blogPostSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters"),
@@ -201,7 +248,9 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [emailChangeRequested, setEmailChangeRequested] = useState(false);
     const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
-
+    const [isEditingPayment, setIsEditingPayment] = useState(false);
+    const [isLoadingPayment, setIsLoadingPayment] = useState(false);
+    const [allPaymentMethods, setAllPaymentMethods] = useState<any[]>([]);
 
 
     // Admin state
@@ -253,6 +302,18 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
         }
     }
     )
+
+    const paymentForm = useForm<PaymentMethodFormValues>({
+        resolver: zodResolver(paymentMethodSchema),
+        defaultValues: {
+            paymentMethod: undefined,
+            paypalEmail: "",
+            accountHolder: "",
+            accountNumber: "",
+            ifscCode: "",
+            upiId: "",
+        },
+    });
 
     const { fields: sessionFields, append: appendSession, remove: removeSession } = useFieldArray({ control: programForm.control, name: "sessions" });
     const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({ control: programForm.control, name: "features" });
@@ -637,6 +698,8 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
             });
         }
     };
+
+
     const token = localStorage.getItem("token")
     useEffect(() => {
         const fetchDraft = async () => {
@@ -779,9 +842,11 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
         setItemToDelete(null);
     };
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     async function onSettingsSubmit(data: SettingsFormValues) {
         const token = localStorage.getItem('token');
+        setIsSubmitting(true);
         if (!token) {
             toast({
                 variant: 'destructive',
@@ -792,13 +857,10 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
         }
 
         try {
-            // ⚠️ Separate email from other profile fields
             const { name, email } = data;
 
-            // 1. If user changed email, start the email-change flow
             if (email && email !== user?.email) {
                 await handleChangeEmail(email);
-                // Do NOT update localStorage here – wait until verification
             }
 
             if (name) {
@@ -812,7 +874,6 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
                 });
 
                 const result = await response.json();
-
                 if (response.ok) {
                     toast({ title: "Settings Saved", description: result.message });
 
@@ -821,6 +882,7 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
                         ...result.user
                     }));
                     setUser((prev) => ({ ...prev, ...result.user }));
+
                 } else {
                     toast({
                         variant: 'destructive',
@@ -835,6 +897,8 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
                 title: 'Network Error',
                 description: 'Could not save settings. Please try again later.'
             });
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -914,6 +978,123 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
         }
     }
 
+    // Fetch all payment methods
+    const fetchAllPaymentMethods = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/payment-methods`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const paymentMethods = data.payment_methods || [];
+                setAllPaymentMethods(paymentMethods);
+            }
+        } catch (error) {
+            console.error('Failed to fetch payment methods:', error);
+        }
+    }, []);
+
+    // Load payment data for the selected category
+    const loadPaymentDataForCategory = useCallback((category: string) => {
+        if (!category || allPaymentMethods.length === 0) return;
+
+        const categoryPayment = allPaymentMethods.find(
+            (pm: any) => pm.payment_category === category
+        );
+
+        if (categoryPayment) {
+            // Pre-fill the form with existing payment data for this category
+            paymentForm.setValue('paymentMethod', categoryPayment.payment_method);
+            paymentForm.setValue('paypalEmail', categoryPayment.paypal_email || "");
+            paymentForm.setValue('accountHolder', categoryPayment.account_holder || "");
+            paymentForm.setValue('accountNumber', categoryPayment.account_number || "");
+            paymentForm.setValue('ifscCode', categoryPayment.ifsc_code || "");
+            paymentForm.setValue('upiId', categoryPayment.upi_id || "");
+        } else {
+            // Clear form fields if no payment method exists for this category
+            paymentForm.setValue('paymentMethod', undefined as any);
+            paymentForm.setValue('paypalEmail', "");
+            paymentForm.setValue('accountHolder', "");
+            paymentForm.setValue('accountNumber', "");
+            paymentForm.setValue('ifscCode', "");
+            paymentForm.setValue('upiId', "");
+        }
+    }, [allPaymentMethods, paymentForm]);
+
+    // Fetch payment methods when settings tab is opened
+    useEffect(() => {
+        if (activeTab === 'settings') {
+            fetchAllPaymentMethods();
+        }
+    }, [activeTab, fetchAllPaymentMethods]);
+
+    // Load initial payment data when payment methods are fetched
+    useEffect(() => {
+        if (allPaymentMethods.length > 0 && !paymentForm.getValues('paymentCategory')) {
+            // Load the first available payment method
+            const firstPayment = allPaymentMethods[0];
+            paymentForm.setValue('paymentCategory', firstPayment.payment_category);
+            paymentForm.setValue('paymentMethod', firstPayment.payment_method);
+            paymentForm.setValue('paypalEmail', firstPayment.paypal_email || "");
+            paymentForm.setValue('accountHolder', firstPayment.account_holder || "");
+            paymentForm.setValue('accountNumber', firstPayment.account_number || "");
+            paymentForm.setValue('ifscCode', firstPayment.ifsc_code || "");
+            paymentForm.setValue('upiId', firstPayment.upi_id || "");
+        }
+    }, [allPaymentMethods, paymentForm]);
+
+    // Watch for category changes and load the appropriate payment data
+    useEffect(() => {
+        const subscription = paymentForm.watch((value, { name }) => {
+            if (name === 'paymentCategory' && value.paymentCategory) {
+                loadPaymentDataForCategory(value.paymentCategory);
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [paymentForm, loadPaymentDataForCategory]);
+
+    // Submit payment method
+    async function onPaymentMethodSubmit(data: PaymentMethodFormValues) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+
+        setIsLoadingPayment(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/payment-method`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                toast({ title: 'Payment Method Saved', description: result.message || 'Your payment information has been saved successfully.' });
+                setIsEditingPayment(false);
+                await fetchAllPaymentMethods();
+            } else {
+                toast({ variant: 'destructive', title: 'Save Failed', description: result.error || 'Failed to save payment method.' });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save payment method. Please try again later.' });
+        } finally {
+            setIsLoadingPayment(false);
+        }
+    }
+
     const deleteSubmission = async (
         id: string | number,
         setMySubmissions: React.Dispatch<React.SetStateAction<any[]>>
@@ -953,7 +1134,7 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
         }
     }, []);
     const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "connex", "engagement", "settings"];
-    const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
+    const founderTabs = ["overview", "organisation", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
     const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];
     const filteredTabs = isTechTransfer ? techTransferTabs : availableTabs
@@ -1504,7 +1685,7 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
                             {tabsToRender.map((tab) => {
                                 const Icon = (
                                     LucideIcons[
-                                    tab === "msmes"
+                                    tab === "organisation"
                                         ? "Briefcase"
                                         : tab === "incubators"
                                             ? "Lightbulb"
@@ -1640,11 +1821,11 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
                                         </CardContent>
                                     </Card>}
                             </TabsContent>
-                            <TabsContent value="msmes" className="mt-0">
+                            <TabsContent value="organisation" className="mt-0">
                                 {hasSubscription || userRole === 'admin' ? (
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                         <CardHeader>
-                                            <CardTitle>MSME Collaborations</CardTitle>
+                                            <CardTitle>Organisation Collaborations</CardTitle>
                                             <CardDescription>
                                                 Your ongoing and potential collaborations with MSMEs.
                                             </CardDescription>
@@ -2891,95 +3072,169 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
                                                                 </FormItem>
                                                             )}
                                                         />
-
-                                                        {/* Email Field */}
-                                                        <FormField
-                                                            control={settingsForm.control}
-                                                            name="email"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Email</FormLabel>
-                                                                    <div className="relative">
-                                                                        <FormControl>
-                                                                            <Input
-                                                                                type="email"
-                                                                                placeholder="your@email.com"
-                                                                                {...field}
-                                                                                readOnly={!isEditingEmail}
-                                                                                className="pr-28" // make space for buttons
-                                                                            />
-                                                                        </FormControl>
-
-                                                                        {/* Buttons inside input */}
-                                                                        <div className="absolute inset-y-0 right-3 flex items-center gap-1">
-                                                                            {emailChangeRequested ? (
-                                                                                // Step 3: After Change request → Resend
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="outline"
-                                                                                    size="sm"
-                                                                                    className="text-xs flex items-center gap-1"
-                                                                                    disabled={loadingResend}
-                                                                                    onClick={() => handleResendEmail(field.value)}
-                                                                                >
-                                                                                    {loadingResend ? (
-                                                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                                                    ) : (
-                                                                                        "Resend"
-                                                                                    )}
-                                                                                </Button>
-                                                                            ) : !isEditingEmail ? (
-                                                                                // Step 1: Default → Edit
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="link"
-                                                                                    className="p-0 h-auto text-sm"
-                                                                                    onClick={() => {
-                                                                                        setIsEditingEmail(true);
-                                                                                        setEmailChangeRequested(false); // reset state
-                                                                                    }}
-                                                                                >
-                                                                                    Edit
-                                                                                </Button>
-                                                                            ) : (
-                                                                                // Step 2: While editing → Change
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="default"
-                                                                                    size="sm"
-                                                                                    className="text-xs flex items-center gap-1"
-                                                                                    disabled={loadingChange}
-                                                                                    onClick={async () => {
-                                                                                        await handleChangeEmail(field.value);
-                                                                                        setEmailChangeRequested(true);  // ✅ Resend will show
-                                                                                        setIsEditingEmail(false);       // input locks, but still shows Resend
-                                                                                    }}
-                                                                                >
-                                                                                    {loadingChange ? (
-                                                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                                                    ) : (
-                                                                                        "Change"
-                                                                                    )}
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-
-                                                                    </div>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
                                                     </div>
                                                 </div>
 
                                                 <Button
                                                     type="submit"
                                                     className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                                                    disabled={isSubmitting}
                                                 >
                                                     Save Changes
                                                 </Button>
                                             </form>
                                         </Form>
+                                        <EmailUpdateForm currentEmail={settingsForm.watch('email')} />
+                                        <Separator />
+
+                                        <div>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-lg font-medium">Payment Method</h3>
+                                                {!isEditingPayment && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setIsEditingPayment(true)}
+                                                    >
+                                                        Edit
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            <Form {...paymentForm}>
+                                                <form onSubmit={paymentForm.handleSubmit(onPaymentMethodSubmit)} className="space-y-4">
+
+                                                    <FormField
+                                                        control={paymentForm.control}
+                                                        name="paymentCategory"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Payment Category</FormLabel>
+                                                                <Select
+                                                                    onValueChange={field.onChange}
+                                                                    value={field.value}
+                                                                    disabled={!isEditingPayment}
+                                                                >
+                                                                    <FormControl>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Select category" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="primary">Primary</SelectItem>
+                                                                        <SelectItem value="secondary">Secondary</SelectItem>
+                                                                        <SelectItem value="others">Others</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+
+                                                    <FormField
+                                                        control={paymentForm.control}
+                                                        name="paymentMethod"
+                                                        render={({ field }) => (
+                                                            <FormItem className="space-y-3">
+                                                                <FormLabel>Select Method</FormLabel>
+                                                                <FormControl>
+                                                                    <RadioGroup
+                                                                        onValueChange={field.onChange}
+                                                                        value={field.value}
+                                                                        disabled={!isEditingPayment}
+                                                                        className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4"
+                                                                    >
+                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                            <FormControl><RadioGroupItem value="paypal" disabled={!isEditingPayment} /></FormControl>
+                                                                            <FormLabel className="font-normal">PayPal</FormLabel>
+                                                                        </FormItem>
+                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                            <FormControl><RadioGroupItem value="bank" disabled={!isEditingPayment} /></FormControl>
+                                                                            <FormLabel className="font-normal">Bank Account</FormLabel>
+                                                                        </FormItem>
+                                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                                            <FormControl><RadioGroupItem value="upi" disabled={!isEditingPayment} /></FormControl>
+                                                                            <FormLabel className="font-normal">UPI</FormLabel>
+                                                                        </FormItem>
+                                                                    </RadioGroup>
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    {paymentForm.watch("paymentMethod") === "paypal" && (
+                                                        <FormField
+                                                            control={paymentForm.control}
+                                                            name="paypalEmail"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>PayPal Email</FormLabel>
+                                                                    <FormControl><Input type="email" placeholder="you@paypal.com" {...field} disabled={!isEditingPayment} /></FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    )}
+
+                                                    {paymentForm.watch("paymentMethod") === "bank" && (
+                                                        <div className="space-y-4">
+                                                            <FormField control={paymentForm.control} name="accountHolder" render={({ field }) => (
+                                                                <FormItem><FormLabel>Account Holder Name</FormLabel><FormControl><Input placeholder="Full name on account" {...field} disabled={!isEditingPayment} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                            <FormField control={paymentForm.control} name="accountNumber" render={({ field }) => (
+                                                                <FormItem><FormLabel>Account Number</FormLabel><FormControl><Input placeholder="Your bank account number" {...field} disabled={!isEditingPayment} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                            <FormField control={paymentForm.control} name="ifscCode" render={({ field }) => (
+                                                                <FormItem><FormLabel>IFSC Code</FormLabel><FormControl><Input placeholder="Bank's IFSC code" {...field} disabled={!isEditingPayment} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                        </div>
+                                                    )}
+
+
+                                                    {paymentForm.watch("paymentMethod") === "upi" && (
+                                                        <FormField control={paymentForm.control} name="upiId" render={({ field }) => (
+                                                            <FormItem><FormLabel>UPI ID</FormLabel><FormControl><Input placeholder="yourname@okbank" {...field} disabled={!isEditingPayment} /></FormControl><FormMessage /></FormItem>
+                                                        )} />
+                                                    )}
+
+
+                                                    {isEditingPayment && (
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                type="submit"
+                                                                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                                                                disabled={isLoadingPayment}
+                                                            >
+                                                                {isLoadingPayment ? (
+                                                                    <>
+                                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                        Saving...
+                                                                    </>
+                                                                ) : (
+                                                                    'Save Payment Method'
+                                                                )}
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                onClick={() => {
+                                                                    setIsEditingPayment(false);
+                                                                    const currentCategory = paymentForm.getValues('paymentCategory');
+                                                                    if (currentCategory) {
+                                                                        loadPaymentDataForCategory(currentCategory);
+                                                                    }
+                                                                }}
+                                                                disabled={isLoadingPayment}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </form>
+                                            </Form>
+                                        </div>
 
                                         {(authProvider === 'local') && (
                                             <>

@@ -224,7 +224,7 @@ export default function ContactClient() {
                           <SelectItem value="general">General Inquiry</SelectItem>
                           <SelectItem value="mentorship">Mentorship Programs</SelectItem>
                           <SelectItem value="incubation">Incubation Support</SelectItem>
-                          <SelectItem value="msme">MSME Partnerships</SelectItem>
+                          <SelectItem value="organisation">Organisation Partnerships</SelectItem>
                           <SelectItem value="support">Support</SelectItem>
                           <SelectItem value="tech-transfer">Technology Transfer</SelectItem>
                         </SelectContent>

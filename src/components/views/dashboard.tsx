@@ -2291,11 +2291,11 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     </div>
                                 )}
                             </TabsContent>
-                            <TabsContent value="msmes" className="mt-0">
+                            <TabsContent value="organisation" className="mt-0">
                                 {hasSubscription || userRole === 'admin' ? (
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                         <CardHeader>
-                                            <CardTitle>MSME Collaborations</CardTitle>
+                                            <CardTitle>Organisation Collaborations</CardTitle>
                                             <CardDescription>
                                                 Your ongoing and potential collaborations with MSMEs.
                                             </CardDescription>
@@ -3988,8 +3988,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         <div>
                                             <p className="text-sm text-muted-foreground">Founder Role</p>
                                             {
-                                                userDetailsData.founder_role === "Solve MSME&#39;s challenge" ? (
-                                                    <p className="font-medium">{"Solve MSME's challenge"}</p>
+                                                userDetailsData.founder_role === "Solve Organisation's challenge" ? (
+                                                    <p className="font-medium">{"Solve Organisation's challenge"}</p>
                                                 ) : (
                                                     <p className="font-medium">{userDetailsData.founder_role || 'N/A'}</p>
                                                 )
@@ -4095,7 +4095,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         <Separator />
                                         <div>
                                             <div className="flex items-center justify-between mb-3">
-                                                <h3 className="text-lg font-semibold">MSME Profile</h3>
+                                                <h3 className="text-lg font-semibold">Organisation Profile</h3>
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-sm text-muted-foreground">Profile Edit Access:</span>
                                                     <label className="relative inline-flex items-center cursor-pointer">

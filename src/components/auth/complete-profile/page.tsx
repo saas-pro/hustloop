@@ -147,7 +147,7 @@ function CompleteProfileForm() {
                                                 <SelectItem value="founder">Entrepreneur</SelectItem>
                                                 <SelectItem value="mentor">Mentor</SelectItem>
                                                 <SelectItem value="incubator">Incubator</SelectItem>
-                                                <SelectItem value="msme">MSME</SelectItem>
+                                                <SelectItem value="organisation">Organisation</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />

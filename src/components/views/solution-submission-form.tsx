@@ -148,7 +148,6 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
 
             Object.entries(parsedDraft).forEach(([key, value]) => {
                 if (key !== 'files') {
-                    console.log(`Setting ${key}:`, value);
                     form.setValue(key as any, value, { shouldValidate: true });
                 }
             });

@@ -45,6 +45,7 @@ import TeamMembers from "./team-members";
 import { LoadingButton } from "../ui/loading-button";
 import { ContributionGraph } from "../ui/contribution-graph";
 import removeMarkdown from "remove-markdown";
+import { EmailUpdateForm } from "../ui/EmailUpdateForm";
 
 const settingsFormSchema = z.object({
     name: z
@@ -53,6 +54,7 @@ const settingsFormSchema = z.object({
         .max(35, "Name must not exceed 35 characters"),
     email: z.string().email("Invalid email address"),
 });
+
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 const paymentMethodSchema = z.object({
@@ -948,9 +950,11 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
         setItemToDelete(null);
     };
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     async function onSettingsSubmit(data: SettingsFormValues) {
         const token = localStorage.getItem('token');
+        setIsSubmitting(true);
         if (!token) {
             toast({
                 variant: 'destructive',
@@ -961,13 +965,10 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
         }
 
         try {
-            // ⚠️ Separate email from other profile fields
             const { name, email } = data;
 
-            // 1. If user changed email, start the email-change flow
             if (email && email !== user?.email) {
                 await handleChangeEmail(email);
-                // Do NOT update localStorage here – wait until verification
             }
 
             if (name) {
@@ -981,7 +982,6 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                 });
 
                 const result = await response.json();
-
                 if (response.ok) {
                     toast({ title: "Settings Saved", description: result.message });
 
@@ -990,6 +990,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                         ...result.user
                     }));
                     setUser((prev) => ({ ...prev, ...result.user }));
+
                 } else {
                     toast({
                         variant: 'destructive',
@@ -1004,6 +1005,8 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                 title: 'Network Error',
                 description: 'Could not save settings. Please try again later.'
             });
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -1864,14 +1867,17 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
-                <DialogHeader className="p-6 shrink-0">
+                <DialogHeader className="p-6 shrink-0 space-y-0">
                     <DialogTitle className="text-3xl font-bold font-headline capitalize">
                         {userRole} Dashboard
                     </DialogTitle>
-                    <DialogDescription>
-                        Welcome back, {user.name}! Here&apos;s an overview of your startup journey. <br />
-                        <p className="text-xs text-muted-foreground">{"Solve MSME's Challenge"}</p>
-                    </DialogDescription>
+                    <div className="space-y-0">
+                        <DialogDescription>
+                            Welcome back, {user.name}! Here&apos;s an overview of your startup journey.
+                        </DialogDescription>
+                        <p className="text-xs text-muted-foreground">{"Solve Organisation's challenge"}</p>
+                    </div>
+
 
                 </DialogHeader>
                 <div className="flex-grow flex flex-col min-h-0 p-4 pt-0">
@@ -2233,96 +2239,19 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                                 </FormItem>
                                                             )}
                                                         />
-
-                                                        {/* Email Field */}
-                                                        <FormField
-                                                            control={settingsForm.control}
-                                                            name="email"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Email</FormLabel>
-                                                                    <div className="relative">
-                                                                        <FormControl>
-                                                                            <Input
-                                                                                type="email"
-                                                                                placeholder="your@email.com"
-                                                                                {...field}
-                                                                                readOnly={!isEditingEmail}
-                                                                                className="pr-28" // make space for buttons
-                                                                            />
-                                                                        </FormControl>
-
-                                                                        {/* Buttons inside input */}
-                                                                        <div className="absolute inset-y-0 right-3 flex items-center gap-1">
-                                                                            {emailChangeRequested ? (
-                                                                                // Step 3: After Change request → Resend
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="outline"
-                                                                                    size="sm"
-                                                                                    className="text-xs flex items-center gap-1"
-                                                                                    disabled={loadingResend}
-                                                                                    onClick={() => handleResendEmail(field.value)}
-                                                                                >
-                                                                                    {loadingResend ? (
-                                                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                                                    ) : (
-                                                                                        "Resend"
-                                                                                    )}
-                                                                                </Button>
-                                                                            ) : !isEditingEmail ? (
-                                                                                // Step 1: Default → Edit
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="link"
-                                                                                    className="p-0 h-auto text-sm"
-                                                                                    onClick={() => {
-                                                                                        setIsEditingEmail(true);
-                                                                                        setEmailChangeRequested(false); // reset state
-                                                                                    }}
-                                                                                >
-                                                                                    Edit
-                                                                                </Button>
-                                                                            ) : (
-                                                                                // Step 2: While editing → Change
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="default"
-                                                                                    size="sm"
-                                                                                    className="text-xs flex items-center gap-1"
-                                                                                    disabled={loadingChange}
-                                                                                    onClick={async () => {
-                                                                                        await handleChangeEmail(field.value);
-                                                                                        setEmailChangeRequested(true);  // ✅ Resend will show
-                                                                                        setIsEditingEmail(false);       // input locks, but still shows Resend
-                                                                                    }}
-                                                                                >
-                                                                                    {loadingChange ? (
-                                                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                                                    ) : (
-                                                                                        "Change"
-                                                                                    )}
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-
-                                                                    </div>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
                                                     </div>
                                                 </div>
 
                                                 <Button
                                                     type="submit"
                                                     className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                                                    disabled={isSubmitting}
                                                 >
                                                     Save Changes
                                                 </Button>
                                             </form>
                                         </Form>
-
+                                        <EmailUpdateForm currentEmail={settingsForm.watch('email')} />
                                         <Separator />
 
                                         <div>
@@ -2341,7 +2270,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                             </div>
                                             <Form {...paymentForm}>
                                                 <form onSubmit={paymentForm.handleSubmit(onPaymentMethodSubmit)} className="space-y-4">
-                                                    {/* Payment Category - Always visible */}
+                                                    
                                                     <FormField
                                                         control={paymentForm.control}
                                                         name="paymentCategory"
@@ -2369,7 +2298,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                         )}
                                                     />
 
-                                                    {/* Payment Method Selection - Always visible */}
+                                                    
                                                     <FormField
                                                         control={paymentForm.control}
                                                         name="paymentMethod"
@@ -2402,7 +2331,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                         )}
                                                     />
 
-                                                    {/* PayPal Fields */}
+
                                                     {paymentForm.watch("paymentMethod") === "paypal" && (
                                                         <FormField
                                                             control={paymentForm.control}
@@ -2417,7 +2346,6 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                         />
                                                     )}
 
-                                                    {/* Bank Account Fields */}
                                                     {paymentForm.watch("paymentMethod") === "bank" && (
                                                         <div className="space-y-4">
                                                             <FormField control={paymentForm.control} name="accountHolder" render={({ field }) => (
@@ -2432,14 +2360,14 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                         </div>
                                                     )}
 
-                                                    {/* UPI Fields */}
+
                                                     {paymentForm.watch("paymentMethod") === "upi" && (
                                                         <FormField control={paymentForm.control} name="upiId" render={({ field }) => (
                                                             <FormItem><FormLabel>UPI ID</FormLabel><FormControl><Input placeholder="yourname@okbank" {...field} disabled={!isEditingPayment} /></FormControl><FormMessage /></FormItem>
                                                         )} />
                                                     )}
 
-                                                    {/* Action Buttons */}
+
                                                     {isEditingPayment && (
                                                         <div className="flex gap-2">
                                                             <Button
@@ -2474,7 +2402,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                     )}
                                                 </form>
                                             </Form>
-                                        </div>
+                                        </div> 
 
                                         {(authProvider === 'local') && (
                                             <>

@@ -138,7 +138,7 @@ export const solutionSteps = {
   'market-solution': {
     title: 'Market Solutions',
     steps: [
-      { icon: Globe, title: "Real-World Challenges", description: "Organizations post pressing industry problems" },
+      { icon: Globe, title: "Real-World Challenges", description: "Organisations post pressing industry problems" },
       { icon: Lightbulb, title: "Innovator Solutions", description: "Browse, ideate, and submit breakthrough solutions" },
       { icon: Puzzle, title: "Collaborative MVPs", description: "Work hand-in-hand to co-create minimum viable products" },
       { icon: BarChart, title: "Business Growth", description: "Unlock measurable growth with tested solutions" },
@@ -457,7 +457,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
                 "Founders",
                 "Innovators",
                 "Students",
-                "Organizations",
+                "Organisations",
                 "Incubators",
                 "Startups",
                 "Enablers",
@@ -584,8 +584,8 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
   const whatWeOffer = [
     {
       icon: <Image src={isMobile ? "/icons/msme-sol.png" : "/icons/msme-sol.gif"} alt="msme" width={100} height={100} />,
-      title: "Organization Solution",
-      description: "Partner with organizations to solve real business challenges, gain market insights, and unlock growth through crowdsourced innovation."
+      title: "Organisation's Solution",
+      description: "Partner with Organisations to solve real business challenges, gain market insights, and unlock growth through crowdsourced innovation."
     },
     {
       icon: <Image src={isMobile ? "/icons/intellectual-tech.png" : "/icons/intellectual-tech.gif"} alt="tech" width={100} height={100} />,
@@ -610,7 +610,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
     {
       icon: <Image src={isMobile ? "/icons/organigram.png" : "/icons/organigram.gif"} alt="networking" width={100} height={100} />,
       title: "Exclusive Networking",
-      description: "Join curated events to connect with founders, investors, organizations, and industry leaders, expanding your professional network."
+      description: "Join curated events to connect with founders, investors, Organisations, and industry leaders, expanding your professional network."
     }
   ];
 
@@ -789,7 +789,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                   />
                 </div>
                 <div className='flex-grow'>
-                  <h3 className="text-xl font-bold">For Organizations</h3>
+                  <h3 className="text-xl font-bold">For Organisations</h3>
                   <p className="text-muted-foreground mt-2 mb-4">
                     Register, post your business challenges, and collaborate with problem solvers.
                   </p>
@@ -797,7 +797,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                 <Button
                   className="bg-secondary text-secondary-foreground hover:text-primary-foreground dark:bg-input"
                   onClick={() => {
-                    if (isLoggedIn && userRole === 'msme') {
+                    if (isLoggedIn && userRole === 'organisation') {
                       localStorage.setItem("msmeTabPending", "profile");
                       setActiveView("dashboard");
                     } else if (userRole === 'admin') {
@@ -809,9 +809,9 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                     }
                   }}
                 >
-                  {(userRole === 'msme' || userRole === 'founder' || userRole === 'incubator' || userRole === 'mentor' || userRole === null)
-                    ? "Join as an Organization"
-                    : "Browse Organizations"}
+                  {(userRole === 'organisation' || userRole === 'founder' || userRole === 'incubator' || userRole === 'mentor' || userRole === null)
+                    ? "Join as an Organisation"
+                    : "Browse Organisations"}
                 </Button>
 
               </Card>
@@ -833,7 +833,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                 <div className='flex-grow'>
                   <h3 className="text-xl font-bold">Problem Solvers (Innovators)</h3>
                   <p className="text-muted-foreground mt-2 mb-4">
-                    Register, browse Organizations problem statements, and submit your solutions.
+                    Register, browse Organisations problem statements, and submit your solutions.
                   </p>
                 </div>
 
@@ -948,7 +948,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                   <Image src={isMobile ? "/icons/growth.png" : "/icons/growth.gif"} alt="msme" width={100} height={100} />
                 </div>
                 <CardTitle className="mb-2">Our Vision</CardTitle>
-                <p className="text-muted-foreground">To create a thriving ecosystem where startups, organizations, and incubators collaborate seamlessly to drive innovation and economic growth.</p>
+                <p className="text-muted-foreground">To create a thriving ecosystem where startups, Organisations, and incubators collaborate seamlessly to drive innovation and economic growth.</p>
               </Card>
               <Card className="group text-center p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
                 <div className="mx-auto bg-primary/10 text-primary p-4 rounded-full w-fit mb-4 transition-all duration-300 group-hover:scale-110 group-hover:text-primary-foreground">
@@ -1141,7 +1141,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                               <SelectItem value="general">General Inquiry</SelectItem>
                               <SelectItem value="mentorship">Mentorship Programs</SelectItem>
                               <SelectItem value="incubation">Incubation Support</SelectItem>
-                              <SelectItem value="organization">Organization Partnerships</SelectItem>
+                              <SelectItem value="organizations">Organizations Partnerships</SelectItem>
                               <SelectItem value="support">Support</SelectItem>
                               <SelectItem value="tech-transfer">Technology Transfer</SelectItem>
                             </SelectContent>

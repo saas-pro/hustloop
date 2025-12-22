@@ -550,7 +550,7 @@ export default function SubmitIPDashboard({ isOpen, setUser, onOpenChange, user,
         }
     }, []);
     const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "blog", "sessions", "settings"];
-    const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
+    const founderTabs = ["overview", "organisation", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
     const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];
     const filteredTabs = isTechTransfer ? techTransferTabs : availableTabs
@@ -830,7 +830,7 @@ export default function SubmitIPDashboard({ isOpen, setUser, onOpenChange, user,
                             {tabsToRender.map((tab) => {
                                 const Icon = (
                                     LucideIcons[
-                                    tab === "msmes"
+                                    tab === "organisation"
                                         ? "Briefcase"
                                         : tab === "incubators"
                                             ? "Lightbulb"
@@ -896,11 +896,11 @@ export default function SubmitIPDashboard({ isOpen, setUser, onOpenChange, user,
                                     </CardContent>
                                 </Card>
                             </TabsContent>
-                            <TabsContent value="msmes" className="mt-0">
+                            <TabsContent value="organisation" className="mt-0">
                                 {hasSubscription || userRole === 'admin' ? (
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                         <CardHeader>
-                                            <CardTitle>MSME Collaborations</CardTitle>
+                                            <CardTitle>Organisation Collaborations</CardTitle>
                                             <CardDescription>
                                                 Your ongoing and potential collaborations with MSMEs.
                                             </CardDescription>

@@ -40,7 +40,7 @@ import {
 
 const profileSchema = z.object({
     role: z.string({ required_error: "Please select a role." }),
-    founder_role: z.string().optional(), 
+    founder_role: z.string().optional(),
 }).refine(
     (data) => data.role !== "founder" || !!data.founder_role,
     {
@@ -68,7 +68,7 @@ function CompleteProfileForm() {
     const { formState: { isSubmitting } } = form;
 
     const onLoginSuccess = (data: { role: UserRole, token: string, founder_role: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
-        const { role, token: loginToken, hasSubscription, name, email, authProvider,founder_role } = data;
+        const { role, token: loginToken, hasSubscription, name, email, authProvider, founder_role } = data;
         const userData = { name, email };
 
         localStorage.setItem('isLoggedIn', 'true');
@@ -78,10 +78,11 @@ function CompleteProfileForm() {
         localStorage.setItem('hasSubscription', String(hasSubscription));
         localStorage.setItem('token', loginToken);
         localStorage.setItem('authProvider', authProvider);
-        localStorage.setItem('founder_role',founder_role);
+        localStorage.setItem('founder_role', founder_role);
         toast({ title: "Profile Complete!", description: `Welcome to Hustloop, ${name}!` });
-        router.push('/');
-        setTimeout(() => window.location.reload(), 500);
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 500);
     };
 
     const onSubmit = async (values: ProfileSchema) => {
@@ -170,7 +171,7 @@ function CompleteProfileForm() {
                                                 <SelectItem value="founder">Founder</SelectItem>
                                                 <SelectItem value="mentor">Mentor</SelectItem>
                                                 <SelectItem value="incubator">Incubator</SelectItem>
-                                                <SelectItem value="msme">MSME</SelectItem>
+                                                <SelectItem value="organisation">Organisation</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -197,9 +198,9 @@ function CompleteProfileForm() {
                                                 </FormControl>
                                                 <SelectContent>
                                                     <TooltipProvider >
-                                                        <SelectItem value="Solve MSME&#39;s challenge">
+                                                        <SelectItem value={"Solve Organisation's challenge"}>
                                                             <div className="flex items-center gap-2 ">
-                                                                {"Solve MSME's challenge"}
+                                                                {"Solve Organisation's challenge"}
                                                                 <Tooltip >
                                                                     <TooltipTrigger asChild>
                                                                         <Info className="h-4 w-4 text-muted-foreground" />

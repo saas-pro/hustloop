@@ -526,7 +526,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                     {!isLoggedIn ? (
                         <>
                             <DialogHeader className="p-6">
-                                <DialogTitle className="text-3xl font-bold text-center  font-headline">Join as an MSME</DialogTitle>
+                                <DialogTitle className="text-3xl font-bold text-center  font-headline">Join as an Organisation</DialogTitle>
                                 <DialogDescription className="text-center">
                                     <span className="text-accent">{"Collaborate, solve, and scale with a network of trusted innovators."}</span><br />
                                     <span className="block text-center mx-auto">
@@ -543,7 +543,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                     ) : !isMsmerole ? (
                         <>
                             <DialogHeader className="p-6 m-auto flex items-center">
-                                <DialogTitle className="text-3xl font-bold font-headline">Join as an MSME</DialogTitle>
+                                <DialogTitle className="text-3xl font-bold font-headline">Join as an Organisation</DialogTitle>
                                 <DialogDescription className="text-center">
                                     <span className="text-accent">{"Your business, your potential."}</span><br />
                                     Browse technology profiles from various organizations seeking collaboration.
@@ -552,13 +552,13 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                             </DialogHeader>
                             <div className="h-screen flex flex-col justify-center items-center gap-4">
                                 {/* <Lock className="w-16 h-16 text-muted-foreground" /> */}
-                                <p className="text-lg text-muted-foreground">You do not have MSME access.</p>
+                                <p className="text-lg text-muted-foreground">You do not have Organisation access.</p>
                             </div>
                         </>
                     ) : (
                         <>
                             <DialogHeader className="p-6">
-                                <DialogTitle className="text-3xl font-bold font-headline">MSME Dashboard</DialogTitle>
+                                <DialogTitle className="text-3xl font-bold font-headline">Organisation Dashboard</DialogTitle>
                                 <DialogDescription>Welcome, {user.name}. Manage your challenges, submissions, and profile.</DialogDescription>
                             </DialogHeader>
                             <div className="flex-grow flex flex-col min-h-0 p-6 pt-0">
@@ -681,7 +681,7 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
                                         <TabsContent value="profile" className="mt-0">
                                             <Card className={`${isProfileSubmitted ? "hidden" : "block"} bg-card/50 backdrop-blur-sm border-border/50`}>
                                                 <CardHeader>
-                                                    <CardTitle>Create MSME Profile</CardTitle>
+                                                    <CardTitle>Create Organisation Profile</CardTitle>
                                                     <CardDescription>
                                                         This information will be publicly visible to potential collaborators.
                                                     </CardDescription>

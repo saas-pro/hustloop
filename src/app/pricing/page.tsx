@@ -56,7 +56,7 @@ export default function PricingPage() {
                                 "name": "Premium",
                                 "price": "2999",
                                 "priceCurrency": "INR",
-                                "description": "Solve MSME challenges with submissions and 24/7 priority support."
+                                "description": "Solve Organisation's challenges with submissions and 24/7 priority support."
                             }
                         ]
                     })

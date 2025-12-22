@@ -366,12 +366,12 @@ export default function CorporateChallengeDetails({
 
   const isAllowedFounder =
     userRole.includes("founder") &&
-    founderRole === "Solve MSME&#39;s challenge";
+    founderRole === "Solve Organisation's challenge";
 
   const isOtherUsers =
     userRole.includes("incubator") ||
     userRole.includes("mentor") ||
-    userRole.includes("msme") ||
+    userRole.includes("organisation") ||
     (userRole.includes("founder") && !isAllowedFounder);
 
   const isDisabled = !isLoggedIn || isOtherUsers;
@@ -614,7 +614,7 @@ export default function CorporateChallengeDetails({
                   <Separator />
                   <div>
                     <h3 className="text-xl font-semibold mb-3">Primary Contact</h3>
-                    <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border w-full md:w-1/2">
+                    <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border w-full">
                       <Avatar className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary font-medium rounded-full">
                         {'B'}
                       </Avatar>

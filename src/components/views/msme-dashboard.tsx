@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { EmailUpdateForm } from '@/components/ui/EmailUpdateForm';
 import SubmissionDetailsModal from "./submission-details-modal";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { API_BASE_URL } from "@/lib/api";
@@ -97,6 +98,7 @@ const DEFAULT_COLLABORATION_DESCRIPTION = `[Give a brief overview of the context
 type User = {
     name: string;
     email: string;
+    userId: string;
 }
 type AuthProvider = 'local' | 'google';
 
@@ -106,13 +108,19 @@ export interface SectorData {
     children: string[]
 }
 
+const phoneRegex = /^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$/;
+
 const profileFormSchema = z.object({
     name: z.string().min(1, "Company name is required"),
     sector: z.string().min(1, "Sector is required"),
     affiliated_by: z.string().optional().or(z.literal('')),
     short_description: z.string().min(1, "A short description is required"),
     website_url: z.string().regex(/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/, "Please enter a valid URL.").optional().or(z.literal('')),
-    phone_number: z.string().regex(/^\+?[1-9]\d{1,10}$/, "Please enter a valid phone number").optional().or(z.literal('')),
+    phone_number: z.string()
+        .min(10, { message: "Phone number must be at least 10 digits" })
+        .regex(phoneRegex, {
+            message: "Please enter a valid Indian phone number (e.g., 9876543210 or +91 9876543210)"
+        }),
     x_url: z.string().optional().or(z.literal('')),
     instagram_username: z.string().optional().or(z.literal('')),
     linkedin_url: z.string().optional().or(z.literal('')),
@@ -231,9 +239,10 @@ const settingsFormSchema = z.object({
     name: z
         .string()
         .min(1, "Name is required")
-        .max(20, "Name must not exceed 20 characters"),
+        .max(35, "Name must not exceed 35 characters"),
     email: z.string().email("Invalid email address"),
 });
+
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 type UsersCollaborationData = z.infer<typeof collaborationSchema>
@@ -324,25 +333,10 @@ interface MsmeDashboardViewProps {
     setActiveView: (view: View) => void;
     user: User;
     authProvider: AuthProvider;
+    setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
-const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: View) => void, contentType: string }) => (
-    <div className="flex flex-col items-center justify-center h-full text-center p-8">
-        <Lock className="h-16 w-16 text-accent mb-6" />
-        <h3 className="text-2xl font-bold mb-2">Access required</h3>
-        <p className="max-w-md mx-auto text-muted-foreground mb-6">
-            Please log in or sign up to view available Problem Statements.
-        </p>
-        <div className="flex gap-4">
-            <Button onClick={() => setActiveView('login')}>Login</Button>
-            <Button onClick={() => setActiveView('signup')} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                Sign Up
-            </Button>
-        </div>
-    </div>
-);
-
-export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, onOpenChange, user, authProvider }: MsmeDashboardViewProps) {
+export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOpenChange, user, authProvider }: MsmeDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<MsmeDashboardTab>("overview");
     const [confirmText, setConfirmText] = useState("");
@@ -469,7 +463,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
         const userRole = localStorage.getItem("userRole");
         setIsAdmin(userRole === "admin");
     }, []);
-    
+
     useEffect(() => {
         if (isMsmeRole) {
             checkProfile();
@@ -577,9 +571,6 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
     const MAX_CHARS = 300;
 
-    // Profile management states
-    ;
-
 
     async function onProfileSubmit(data: ProfileFormValues) {
         const token = localStorage.getItem('token');
@@ -661,31 +652,47 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
     async function onSettingsSubmit(data: SettingsFormValues) {
         const token = localStorage.getItem('token');
+
         if (!token) {
-            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            toast({
+                variant: 'destructive',
+                title: 'Authentication Error',
+                description: 'Please log in again.'
+            });
             return;
         }
-
+        setIsSubmitting(true);
         try {
+            const { name } = data;
+
             const response = await fetch(`${API_BASE_URL}/api/update-profile`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify({ name })
             });
-
             const result = await response.json();
-
             if (response.ok) {
-                toast({ title: "Settings Saved", description: result.message });
-                localStorage.setItem('user', JSON.stringify(result.user));
+                setUser(prev => prev ? { ...prev, name } : null);
+
+                toast({
+                    title: "Settings Saved",
+                    description: "Your profile has been updated successfully."
+                });
             } else {
-                toast({ variant: 'destructive', title: 'Update Failed', description: result.error || 'An unknown error occurred.' });
+                throw new Error(result.message || 'Failed to update profile');
             }
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not save settings. Please try again later.' });
+            console.error('Error updating profile:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: error instanceof Error ? error.message : 'Failed to update profile'
+            });
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -1072,22 +1079,37 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            const allowedExtensions = ['.pdf', '.doc', '.docx'];
-            const fileExtension = file.name.split('.').pop()?.toLowerCase();
+        if (!file) return;
 
-            if (fileExtension && allowedExtensions.includes(`.${fileExtension}`)) {
-                profileForm.setValue('logo', file, { shouldValidate: true, shouldDirty: true });
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setLogoPreview(reader.result as string);
-                };
-                reader.readAsDataURL(file);
-            } else {
-                setUploadError('Only PDF, DOC, and DOCX files are allowed');
-                e.target.value = ''; // Reset the file input
-            }
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+            setUploadError('Only PNG and JPG images are allowed');
+            e.target.value = '';
+            return;
         }
+
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        if (file.size > maxSize) {
+            setUploadError('File size should be less than 2MB');
+            e.target.value = '';
+            return;
+        }
+
+        profileForm.setValue('logo', file, {
+            shouldValidate: true,
+            shouldDirty: true
+        });
+
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            setLogoPreview(reader.result as string);
+        };
+        reader.onerror = () => {
+            console.error('Error reading file');
+            setUploadError('Error reading file. Please try again.');
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -1653,7 +1675,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     name="phone_number"
                                                                     render={({ field }) => (
                                                                         <FormItem>
-                                                                            <FormLabel>Phone Number</FormLabel>
+                                                                            <FormLabel>Phone Number <span className="text-red-600">*</span></FormLabel>
                                                                             <FormControl>
                                                                                 <Input
                                                                                     {...field}
@@ -1765,7 +1787,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                             <span className="font-semibold">Click to upload</span> or drag and drop
                                                                                         </p>
                                                                                         <p className="text-xs text-muted-foreground">
-                                                                                            PNG, JPG, or GIF (MAX. 800x400px)
+                                                                                            PNG, JPG (MAX. 800x400px)
                                                                                         </p>
                                                                                     </div>
                                                                                 )}
@@ -1810,9 +1832,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                             placeholder='Type "confirm" to proceed'
                                                                             value={confirmText}
                                                                             onChange={(e) => setConfirmText(e.target.value)}
-                                                                            disabled={
-                                                                                profileForm.formState.isSubmitting
-                                                                            }
+                                                                            
                                                                         />
                                                                     </div>
 
@@ -2237,7 +2257,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                                 return (
                                                                                     <div
                                                                                         key={index}
-                                                                                        className="flex justify-between items-center border rounded rounded-lg p-2 bg-muted/40"
+                                                                                        className="flex justify-between items-center border rounded-lg p-2 bg-muted/40"
                                                                                     >
                                                                                         <div className="flex items-center gap-3">
                                                                                             <div>
@@ -2373,30 +2393,14 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                             <h3 className="text-lg font-medium mb-4">Profile</h3>
                                                             <div className="space-y-4">
                                                                 <FormField control={settingsForm.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                                                <FormField
-                                                                    control={settingsForm.control}
-                                                                    name="email"
-                                                                    render={({ field }) => (
-                                                                        <FormItem>
-                                                                            <div className="flex justify-between items-center">
-                                                                                <FormLabel>Email</FormLabel>
-                                                                                {!isEditingEmail && (
-                                                                                    <Button type="button" variant="link" className="p-0 h-auto text-sm" onClick={() => setIsEditingEmail(true)}>
-                                                                                        Edit
-                                                                                    </Button>
-                                                                                )}
-                                                                            </div>
-                                                                            <FormControl><Input type="email" placeholder="your@email.com" {...field} readOnly={!isEditingEmail} /></FormControl>
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    )}
-                                                                />
+
                                                             </div>
                                                         </div>
 
-                                                        <Button type="submit">Save Changes</Button>
+                                                        <Button type="submit" disabled={isSubmitting}>Save Changes</Button>
                                                     </form>
                                                 </Form>
+                                                <EmailUpdateForm currentEmail={settingsForm.watch('email')} />
                                                 {authProvider === 'local' && (
                                                     <>
                                                         <Separator />
@@ -2550,7 +2554,7 @@ export default function MsmeDashboardView({ isOpen, isLoggedIn, setActiveView, o
                                                                     name="phone_number"
                                                                     render={({ field }) => (
                                                                         <FormItem>
-                                                                            <FormLabel>Phone Number</FormLabel>
+                                                                            <FormLabel>Phone Number <span className="text-red-600">*</span></FormLabel>
                                                                             <FormControl>
                                                                                 <Input
                                                                                     {...field}

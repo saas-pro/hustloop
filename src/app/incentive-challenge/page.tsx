@@ -88,7 +88,7 @@ export default function IncentiveChallengePage() {
                                     name: 'Who can apply to incentive challenges?',
                                     acceptedAnswer: {
                                         '@type': 'Answer',
-                                        text: 'Anyone with an innovative solution can apply! This includes students, researchers, innovators, early-stage founders, MSMEs, professionals, and technology enthusiasts.'
+                                        text: 'Anyone with an innovative solution can apply! This includes students, researchers, innovators, early-stage founders, organisation, professionals, and technology enthusiasts.'
                                     }
                                 },
                                 {
@@ -120,7 +120,7 @@ export default function IncentiveChallengePage() {
                                     name: 'What happens after winning?',
                                     acceptedAnswer: {
                                         '@type': 'Answer',
-                                        text: 'Winners gain access to pilot projects, partnerships with corporates and MSMEs, visibility through Hall of Fame and media coverage, networking opportunities, continued mentorship, and recognition through certificates and awards.'
+                                        text: 'Winners gain access to pilot projects, partnerships with corporates and organisation, visibility through Hall of Fame and media coverage, networking opportunities, continued mentorship, and recognition through certificates and awards.'
                                     }
                                 }
                             ]

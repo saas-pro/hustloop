@@ -33,10 +33,10 @@ const plans = [
         price: "₹2999",
         originally: "₹3999",
         offer: "25% OFF",
-        description: "Solve MSME challenges with submissions and 24/7 priority support.",
+        description: "Solve Organisation's challenge with submissions and 24/7 priority support.",
         features: [
             "Browse Challenges",
-            "Submit 1 solution to MSME",
+            "Submit 1 solution to Organisation",
             "60 days duration",
             "24/7 priority support"
         ],
