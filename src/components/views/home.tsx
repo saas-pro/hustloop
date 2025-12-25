@@ -1141,7 +1141,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                             <FormControl>
                               <Input placeholder="Enter your full name" {...field} className="pr-16" />
                             </FormControl>
-                            <span className={`absolute right - 3 top - 1 / 2 - translate - y - 1 / 2 text - xs ${field.value?.length >= 300 ? "text-red-500" : "text-muted-foreground"} `}>
+                            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${field.value?.length >= 300 ? "text-red-500" : "text-muted-foreground"} `}>
                               {field.value?.length || 0}/300
                             </span>
                           </div>
@@ -1178,7 +1178,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                             </FormControl>
 
                             <span
-                              className={`absolute right - 3 top - 1 / 2 - translate - y - 1 / 2 text - xs ${(field.value?.length ?? 0) > 10 ? "text-red-500" : "text-muted-foreground"
+                              className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${(field.value?.length ?? 0) > 10 ? "text-red-500" : "text-muted-foreground"
                                 } `}
                             >
                               {(field.value?.length ?? 0)}/10
@@ -1222,7 +1222,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                             <FormControl>
                               <Textarea placeholder="How can we help you?" {...field} className="pb-6" />
                             </FormControl>
-                            <span className={`absolute right - 3 bottom - 2 text - xs ${field.value?.length >= 500 ? "text-red-500" : "text-muted-foreground"} `}>
+                            <span className={`absolute right-3 bottom-2 text-xs ${field.value?.length >= 500 ? "text-red-500" : "text-muted-foreground"} `}>
                               {field.value?.length || 0}/500
                             </span>
                           </div>
