@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lightbulb, Briefcase, PlayCircle, Globe, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins, Puzzle, Microscope, FileSearch, Layers, Network, Sprout } from "lucide-react";
 import { ReactTyped } from "react-typed";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import SolutionCard from '../SolutionCard';
 import { cn } from "@/lib/utils";
 import * as React from "react";
@@ -33,6 +33,8 @@ import { useRouter } from "next/navigation";
 import PricingData from '../BillingCard/billing-card';
 import { DashboardTab } from '@/app/types';
 import * as THREE from 'three';
+import { GoogleGeminiEffect } from "@/components/ui/google-gemini-effect";
+import { useScroll, useTransform } from "motion/react";
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters.").max(300, "Full name must not exceed 300 characters."),
@@ -237,6 +239,16 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
   const [themeKey, setThemeKey] = useState(0);
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  // Track scroll progress from the top of the page
+  const { scrollYProgress } = useScroll();
+
+  const pathLengthFirst = useTransform(scrollYProgress, [0, 0.4], [0.2, 1.2]);
+  const pathLengthSecond = useTransform(scrollYProgress, [0, 0.4], [0.15, 1.2]);
+  const pathLengthThird = useTransform(scrollYProgress, [0, 0.4], [0.1, 1.2]);
+  const pathLengthFourth = useTransform(scrollYProgress, [0, 0.4], [0.05, 1.2]);
+  const pathLengthFifth = useTransform(scrollYProgress, [0, 0.4], [0, 1.2]);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -372,26 +384,28 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
     };
   }, [themeKey]);
 
-  useEffect(() => {
-    const hero = document.getElementById("hero") as HTMLElement | null;
-    const video = hero?.querySelector("video") as HTMLVideoElement | null;
+  // Commented out video observer since we're using Google Gemini Effect now
+  // useEffect(() => {
+  //   const hero = document.getElementById("hero") as HTMLElement | null;
+  //   const video = hero?.querySelector("video") as HTMLVideoElement | null;
 
-    if (!hero || !video) return;
+  //   if (!hero || !video) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        video.style.opacity = entry.isIntersecting ? "1" : "0";
-        video.style.transition = "opacity 0.5s ease";
-      },
-      { threshold: 0.5 }
-    );
+  //   const observer = new IntersectionObserver(
+  //     ([entry]) => {
+  //       video.style.opacity = entry.isIntersecting ? "1" : "0";
+  //       video.style.transition = "opacity 0.5s ease";
+  //     },
+  //     { threshold: 0.5 }
+  //   );
 
-    observer.observe(hero);
-  }, []);
+  //   observer.observe(hero);
+  // }, []);
 
 
   return (
     <section
+      ref={heroRef}
       className={`hidden-scroll h-screen relative bg-background w-full`}
       id="hero"
     >
@@ -403,6 +417,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         className="xl:hidden absolute top-0 left-0 w-full h-full z-[1]"
       />
 
+      {/* Commented out video - using Google Gemini Effect instead */}
       <video
         autoPlay
         loop
@@ -414,6 +429,20 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         <source src="/video/HeaderVideo.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
+
+      {/* Google Gemini Effect for desktop */}
+      {/* <div className="block absolute top-0 left-0 w-full h-full z-0">
+        <GoogleGeminiEffect
+          pathLengths={[
+            pathLengthFirst,
+            pathLengthSecond,
+            pathLengthThird,
+            pathLengthFourth,
+            pathLengthFifth,
+          ]}
+          className="absolute top-0 left-0 w-full h-full"
+        />
+      </div> */}
 
       <div className="hidden absolute inset-0 md:bg-black/40 z-10 xl:block"></div>
 
@@ -539,7 +568,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
 
   async function onContactSubmit(data: ContactFormValues) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/contact`, {
+      const response = await fetch(`${API_BASE_URL} /api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -645,7 +674,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
       const progress = clamp(t, 0, 1);
 
       const scale = 0.75 + (1.0 - 0.75) * progress; // 0.75 → 1.0
-      // panel.style.transform = `scale(${scale})`;
+      // panel.style.transform = `scale(${ scale })`;
       // panel.style.transformOrigin = 'top center';
       // Keep text fully readable at all times
       panel.style.opacity = '1';
@@ -706,17 +735,13 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
   }, []);
 
 
-
-
-
-
   return (
     <div
       className={`relative pointer-events-auto w-full h-screen bg-background text-foreground overflow-x-hidden ${navOpen ? "overflow-hidden" : ""
-        }`}
+        } `}
     >
       {/* Hero Section */}
-      <section id="hero-section" className={`h-screen md:min-h-screen sticky top-0 overflow-hidden ${navOpen ? 'relative' : 'sticky top-0'}`}>
+      <section id="hero-section" className={`h-screen md: min-h-screen sticky top-0 overflow-hidden ${navOpen ? 'relative' : 'sticky top-0'} `}>
         <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
       </section>
 
@@ -964,8 +989,62 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
         {/* 5-Minute Tour Section */}
         <section className="relative py-16 md:py-20 bg-background">
           <div className="container mx-auto px-4">
-            <Card className="bg-card text-card-foreground rounded-2xl shadow-2xl shadow-primary/20 overflow-hidden">
-              <div className="p-8 md:p-12">
+            <Card className="bg-card text-card-foreground rounded-2xl shadow-2xl shadow-primary/20 overflow-hidden relative">
+              {/* Animated wave dots background inside card */}
+              <div
+                className="absolute inset-0 opacity-30 z-0 wave-dots"
+              />
+
+              <style jsx>{`
+                @keyframes waveMove {
+                  0% {
+                    background-position: 0 0, 20px 20px;
+                    opacity: 0.3;
+                  }
+                  12.5% {
+                    background-position: 5px 2.5px, 25px 22.5px;
+                    opacity: 0.35;
+                  }
+                  25% {
+                    background-position: 10px 5px, 30px 25px;
+                    opacity: 0.4;
+                  }
+                  37.5% {
+                    background-position: 15px 7.5px, 35px 27.5px;
+                    opacity: 0.45;
+                  }
+                  50% {
+                    background-position: 20px 10px, 40px 30px;
+                    opacity: 0.5;
+                  }
+                  62.5% {
+                    background-position: 15px 7.5px, 35px 27.5px;
+                    opacity: 0.45;
+                  }
+                  75% {
+                    background-position: 10px 5px, 30px 25px;
+                    opacity: 0.4;
+                  }
+                  87.5% {
+                    background-position: 5px 2.5px, 25px 22.5px;
+                    opacity: 0.35;
+                  }
+                  100% {
+                    background-position: 0 0, 20px 20px;
+                    opacity: 0.3;
+                  }
+                }
+                
+                .wave-dots {
+                  animation: waveMove 12s ease-in-out infinite;
+                  background-image:
+                    radial-gradient(circle, hsl(var(--accent)) 2px, transparent 2px),
+                    radial-gradient(circle, hsl(var(--accent)) 1.5px, transparent 1.5px);
+                  background-size: 40px 40px, 40px 40px;
+                }
+              `}</style>
+
+              <div className="p-8 md:p-12 relative z-10">
                 <div className="grid md:grid-cols-2 gap-8 items-center relative">
                   <div className="space-y-4">
                     <p className="font-semibold text-primary relative z-10">5-Minute Tour</p>
@@ -973,23 +1052,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                     <p className="text-muted-foreground max-w-md relative z-10">
                       Take a virtual tour and experience how the Hustloop Platform connects founders, mentors, and investors to build the future.
                     </p>
-                  </div>
-                  <div className="hidden sm:block h-full rotate-6 z-0 pointer-events-none absolute top-0 right-0">
-                    <svg
-                      viewBox="0 0 400 200"
-                      className="w-full h-full"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M 100,100 C 100,60 60,40 40,40 C 20,40 0,60 0,100 C 0,140 20,160 40,160 C 60,160 100,140 100,100 M 100,100 C 100,60 140,40 160,40 C 180,40 200,60 200,100 C 200,140 180,160 160,160 C 140,160 100,140 100,100"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="16"
-                        strokeLinecap="round"
-                        className="text-accent"
-                        transform="translate(100, 20) scale(1)"
-                      />
-                    </svg>
                   </div>
                 </div>
                 <div className="mt-8 relative group">
@@ -1051,7 +1113,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                   </p>
                   <div>
                     <p className="text-sm font-semibold">Email us</p>
-                    <a href="mailto:support@hustloop.com" className="text-primary hover:underline">support@hustloop.com</a>
+                    <a href="mailto:support@hustloop.com" className="text-primary hover:underline">support[@]hustloop.com</a>
                   </div>
                   <div className="flex items-center gap-4">
                     <a href="#" aria-label="X" className="text-muted-foreground hover:text-primary transition-colors">
@@ -1079,7 +1141,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                             <FormControl>
                               <Input placeholder="Enter your full name" {...field} className="pr-16" />
                             </FormControl>
-                            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${field.value?.length >= 300 ? "text-red-500" : "text-muted-foreground"}`}>
+                            <span className={`absolute right - 3 top - 1 / 2 - translate - y - 1 / 2 text - xs ${field.value?.length >= 300 ? "text-red-500" : "text-muted-foreground"} `}>
                               {field.value?.length || 0}/300
                             </span>
                           </div>
@@ -1116,8 +1178,8 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                             </FormControl>
 
                             <span
-                              className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${(field.value?.length ?? 0) > 10 ? "text-red-500" : "text-muted-foreground"
-                                }`}
+                              className={`absolute right - 3 top - 1 / 2 - translate - y - 1 / 2 text - xs ${(field.value?.length ?? 0) > 10 ? "text-red-500" : "text-muted-foreground"
+                                } `}
                             >
                               {(field.value?.length ?? 0)}/10
                             </span>
@@ -1160,7 +1222,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                             <FormControl>
                               <Textarea placeholder="How can we help you?" {...field} className="pb-6" />
                             </FormControl>
-                            <span className={`absolute right-3 bottom-2 text-xs ${field.value?.length >= 500 ? "text-red-500" : "text-muted-foreground"}`}>
+                            <span className={`absolute right - 3 bottom - 2 text - xs ${field.value?.length >= 500 ? "text-red-500" : "text-muted-foreground"} `}>
                               {field.value?.length || 0}/500
                             </span>
                           </div>
@@ -1185,7 +1247,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
         <section className='relative bg-background'>
           <Footer />
         </section>
-      </div>
+      </div >
 
 
     </div >

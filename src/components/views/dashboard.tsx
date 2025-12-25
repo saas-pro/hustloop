@@ -1952,11 +1952,13 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             })
                                                                         )}
                                                                     </Pie>
-                                                                    <Tooltip
-                                                                        contentStyle={{
-                                                                            borderRadius: 12,
-                                                                        }}
-                                                                    />
+                                                                    {dashboardStats.tech_transfer.total > 0 && (
+                                                                        <Tooltip
+                                                                            contentStyle={{
+                                                                                borderRadius: 12,
+                                                                            }}
+                                                                        />
+                                                                    )}
                                                                 </PieChart>
                                                             </ResponsiveContainer>
                                                             <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
@@ -2049,11 +2051,13 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             })
                                                                         )}
                                                                     </Pie>
-                                                                    <Tooltip
-                                                                        contentStyle={{
-                                                                            borderRadius: 12,
-                                                                        }}
-                                                                    />
+                                                                    {dashboardStats.collaborations.total > 0 && (
+                                                                        <Tooltip
+                                                                            contentStyle={{
+                                                                                borderRadius: 12,
+                                                                            }}
+                                                                        />
+                                                                    )}
                                                                 </PieChart>
                                                             </ResponsiveContainer>
                                                             <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
@@ -2149,9 +2153,11 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             })
                                                                         )}
                                                                     </Pie>
-                                                                    <Tooltip contentStyle={{
-                                                                        borderRadius: 12,
-                                                                    }} />
+                                                                    {dashboardStats.solutions.total > 0 && (
+                                                                        <Tooltip contentStyle={{
+                                                                            borderRadius: 12,
+                                                                        }} />
+                                                                    )}
                                                                 </PieChart>
                                                             </ResponsiveContainer>
                                                             <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
@@ -2248,11 +2254,13 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             })
                                                                         )}
                                                                     </Pie>
-                                                                    <Tooltip
-                                                                        contentStyle={{
-                                                                            borderRadius: 12,
-                                                                        }}
-                                                                    />
+                                                                    {dashboardStats.users.total > 0 && (
+                                                                        <Tooltip
+                                                                            contentStyle={{
+                                                                                borderRadius: 12,
+                                                                            }}
+                                                                        />
+                                                                    )}
                                                                 </PieChart>
                                                             </ResponsiveContainer>
                                                             <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">

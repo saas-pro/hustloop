@@ -107,6 +107,7 @@ interface CorporateChallenge {
   logo_url: string;
   extended_end_date?: string | null;
   attachments?: []
+  qa_count: number;
 }
 
 type hallOfFame = {
@@ -469,7 +470,9 @@ export default function CorporateChallengeDetails({
               </span>
             </TabsTrigger>
             <TabsTrigger value="hof">Hall of Fame</TabsTrigger>
-            <TabsTrigger value="q/a">Q/A</TabsTrigger>
+            <TabsTrigger value="q/a"><span className="flex items-center gap-2"> Q/A {challenge.qa_count > 0 && <span className="inline-flex items-center justify-center h-5 w-5 font-semibold rounded-full bg-primary text-primary-foreground">
+              {challenge.qa_count}
+            </span>}</span></TabsTrigger>
             <TabsTrigger value="faq">FAQ</TabsTrigger>
           </TabsList>
 
@@ -524,10 +527,10 @@ export default function CorporateChallengeDetails({
                   )}
 
 
-                  <div className="flex flex-col md:flex-row justify-between items-center md:items-center gap-6">
-                    <div className="flex items-start gap-3">
-                      <Award className="h-10 w-10 text-primary mt-1" />
-                      <div>
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="flex gap-3 items-start">
+                      <Award className="h-10 w-10 text-primary mt-1 flex-shrink-0" />
+                      <div className="text-left">
                         <h2 className="text-xl font-bold text-muted-foreground uppercase mb-1">
                           Challenge Title
                         </h2>
@@ -536,7 +539,7 @@ export default function CorporateChallengeDetails({
                         </h1>
                       </div>
                     </div>
-                    <div className='md:mr-8 md:mt-8'>
+                    <div className='md:mr-8 md:mt-8 flex justify-center w-full md:w-auto'>
                       <TimelineCounter
                         endDate={challenge?.end_date}
                         extendedEndDate={challenge.extended_end_date}

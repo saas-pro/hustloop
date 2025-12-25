@@ -77,6 +77,7 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
     const [teamWizardOpen, setTeamWizardOpen] = useState(false);
     const [wizardStep, setWizardStep] = useState(1);
     const [finalSuccessOpen, setFinalSuccessOpen] = useState(false);
+    const [teamAcknowledgeOpen, setTeamAcknowledgeOpen] = useState(false);
 
     const form = useForm<SolutionSubmissionSchema>({
         resolver: zodResolver(solutionSubmissionSchema),
@@ -295,8 +296,13 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
         if (wizardStep > 1) setWizardStep((s) => s - 1);
     };
 
-    const confirmTeamSubmit = async () => {
+    const confirmTeamSubmit = () => {
+        setTeamAcknowledgeOpen(true);
+    };
+
+    const handleTeamAcknowledge = async () => {
         const data = form.getValues();
+        setTeamAcknowledgeOpen(false);
         await performSubmit({ ...data, submissionType: "team" });
     };
 
@@ -602,7 +608,7 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                             Cancel
                         </Button>
                         <Button type="submit" className={`bg-accent hover:bg-accent/90 text-accent-foreground ${!agreeToTerms ? "opacity-50 cursor-not-allowed" : ""}`} disabled={loading || !agreeToTerms}>
-                            {loading ? "Submitting..." : "Submit Solution"}
+                            Proceed Next
                         </Button>
                     </div>
 
@@ -651,7 +657,7 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                     </DialogHeader>
 
                     <div className="py-4 h-[400px] md:h-[450px] overflow-y-auto">
-                        <div className="flex flex-col md:grid md:grid-cols-2 gap-4 md:gap-6 items-start md:items-center">
+                        <div className="flex flex-col md:grid md:grid-cols-1 gap-4 md:gap-6 items-center md:items-center">
                             <div className="w-full">
                                 <h3 className="text-base md:text-lg font-semibold">{wizardStepContent[wizardStep - 1].title}</h3>
                                 <p className="text-xs md:text-sm text-muted-foreground mt-2">{wizardStepContent[wizardStep - 1].text}</p>
@@ -692,13 +698,57 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                             {wizardStep < 5 && <Button onClick={wizardNext} disabled={loading} className="w-full sm:w-auto">Next</Button>}
                             {wizardStep === 5 && (
                                 <Button onClick={confirmTeamSubmit} disabled={loading} className="w-full sm:w-auto">
-                                    {loading ? "Submitting..." : "Create Solution & Send Invites"}
+                                    {loading ? "Submitting..." : "Submit Solution"}
                                 </Button>
                             )}
                             {wizardStep <= 4 && <Button variant="ghost" onClick={() => { setTeamWizardOpen(false); setWizardStep(1); }} disabled={loading} className="w-full sm:w-auto">
                                 Cancel
                             </Button>}
                         </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Team Acknowledgment Dialog */}
+            <Dialog open={teamAcknowledgeOpen} onOpenChange={setTeamAcknowledgeOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Team Submission Acknowledgment</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                            Before submitting your team solution, please acknowledge the following:
+                        </p>
+                        <ul className="list-disc list-inside text-sm space-y-2 text-muted-foreground">
+                            <li>You will be the team leader and responsible for managing team members.</li>
+                            <li>You can add team members from the Dashboard after submission.</li>
+                            <li>Team members will receive email invitations to join your solution.</li>
+                            <li>All team members must verify their email to be added to the team.</li>
+                            <li>You can manage team members from the Team tab in your solution details.</li>
+                        </ul>
+                        <div className="bg-muted p-4 rounded-md">
+                            <p className="text-sm font-medium">Important:</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                By clicking &quot;I Acknowledge &amp; Submit&quot;, you confirm that you understand the team submission process and agree to follow the steps outlined in the wizard.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setTeamAcknowledgeOpen(false)}
+                            disabled={loading}
+                            className="w-full sm:w-auto"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleTeamAcknowledge}
+                            disabled={loading}
+                            className="w-full sm:w-auto"
+                        >
+                            {loading ? "Submitting..." : "I Acknowledge & Submit"}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

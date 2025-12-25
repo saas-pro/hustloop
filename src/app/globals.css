@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 
 @font-face {
   font-family: 'Epic Pro';
@@ -845,6 +845,26 @@ body {
 .paused {
   animation-play-state: paused !important;
 }
+
+/* Zoho SalesIQ Chatbot - Ensure it appears beneath page loader */
+#zsiq_float,
+#zsiq_agtpic,
+.zsiq_floatmain,
+.zsiq_theme1,
+div[id^="zsiq"],
+div[class^="zsiq"],
+div[class*="zsiq"],
+iframe[id^="siq"],
+iframe[name^="siq"] {
+  z-index: 40 !important;
+}
+
+/* Additional specificity for nested elements */
+body > div[id^="zsiq"],
+body > div[class^="zsiq"] {
+  z-index: 40 !important;
+}
+
 
 @keyframes ping-slow {
 

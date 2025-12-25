@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Check, Info, Paperclip } from 'lucide-react';
 import { MarkdownViewer } from './ui/markdownViewer';
 import Image from 'next/image';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 
 interface TechTransferViewProps {
@@ -30,6 +32,7 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
   const [ipDetails, setIpDetails] = useState<IPDetails | null>(null);
   const [isFetchingIpDetails, setIsFetchingIpDetails] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const handleCloseDialog = useCallback(() => {
     setIsDialogOpen(false);
@@ -117,61 +120,124 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
           </DialogTitle>
         </div>
 
-        <div className="flex-grow overflow-y-auto p-4 space-y-4">
-          {ipDetails && (
-            <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
-              <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-lg font-extrabold text-primary flex items-center">
-                  <Info className="h-5 w-5 mr-2" />
-                  {ipDetails.ipTitle}
-                </CardTitle>
-                {ipDetails?.approvalStatus === "approved" && (
-                  <span className="flex items-center justify-center w-6 h-6  rounded-full">
-                    <Image src="/bluetick.png" alt="bluetick" height={20} width={20} />
-                  </span>
-                )}
-              </CardHeader>
-              <CardContent className="p-4 pt-0 text-sm">
-                <div className='py-2 '>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden ">
+          <div className="flex justify-center mx-4 mt-2">
+            <TabsList className="w-fit">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="faq">FAQ</TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="overview" className="flex-grow overflow-y-auto p-4 space-y-4 mt-0">
+            {ipDetails && (
+              <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
+                <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="text-lg font-extrabold text-primary flex items-center">
+                    <Info className="h-5 w-5 mr-2" />
+                    {ipDetails.ipTitle}
+                  </CardTitle>
+                  {ipDetails?.approvalStatus === "approved" && (
+                    <span className="flex items-center justify-center w-6 h-6  rounded-full">
+                      <Image src="/bluetick.png" alt="bluetick" height={20} width={20} />
+                    </span>
+                  )}
+                </CardHeader>
+                <CardContent className="p-4 pt-0 text-sm">
+                  <div className='py-2 '>
+                    <h1 className='text-lg'>
+                      Summary:
+                    </h1>
+                    <div className='p-2'>
+                      <p>{ipDetails.summary} </p>
+                    </div>
+                  </div>
+
                   <h1 className='text-lg'>
-                    Summary:
+                    Described About the Technology:
                   </h1>
                   <div className='p-2'>
-                    <p>{ipDetails.summary} </p>
+                    <MarkdownViewer content={ipDetails.describetheTech} />
                   </div>
-                </div>
+                  <p className="mt-1 text-muted-foreground">Submitted By: <span className="font-semibold">{ipDetails.firstName} {ipDetails.lastName}</span> from <span className="italic">{ipDetails.organization}</span></p>
 
-                <h1 className='text-lg'>
-                  Described About the Technology:
-                </h1>
-                <div className='p-2'>
-                  <MarkdownViewer content={ipDetails.describetheTech} />
-                </div>
-                <p className="mt-1 text-muted-foreground">Submitted By: <span className="font-semibold">{ipDetails.firstName} {ipDetails.lastName}</span> from <span className="italic">{ipDetails.organization}</span></p>
+                  {(() => {
+                    const files = Array.isArray(ipDetails.supportingFileUrl)
+                      ? ipDetails.supportingFileUrl
+                      : ipDetails.supportingFileUrl
+                        ? [ipDetails.supportingFileUrl]
+                        : []
 
-                {ipDetails.supportingFileUrl && (
-                  <div className="mt-4 border-t pt-3">
-                    <p className="font-medium text-primary-dark mb-2">
-                      Attached Submission File{Array.isArray(ipDetails.supportingFileUrl) && ipDetails.supportingFileUrl.length > 1 ? 's' : ''}:
-                    </p>
-                    {Array.isArray(ipDetails.supportingFileUrl) ? (
-                      <div className="flex flex-col gap-2">
-                        {ipDetails.supportingFileUrl.map((url, index) => (
-                          <div key={index}>
+                    if (files.length === 0) return null
 
-                            {renderFileAttachment(url, `${ipDetails.ipTitle}`)}
-                          </div>
-                        ))}
+                    return (
+                      <div className="mt-4 border-t pt-3">
+                        <p className="font-medium text-primary-dark mb-2">
+                          Attached Submission File{files.length > 1 ? 's' : ''}:
+                        </p>
+
+                        <div className="flex flex-col gap-2">
+                          {files.map((url, index) => (
+                            <div key={index}>
+                              {renderFileAttachment(url, ipDetails.ipTitle)}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ) : (
-                      renderFileAttachment(ipDetails.supportingFileUrl, ipDetails.ipTitle)
-                    )}
-                  </div>
-                )}
+                    )
+                  })()}
+
+
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="faq" className="flex-grow overflow-y-auto p-4 mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-bold">Frequently Asked Questions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-1">
+                    <AccordionTrigger>What is technology transfer?</AccordionTrigger>
+                    <AccordionContent>
+                      Technology transfer is the process of transferring scientific findings, innovations, and intellectual property from one organization to another for further development and commercialization. It enables research institutions, universities, and companies to share their technologies with businesses that can bring them to market.
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="item-2">
+                    <AccordionTrigger>How does the licensing process work?</AccordionTrigger>
+                    <AccordionContent>
+                      The licensing process typically involves: (1) Reviewing the technology details and documentation, (2) Submitting an expression of interest, (3) Negotiating terms and conditions with the technology owner, (4) Signing a licensing agreement, and (5) Receiving the necessary documentation and support to implement the technology. The specific timeline and requirements may vary depending on the technology and parties involved.
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="item-3">
+                    <AccordionTrigger>What are the terms and conditions?</AccordionTrigger>
+                    <AccordionContent>
+                      Terms and conditions vary by technology and are negotiated between the licensor and licensee. Common terms include licensing fees, royalty rates, exclusivity rights, territory restrictions, duration of the license, and performance milestones. All terms are documented in a formal licensing agreement that protects both parties&apos; interests.
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="item-4">
+                    <AccordionTrigger>How can I contact the technology owner?</AccordionTrigger>
+                    <AccordionContent>
+                      You can contact the technology owner through the Hustloop platform by expressing your interest in the technology. The platform will facilitate communication between you and the technology owner. For additional support, you can reach out to our team at support[@]hustloop.com.
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="item-5">
+                    <AccordionTrigger>What support is provided after licensing?</AccordionTrigger>
+                    <AccordionContent>
+                      Post-licensing support varies by agreement but typically includes technical documentation, training materials, and consultation with the technology developers. Some licenses may include ongoing technical support, updates, and improvements. The specific support terms are outlined in the licensing agreement and can be customized based on your needs.
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </CardContent>
             </Card>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   )

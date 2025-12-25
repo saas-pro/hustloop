@@ -14,6 +14,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/layout/footer";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod"
+import { useForm } from "react-hook-form";
+
+const formSchema = z.object({
+    pitchDate: z.string().min(1, "Preferred date is required"),
+    pitchTime: z.string().min(1, "Preferred time is required"),
+    requirements: z.string().optional()
+});
+type FormValues = z.infer<typeof formSchema>;
 
 function PitchingFormContent() {
     const router = useRouter()
@@ -41,6 +51,14 @@ function PitchingFormContent() {
     const [submitting, setSubmitting] = useState(false);
     const [resending, setResending] = useState(false);
 
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            pitchDate: "",
+            pitchTime: "",
+            requirements: ""
+        }
+    })
     useEffect(() => {
         if (!token) {
             setLoading(false);
@@ -104,56 +122,35 @@ function PitchingFormContent() {
         fetchStatus();
     }, [token]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!pitchDate || !pitchTime) {
-            toast({
-                title: "Missing Fields",
-                description: "Please select both date and time.",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        setSubmitting(true);
+    const onSubmit = async (values: FormValues) => {
+        setSubmitting(true)
         try {
             const res = await fetch(`${API_BASE_URL}/api/pitching/submit`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     token,
-                    pitch_date: pitchDate,
-                    pitch_time: pitchTime,
-                    requirements,
-                }),
-            });
+                    pitch_date: values.pitchDate,
+                    pitch_time: values.pitchTime,
+                    requirements: values.requirements
+                })
+            })
 
-            const data = await res.json();
+            const data = await res.json()
 
             if (res.ok) {
-                setSubmitted(true);
-                setAllowForm(false);
-                toast({
-                    title: "Success",
-                    description: "Pitching details submitted successfully!",
-                });
+                setSubmitted(true)
+                setAllowForm(false)
+                toast({ title: "Success", description: "Pitching details submitted successfully!" })
             } else {
-                toast({
-                    title: "Error",
-                    description: data.error || "Failed to submit form.",
-                    variant: "destructive",
-                });
+                toast({ title: "Error", description: data.error, variant: "destructive" })
             }
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: "Something went wrong. Please try again.",
-                variant: "destructive",
-            });
+        } catch {
+            toast({ title: "Error", description: "Something went wrong.", variant: "destructive" })
         } finally {
-            setSubmitting(false);
+            setSubmitting(false)
         }
-    };
+    }
 
     const handleResendLink = async () => {
         if (!solutionId) return;
@@ -275,44 +272,38 @@ function PitchingFormContent() {
                                     </Button>
                                 </div>
                             ) : allowForm ? (
-                                <form onSubmit={handleSubmit} className="space-y-6">
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
-                                            <Calendar className="h-4 w-4" /> Preferred Date
+                                            <Calendar className="h-4 w-4" /> Preferred Date <span className="text-red-600">*</span>
                                         </label>
-                                        <Input
-                                            type="date"
-                                            required
-                                            value={pitchDate}
-                                            onChange={(e) => setPitchDate(e.target.value)}
-                                            className="w-full"
-                                            min={new Date().toISOString().split("T")[0]}
-                                        />
+                                        <Input type="date" min={new Date().toISOString().split("T")[0]} {...form.register("pitchDate")} />
+                                        {form.formState.errors.pitchDate && (
+                                            <p className="text-sm text-red-600">
+                                                {form.formState.errors.pitchDate.message}
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
-                                            <Clock className="h-4 w-4" /> Preferred Time
+                                            <Clock className="h-4 w-4" /> Preferred Time <span className="text-red-600">*</span>
                                         </label>
-                                        <Input
-                                            type="time"
-                                            required
-                                            value={pitchTime}
-                                            onChange={(e) => setPitchTime(e.target.value)}
-                                            className="w-full"
-                                        />
+                                        <Input type="time" {...form.register("pitchTime")} />
+                                        {form.formState.errors.pitchTime && (
+                                            <p className="text-sm text-red-600">
+                                                {form.formState.errors.pitchTime.message}
+                                            </p>
+                                        )}
+
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
                                             <FileEdit className="h-4 w-4" /> Special Requirements (Optional)
                                         </label>
-                                        <Textarea
-                                            placeholder="Any specific tools, setup, or constraints..."
-                                            value={requirements}
-                                            onChange={(e) => setRequirements(e.target.value)}
-                                            className="min-h-[100px]"
-                                        />
+                                        <Textarea {...form.register("requirements")} placeholder="Optional requirements" />
+
                                     </div>
 
                                     <Button type="submit" className="w-full" disabled={submitting}>

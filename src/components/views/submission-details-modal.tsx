@@ -45,7 +45,7 @@ interface FileData {
     previewUrl: string;
 }
 
-type UserRole = 'founder' | 'admin' | 'msme' | null;
+
 
 interface Comment {
     id: string;
@@ -459,6 +459,46 @@ export default function SubmissionDetailsModal({
                                                     </div>
                                                 </div>
                                             )}
+
+                                            {submission.team_members && submission.team_members.length > 0 && (
+                                                <div className="mt-4 border-t pt-3">
+                                                    <p className="font-medium text-primary-dark mb-2">
+                                                        {submission.team_members.length === 1
+                                                            ? "Submitter:"
+                                                            : `Team Members (${submission.team_members.length}):`}
+                                                    </p>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                        {submission.team_members.map((member, index) => (
+                                                            <div
+                                                                key={member.userId || index}
+                                                                className="flex items-center gap-2 p-2 border rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
+                                                            >
+                                                                <Avatar className="h-8 w-8">
+                                                                    <AvatarFallback className="text-xs font-semibold">
+                                                                        {member.name?.charAt(0) || 'T'}
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-1 mb-1">
+                                                                        <p className="text-sm font-medium truncate">
+                                                                            {member.name}
+                                                                        </p>
+                                                                        {member.userId === submission.user_id && (
+                                                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary whitespace-nowrap flex-shrink-0">
+                                                                                Creator
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <p className="text-xs text-muted-foreground truncate">
+                                                                        {member.email}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -577,11 +617,11 @@ export default function SubmissionDetailsModal({
 
                                                         {comment.authorRole && (
                                                             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
-                                                                {comment.authorRole.toLowerCase() === "msme"
-                                                                    ? `${submission.challenge?.postedBy?.companyName || "Unknown Company"} - MSME`
+                                                                {comment.authorRole.toLowerCase() === "organisation"
+                                                                    ? `${submission.challenge?.postedBy?.companyName || "Unknown Company"} Staff`
                                                                     : comment.authorRole.toLowerCase() === "admin"
-                                                                        ? "Triager"
-                                                                        : comment.authorRole}
+                                                                        ? "Hustloop Triager"
+                                                                        : comment.authorRole.charAt(0).toUpperCase() + comment.authorRole.slice(1)}
                                                             </span>
                                                         )}
 

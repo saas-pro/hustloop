@@ -16,6 +16,7 @@ type User = {
 
 export default function Home() {
   const [showLoader, setShowLoader] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const [isLoggedIn, setLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -37,19 +38,32 @@ export default function Home() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setShowLoader(false);
-    }, 1500);
+      setIsAnimating(true);
+      // Wait for animation to complete before hiding loader
+      setTimeout(() => {
+        setShowLoader(false);
+      }, 500); // Match the faster animation duration
+    }, 5500);
 
     return () => clearTimeout(timer);
   }, []);
 
-  if (showLoader) {
-    return <PageLoader />;
-  }
-
   return (
-    <Suspense fallback={<PageLoader />}>
-      <MainView />
-    </Suspense>
+    <>
+      {/* Main Content */}
+      <Suspense fallback={<PageLoader />}>
+        <MainView />
+      </Suspense>
+
+      {/* Loader Overlay with slide-up animation */}
+      {showLoader && (
+        <div
+          className={`fixed inset-0 z-50 bg-background transition-transform duration-500 ease-in-out ${isAnimating ? '-translate-y-full' : 'translate-y-0'
+            }`}
+        >
+          <PageLoader />
+        </div>
+      )}
+    </>
   );
 }

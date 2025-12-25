@@ -55,6 +55,7 @@ export type CorporateChallenge = {
   logo_url: string;
   extended_end_date?: string | null;
   attachments: [];
+  qa_count: number;
 };
 
 export type MSMEChallenge = {

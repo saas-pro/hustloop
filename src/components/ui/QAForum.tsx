@@ -28,6 +28,9 @@ interface QAItem {
     attachment?: { name: string; url: string; type: 'image' | 'doc' | 'pdf' };
     replies: QAItem[];
     role: string;
+    collaboration?: {
+        company_name?: string;
+    };
 }
 
 interface QAForumProps {
@@ -276,14 +279,14 @@ const QAItemView = ({
                         <AvatarFallback>{item?.author?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                     <span
-                        className={`font-semibold text-[14px]  ${item.isOrganizer ? 'text-foreground' : 'text-foreground'}`}
+                        className={`font-semibold text-[14px] text-foreground`}
                     >
                         {item?.author || 'Unknown User'}
                     </span>
                     {item.isOrganizer ? (
-                        <Badge variant="secondary">Organizer</Badge>
+                        <Badge variant="secondary">{item.collaboration?.company_name} Staff</Badge>
                     ) : item.role === "admin" ? (
-                        <Badge variant="default">Triager</Badge>
+                        <Badge variant="default">Hustloop Triager</Badge>
                     ) : (
                         <Badge variant="outline">{item.role}</Badge>
                     )}
@@ -422,7 +425,6 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
         setDeleteId(id);
     };
 
-
     useEffect(() => {
         if (!collaborationId) return;
         const fetchQA = async () => {
@@ -447,6 +449,8 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
         };
         fetchQA();
     }, [collaborationId]);
+
+
 
     const addReplyToItem = (items: QAItem[], parentId: string, newReply: QAItem): QAItem[] => {
         return items.map((item) => {
@@ -692,74 +696,7 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
             </div>
 
             <CardContent>
-                <div className="space-y-3 p-4 border rounded-lg bg-background w-full">
-                    {isExpired ? (
-                        <div className="text-center py-6 text-muted-foreground">
-                            <p className="font-semibold">This Q/A section is closed.</p>
-                            <p className="text-sm">New questions and replies are disabled because the challenge has ended or is stopped.</p>
-                        </div>
-                    ) : (
-                        <>
-                            <h4 className="font-semibold">Ask a Question</h4>
-                            <QuillEditor
-                                value={newQuestion}
-                                onChange={setNewQuestion}
-                                placeholder="Ask your question here..."
-                                height="150px"
-                                disabled={isPostingQuestion}
-                            />
-
-                            <div className="flex gap-2 items-center justify-between">
-                                <div className='flex items-center  gap-2'>
-                                    <Input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        className="hidden"
-                                        disabled={isPostingQuestion}
-                                        onChange={(e) => setNewFile(e.target.files?.[0] || null)}
-                                    />
-
-                                    <div className='flex flex-col md:flex-row justify-center items-center gap-2'>
-                                        <Button
-                                            className='flex gap-2'
-                                            onClick={() => fileInputRef.current?.click()}
-                                            disabled={!!newFile || isPostingQuestion}
-                                        >
-                                            <Paperclip className="h-4 w-4" />
-                                            <p>Attachment</p>
-                                        </Button>
-                                        <span className="text-xs text-muted-foreground hidden md:block">
-                                            Supported file types: PDF, DOC, DOCX, JPG, PNG
-                                        </span>
-                                    </div>
-
-                                    {newFile && (
-                                        <Button
-                                            variant="destructive"
-                                            onClick={handleCancel}
-                                            className="text-xs"
-                                            disabled={isPostingQuestion}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    )}
-                                </div>
-
-                                <div className="flex-grow" />
-                                <Button onClick={handlePostQuestion} disabled={isPostingQuestion}>
-                                    {isPostingQuestion ? "Posting..." : "Post Question"}
-                                </Button>
-
-                            </div>
-                        </>
-                    )}
-
-                </div>
-                {newFile && <p className="text-xs text-muted-foreground">Selected: {newFile.name}</p>}
-                <div className='mt-4'>
-                    <Separator />
-                </div>
-
+                {/* Display existing questions first */}
                 {loading ? (
                     <div className="space-y-6 mt-5">
                         {[1, 2, 3].map((i) => (
@@ -777,8 +714,6 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
                             </div>
                         ))}
                     </div>
-                ) : qaData.length === 0 ? (
-                    <p className="text-center text-muted-foreground mt-5">No questions yet.</p>
                 ) : (
                     <div className="space-y-6">
                         {qaData.map((item, id) => (
@@ -799,6 +734,79 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
                     </div>
                 )}
 
+                {/* Separator between questions and form */}
+                {qaData.length > 0 && !loading && !isExpired && (
+                    <div className='mt-6 mb-4'>
+                        <Separator />
+                    </div>
+                )}
+
+                {/* Question form - always visible when not expired */}
+                {!isExpired && (
+                    <div className="space-y-3 p-4 border rounded-lg bg-background w-full mt-4">
+                        <h4 className="font-semibold">Ask a Question</h4>
+                        <QuillEditor
+                            value={newQuestion}
+                            onChange={setNewQuestion}
+                            placeholder="Ask your question here..."
+                            height="150px"
+                            disabled={isPostingQuestion}
+                        />
+
+                        <div className="flex gap-2 items-center justify-between">
+                            <div className='flex items-center  gap-2'>
+                                <Input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    className="hidden"
+                                    disabled={isPostingQuestion}
+                                    onChange={(e) => setNewFile(e.target.files?.[0] || null)}
+                                />
+
+                                <div className='flex flex-col md:flex-row justify-center items-center gap-2'>
+                                    <Button
+                                        className='flex gap-2'
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={!!newFile || isPostingQuestion}
+                                    >
+                                        <Paperclip className="h-4 w-4" />
+                                        <p>Attachment</p>
+                                    </Button>
+                                    <span className="text-xs text-muted-foreground hidden md:block">
+                                        Supported file types: PDF, DOC, DOCX, JPG, PNG
+                                    </span>
+                                </div>
+
+                                {newFile && (
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleCancel}
+                                        className="text-xs"
+                                        disabled={isPostingQuestion}
+                                    >
+                                        Cancel
+                                    </Button>
+                                )}
+                            </div>
+
+                            <div className="flex-grow" />
+                            <Button onClick={handlePostQuestion} disabled={isPostingQuestion}>
+                                {isPostingQuestion ? "Posting..." : "Post Question"}
+                            </Button>
+                        </div>
+
+                        {newFile && <p className="text-xs text-muted-foreground">Selected: {newFile.name}</p>}
+                    </div>
+                )}
+
+                {/* Expired state message */}
+                {isExpired && (
+                    <div className="text-center py-6 text-muted-foreground mt-4">
+                        <p className="font-semibold">This Q/A section is closed.</p>
+                        <p className="text-sm">New questions and replies are disabled because the challenge has ended or is stopped.</p>
+                    </div>
+                )}
+
                 <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                     <DialogContent>
                         <DialogHeader>
@@ -808,7 +816,7 @@ export function QAForum({ collaborationId, isExpired }: QAForumProps) {
                             </DialogDescription>
                         </DialogHeader>
 
-                        <DialogFooter>
+                        <DialogFooter className='flex flex-col gap-2'>
                             <Button variant="outline" onClick={() => setDeleteId(null)}>
                                 Cancel
                             </Button>
