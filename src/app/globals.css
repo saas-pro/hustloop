@@ -90,13 +90,15 @@ body {
   }
 
   .theme-dark {
-    /* --background: 0 0% 0% */
-    --background: 222 84% 5%;
+    --background: 0 0% 0%;
+    /* --background: 222 84% 5%; */
     /* #121212 */
+    /* --foreground: 210 40% 98%; */
     --foreground: 210 40% 98%;
+    
     /* #E0E0E0 */
     /* --card:0 0 4% */
-    --card: 222 84% 8%;
+    --card: 222 84% 5%;
     --flow-line: 217.2 32.6% 25%;
     --flow-accent: 45 100% 65%;
     /* #1E1E1E */
@@ -413,6 +415,19 @@ body {
     background-position: -200% 0;
   }
 }
+
+@keyframes gradient-rotate {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 
 .star-field {
   position: fixed;
@@ -1629,3 +1644,32 @@ body > div[class^="zsiq"] {
         color-scheme: white !important;
     }
 }
+
+.circular-text {
+  margin: 0 auto;
+  border-radius: 50%;
+  width: 200px;
+  height: 200px;
+  font-weight: bold;
+  color: var(--text);
+  font-weight: 900;
+  text-align: center;
+  cursor: pointer;
+  transform-origin: 50% 50%;
+  -webkit-transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.circular-text span {
+  position: absolute;
+  display: inline-block;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  font-size: 24px;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+

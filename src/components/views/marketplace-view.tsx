@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Lightbulb, Microscope, Puzzle } from 'lucide-react';
 import type { View } from '@/app/types';
+import CircularText from '@/components/CircularText';
 
 const MsmesView = dynamic(() => import('./msmes'));
 const TechTransferView = dynamic(() => import('../browsetech/browsetech'));
@@ -55,30 +56,40 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
             </TabsList>
 
             <TabsContent value="challenges">
-              <Card className='min-h-[26vh] flex flex-col justify-center'>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Puzzle />
-                    Solve Corporate & MSME Challenges
-                  </CardTitle>
-                </CardHeader>
+              <Card className='min-h-[26vh] flex  justify-between'>
+                <div>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Puzzle />
+                      Solve Corporate & MSME Challenges
+                    </CardTitle>
+                  </CardHeader>
 
-                <CardContent >
-                  <p className="text-muted-foreground mb-4">
-                    Apply your skills to solve real-world problems posted by companies and MSMEs. Get rewarded and gain valuable experience.
-                  </p>
+                  <CardContent >
+                    <p className="text-muted-foreground mb-4">
+                      Apply your skills to solve real-world problems posted by companies and MSMEs. Get rewarded and gain valuable experience.
+                    </p>
 
-                  <Button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      localStorage.setItem("fromMarketplace", "true");
-                      setInternalView("msmes");
-                    }}
-                  >
-                    Browse Challenges <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
+                    <Button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        localStorage.setItem("fromMarketplace", "true");
+                        setInternalView("msmes");
+                      }}
+                    >
+                      Browse Challenges <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </div>
+
+                <div className="flex justify-center items-center m-6">
+                  <CircularText
+                    text="INCENTIVE*CHALLENGES*"
+                    spinDuration={10}
+                    className='!h-36 !w-36 '
+                  />
+                </div>
               </Card>
             </TabsContent>
 

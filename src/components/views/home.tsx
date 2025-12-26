@@ -35,6 +35,7 @@ import { DashboardTab } from '@/app/types';
 import * as THREE from 'three';
 import { GoogleGeminiEffect } from "@/components/ui/google-gemini-effect";
 import { useScroll, useTransform } from "motion/react";
+import Prism from '../Prism';
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters.").max(300, "Full name must not exceed 300 characters."),
@@ -412,10 +413,20 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
 
       <div className="xl:hidden absolute top-0 left-0 w-full h-full z-0 bg-accent opacity-0 transition-opacity duration-1000 animate-in fade-in" />
 
-      <div
-        ref={vantaRef}
-        className="xl:hidden absolute top-0 left-0 w-full h-full z-[1]"
-      />
+      <div className="xl:hidden absolute top-0 left-0 w-full h-full z-[1]">
+        <Prism
+          animationType="rotate"
+          timeScale={0.5}
+          height={3.5}
+          baseWidth={5.5}
+          scale={3.6}
+          hueShift={0}
+          colorFrequency={1}
+          noise={0}
+          glow={1}
+        />
+      </div>
+
 
       {/* Commented out video - using Google Gemini Effect instead */}
       <video
@@ -444,7 +455,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
         />
       </div> */}
 
-      <div className="hidden absolute inset-0 md:bg-black/40 z-10 xl:block"></div>
+      <div className="absolute inset-0 bg-black/40 z-10 hidden md:block"></div>
 
       <BrandLogo />
 
@@ -538,7 +549,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
           </svg>
         </div>
       </div>
-    </section>
+    </section >
   );
 };
 
@@ -568,7 +579,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
 
   async function onContactSubmit(data: ContactFormValues) {
     try {
-      const response = await fetch(`${API_BASE_URL} /api/contact`, {
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1248,8 +1259,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
           <Footer />
         </section>
       </div >
-
-
     </div >
   );
 }

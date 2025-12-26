@@ -88,6 +88,7 @@ export type MSMEChallenge = {
   extended_end_date?: string | null;
   stop_date: string | null;
   attachments: [];
+
 };
 export type Governmentchallenges = {
   id: string;
@@ -360,7 +361,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
           <TabsTrigger value="MSMECollaboration">MSME Challenges</TabsTrigger>
           <TabsTrigger value="Governmentchallenges">Government Challenges</TabsTrigger>
         </TabsList>
-        <TabsContent value="CorporateChallenges" className="mt-4 flex-1 overflow-y-auto pr-4">
+        <TabsContent value="CorporateChallenges" className="mt-4 flex-1 overflow-x-hidden pr-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {corporateChallenges?.length === 0 ? (
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
@@ -381,7 +382,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
             )}
           </div>
         </TabsContent>
-        <TabsContent value="MSMECollaboration" className="mt-4 flex-1 overflow-y-auto pr-4">
+        <TabsContent value="MSMECollaboration" className="mt-4 flex-1 overflow-x-hidden pr-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {msmeCollaborations?.length === 0 ? (
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
@@ -403,7 +404,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
             )}
           </div>
         </TabsContent>
-        <TabsContent value="Governmentchallenges" className="mt-4 flex-1 overflow-y-auto pr-4">
+        <TabsContent value="Governmentchallenges" className="mt-4 flex-1 overflow-x-hidden pr-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {Governmentchallenges?.length === 0 ? (
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">

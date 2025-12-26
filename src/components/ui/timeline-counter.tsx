@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card } from './card';
 import { cn } from '@/lib/utils';
+import { SparklesCore } from './sparkles';
 
 interface TimelineCounterProps {
     endDate: string;
@@ -32,6 +33,44 @@ export default function TimelineCounter({
         seconds: 0,
         isExpired: false,
     });
+
+    // Get accent color from CSS variable
+    const getAccentColor = () => {
+        if (typeof window === 'undefined') return '#84cc16';
+        const accentHsl = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+        if (!accentHsl) return '#84cc16';
+
+        // Parse HSL values (format: "h s% l%")
+        const hslMatch = accentHsl.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
+        if (!hslMatch) return '#84cc16';
+
+        const h = parseInt(hslMatch[1]);
+        const s = parseInt(hslMatch[2]) / 100;
+        const l = parseInt(hslMatch[3]) / 100;
+
+        // Convert HSL to RGB
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        const m = l - c / 2;
+
+        let r = 0, g = 0, b = 0;
+        if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+        else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+        else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+        else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+        else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+        else if (h >= 300 && h < 360) { r = c; g = 0; b = x; }
+
+        // Convert to hex
+        const toHex = (n: number) => {
+            const hex = Math.round((n + m) * 255).toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+        };
+
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    };
+
+    const accentColor = getAccentColor();
 
     useEffect(() => {
         const calculateTimeRemaining = () => {
@@ -70,8 +109,8 @@ export default function TimelineCounter({
         return () => clearInterval(interval);
     }, [endDate, extendedEndDate, status]);
 
-    const TimeUnit = ({ value, label }: { value: number; label: string }) => (
-        <div className="flex flex-col items-center">
+    const TimeUnit = ({ value, label, className }: { value: number; label: string; className?: string }) => (
+        <div className={cn("flex flex-col items-center", className)}>
             <div className={cn(
                 "relative w-14 h-14 md:w-14 md:h-14 rounded-lg flex items-center justify-center",
                 "bg-gradient-to-br from-primary/20 to-primary/10",
@@ -98,7 +137,7 @@ export default function TimelineCounter({
 
     return (
         <div className='flex justify-center'>
-            <div className="space-y-2">
+            <div className="space-y-2 relative pb-20">
                 {/* <div className="text-center">
                     <h3 className={cn(
                         "text-lg md:text-xl font-bold mb-1",
@@ -115,7 +154,7 @@ export default function TimelineCounter({
                     </p>
                 </div> */}
 
-                <div className="flex justify-center gap-3 md:gap-4">
+                <div className="flex justify-center gap-3 md:gap-4 relative z-10 top-14 right-16">
                     <TimeUnit value={timeRemaining.days} label="Days" />
 
                     <div className={`flex items-center text-2xl md:text-3xl font-bold pb-6 ${timeRemaining.isExpired ? 'text-red-600' : 'text-primary/50'}`}>
@@ -138,7 +177,13 @@ export default function TimelineCounter({
                 </div>
 
                 {extendedEndDate && !timeRemaining.isExpired && (
-                    <div className="flex w-full border-t border-border/50 pt-2">
+                    <div className="absolute top-36 -left-16 -right-16 w-full h-48 hidden md:block">
+                        {/* Gradient Lines */}
+                        <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-primary to-transparent h-[2px] w-3/4 blur-sm" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-primary to-transparent h-px w-3/4" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-accent to-transparent h-[5px] w-1/4 blur-sm" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-accent to-transparent h-px w-1/4" />
+
                         <div className="flex-1 flex justify-center">
                             <p className="text-xs text-muted-foreground">
                                 ⚡ Extended until {new Date(extendedEndDate).toLocaleDateString(
@@ -149,6 +194,34 @@ export default function TimelineCounter({
                         </div>
                     </div>
                 )}
+
+                {/* Sparkles Effect - Absolutely Positioned at Bottom */}
+                <div className="absolute top-36 -left-16 -right-16 w-full h-48 hidden md:block">
+                    {/* Gradient Lines - Only show if no extended date */}
+                    {!extendedEndDate && !timeRemaining.isExpired && (
+                        <>
+                            <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-primary to-transparent h-[2px] w-3/4 blur-sm" />
+                            <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-primary to-transparent h-px w-3/4" />
+                            <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-accent to-transparent h-[5px] w-1/4 blur-sm" />
+                            <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-accent to-transparent h-px w-1/4" />
+                        </>
+                    )}
+
+                    {/* Core Sparkles Component */}
+                    {useMemo(() => (
+                        <SparklesCore
+                            id="timeline-sparkles"
+                            background="transparent"
+                            minSize={0.4}
+                            maxSize={1.5}
+                            particleDensity={1200}
+                            className="w-full h-1/2 z-10"
+                            particleColor={timeRemaining.isExpired ? "#ef4444" : accentColor}
+                        />
+                    ), [timeRemaining.isExpired, accentColor])}
+
+                    <div className="absolute inset-0  w-full h-full bg-background [mask-image:radial-gradient(180px_200px_at_top,transparent_20%,white)]"></div>
+                </div>
             </div>
         </div>
     );

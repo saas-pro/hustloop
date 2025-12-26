@@ -13,7 +13,7 @@ const PageLoader = () => {
           clearInterval(interval);
           return 100;
         }
-        const nextValue = prev + 40;
+        const nextValue = prev + 50;
         return Math.min(nextValue, 100);
       });
     }, 1150);
@@ -29,19 +29,19 @@ const PageLoader = () => {
   };
 
   return (
-    <div className="flex items-end justify-start min-h-screen bg-background py-10 px-12">
+    <div className="flex items-end justify-start min-h-screen bg-background py-4 px-8">
       <div className="text-center">
-        <div className="inline-flex items-center gap-2">
+        <div className="inline-flex items-center">
           <Counter
             value={roundedProgress}
-            fontSize={72}
+            fontSize={220}
             padding={8}
             places={getPlaces()}
-            gap={4}
+            gap={1}
             borderRadius={8}
-            horizontalPadding={12}
+            horizontalPadding={10}
             textColor="hsl(var(--accent))"
-            fontWeight="bold"
+            fontWeight="normal"
             gradientHeight={20}
             gradientFrom="hsl(var(--background))"
             gradientTo="transparent"
