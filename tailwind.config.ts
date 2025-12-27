@@ -17,7 +17,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Chillax', 'sans-serif'],
         headline: ['Quicksand', 'sans-serif'],
         epic: ['Epic Pro', 'sans-serif']
       },

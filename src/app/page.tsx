@@ -39,26 +39,22 @@ export default function Home() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsAnimating(true);
-      // Wait for animation to complete before hiding loader
       setTimeout(() => {
         setShowLoader(false);
-      }, 500); // Match the faster animation duration
-    }, 5500);
+      }, 250);
+    }, 3500);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <>
-      {/* Main Content */}
       <Suspense fallback={<PageLoader />}>
         <MainView />
       </Suspense>
-
-      {/* Loader Overlay with slide-up animation */}
       {showLoader && (
         <div
-          className={`fixed inset-0 z-50 bg-background transition-transform duration-500 ease-in-out ${isAnimating ? '-translate-y-full' : 'translate-y-0'
+          className={`fixed font-headline inset-0 z-50 bg-background transition-transform duration-500 ease-in-out ${isAnimating ? '-translate-y-full' : 'translate-y-0'
             }`}
         >
           <PageLoader />

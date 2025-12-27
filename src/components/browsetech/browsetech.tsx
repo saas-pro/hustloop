@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { Download, Loader2, Search } from "lucide-react";
+import { Loader2, Search, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { View } from "@/app/types";
 import { API_BASE_URL } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import TechTransfer from "../techtransfer_view";
-import { profile } from "console";
 import { Input } from "../ui/input";
-import Image from "next/image";
-import TechCard from "../tech-card/tech-card";
+import { PinContainer } from "../ui/3d-pin";
+import removeMarkdown from "remove-markdown";
 
 interface TechTransferViewProps {
     isOpen: boolean;
@@ -79,7 +79,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0 overflow-y-auto pb-3">
+            <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0 overflow-y-auto pb-3">
                 <DialogHeader className="p-6">
                     <DialogTitle className="text-3xl font-bold text-center font-headline">Technology Transfer</DialogTitle>
                     <DialogDescription className="text-center">
@@ -90,11 +90,36 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                         Browse technology profiles from various organizations seeking collaboration.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-6">
+                <div className="space-y-6 px-6">
                     {isLoading && (
-                        <div className="flex items-center justify-center py-10">
-                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                            <span className="text-gray-500">Loading profiles...</span>
+                        <div className="space-y-6">
+                            {/* Skeleton Search Bar */}
+                            <div className="relative max-w-md mx-auto">
+                                <Skeleton className="h-10 w-full rounded-md" />
+                            </div>
+
+                            {/* Skeleton Cards Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 pb-6 overflow-x-hidden gap-8">
+                                {[...Array(6)].map((_, index) => (
+                                    <div key={index} className="h-[22rem] w-full flex items-center justify-center">
+                                        <Card className="w-[20rem] h-[18rem] flex flex-col border-border/50">
+                                            <CardHeader className="pb-3">
+                                                <Skeleton className="h-6 w-3/4 mb-2" />
+                                                <Skeleton className="h-4 w-1/2" />
+                                            </CardHeader>
+                                            <CardContent className="flex-1 space-y-2">
+                                                <Skeleton className="h-4 w-full" />
+                                                <Skeleton className="h-4 w-full" />
+                                                <Skeleton className="h-4 w-3/4" />
+                                                <Skeleton className="h-4 w-5/6" />
+                                            </CardContent>
+                                            <CardFooter>
+                                                <Skeleton className="h-10 w-full rounded-md" />
+                                            </CardFooter>
+                                        </Card>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                     {!isLoading && profiles.length === 0 && (
@@ -102,43 +127,68 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                             <p>No Technologies are currently available.</p>
                         </div>
                     )}
-                    {!isLoading && profiles.length > 0 && (<div className="space-y-6">
-                        {/* Search Bar */}
-                        <div className="relative max-w-md mx-auto">
-                            <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
-                            <Input
-                                type="text"
-                                placeholder="Search by title, organization, or inventor..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-9 pr-4 py-2 rounded-md border border-gray-300 focus-visible:ring-2 focus-visible:ring-primary"
-                            />
-                        </div>
+                    {!isLoading && profiles.length > 0 && (
+                        <div>
+                            {/* Search Bar */}
+                            <div className="relative max-w-md mx-auto">
+                                <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                                <Input
+                                    type="text"
+                                    placeholder="Search by title, organization, or inventor..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-9 pr-4 py-2 rounded-md border border-gray-300 focus-visible:ring-2 focus-visible:ring-primary"
+                                />
+                            </div>
 
-                        {/* Profiles Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-12 mx-auto w-fit justify-items-center">
-                            {filteredProfiles.length > 0 ? (
-                                filteredProfiles.map((profile) => (
-                                    <div
-                                        key={profile.id}
-                                        onClick={() => setTechId(profile.id)}
-                                        className="relative cursor-pointer w-full"
-                                    >
-                                        <TechCard
-                                            title={profile.ipTitle}
-                                            author={profile.firstName + " " + profile.lastName}
-                                        />
+                            {/* Profiles Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 pb-6 overflow-x-hidden">
+                                {filteredProfiles.length > 0 ? (
+                                    filteredProfiles.map((profile) => (
+                                        <div key={profile.id} className="h-[22rem] w-full flex items-center justify-center">
+                                            <PinContainer
+                                                title={profile.firstName + " " + profile.lastName}
+                                                containerClassName="w-[20rem]"
+                                            >
+                                                <Card className="w-[20rem] h-[18rem] flex flex-col border-border/50 hover:border-accent/50 transition-colors bg-card shadow-xl" onClick={() => {
+                                                    setTechId(profile.id);
+                                                    onOpenChange(true);
+                                                }}>
+                                                    <CardHeader className="pb-3">
+                                                        <CardTitle className="text-xl font-bold line-clamp-2">
+                                                            {profile.ipTitle}
+                                                        </CardTitle>
+                                                        <CardDescription className="text-xs">
+                                                            by {profile.firstName + " " + profile.lastName}
+                                                        </CardDescription>
+                                                    </CardHeader>
+                                                    <CardContent className="flex-1 overflow-hidden">
+                                                        <p className="text-sm text-muted-foreground line-clamp-4">
+                                                            {profile.summary}
+                                                        </p>
+                                                    </CardContent>
+                                                    <CardFooter>
+                                                        <Button
+                                                            onClick={() => setTechId(profile.id)}
+                                                            className="w-full group"
+                                                            variant="default"
+                                                        >
+                                                            View Details
+                                                            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                                                        </Button>
+                                                    </CardFooter>
+                                                </Card>
+                                            </PinContainer>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="py-10 text-center text-gray-500 col-span-full">
+                                        No Technologies match your search.
                                     </div>
-                                ))
-                            ) : (
-                                <div className="py-10 text-center text-gray-500 col-span-full">
-                                    No profiles match your search.
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
-
-
-                    </div>)}
+                    )}
                 </div>
                 {
                     techId !== null && (

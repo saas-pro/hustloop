@@ -67,7 +67,7 @@ interface TokenStatus {
   error?: string;
 }
 
-const LOCAL_STORAGE_VERSION = '1.2'; 
+const LOCAL_STORAGE_VERSION = '1.2';
 
 function safeParse<T>(value: string | null, fallback: T, key?: string, validate: (obj: any) => boolean = () => true): T {
   try {
@@ -542,8 +542,6 @@ export default function MainView() {
         className={`relative overflow-y-auto z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
           }`}
         id="main-view"
-
-
       >
         <section className={`min-h-screen`} ref={scrollContainerRef}>
           <HomeView

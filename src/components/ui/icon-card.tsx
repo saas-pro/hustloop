@@ -24,7 +24,7 @@ const IconCard = React.forwardRef<HTMLDivElement, IconCardProps>(
           {icon}
         </div>
         {/* Title */}
-        <CardTitle className="text-xl font-semibold">{title}</CardTitle>
+        <h3 className="text-xl font-bold">{title}</h3>
 
         {/* Description */}
         <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>

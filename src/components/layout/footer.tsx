@@ -69,14 +69,11 @@ export default function Footer() {
             </div>
           </div>
         </div>
-
-        {/* Text Hover Effect Below Footer */}
-        <div className="w-full flex items-center justify-center">
-          <div className="w-full h-[138px] md:h-[400px] flex items-center justify-center">
-            <TextHoverEffect text="HUSTLOOP" duration={0.5} />
-          </div>
+      </div>
+      <div className="w-full flex items-center justify-center pb-0 mb-0 h-[80px] md:h-[160px] lg:h-[200px] overflow-hidden">
+        <div className="w-full relative h-[160px] md:h-[320px] lg:h-[400px] flex items-end justify-center">
+          <TextHoverEffect text="HUSTLOOP" duration={10} />
         </div>
-
       </div>
     </footer>
   );

@@ -96,7 +96,7 @@ export default function NewsletterForm() {
           >
             <div className="flex items-center gap-2">
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              <span>Let Me In</span>
+              <span className="text-accent-foreground font-medium">Let Me In</span>
             </div>
           </Button>
         </form>

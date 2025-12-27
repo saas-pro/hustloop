@@ -9,6 +9,11 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'Chillax';
+  src: url('/font/chillax.ttf') format('truetype');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,6 +38,7 @@ body {
   scrollbar-width: none !important;
   --icon-size: 112px;
   /* was 80px; now larger */
+
   --gap: 18px;
   --col-width: calc(var(--icon-size) + var(--gap));
 }
@@ -46,9 +52,6 @@ body {
     --icon-size: 90px;
   }
 }
-
-
-
 
 
 @layer base {
@@ -346,7 +349,6 @@ body {
     @apply bg-background text-foreground;
     font-family: 'Nunito', 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
-    height: 100vh;
     scrollbar-width: none;
   }
 
@@ -604,7 +606,6 @@ body {
 #main-view,
 .view-card-3,
 #main-view1 {
-  overflow: hidden;
   transition: border-radius 300ms ease, transform 750ms cubic-bezier(0.65, 0, 0.076, 1);
 }
 
@@ -657,7 +658,6 @@ body {
 
 /* Base rounding on hero to avoid abrupt square corners */
 #hero {
-
   overflow: hidden;
   transition: border-radius 300ms ease;
 }
@@ -705,10 +705,10 @@ body {
   }
 }
 
-.nav-open #main-view *,
+/* .nav-open #main-view *,
 .nav-open .view-card-3 * {
   pointer-events: none;
-}
+} */
 
 .nav-open .view-card {
   transform: scale(0.9) translate(0, 35%);

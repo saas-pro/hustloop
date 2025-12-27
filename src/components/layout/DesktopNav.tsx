@@ -4,6 +4,7 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import React, { use, useEffect, useRef, useState } from 'react'
 import { Button } from "@/components/ui/button";
+import { SilverBorderButton } from "@/components/ui/silver-border-button";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Palette, Check, Loader2, UserCircle, LogOut, Droplet, Leaf, Flame, Cloud, Mail, ShoppingCart } from 'lucide-react';
 import { View } from '@/app/types';
@@ -77,6 +78,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
     const router = useRouter();
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
+    const [isScrolling, setIsScrolling] = React.useState(false);
 
     const preloadRecaptcha = () => {
         const scriptId = 'recaptcha-preload-link';
@@ -126,6 +128,26 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
             }
         }
     };
+
+    // Scroll detection
+    useEffect(() => {
+        let scrollTimeout: NodeJS.Timeout;
+
+        const handleScroll = () => {
+            setIsScrolling(true);
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                setIsScrolling(false);
+            }, 150);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            clearTimeout(scrollTimeout);
+        };
+    }, []);
+
     const btnRef = useRef<HTMLButtonElement>(null);
     useEffect(() => {
         if (!btnRef.current) return;
@@ -211,16 +233,14 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                     <div className={cn("hidden md:flex relative pointer-events-auto", (heroVisible && !navOpen) ? 'items-center gap-4' : '')}>
                         {!isStaticPage && pathname !== "/terms-of-service" && pathname !== "/privacy-policy" && pathname !== "/aignite" && (
                             <>
-                                {!hideMarketplace && (<button
-                                    onClick={() => setActiveView('marketplace')}
-                                    className={cn(
-                                        'font-medium w-32 h-14 transition-all duration-300 backdrop-blur-md rounded-xl border border-solid',
-                                        'bg-white/10',
-                                        (heroVisible && !navOpen) ? 'text-white ' : 'hidden',
-                                    )}
-                                >
-                                    Marketplace
-                                </button>)}
+                                {!hideMarketplace && (heroVisible && !navOpen) && (
+                                    <SilverBorderButton
+                                        onClick={() => setActiveView('marketplace')}
+                                        className="font-medium w-32 h-14 transition-all duration-300 text-white"
+                                    >
+                                        Marketplace
+                                    </SilverBorderButton>
+                                )}
                                 {isLoading ? (
                                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                                 ) : isLoggedIn ? (
@@ -326,17 +346,14 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                             (heroVisible && !navOpen) && "hidden"
                         )}
                     >
-                        <button
+                        <SilverBorderButton
                             onClick={() => setActiveView("marketplace")}
                             className={cn(
-                                "relative font-medium w-full h-full transition-all duration-300",
-                                "backdrop-blur-md rounded-xl border border-solid",
-                                "bg-white/10",
-                                "text-foreground border-border"
+                                "relative font-medium w-full text-current h-full transition-all duration-300"
                             )}
                         >
                             Marketplace
-                        </button>
+                        </SilverBorderButton>
                     </div>)}
 
 

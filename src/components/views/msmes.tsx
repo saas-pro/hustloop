@@ -421,7 +421,6 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                 key={index}
                 challenge={challenge}
                 onViewDetails={handleViewDetails}
-
               />
             )}
           </div>
@@ -454,12 +453,6 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
         isLoggedIn={isLoggedIn}
         hasSubscription={hasSubscription}
         setActiveView={setActiveView}
-      />
-      <MSMECollaborationDetails
-        collaboration={selectedCollaboration}
-        onOpenChange={(isOpen) => !isOpen && setSelectedCollaboration(null)}
-        isLoggedIn={isLoggedIn}
-        hasSubscription={hasSubscription}
       />
     </>
   );

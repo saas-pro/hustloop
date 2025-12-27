@@ -136,8 +136,8 @@ export default function TimelineCounter({
     );
 
     return (
-        <div className='flex justify-center'>
-            <div className="space-y-2 relative pb-20">
+        <div className='flex justify-center items-center'>
+            <div className="space-y-2 relative pb-12 md:pb-20">
                 {/* <div className="text-center">
                     <h3 className={cn(
                         "text-lg md:text-xl font-bold mb-1",
@@ -154,22 +154,22 @@ export default function TimelineCounter({
                     </p>
                 </div> */}
 
-                <div className="flex justify-center gap-3 md:gap-4 relative z-10 top-14 right-16">
+                <div className="flex justify-center gap-2 md:gap-4 relative z-10">
                     <TimeUnit value={timeRemaining.days} label="Days" />
 
-                    <div className={`flex items-center text-2xl md:text-3xl font-bold pb-6 ${timeRemaining.isExpired ? 'text-red-600' : 'text-primary/50'}`}>
+                    <div className={`flex items-center text-2xl md:text-3xl font-bold ${timeRemaining.isExpired ? 'text-red-600' : 'text-primary/50'}`}>
                         :
                     </div>
 
                     <TimeUnit value={timeRemaining.hours} label="Hours" />
 
-                    <div className={`flex items-center text-2xl md:text-3xl font-bold pb-6 ${timeRemaining.isExpired ? 'text-red-600' : 'text-primary/50'}`}>
+                    <div className={`flex items-center text-2xl md:text-3xl font-bold ${timeRemaining.isExpired ? 'text-red-600' : 'text-primary/50'}`}>
                         :
                     </div>
 
                     <TimeUnit value={timeRemaining.minutes} label="Mins" />
 
-                    <div className={`flex items-center text-2xl md:text-3xl font-bold pb-6 ${timeRemaining.isExpired ? 'text-red-600' : 'text-primary/50'}`}>
+                    <div className={`flex items-center text-2xl md:text-3xl font-bold ${timeRemaining.isExpired ? 'text-red-600' : 'text-primary/50'}`}>
                         :
                     </div>
 
@@ -177,14 +177,14 @@ export default function TimelineCounter({
                 </div>
 
                 {extendedEndDate && !timeRemaining.isExpired && (
-                    <div className="absolute top-36 -left-16 -right-16 w-full h-48 hidden md:block">
+                    <div className="absolute top-20 md:top-24 w-full h-32 md:h-48">
                         {/* Gradient Lines */}
                         <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-primary to-transparent h-[2px] w-3/4 blur-sm" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-primary to-transparent h-px w-3/4" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-accent to-transparent h-[5px] w-1/4 blur-sm" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-accent to-transparent h-px w-1/4" />
 
-                        <div className="flex-1 flex justify-center">
+                        <div className="flex-1 flex justify-center mt-[2.5px]">
                             <p className="text-xs text-muted-foreground">
                                 ⚡ Extended until {new Date(extendedEndDate).toLocaleDateString(
                                     'en-US',
@@ -195,8 +195,8 @@ export default function TimelineCounter({
                     </div>
                 )}
 
-                {/* Sparkles Effect - Absolutely Positioned at Bottom */}
-                <div className="absolute top-36 -left-16 -right-16 w-full h-48 hidden md:block">
+                {/* Sparkles Effect - Visible on both mobile and desktop */}
+                <div className="absolute top-20 md:top-24 w-full h-32 md:h-48">
                     {/* Gradient Lines - Only show if no extended date */}
                     {!extendedEndDate && !timeRemaining.isExpired && (
                         <>
@@ -220,7 +220,7 @@ export default function TimelineCounter({
                         />
                     ), [timeRemaining.isExpired, accentColor])}
 
-                    <div className="absolute inset-0  w-full h-full bg-background [mask-image:radial-gradient(180px_200px_at_top,transparent_20%,white)]"></div>
+                    <div className="absolute inset-0 w-full h-full bg-background [mask-image:radial-gradient(180px_200px_at_top,transparent_0%,white)] -z-10"></div>
                 </div>
             </div>
         </div>

@@ -56,8 +56,8 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
             </TabsList>
 
             <TabsContent value="challenges">
-              <Card className='min-h-[26vh] flex  justify-between'>
-                <div>
+              <Card className='min-h-[30.5vh] flex flex-col md:flex-row justify-between'>
+                <div className="flex-1 flex flex-col">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Puzzle />
@@ -65,10 +65,20 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                     </CardTitle>
                   </CardHeader>
 
-                  <CardContent >
-                    <p className="text-muted-foreground mb-4">
-                      Apply your skills to solve real-world problems posted by companies and MSMEs. Get rewarded and gain valuable experience.
-                    </p>
+                  <CardContent className="flex-1 flex flex-col justify-between">
+                    <div className="flex-1 flex flex-row items-center gap-4">
+                      <p className="text-muted-foreground mb-4 flex-1">
+                        Apply your skills to solve real-world problems posted by companies and MSMEs. Get rewarded and gain valuable experience.
+                      </p>
+                      <div className="flex md:hidden justify-center items-center">
+                        <CircularText
+                          text="INCENTIVE*CHALLENGES*"
+                          spinDuration={10}
+                          onHover="pause"
+                          className='!h-36 !w-36 mb-4'
+                        />
+                      </div>
+                    </div>
 
                     <Button
                       onClick={(e) => {
@@ -77,78 +87,126 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                         localStorage.setItem("fromMarketplace", "true");
                         setInternalView("msmes");
                       }}
+                      className='w-fit'
                     >
                       Browse Challenges <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardContent>
                 </div>
 
-                <div className="flex justify-center items-center m-6">
+                <div className="hidden md:flex justify-center items-center m-6">
                   <CircularText
                     text="INCENTIVE*CHALLENGES*"
                     spinDuration={10}
-                    className='!h-36 !w-36 '
+                    onHover="pause"
+                    className='!h-36 !w-36'
                   />
                 </div>
               </Card>
             </TabsContent>
 
             <TabsContent value="tech">
-              <Card className='min-h-[26vh] flex flex-col justify-center'>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Microscope />
-                    Technology Transfer
-                  </CardTitle>
-                </CardHeader>
+              <Card className='min-h-[30.5vh] flex flex-col md:flex-row justify-between'>
+                <div className="flex-1 flex flex-col">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Microscope />
+                      Technology Transfer
+                    </CardTitle>
+                  </CardHeader>
 
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">
-                    Discover and license cutting-edge technologies from universities and research institutions.
-                  </p>
+                  <CardContent className="flex-1 flex flex-col justify-between">
+                    <div className="flex-1 flex flex-row md:flex-row items-center gap-4">
+                      <p className="text-muted-foreground mb-4 flex-1">
+                        Discover and license cutting-edge technologies from universities and research institutions. Access innovative solutions and intellectual property ready for Monitize.
+                      </p>
+                      <div className="flex md:hidden justify-center items-center">
+                        <CircularText
+                          text="TECHNOLOGY*TRANSFER*"
+                          spinDuration={10}
+                          onHover="pause"
+                          className='!h-36 !w-36 mb-4'
+                        />
+                      </div>
+                    </div>
 
-                  <Button onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setInternalView("browseTech");
-                  }}>
-                    Browse Technologies <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
+                    <Button onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setInternalView("browseTech");
+                    }}
+                      className='w-fit'>
+                      Browse Technologies <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </div>
+
+                <div className="hidden md:flex justify-center items-center m-6">
+                  <CircularText
+                    text="TECHNOLOGY*TRANSFER*"
+                    spinDuration={10}
+                    onHover="pause"
+                    className='!h-36 !w-36'
+                  />
+                </div>
               </Card>
+
             </TabsContent>
 
             <TabsContent value="incubators">
-              <Card className='min-h-[26vh] flex flex-col justify-center'>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Lightbulb />
-                    Startup Incubation
-                  </CardTitle>
-                </CardHeader>
+              <Card className='min-h-[30.5vh] flex flex-col md:flex-row justify-between'>
+                <div className="flex-1 flex flex-col">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Lightbulb />
+                      Startup Incubation
+                    </CardTitle>
+                  </CardHeader>
 
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">
-                    Discover the ideal incubator that will provide the guidance, support, and resources needed to nurture your idea into a successful reality
-                  </p>
+                  <CardContent className="flex-1 flex flex-col justify-between">
+                    <div className="flex-1 flex flex-row justify-center items-center gap-4">
+                      <p className="text-muted-foreground mb-4 flex-1">
+                        Discover the ideal incubator that will provide the guidance, support, and resources needed to nurture your idea into a successful reality and accelerate your startup journey.
+                      </p>
+                      <div className="flex md:hidden justify-center items-center">
+                        <CircularText
+                          text="STARTUP*DREAM*"
+                          spinDuration={10}
+                          onHover="pause"
+                          className='!h-36 !w-36 mb-4'
+                        />
+                      </div>
+                    </div>
 
-                  <Button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      localStorage.setItem("fromMarketplace", "true");
-                      setInternalView("incubators");
-                    }}
-                  >
-                    Find an Incubator <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
+                    <Button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        localStorage.setItem("fromMarketplace", "true");
+                        setInternalView("incubators");
+                      }}
+                      className='w-fit'>
+                      Find an Incubator <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </div>
+                <div className="hidden md:flex justify-center items-center m-6">
+                  <CircularText
+                    text="STARTUP*DREAM*"
+                    spinDuration={10}
+                    onHover="pause"
+                    className='!h-36 !w-36'
+                  />
+                </div>
+
               </Card>
+
+
             </TabsContent>
 
           </Tabs>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {internalView === 'msmes' && (
         <MsmesView
@@ -158,25 +216,30 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
           hasSubscription={hasSubscription}
           setActiveView={setActiveView}
         />
-      )}
+      )
+      }
 
-      {internalView === 'browseTech' && (
-        <TechTransferView
-          isOpen={true}
-          onOpenChange={handleInternalViewClose('browseTech')}
-          setActiveView={setActiveView}
-        />
-      )}
+      {
+        internalView === 'browseTech' && (
+          <TechTransferView
+            isOpen={true}
+            onOpenChange={handleInternalViewClose('browseTech')}
+            setActiveView={setActiveView}
+          />
+        )
+      }
 
-      {internalView === 'incubators' && (
-        <IncubatorsView
-          isOpen={true}
-          onOpenChange={handleInternalViewClose('incubators')}
-          isLoggedIn={isLoggedIn}
-          hasSubscription={hasSubscription}
-          setActiveView={setActiveView}
-        />
-      )}
+      {
+        internalView === 'incubators' && (
+          <IncubatorsView
+            isOpen={true}
+            onOpenChange={handleInternalViewClose('incubators')}
+            isLoggedIn={isLoggedIn}
+            hasSubscription={hasSubscription}
+            setActiveView={setActiveView}
+          />
+        )
+      }
     </>
   );
 }

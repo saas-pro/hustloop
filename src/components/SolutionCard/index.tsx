@@ -2,7 +2,7 @@ import { ComponentType, SVGProps, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import styles from "./Solutionstyle.module.css"
-import { motion, useTransform, useScroll } from "framer-motion";
+import { motion, useTransform, useScroll } from "motion/react";
 
 
 export type LucideIcon = ComponentType<SVGProps<SVGSVGElement>>;
@@ -20,25 +20,40 @@ type Solution = {
 
 type SolutionCardsProps = {
   solutionSteps: Record<string, Solution>;
-
+  scrollContainer?: React.RefObject<HTMLDivElement>;
 };
 
-const SolutionCard = ({ solutionSteps }: SolutionCardsProps) => {
+const SolutionCard = ({ solutionSteps, scrollContainer }: SolutionCardsProps) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
+    container: scrollContainer,
     offset: ['start start', 'end end'] // Track the entire duration of the scroll
   });
 
-  const headingY = useTransform(scrollYProgress, [0, 0.5], [0, -200]); // Adjust the end value to control how far it moves up
-  const headingOpacity = useTransform(scrollYProgress, [0.4, 0.5], [1, 0]); // Fade it out
+  const headingY = useTransform(scrollYProgress, [0, 0.3], [100, 0]); // Start from below (100px) and move to position (0)
+  const headingOpacity = useTransform(scrollYProgress, [0, 0.2], [0, 1]); // Fade in
+
+  // Pre-calculate all card scales - create individual transforms for each card
+  const totalCards = Object.entries(solutionSteps).length;
+  const cardScales: any[] = [];
+
+  for (let i = 0; i < totalCards; i++) {
+    const targetScale = 1 - (totalCards - i - 1) * 0.05;
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    cardScales.push(useTransform(
+      scrollYProgress,
+      [i / totalCards, (i + 1) / totalCards],
+      [1, targetScale]
+    ));
+  }
 
   return (
     <section className="relative py-16 md:py-20 bg-background" ref={containerRef}>
       <motion.h3
         className="text-4xl font-bold text-current sticky top-8 text-center"
-        style={{ y: headingY, opacity: headingOpacity }}
+        style={{ y: headingY, opacity: headingOpacity, willChange: "transform, opacity" }}
       >
         Choose your{' '}
         <span className="relative inline-block">
@@ -73,7 +88,11 @@ const SolutionCard = ({ solutionSteps }: SolutionCardsProps) => {
             if (isLastCard) {
               // 🔥 Special Flip Card for last solution
               return (
-                <motion.div key={key} className={`${styles.cardContainer}`}>
+                <motion.div
+                  key={key}
+                  className={`${styles.cardContainer}`}
+                  style={{ scale: cardScales[index], willChange: "transform" }}
+                >
                   <Card
                     className={`${styles.card} bg-background flex-grow-0`}
                     style={{ top: `calc(5vh + ${index * 24}px)` }}
@@ -130,7 +149,11 @@ const SolutionCard = ({ solutionSteps }: SolutionCardsProps) => {
               );
             }
             return (
-              <motion.div key={key} className={`${styles.cardContainer}`}>
+              <motion.div
+                key={key}
+                className={`${styles.cardContainer}`}
+                style={{ scale: cardScales[index], willChange: "transform" }}
+              >
                 <Card className={`${styles.card} bg-background`} style={{
                   top: `calc(5vh + ${index * 24}px)`
                 }}
@@ -248,7 +271,7 @@ const SolutionCard = ({ solutionSteps }: SolutionCardsProps) => {
             );
           })}
         </div>
-        
+
       </div>
     </section>
   );
