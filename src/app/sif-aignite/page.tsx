@@ -52,8 +52,35 @@ type RegistrationSchema = z.infer<typeof registrationSchema>;
 function RegistrationForm() {
 
     const { toast } = useToast();
+    const router = useRouter();
 
     const eventName = "SIF's-Aignite";
+    const [isEventEnabled, setIsEventEnabled] = useState<boolean | null>(null);
+    const [isCheckingEvent, setIsCheckingEvent] = useState(true);
+
+    // Check event availability on component mount
+    useEffect(() => {
+        const checkEventAvailability = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/event-config/aignite`);
+                const data = await response.json();
+
+                if (!data.is_enabled) {
+                    router.push('/404');
+                    return;
+                }
+
+                setIsEventEnabled(true);
+            } catch (error) {
+                console.error('Error checking event availability:', error);
+                router.push('/404');
+            } finally {
+                setIsCheckingEvent(false);
+            }
+        };
+
+        checkEventAvailability();
+    }, [router]);
 
     const form = useForm<RegistrationSchema>({
         resolver: zodResolver(registrationSchema),
@@ -124,7 +151,21 @@ function RegistrationForm() {
     const handleClosePaymentModal = () => {
         setIsPaymentModalOpen(false);
     };
-    const router = useRouter()
+
+    // Show loading while checking event availability
+    if (isCheckingEvent) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <Loader2 className="h-12 w-12 animate-spin text-accent" />
+            </div>
+        );
+    }
+
+    // Don't render if event is not enabled
+    if (!isEventEnabled) {
+        return null;
+    }
+
     return (
         <div className="text-white">
             <div className="flex items-center justify-between px-4">

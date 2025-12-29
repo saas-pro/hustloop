@@ -124,10 +124,6 @@ export default function TimelineCounter({
                 )}>
                     {String(value).padStart(2, '0')}
                 </span>
-
-                {!timeRemaining.isExpired && (
-                    <div className="absolute inset-0 rounded-lg bg-primary/10 animate-pulse" />
-                )}
             </div>
             <span className="text-xs md:text-sm text-muted-foreground mt-2 font-medium uppercase tracking-wide">
                 {label}

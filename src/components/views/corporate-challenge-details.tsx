@@ -450,7 +450,7 @@ export default function CorporateChallengeDetails({
                 <DialogDescription className="line-clamp-3">
                   {challenge.company_description}
                 </DialogDescription>
-                <p className="text-sm text-muted-foreground">A challenge by {challenge.company_name} {challenge.affiliated_by && <span className="text-muted-foreground font-bold">(Affiliated By {challenge.affiliated_by})</span>}</p>
+                <p className="text-sm text-muted-foreground">A challenge by {challenge.company_name} {challenge.affiliated_by && <span className="text-muted-foreground font-bold font-headline">(Affiliated By {challenge.affiliated_by})</span>}</p>
               </div>
             </div>
           </div>
@@ -534,7 +534,7 @@ export default function CorporateChallengeDetails({
 
                     <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
                       {/* Left side - Title section */}
-                      <div className="flex gap-4 items-start flex-1 max-w-[70%] md:max-w-[65%] pr-4">
+                      <div className="flex gap-4 items-start flex-1 max-w-[100%] md:max-w-[65%] pr-4">
                         <div className="relative flex-shrink-0">
                           <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full" />
                           <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center shadow-lg">
@@ -544,7 +544,6 @@ export default function CorporateChallengeDetails({
 
                         <div className="text-left flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="h-1 w-12 bg-gradient-to-r from-accent to-transparent rounded-full" />
                             <h2 className="text-sm font-bold text-accent uppercase tracking-wider">
                               Challenge Title
                             </h2>
@@ -661,9 +660,9 @@ export default function CorporateChallengeDetails({
                         <CardContent className="pt-0">
                           <a
                             href="mailto:boopathi.s@hustloop.com"
-                            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
+                            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group break-all"
                           >
-                            <Mail className="h-4 w-4" />
+                            <Mail className="h-4 w-4 flex-shrink-0" />
                             <span className="group-hover:underline">boopathi.s[@]hustloop.com</span>
                           </a>
                         </CardContent>

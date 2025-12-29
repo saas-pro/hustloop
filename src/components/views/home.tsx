@@ -86,6 +86,7 @@ interface DynamicHeroSection {
   setActiveView: (view: View) => void;
   isLoggedIn: boolean;
   navOpen?: boolean;
+  scrollContainerRef: React.RefObject<HTMLDivElement>;
 }
 
 
@@ -236,21 +237,25 @@ const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
 };
 
 
-const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroSection) => {
+const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContainerRef }: DynamicHeroSection) => {
   const [currentStateIndex, setCurrentStateIndex] = useState(0);
   const [themeKey, setThemeKey] = useState(0);
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
   const heroRef = useRef<HTMLDivElement>(null);
 
-  // Track scroll progress from the top of the page
-  const { scrollYProgress } = useScroll();
+  // Track scroll progress from the scroll container
+  const { scrollYProgress } = useScroll({ container: scrollContainerRef });
 
   const pathLengthFirst = useTransform(scrollYProgress, [0, 0.4], [0.2, 1.2]);
   const pathLengthSecond = useTransform(scrollYProgress, [0, 0.4], [0.15, 1.2]);
   const pathLengthThird = useTransform(scrollYProgress, [0, 0.4], [0.1, 1.2]);
   const pathLengthFourth = useTransform(scrollYProgress, [0, 0.4], [0.05, 1.2]);
   const pathLengthFifth = useTransform(scrollYProgress, [0, 0.4], [0, 1.2]);
+
+  const videoOpacityTransform = useTransform(scrollYProgress, [0, 0.5], [0.98, 0]);
+  const videoDisplayTransform = useTransform(scrollYProgress, (value) => (value > 0.1 ? 'none' : navOpen ? 'none' : 'block'));
+  const heroOverlayOpacityTransform = useTransform(scrollYProgress, [0, 0.15], [0.42, 0]);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -411,23 +416,30 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
       className={`hidden-scroll h-screen relative bg-background w-full`}
       id="hero"
     >
+      <motion.div
+        className="hidden xl:block absolute inset-0 bg-black z-10 pointer-events-none"
+        style={{
+          opacity: heroOverlayOpacityTransform
+        }}
+      />
 
-      <div className="xl:hidden absolute top-0 left-0 w-full h-full z-0 bg-accent opacity-0 transition-opacity duration-1000 animate-in fade-in" />
+
+      <div className="hidden xl:block absolute top-0 left-0 w-full h-full z-0 bg-accent opacity-0 transition-opacity duration-1000 animate-in fade-in" />
 
       {/* Lightweight Prism for mobile, full effect on tablet/desktop */}
-      <div className="md:hidden absolute top-0 left-0 w-full h-full z-[1]">
+      <div className="xl:hidden absolute top-0 left-0 w-full h-full z-[1]">
         <Prism
           animationType="rotate"
-          timeScale={0.25}
+          timeScale={0.5}
           bloom={0.6}
           suspendWhenOffscreen
-          height={2}
-          baseWidth={3}
-          scale={2}
+          height={3.5}
+          baseWidth={5.5}
+          scale={4}
           hueShift={0}
           colorFrequency={1}
           noise={0}
-          glow={0.5}
+          glow={1}
         />
 
       </div>
@@ -447,20 +459,30 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
 
 
       {/* Commented out video - using Google Gemini Effect instead */}
-      <video
-        autoPlay
-        loop
-        muted
-        preload="auto"
-        playsInline
-        className="hidden absolute top-0 left-0 w-full h-full object-cover z-0 xl:block"
-      >
-        <source src="/video/HeaderVideo.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-
+      <div className='hidden xl:block'>
+        <motion.video
+          autoPlay
+          loop
+          muted
+          preload="auto"
+          playsInline
+          className="hidden absolute top-0 left-0 w-full h-full object-cover z-0 xl:block"
+          style={{
+            opacity: navOpen ? 0 : videoOpacityTransform,
+            display: videoDisplayTransform,
+          }}
+        >
+          <source src="/video/HeaderVideo.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </motion.video>
+      </div>
       {/* Google Gemini Effect for desktop */}
-      {/* <div className="block absolute top-0 left-0 w-full h-full z-0">
+      {/* <motion.div
+        className="block absolute top-0 left-0 w-full h-full z-0"
+        style={{
+          opacity: navOpen ? 0 : useTransform(scrollYProgress, [0, 0.15], [1, 0])
+        }}
+      >
         <GoogleGeminiEffect
           pathLengths={[
             pathLengthFirst,
@@ -471,13 +493,18 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
           ]}
           className="absolute top-0 left-0 w-full h-full"
         />
-      </div> */}
+      </motion.div> */}
 
-      <div className="absolute inset-0 bg-black/40 z-10 hidden md:block"></div>
+      {/* <motion.div
+        className="absolute inset-0 bg-black z-50 hidden md:block"
+        style={{
+          opacity: navOpen ? 1 : useTransform(scrollYProgress, [0, 0.15], [0, 1])
+        }}
+      ></motion.div> */}
 
       <BrandLogo />
 
-      <section className="relative text-center w-full xl:text-left z-20 h-screen flex flex-col xl:flex-row items-center justify-center">
+      <section className="relative text-center text-current w-full xl:text-left z-20 h-screen flex flex-col xl:flex-row items-center justify-center">
         <div className="xl:flex-1 flex-0 xl:text-left relative xl:left-16 xl:top-4">
           <h1 className="text-5xl lg:text-[60px] xl:text-[80px] font-bold font-headline leading-tight text-current xl:text-white">
             {"Empowering Tomorrow's"}
@@ -567,7 +594,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen }: DynamicHeroS
           </svg>
         </div>
       </div>
-    </section >
+    </section>
   );
 };
 
@@ -773,7 +800,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
     >
       {/* Hero Section */}
       <section id="hero-section" className={`min-h-screen sticky top-0 overflow-hidden ${navOpen ? 'relative' : 'sticky top-0'} `}>
-        <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} />
+        <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} scrollContainerRef={scrollContainerRef} />
       </section>
 
       {/* Sentinel goes here, after hero */}
@@ -791,7 +818,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
               container: scrollContainerRef,
               offset: ["start end", "end start"]
             }).scrollYProgress,
-            [0, 0.1, 1],
+            [0, 0.2, 1],
             [0.8, 1, 1]
           ),
           transformOrigin: "top center"

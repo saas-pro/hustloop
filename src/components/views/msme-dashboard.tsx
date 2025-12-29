@@ -816,8 +816,19 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
     };
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showTermsDialog, setShowTermsDialog] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [pendingCollaborationData, setPendingCollaborationData] = useState<collaborationFormValues | null>(null);
 
-    async function onCollaborationSubmit(data: collaborationFormValues) {
+    // Handler to show terms dialog
+    const handleCollaborationFormSubmit = async (data: collaborationFormValues) => {
+        setPendingCollaborationData(data);
+        setTermsAccepted(false);
+        setShowTermsDialog(true);
+    };
+
+    // Actual submission after terms acceptance
+    async function onCollaborationSubmit(data: collaborationFormValues): Promise<boolean> {
         const token = localStorage.getItem("token");
         if (!token) {
             toast({
@@ -825,7 +836,7 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                 title: "Authentication Error",
                 description: "Please log in again.",
             });
-            return;
+            return false;
         }
 
         // Reward logic
@@ -845,13 +856,19 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
         formData.append("contact_name", data.contact.name);
         formData.append("contact_role", data.contact.role);
 
-        formData.append("startDate", data.startDate?.toISOString() || "");
-        formData.append("endDate", data.endDate?.toISOString() || "");
+        const formatDateForBackend = (date: Date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        formData.append("startDate", data.startDate ? formatDateForBackend(data.startDate) : "");
+        formData.append("endDate", data.endDate ? formatDateForBackend(data.endDate) : "");
 
         formData.append("sector", data.technologyArea?.sector || "");
         formData.append("technologyArea", data.technologyArea?.techArea || "");
 
-        // Reward
         if (rewardData.reward_amount !== undefined) {
             formData.append("reward_amount", String(rewardData.reward_amount));
         }
@@ -917,6 +934,7 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                 setIsEditingCollaboration(false);
                 setCurrentEditingCollaborationId(null);
                 setSelectedCollaborationToEdit(null);
+                return true; // Success
             } else {
                 const errorData = await response.json();
                 toast({
@@ -924,6 +942,7 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                     title: `Failed to ${isEditingCollaboration ? "update" : "save"} Challenge`,
                     description: errorData.error || "An unknown error occurred.",
                 });
+                return false; // Failed
             }
         } catch (error) {
             toast({
@@ -935,6 +954,7 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
         } finally {
             setIsSubmitting(false);
         }
+        return false; // Failed if we reach here
     }
 
 
@@ -1449,7 +1469,7 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                                         }
                                     </TabsContent >
                                     <TabsContent value="engagement" className="mt-4 space-y-4">
-                                        {getUsersCollaborationData?.length > 0 ? getUsersCollaborationData.map((sub) => (
+                                        {getUsersCollaborationData?.length > 0 ? getUsersCollaborationData.slice().reverse().map((sub) => (
                                             <Card
                                                 key={sub.id}
                                                 onClick={() => setSelectedCollabId(sub.id)}
@@ -1832,7 +1852,7 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                                                                             placeholder='Type "confirm" to proceed'
                                                                             value={confirmText}
                                                                             onChange={(e) => setConfirmText(e.target.value)}
-                                                                            
+
                                                                         />
                                                                     </div>
 
@@ -1874,7 +1894,7 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                                             </CardHeader>
                                             <CardContent>
                                                 <Form {...collaborationForm}>
-                                                    <form onSubmit={collaborationForm.handleSubmit(onCollaborationSubmit)} className="space-y-4 w-full">
+                                                    <form onSubmit={collaborationForm.handleSubmit(handleCollaborationFormSubmit)} className="space-y-4 w-full">
 
                                                         <FormField
                                                             control={collaborationForm.control}
@@ -2183,7 +2203,11 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                                                                                     }}
 
 
-                                                                                    disabled={(date) => date < new Date()}
+                                                                                    disabled={(date) => {
+                                                                                        const today = new Date();
+                                                                                        today.setHours(0, 0, 0, 0);
+                                                                                        return date < today;
+                                                                                    }}
                                                                                 />
                                                                                 <div className="flex justify-end gap-2 mt-3">
                                                                                     <Button
@@ -2211,7 +2235,6 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                                                                         <FormMessage />
                                                                     </FormItem>
                                                                 </div>
-
                                                             )}
                                                         />
                                                         <FormField
@@ -2366,7 +2389,7 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                                                                             className="w-full sm:w-auto"
                                                                         >
                                                                             {collaborationForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                                            {isEditingCollaboration ? "Update Challenge" : "Save Challenge"}
+                                                                            {isEditingCollaboration ? "Update Challenge" : "Proceed to Next"}
                                                                         </Button>
                                                                     </div>
                                                                 </TooltipTrigger>
@@ -2381,6 +2404,136 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                                                 </Form>
                                             </CardContent>
                                         </Card>
+
+                                        {/* Terms and Conditions Dialog */}
+                                        <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
+                                            <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                                                <DialogHeader>
+                                                    <DialogTitle>Terms and Conditions</DialogTitle>
+                                                    <DialogDescription>
+                                                        Please read and accept the terms and conditions before submitting your challenge.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+
+                                                <ScrollArea className="flex-1 pr-4 max-h-[50vh] overflow-y-scroll">
+                                                    <div className="space-y-4 text-sm">
+                                                        <section>
+                                                            <h3 className="font-semibold text-base mb-2">1. Challenge Submission</h3>
+                                                            <p className="text-muted-foreground">
+                                                                By submitting a challenge, you confirm that you have the authority to post this challenge on behalf of your organization. All information provided must be accurate and complete.
+                                                            </p>
+                                                        </section>
+
+                                                        <section>
+                                                            <h3 className="font-semibold text-base mb-2">2. Intellectual Property</h3>
+                                                            <p className="text-muted-foreground">
+                                                                You retain all intellectual property rights to your challenge description and materials. However, by posting, you grant us a license to display and distribute your challenge to potential solvers on our platform.
+                                                            </p>
+                                                        </section>
+
+                                                        <section>
+                                                            <h3 className="font-semibold text-base mb-2">3. Reward Commitment</h3>
+                                                            <p className="text-muted-foreground">
+                                                                The reward amount specified is a binding commitment. You agree to pay the stated reward to the winner(s) upon successful completion of the challenge as per the criteria outlined.
+                                                            </p>
+                                                        </section>
+
+                                                        <section>
+                                                            <h3 className="font-semibold text-base mb-2">4. Solution Evaluation</h3>
+                                                            <p className="text-muted-foreground">
+                                                                You commit to evaluating all submitted solutions fairly and in a timely manner. Feedback should be provided to participants within a reasonable timeframe.
+                                                            </p>
+                                                        </section>
+
+                                                        <section>
+                                                            <h3 className="font-semibold text-base mb-2">5. Data Privacy</h3>
+                                                            <p className="text-muted-foreground">
+                                                                Any personal or sensitive information shared by solution providers must be handled in accordance with applicable data protection laws. You agree not to misuse participant information.
+                                                            </p>
+                                                        </section>
+
+                                                        <section>
+                                                            <h3 className="font-semibold text-base mb-2">6. Platform Fees</h3>
+                                                            <p className="text-muted-foreground">
+                                                                Platform service fees may apply as per our pricing structure. You will be notified of any applicable fees before your challenge goes live.
+                                                            </p>
+                                                        </section>
+
+                                                        <section>
+                                                            <h3 className="font-semibold text-base mb-2">7. Challenge Modifications</h3>
+                                                            <p className="text-muted-foreground">
+                                                                Once a challenge is published and has received submissions, significant modifications to the challenge requirements or rewards may not be permitted without platform approval.
+                                                            </p>
+                                                        </section>
+
+                                                        <section>
+                                                            <h3 className="font-semibold text-base mb-2">8. Cancellation Policy</h3>
+                                                            <p className="text-muted-foreground">
+                                                                Challenges may be cancelled before the submission deadline with valid reasons. However, if solutions have already been submitted, you may be required to provide compensation or feedback.
+                                                            </p>
+                                                        </section>
+
+                                                        <section>
+                                                            <h3 className="font-semibold text-base mb-2">9. Liability</h3>
+                                                            <p className="text-muted-foreground">
+                                                                The platform acts as an intermediary. We are not responsible for disputes between challenge posters and solution providers. You agree to resolve any disputes directly with participants.
+                                                            </p>
+                                                        </section>
+
+                                                        <section>
+                                                            <h3 className="font-semibold text-base mb-2">10. Compliance</h3>
+                                                            <p className="text-muted-foreground">
+                                                                Your challenge must comply with all applicable laws and regulations. Challenges involving illegal activities, discrimination, or harmful content will be removed immediately.
+                                                            </p>
+                                                        </section>
+                                                    </div>
+                                                </ScrollArea>
+
+                                                <div className="flex items-center space-x-2 pt-4 border-t">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="terms-accept"
+                                                        checked={termsAccepted}
+                                                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                                                        className="h-4 w-4 rounded border-gray-300"
+                                                    />
+                                                    <label htmlFor="terms-accept" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                        I have read and agree to the terms and conditions
+                                                    </label>
+                                                </div>
+
+                                                <DialogFooter className="gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        onClick={() => {
+                                                            setShowTermsDialog(false);
+                                                            setTermsAccepted(false);
+                                                            setPendingCollaborationData(null);
+                                                        }}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        disabled={!termsAccepted || isSubmitting}
+                                                        onClick={async () => {
+                                                            if (pendingCollaborationData && termsAccepted) {
+                                                                const success = await onCollaborationSubmit(pendingCollaborationData);
+                                                                if (success) {
+                                                                    setShowTermsDialog(false);
+                                                                    setPendingCollaborationData(null);
+                                                                    setTermsAccepted(false);
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                        Accept & Submit
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
                                     </TabsContent>
                                     <TabsContent value="settings" className="mt-4">
 

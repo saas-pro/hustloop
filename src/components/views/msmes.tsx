@@ -362,7 +362,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
           <TabsTrigger value="Governmentchallenges">Government Challenges</TabsTrigger>
         </TabsList>
         <TabsContent value="CorporateChallenges" className="mt-4 flex-1 overflow-x-hidden pr-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
             {corporateChallenges?.length === 0 ? (
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
@@ -383,7 +383,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
           </div>
         </TabsContent>
         <TabsContent value="MSMECollaboration" className="mt-4 flex-1 overflow-x-hidden pr-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
             {msmeCollaborations?.length === 0 ? (
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
@@ -405,7 +405,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
           </div>
         </TabsContent>
         <TabsContent value="Governmentchallenges" className="mt-4 flex-1 overflow-x-hidden pr-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
             {Governmentchallenges?.length === 0 ? (
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />

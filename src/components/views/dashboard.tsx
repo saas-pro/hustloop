@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
 import Image from "next/image";
@@ -35,12 +36,10 @@ import { Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { CommentSection } from "../comment-section";
-import { DeleteConfirmationDialog } from '../ui/DeleteConfirmationDialog'
-import MarkdownEditor from "../ui/markdown";
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from "remark-gfm";
+import { DeleteConfirmationDialog } from '../ui/DeleteConfirmationDialog';
 import { useSearchParams } from "next/navigation";
 import SubmissionDetailsModal from "./submission-details-modal";
+import AnimatedList from "@/components/AnimatedList";
 
 const settingsFormSchema = z.object({
     name: z
@@ -259,12 +258,19 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     // Dashboard stats state
     const [dashboardStats, setDashboardStats] = useState<any>(null);
     const [isLoadingStats, setIsLoadingStats] = useState(false);
+    const [newsletterSubscribers, setNewsletterSubscribers] = useState(0);
 
     // Active pie chart segment indices for legend hover
     const [activeTechTransferIndex, setActiveTechTransferIndex] = useState<number | undefined>(undefined);
     const [activeCollaborationIndex, setActiveCollaborationIndex] = useState<number | undefined>(undefined);
     const [activeSolutionIndex, setActiveSolutionIndex] = useState<number | undefined>(undefined);
     const [activeUserIndex, setActiveUserIndex] = useState<number | undefined>(undefined);
+    const [activeEventIndex, setActiveEventIndex] = useState<number | undefined>(undefined);
+
+    // Event config state
+    const [eventConfig, setEventConfig] = useState<{ event_name: string; is_enabled: boolean } | null>(null);
+    const [isTogglingEvent, setIsTogglingEvent] = useState(false);
+    const [totalRegistrations, setTotalRegistrations] = useState(0);
 
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
     const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
@@ -341,7 +347,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingFormUsers, setIsLoadingFormUsers] = useState(false)
     const [perPage] = useState(10);
-    const [totalRegistrations, setTotalRegistrations] = useState(0);
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [statusUpdates1, setStatusUpdates1] = useState<Record<string, SolutionStatus>>({});
     const [isUpdating1, setIsUpdating1] = useState<Record<string, boolean>>({});
@@ -401,7 +406,13 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             }
 
             const data = await response.json();
+
             setDashboardStats(data);
+
+            // Extract newsletter subscribers count
+            if (data.success && data.newsletter) {
+                setNewsletterSubscribers(data.newsletter.total || 0);
+            }
 
         } catch (error) {
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could not fetch dashboard statistics.' });
@@ -409,6 +420,54 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setIsLoadingStats(false);
         }
     }, [toast]);
+
+    const fetchEventConfig = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/event-config/aignite`);
+            if (response.ok) {
+                const data = await response.json();
+                setEventConfig(data);
+            }
+        } catch (error) {
+            console.error('Error fetching event config:', error);
+        }
+    }, []);
+
+    const handleToggleEvent = async () => {
+        setIsTogglingEvent(true);
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error' });
+            setIsTogglingEvent(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/event-config/aignite/toggle`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setEventConfig(data.event_config);
+                toast({
+                    title: 'Success',
+                    description: data.message
+                });
+                fetchDashboardStats();
+            } else {
+                toast({ variant: 'destructive', title: 'Failed to toggle event' });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error' });
+        } finally {
+            setIsTogglingEvent(false);
+        }
+    };
 
 
 
@@ -737,34 +796,34 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     const [connexRegistrations, setConnexRegistrations] = useState<connexRegistrations[]>([]);
 
-    const fetchConnex = useCallback(async (page: number) => {
-        setIsLoadingFormUsers(true);
-        const token = localStorage.getItem('token');
-        try {
-            const res = await fetch(`${API_BASE_URL}/api/get-connex?page=${page}&per_page=${perPage}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json()
+    // const fetchConnex = useCallback(async (page: number) => {
+    //     setIsLoadingFormUsers(true);
+    //     const token = localStorage.getItem('token');
+    //     try {
+    //         const res = await fetch(`${API_BASE_URL}/api/get-connex?page=${page}&per_page=${perPage}`, {
+    //             headers: { 'Authorization': `Bearer ${token}` }
+    //         });
+    //         const data = await res.json()
 
-            setConnexRegistrations(data.items);
-            setTotalPages(data.pages || 1);
-            setTotalRegistrations(data.total);
-            setCurrentPage(data.page);
+    //         setConnexRegistrations(data.items);
+    //         setTotalPages(data.pages || 1);
+    //         setTotalRegistrations(data.total);
+    //         setCurrentPage(data.page);
 
-            if (!res.ok) {
-                toast({
-                    variant: 'destructive',
-                    description: data.message || 'Something went wrong.',
-                    title: 'Failed to fetch Registered Users'
-                });
-            }
+    //         if (!res.ok) {
+    //             toast({
+    //                 variant: 'destructive',
+    //                 description: data.message || 'Something went wrong.',
+    //                 title: 'Failed to fetch Registered Users'
+    //             });
+    //         }
 
-        } catch (err) {
-            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not connect to the server or retrieve data.' });
-        } finally {
-            setIsLoadingFormUsers(false);
-        }
-    }, [perPage, toast]);
+    //     } catch (err) {
+    //         toast({ variant: 'destructive', title: 'Network Error', description: 'Could not connect to the server or retrieve data.' });
+    //     } finally {
+    //         setIsLoadingFormUsers(false);
+    //     }
+    // }, [perPage, toast]);
 
 
     const onPageChange = (page: number) => {
@@ -897,7 +956,19 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     useEffect(() => {
         if (userRole === 'admin') {
-            if (activeTab === 'overview') fetchDashboardStats();
+            if (activeTab === 'overview') {
+                fetchDashboardStats();
+                // Fetch all registrations for pie chart
+                const token = localStorage.getItem('token');
+                if (token) {
+                    fetch(`${API_BASE_URL}/api/get-aignite?all=true`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                        .then(res => res.json())
+                        .then(data => setRegistrations(data.items || []))
+                        .catch(err => console.error('Error fetching registrations:', err));
+                }
+            }
             if (activeTab === 'users') fetchUsers(1, 10);
             if (activeTab === 'aignite') fetchRegistrations(1);
             // if (activeTab === 'connex') fetchConnex(1);
@@ -907,7 +978,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             // if (activeTab === 'subscribers') fetchSubscribers();
             if (activeTab === 'pitch-details') fetchPitchingDetails();
         }
-    }, [activeTab, userRole, fetchUsers, fetchPitchingDetails, fetchConnex, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations, fetchDashboardStats]);
+    }, [activeTab, userRole, fetchUsers, fetchPitchingDetails, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations, fetchDashboardStats]);
 
 
 
@@ -1806,6 +1877,12 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     }, [activeSubTab, fetchIps, userRole])
 
     useEffect(() => {
+        if (userRole === "admin") {
+            fetchEventConfig();
+        }
+    }, [userRole, fetchEventConfig]);
+
+    useEffect(() => {
         const pendingTab = localStorage.getItem("pendingTab");
         if (pendingTab) {
             setActiveTab(pendingTab as DashboardTab);
@@ -1893,253 +1970,290 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                         <div className="flex-grow overflow-y-auto pb-6 w-full" >
                             <TabsContent value="overview" className="mt-0 space-y-6">
                                 {userRole === 'admin' && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
-                                        {/* Tech Transfer IPs Pie Chart */}
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader>
-                                                <CardTitle>Tech Transfer IPs</CardTitle>
-                                                <CardDescription>Status breakdown</CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                {isLoadingStats ? (
-                                                    <div className="flex justify-center items-center h-[300px]">
-                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                    </div>
-                                                ) : dashboardStats?.tech_transfer ? (
-                                                    <>
-                                                        <div className="relative">
-                                                            <ResponsiveContainer width="100%" height={280}>
-                                                                <PieChart>
-                                                                    <Pie
-                                                                        data={dashboardStats.tech_transfer.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.tech_transfer.by_status).map(([status, count]) => ({
-                                                                            name: status.replace(/_/g, ' '),
-                                                                            value: count
-                                                                        }))}
-                                                                        dataKey="value"
-                                                                        nameKey="name"
-                                                                        cx="50%"
-                                                                        cy="45%"
-                                                                        innerRadius={90}
-                                                                        outerRadius={120}
-                                                                        paddingAngle={2}
-                                                                        activeIndex={activeTechTransferIndex}
-                                                                        activeShape={{
-                                                                            outerRadius: 125,
-                                                                            strokeWidth: 1,
-                                                                            cursor: 'pointer'
-                                                                        } as any}
-                                                                        inactiveShape={{
-                                                                            opacity: 0.6
-                                                                        } as any}
-                                                                        isAnimationActive={true}
-
-                                                                        animationBegin={0}
-                                                                        animationDuration={400}
-                                                                        animationEasing="ease-in-out"
-                                                                    >
-                                                                        {dashboardStats.tech_transfer.total === 0 ? (
-                                                                            <Cell fill="#e5e7eb" />
-                                                                        ) : (
-                                                                            Object.keys(dashboardStats.tech_transfer.by_status).map((status, index) => {
-                                                                                const colors: Record<string, string> = {
-                                                                                    'pending': '#f59e0b',
-                                                                                    'approved': '#10b981',
-                                                                                    'rejected': '#ef4444',
-                                                                                    'need_info': '#3b82f6',
-                                                                                    'monitized': '#8b5cf6'
-                                                                                };
-                                                                                return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
-                                                                            })
-                                                                        )}
-                                                                    </Pie>
-                                                                    {dashboardStats.tech_transfer.total > 0 && (
-                                                                        <Tooltip
-                                                                            contentStyle={{
-                                                                                borderRadius: 12,
-                                                                            }}
-                                                                        />
-                                                                    )}
-                                                                </PieChart>
-                                                            </ResponsiveContainer>
-                                                            <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
-                                                                <p className="text-3xl font-bold">{dashboardStats.tech_transfer.total}</p>
-                                                                <p className="text-xs text-muted-foreground whitespace-nowrap">Total Submissions</p>
-                                                            </div>
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
+                                            {/* Users Pie Chart */}
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader>
+                                                    <CardTitle>Users</CardTitle>
+                                                    <CardDescription>Role breakdown</CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    {isLoadingStats ? (
+                                                        <div className="flex justify-center items-center h-[300px]">
+                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
                                                         </div>
-                                                        {dashboardStats.tech_transfer.total > 0 && (
-                                                            <div className="mt-4 flex flex-wrap gap-3 justify-center">
-                                                                {Object.entries(dashboardStats.tech_transfer.by_status).map(([status, count], index) => (
-                                                                    <div
-                                                                        key={status}
-                                                                        className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
-                                                                        style={{ opacity: activeTechTransferIndex === undefined || activeTechTransferIndex === index ? 1 : 0.6 }}
-                                                                        onMouseEnter={() => setActiveTechTransferIndex(index)}
-                                                                        onMouseLeave={() => setActiveTechTransferIndex(undefined)}
-                                                                    >
-                                                                        <div className="w-3 h-3 rounded-full" style={{
-                                                                            backgroundColor: {
-                                                                                'pending': '#f59e0b',
-                                                                                'approved': '#10b981',
-                                                                                'rejected': '#ef4444',
-                                                                                'need_info': '#3b82f6',
-                                                                                'monitized': '#8b5cf6'
-                                                                            }[status] || '#6366f1'
-                                                                        }} />
-                                                                        <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
-                                                                    </div>
-                                                                ))}
+                                                    ) : dashboardStats?.users ? (
+                                                        <>
+                                                            <div className="relative">
+                                                                <ResponsiveContainer width="100%" height={280}>
+                                                                    <PieChart>
+                                                                        <Pie
+                                                                            data={dashboardStats.users.total === 0 ? [{ name: 'No data', value: 0 }] : Object.entries(dashboardStats.users.by_role).filter(([_, count]) => (count as number) > 0).map(([role, count]) => ({
+                                                                                name: role.replace(/_/g, ' '),
+                                                                                value: count as number
+                                                                            }))}
+                                                                            dataKey="value"
+                                                                            nameKey="name"
+                                                                            cx="50%"
+                                                                            cy="45%"
+                                                                            innerRadius={90}
+                                                                            outerRadius={120}
+                                                                            paddingAngle={2}
+                                                                            activeIndex={activeUserIndex}
+                                                                            activeShape={{
+                                                                                outerRadius: 125,
+                                                                                strokeWidth: 1,
+                                                                                cursor: 'pointer'
+                                                                            } as any}
+                                                                            inactiveShape={{
+                                                                                opacity: 0.6
+                                                                            } as any}
+                                                                            isAnimationActive={true}
+                                                                            animationBegin={0}
+                                                                            animationDuration={400}
+                                                                            animationEasing="ease-in-out"
+                                                                        >
+                                                                            {dashboardStats.users.total === 0 ? (
+                                                                                <Cell fill="#e5e7eb" />
+                                                                            ) : (
+                                                                                Object.keys(dashboardStats.users.by_role).map((role, index) => {
+                                                                                    const colors: Record<string, string> = {
+                                                                                        'founder': '#8b5cf6',
+                                                                                        'msme': '#ec4899',
+                                                                                        'mentor': '#14b8a6',
+                                                                                        'incubator': '#f97316',
+                                                                                        'admin': '#6366f1'
+                                                                                    };
+                                                                                    return <Cell key={`cell-${index}`} fill={colors[role] || '#6366f1'} />;
+                                                                                })
+                                                                            )}
+                                                                        </Pie>
+                                                                        {dashboardStats.users.total > 0 && (
+                                                                            <Tooltip
+                                                                                contentStyle={{
+                                                                                    borderRadius: 12,
+                                                                                }}
+                                                                            />
+                                                                        )}
+                                                                    </PieChart>
+                                                                </ResponsiveContainer>
+                                                                <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                    <p className="text-3xl font-bold">{dashboardStats.users.total}</p>
+                                                                    <p className="text-xs text-muted-foreground whitespace-nowrap">Total Users</p>
+                                                                </div>
                                                             </div>
-                                                        )}
-                                                    </>
-                                                ) : null}
-                                            </CardContent>
-                                        </Card>
+                                                            {dashboardStats.users.total > 0 && (
+                                                                <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                    {Object.entries(dashboardStats.users.by_role).map(([role, count], index) => (
+                                                                        <div
+                                                                            key={role}
+                                                                            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                            style={{ opacity: activeUserIndex === undefined || activeUserIndex === index ? 1 : 0.6 }}
+                                                                            onMouseEnter={() => setActiveUserIndex(index)}
+                                                                            onMouseLeave={() => setActiveUserIndex(undefined)}
+                                                                        >
+                                                                            <div className="w-3 h-3 rounded-full" style={{
+                                                                                backgroundColor: {
+                                                                                    'founder': '#8b5cf6',
+                                                                                    'msme': '#ec4899',
+                                                                                    'mentor': '#14b8a6',
+                                                                                    'incubator': '#f97316',
+                                                                                    'admin': '#6366f1'
+                                                                                }[role] || '#6366f1'
+                                                                            }} />
+                                                                            <span className="text-sm capitalize">{role.replace(/_/g, ' ')}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : null}
+                                                </CardContent>
+                                            </Card>
 
-                                        {/* Challenge Pie Chart */}
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader>
-                                                <CardTitle>Challenge</CardTitle>
-                                                <CardDescription>Status breakdown</CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                {isLoadingStats ? (
-                                                    <div className="flex justify-center items-center h-[300px]">
-                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                    </div>
-                                                ) : dashboardStats?.collaborations ? (
-                                                    <>
-                                                        <div className="relative">
-                                                            <ResponsiveContainer width="100%" height={280}>
-                                                                <PieChart>
-                                                                    <Pie
-                                                                        data={dashboardStats.collaborations.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.collaborations.by_status).map(([status, count]) => ({
-                                                                            name: status.replace(/_/g, ' '),
-                                                                            value: count
-                                                                        }))}
-                                                                        dataKey="value"
-                                                                        nameKey="name"
-                                                                        cx="50%"
-                                                                        cy="45%"
-                                                                        innerRadius={90}
-                                                                        outerRadius={120}
-                                                                        paddingAngle={2}
-                                                                        activeIndex={activeCollaborationIndex}
-                                                                        activeShape={{
-                                                                            outerRadius: 125,
-                                                                            strokeWidth: 1,
-                                                                            cursor: 'pointer'
-                                                                        } as any}
-                                                                        inactiveShape={{
-                                                                            opacity: 0.6
-                                                                        } as any}
-                                                                        isAnimationActive={true}
-                                                                        animationBegin={0}
-                                                                        animationDuration={400}
-                                                                        animationEasing="ease-in-out"
-                                                                    >
-                                                                        {dashboardStats.collaborations.total === 0 ? (
-                                                                            <Cell fill="#e5e7eb" />
-                                                                        ) : (
-                                                                            Object.keys(dashboardStats.collaborations.by_status).map((status, index) => {
-                                                                                const colors: Record<string, string> = {
+                                            {/* Challenge Pie Chart */}
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader>
+                                                    <CardTitle>Challenge</CardTitle>
+                                                    <CardDescription>Status breakdown</CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    {isLoadingStats ? (
+                                                        <div className="flex justify-center items-center h-[300px]">
+                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                        </div>
+                                                    ) : dashboardStats?.collaborations ? (
+                                                        <>
+                                                            <div className="relative">
+                                                                <ResponsiveContainer width="100%" height={280}>
+                                                                    <PieChart>
+                                                                        <Pie
+                                                                            data={dashboardStats.collaborations.total === 0 ? [{ name: 'No data', value: 0 }] : Object.entries(dashboardStats.collaborations.by_status).filter(([_, count]) => (count as number) > 0).map(([status, count]) => ({
+                                                                                name: status.replace(/_/g, ' '),
+                                                                                value: count as number
+                                                                            }))}
+                                                                            dataKey="value"
+                                                                            nameKey="name"
+                                                                            cx="50%"
+                                                                            cy="45%"
+                                                                            innerRadius={90}
+                                                                            outerRadius={120}
+                                                                            paddingAngle={2}
+                                                                            activeIndex={activeCollaborationIndex}
+                                                                            activeShape={{
+                                                                                outerRadius: 125,
+                                                                                strokeWidth: 1,
+                                                                                cursor: 'pointer'
+                                                                            } as any}
+                                                                            inactiveShape={{
+                                                                                opacity: 0.6
+                                                                            } as any}
+                                                                            isAnimationActive={true}
+                                                                            animationBegin={0}
+                                                                            animationDuration={400}
+                                                                            animationEasing="ease-in-out"
+                                                                        >
+                                                                            {dashboardStats.collaborations.total === 0 ? (
+                                                                                <Cell fill="#e5e7eb" />
+                                                                            ) : (
+                                                                                Object.keys(dashboardStats.collaborations.by_status).map((status, index) => {
+                                                                                    const colors: Record<string, string> = {
+                                                                                        'active': '#10b981',
+                                                                                        'completed': '#6366f1',
+                                                                                        'stopped': '#f59e0b',
+                                                                                        'expired': '#ef4444'
+                                                                                    };
+                                                                                    return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
+                                                                                })
+                                                                            )}
+                                                                        </Pie>
+                                                                        {dashboardStats.collaborations.total > 0 && (
+                                                                            <Tooltip
+                                                                                contentStyle={{
+                                                                                    borderRadius: 12,
+                                                                                }}
+                                                                            />
+                                                                        )}
+                                                                    </PieChart>
+                                                                </ResponsiveContainer>
+                                                                <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                    <p className="text-3xl font-bold">{dashboardStats.collaborations.total}</p>
+                                                                    <p className="text-xs text-muted-foreground whitespace-nowrap">Total Challenges</p>
+                                                                </div>
+                                                            </div>
+                                                            {dashboardStats.collaborations.total > 0 && (
+                                                                <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                    {Object.entries(dashboardStats.collaborations.by_status).map(([status, count], index) => (
+                                                                        <div
+                                                                            key={status}
+                                                                            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                            style={{ opacity: activeCollaborationIndex === undefined || activeCollaborationIndex === index ? 1 : 0.6 }}
+                                                                            onMouseEnter={() => setActiveCollaborationIndex(index)}
+                                                                            onMouseLeave={() => setActiveCollaborationIndex(undefined)}
+                                                                        >
+                                                                            <div className="w-3 h-3 rounded-full" style={{
+                                                                                backgroundColor: {
                                                                                     'active': '#10b981',
                                                                                     'completed': '#6366f1',
                                                                                     'stopped': '#f59e0b',
                                                                                     'expired': '#ef4444'
-                                                                                };
-                                                                                return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
-                                                                            })
-                                                                        )}
-                                                                    </Pie>
-                                                                    {dashboardStats.collaborations.total > 0 && (
-                                                                        <Tooltip
-                                                                            contentStyle={{
-                                                                                borderRadius: 12,
-                                                                            }}
-                                                                        />
-                                                                    )}
-                                                                </PieChart>
-                                                            </ResponsiveContainer>
-                                                            <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
-                                                                <p className="text-3xl font-bold">{dashboardStats.collaborations.total}</p>
-                                                                <p className="text-xs text-muted-foreground whitespace-nowrap">Total Challenges</p>
-                                                            </div>
-                                                        </div>
-                                                        {dashboardStats.collaborations.total > 0 && (
-                                                            <div className="mt-4 flex flex-wrap gap-3 justify-center">
-                                                                {Object.entries(dashboardStats.collaborations.by_status).map(([status, count], index) => (
-                                                                    <div
-                                                                        key={status}
-                                                                        className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
-                                                                        style={{ opacity: activeCollaborationIndex === undefined || activeCollaborationIndex === index ? 1 : 0.6 }}
-                                                                        onMouseEnter={() => setActiveCollaborationIndex(index)}
-                                                                        onMouseLeave={() => setActiveCollaborationIndex(undefined)}
-                                                                    >
-                                                                        <div className="w-3 h-3 rounded-full" style={{
-                                                                            backgroundColor: {
-                                                                                'active': '#10b981',
-                                                                                'completed': '#6366f1',
-                                                                                'stopped': '#f59e0b',
-                                                                                'expired': '#ef4444'
-                                                                            }[status] || '#6366f1'
-                                                                        }} />
-                                                                        <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                ) : null}
-                                            </CardContent>
-                                        </Card>
+                                                                                }[status] || '#6366f1'
+                                                                            }} />
+                                                                            <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : null}
+                                                </CardContent>
+                                            </Card>
 
-                                        {/* Solutions Pie Chart */}
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader>
-                                                <CardTitle>Solutions</CardTitle>
-                                                <CardDescription>Status breakdown</CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                {isLoadingStats ? (
-                                                    <div className="flex justify-center items-center h-[300px]">
-                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                    </div>
-                                                ) : dashboardStats?.solutions ? (
-                                                    <>
-                                                        <div className="relative">
-                                                            <ResponsiveContainer width="100%" height={280}>
-                                                                <PieChart>
-                                                                    <Pie
-                                                                        data={dashboardStats.solutions.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.solutions.by_status).map(([status, count]) => ({
-                                                                            name: status.replace(/_/g, ' '),
-                                                                            value: count
-                                                                        }))}
-                                                                        dataKey="value"
-                                                                        nameKey="name"
-                                                                        cx="50%"
-                                                                        cy="45%"
-                                                                        innerRadius={90}
-                                                                        outerRadius={120}
-                                                                        paddingAngle={2}
-                                                                        activeIndex={activeSolutionIndex}
-                                                                        activeShape={{
-                                                                            outerRadius: 125,
-                                                                            strokeWidth: 1,
-                                                                            cursor: 'pointer'
-                                                                        } as any}
-                                                                        inactiveShape={{
-                                                                            opacity: 0.6
-                                                                        } as any}
-                                                                        isAnimationActive={true}
-                                                                        animationBegin={0}
-                                                                        animationDuration={400}
-                                                                        animationEasing="ease-in-out"
-                                                                    >
-                                                                        {dashboardStats.solutions.total === 0 ? (
-                                                                            <Cell fill="#e5e7eb" />
-                                                                        ) : (
-                                                                            Object.keys(dashboardStats.solutions.by_status).map((status, index) => {
-                                                                                const colors: Record<string, string> = {
+                                            {/* Solutions Pie Chart */}
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader>
+                                                    <CardTitle>Solutions</CardTitle>
+                                                    <CardDescription>Status breakdown</CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    {isLoadingStats ? (
+                                                        <div className="flex justify-center items-center h-[300px]">
+                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                        </div>
+                                                    ) : dashboardStats?.solutions ? (
+                                                        <>
+                                                            <div className="relative">
+                                                                <ResponsiveContainer width="100%" height={280}>
+                                                                    <PieChart>
+                                                                        <Pie
+                                                                            data={dashboardStats.solutions.total === 0 ? [{ name: 'No data', value: 0 }] : Object.entries(dashboardStats.solutions.by_status).map(([status, count]) => ({
+                                                                                name: status.replace(/_/g, ' '),
+                                                                                value: count as number
+                                                                            }))}
+                                                                            dataKey="value"
+                                                                            nameKey="name"
+                                                                            cx="50%"
+                                                                            cy="45%"
+                                                                            innerRadius={90}
+                                                                            outerRadius={120}
+                                                                            paddingAngle={2}
+                                                                            activeIndex={activeSolutionIndex}
+                                                                            activeShape={{
+                                                                                outerRadius: 125,
+                                                                                strokeWidth: 1,
+                                                                                cursor: 'pointer'
+                                                                            } as any}
+                                                                            inactiveShape={{
+                                                                                opacity: 0.6
+                                                                            } as any}
+                                                                            isAnimationActive={true}
+                                                                            animationBegin={0}
+                                                                            animationDuration={400}
+                                                                            animationEasing="ease-in-out"
+                                                                        >
+                                                                            {dashboardStats.solutions.total === 0 ? (
+                                                                                <Cell fill="#e5e7eb" />
+                                                                            ) : (
+                                                                                Object.keys(dashboardStats.solutions.by_status).map((status, index) => {
+                                                                                    const colors: Record<string, string> = {
+                                                                                        'new': '#3b82f6',
+                                                                                        'under_review': '#f59e0b',
+                                                                                        'duplicate': '#a855f7',
+                                                                                        'rejected': '#ef4444',
+                                                                                        'solution_accepted_points': '#10b981',
+                                                                                        'triaged': '#f97316',
+                                                                                        'need_info': '#06b6d4',
+                                                                                        'winner': '#eab308'
+                                                                                    };
+                                                                                    return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
+                                                                                })
+                                                                            )}
+                                                                        </Pie>
+                                                                        {dashboardStats.solutions.total > 0 && (
+                                                                            <Tooltip contentStyle={{
+                                                                                borderRadius: 12,
+                                                                            }} />
+                                                                        )}
+                                                                    </PieChart>
+                                                                </ResponsiveContainer>
+                                                                <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                    <p className="text-3xl font-bold">{dashboardStats.solutions.total}</p>
+                                                                    <p className="text-xs text-muted-foreground whitespace-nowrap">Total Submissions</p>
+                                                                </div>
+                                                            </div>
+                                                            {dashboardStats.solutions.total > 0 && (
+                                                                <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                    {Object.entries(dashboardStats.solutions.by_status).map(([status, count], index) => (
+                                                                        <div
+                                                                            key={status}
+                                                                            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                            style={{ opacity: activeSolutionIndex === undefined || activeSolutionIndex === index ? 1 : 0.6 }}
+                                                                            onMouseEnter={() => setActiveSolutionIndex(index)}
+                                                                            onMouseLeave={() => setActiveSolutionIndex(undefined)}
+                                                                        >
+                                                                            <div className="w-3 h-3 rounded-full" style={{
+                                                                                backgroundColor: {
                                                                                     'new': '#3b82f6',
                                                                                     'under_review': '#f59e0b',
                                                                                     'duplicate': '#a855f7',
@@ -2148,155 +2262,299 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                     'triaged': '#f97316',
                                                                                     'need_info': '#06b6d4',
                                                                                     'winner': '#eab308'
-                                                                                };
-                                                                                return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
-                                                                            })
-                                                                        )}
-                                                                    </Pie>
-                                                                    {dashboardStats.solutions.total > 0 && (
-                                                                        <Tooltip contentStyle={{
-                                                                            borderRadius: 12,
-                                                                        }} />
-                                                                    )}
-                                                                </PieChart>
-                                                            </ResponsiveContainer>
-                                                            <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
-                                                                <p className="text-3xl font-bold">{dashboardStats.solutions.total}</p>
-                                                                <p className="text-xs text-muted-foreground whitespace-nowrap">Total Submissions</p>
-                                                            </div>
-                                                        </div>
-                                                        {dashboardStats.solutions.total > 0 && (
-                                                            <div className="mt-4 flex flex-wrap gap-3 justify-center">
-                                                                {Object.entries(dashboardStats.solutions.by_status).map(([status, count], index) => (
-                                                                    <div
-                                                                        key={status}
-                                                                        className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
-                                                                        style={{ opacity: activeSolutionIndex === undefined || activeSolutionIndex === index ? 1 : 0.6 }}
-                                                                        onMouseEnter={() => setActiveSolutionIndex(index)}
-                                                                        onMouseLeave={() => setActiveSolutionIndex(undefined)}
-                                                                    >
-                                                                        <div className="w-3 h-3 rounded-full" style={{
-                                                                            backgroundColor: {
-                                                                                'new': '#3b82f6',
-                                                                                'under_review': '#f59e0b',
-                                                                                'duplicate': '#a855f7',
-                                                                                'rejected': '#ef4444',
-                                                                                'solution_accepted_points': '#10b981',
-                                                                                'triaged': '#f97316',
-                                                                                'need_info': '#06b6d4',
-                                                                                'winner': '#eab308'
-                                                                            }[status] || '#6366f1'
-                                                                        }} />
-                                                                        <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                ) : null}
-                                            </CardContent>
-                                        </Card>
+                                                                                }[status] || '#6366f1'
+                                                                            }} />
+                                                                            <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : null}
+                                                </CardContent>
+                                            </Card>
 
-                                        {/* Users Pie Chart */}
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader>
-                                                <CardTitle>Users</CardTitle>
-                                                <CardDescription>Role breakdown</CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                {isLoadingStats ? (
-                                                    <div className="flex justify-center items-center h-[300px]">
-                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                    </div>
-                                                ) : dashboardStats?.users ? (
-                                                    <>
+                                            {/* Tech Transfer IPs Pie Chart */}
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader>
+                                                    <CardTitle>Tech Transfer IPs</CardTitle>
+                                                    <CardDescription>Status breakdown</CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    {isLoadingStats ? (
+                                                        <div className="flex justify-center items-center h-[300px]">
+                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                        </div>
+                                                    ) : dashboardStats?.tech_transfer ? (
+                                                        <>
+                                                            <div className="relative">
+                                                                <ResponsiveContainer width="100%" height={280}>
+                                                                    <PieChart>
+                                                                        <Pie
+                                                                            data={dashboardStats.tech_transfer.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.tech_transfer.by_status).map(([status, count]) => ({
+                                                                                name: status.replace(/_/g, ' '),
+                                                                                value: count as number
+                                                                            }))}
+                                                                            dataKey="value"
+                                                                            nameKey="name"
+                                                                            cx="50%"
+                                                                            cy="45%"
+                                                                            innerRadius={90}
+                                                                            outerRadius={120}
+                                                                            paddingAngle={2}
+                                                                            activeIndex={activeTechTransferIndex}
+                                                                            activeShape={{
+                                                                                outerRadius: 125,
+                                                                                strokeWidth: 1,
+                                                                                cursor: 'pointer'
+                                                                            } as any}
+                                                                            inactiveShape={{
+                                                                                opacity: 0.6
+                                                                            } as any}
+                                                                            isAnimationActive={true}
+
+                                                                            animationBegin={0}
+                                                                            animationDuration={400}
+                                                                            animationEasing="ease-in-out"
+                                                                        >
+                                                                            {dashboardStats.tech_transfer.total === 0 ? (
+                                                                                <Cell fill="#e5e7eb" />
+                                                                            ) : (
+                                                                                Object.keys(dashboardStats.tech_transfer.by_status).map((status, index) => {
+                                                                                    const colors: Record<string, string> = {
+                                                                                        'pending': '#f59e0b',
+                                                                                        'approved': '#10b981',
+                                                                                        'rejected': '#ef4444',
+                                                                                        'need_info': '#3b82f6',
+                                                                                        'monitized': '#8b5cf6'
+                                                                                    };
+                                                                                    return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
+                                                                                })
+                                                                            )}
+                                                                        </Pie>
+                                                                        {dashboardStats.tech_transfer.total > 0 && (
+                                                                            <Tooltip
+                                                                                contentStyle={{
+                                                                                    borderRadius: 12,
+                                                                                }}
+                                                                            />
+                                                                        )}
+                                                                    </PieChart>
+                                                                </ResponsiveContainer>
+                                                                <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                    <p className="text-3xl font-bold">{dashboardStats.tech_transfer.total}</p>
+                                                                    <p className="text-xs text-muted-foreground whitespace-nowrap">Total Submissions</p>
+                                                                </div>
+                                                            </div>
+                                                            {dashboardStats.tech_transfer.total > 0 && (
+                                                                <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                    {Object.entries(dashboardStats.tech_transfer.by_status).map(([status, count], index) => (
+                                                                        <div
+                                                                            key={status}
+                                                                            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                            style={{ opacity: activeTechTransferIndex === undefined || activeTechTransferIndex === index ? 1 : 0.6 }}
+                                                                            onMouseEnter={() => setActiveTechTransferIndex(index)}
+                                                                            onMouseLeave={() => setActiveTechTransferIndex(undefined)}
+                                                                        >
+                                                                            <div className="w-3 h-3 rounded-full" style={{
+                                                                                backgroundColor: {
+                                                                                    'pending': '#f59e0b',
+                                                                                    'approved': '#10b981',
+                                                                                    'rejected': '#ef4444',
+                                                                                    'need_info': '#3b82f6',
+                                                                                    'monitized': '#8b5cf6'
+                                                                                }[status] || '#6366f1'
+                                                                            }} />
+                                                                            <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : null}
+                                                </CardContent>
+                                            </Card>
+
+                                            {/* Newsletter Subscribers Card */}
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader>
+                                                    <CardTitle>Newsletter Subscribers</CardTitle>
+                                                    <CardDescription>Total waitlist subscribers</CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    {newsletterSubscribers > 0 ? (
                                                         <div className="relative">
                                                             <ResponsiveContainer width="100%" height={280}>
                                                                 <PieChart>
                                                                     <Pie
-                                                                        data={dashboardStats.users.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.users.by_role).map(([role, count]) => ({
-                                                                            name: role.replace(/_/g, ' '),
-                                                                            value: count
-                                                                        }))}
+                                                                        data={[{ name: 'Subscribers', value: newsletterSubscribers }]}
                                                                         dataKey="value"
                                                                         nameKey="name"
                                                                         cx="50%"
                                                                         cy="45%"
                                                                         innerRadius={90}
                                                                         outerRadius={120}
-                                                                        paddingAngle={2}
-                                                                        activeIndex={activeUserIndex}
-                                                                        activeShape={{
-                                                                            outerRadius: 125,
-                                                                            strokeWidth: 1,
-                                                                            cursor: 'pointer'
-                                                                        } as any}
-                                                                        inactiveShape={{
-                                                                            opacity: 0.6
-                                                                        } as any}
+                                                                        fill="#8b5cf6"
+                                                                        paddingAngle={0}
                                                                         isAnimationActive={true}
                                                                         animationBegin={0}
                                                                         animationDuration={400}
                                                                         animationEasing="ease-in-out"
                                                                     >
-                                                                        {dashboardStats.users.total === 0 ? (
-                                                                            <Cell fill="#e5e7eb" />
-                                                                        ) : (
-                                                                            Object.keys(dashboardStats.users.by_role).map((role, index) => {
-                                                                                const colors: Record<string, string> = {
-                                                                                    'founder': '#8b5cf6',
-                                                                                    'msme': '#ec4899',
-                                                                                    'mentor': '#14b8a6',
-                                                                                    'incubator': '#f97316',
-                                                                                    'admin': '#6366f1'
-                                                                                };
-                                                                                return <Cell key={`cell-${index}`} fill={colors[role] || '#6366f1'} />;
-                                                                            })
-                                                                        )}
+                                                                        <Cell fill="#8b5cf6" />
                                                                     </Pie>
-                                                                    {dashboardStats.users.total > 0 && (
+                                                                    <Tooltip
+                                                                        contentStyle={{
+                                                                            borderRadius: 12,
+                                                                        }}
+                                                                    />
+                                                                </PieChart>
+                                                            </ResponsiveContainer>
+                                                            <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                <p className="text-4xl font-bold">{newsletterSubscribers}</p>
+                                                                <p className="text-sm text-muted-foreground">Subscribers</p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+                                                            <p>No subscribers yet</p>
+                                                        </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+
+                                            {/* Event Configuration Card */}
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader>
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <CardTitle>Event Registrations</CardTitle>
+                                                            <CardDescription>Aignite registration breakdown</CardDescription>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            {isTogglingEvent ? <LucideIcons.Loader2 className="h-4 w-4 animate-spin" /> : <Switch
+                                                                checked={eventConfig?.is_enabled || false}
+                                                                onCheckedChange={handleToggleEvent}
+                                                                disabled={isTogglingEvent}
+                                                                className="data-[state=checked]:bg-green-600"
+                                                            />}
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm font-medium">
+                                                                    {eventConfig?.is_enabled ? "Is Running" : "Not Running"}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    {isLoadingStats ? (
+                                                        <div className="flex justify-center items-center h-[300px]">
+                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                        </div>
+                                                    ) : registrations && registrations.length > 0 ? (
+                                                        <>
+                                                            <div className="relative">
+                                                                <ResponsiveContainer width="100%" height={280}>
+                                                                    <PieChart>
+                                                                        <Pie
+                                                                            data={Object.entries(
+                                                                                registrations.reduce((acc: Record<string, number>, reg) => {
+                                                                                    const type = reg.who_you_are || 'Other';
+                                                                                    acc[type] = (acc[type] || 0) + 1;
+                                                                                    return acc;
+                                                                                }, {})
+                                                                            ).map(([name, value]) => ({ name, value }))}
+                                                                            dataKey="value"
+                                                                            nameKey="name"
+                                                                            cx="50%"
+                                                                            cy="45%"
+                                                                            innerRadius={90}
+                                                                            outerRadius={120}
+                                                                            paddingAngle={2}
+                                                                            activeIndex={activeEventIndex}
+                                                                            activeShape={{
+                                                                                outerRadius: 125,
+                                                                                strokeWidth: 1,
+                                                                                cursor: 'pointer'
+                                                                            } as any}
+                                                                            inactiveShape={{
+                                                                                opacity: 0.6
+                                                                            } as any}
+                                                                            isAnimationActive={true}
+                                                                            animationBegin={0}
+                                                                            animationDuration={400}
+                                                                            animationEasing="ease-in-out"
+                                                                        >
+                                                                            {Object.keys(
+                                                                                registrations.reduce((acc: Record<string, number>, reg) => {
+                                                                                    const type = reg.who_you_are || 'Other';
+                                                                                    acc[type] = (acc[type] || 0) + 1;
+                                                                                    return acc;
+                                                                                }, {})
+                                                                            ).map((type, index) => {
+                                                                                const colors: Record<string, string> = {
+                                                                                    'Marketing Teams': '#8b5cf6',
+                                                                                    'Founders': '#ec4899',
+                                                                                    'CEO': '#14b8a6',
+                                                                                    'Manager': '#f97316',
+                                                                                    'Other': '#6366f1'
+                                                                                };
+                                                                                return <Cell key={`cell-${index}`} fill={colors[type] || '#6366f1'} />;
+                                                                            })}
+                                                                        </Pie>
                                                                         <Tooltip
                                                                             contentStyle={{
                                                                                 borderRadius: 12,
                                                                             }}
                                                                         />
-                                                                    )}
-                                                                </PieChart>
-                                                            </ResponsiveContainer>
-                                                            <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
-                                                                <p className="text-3xl font-bold">{dashboardStats.users.total}</p>
-                                                                <p className="text-xs text-muted-foreground whitespace-nowrap">Total Users</p>
+                                                                    </PieChart>
+                                                                </ResponsiveContainer>
+                                                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                                    <p className="text-4xl font-bold">{registrations.length}</p>
+                                                                    <p className="text-sm text-muted-foreground">Total</p>
+                                                                </div>
                                                             </div>
+                                                            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                                                                {Object.entries(
+                                                                    registrations.reduce((acc: Record<string, number>, reg) => {
+                                                                        const type = reg.who_you_are || 'Other';
+                                                                        acc[type] = (acc[type] || 0) + 1;
+                                                                        return acc;
+                                                                    }, {})
+                                                                ).map(([type, count], index) => {
+                                                                    const colors: Record<string, string> = {
+                                                                        'Marketing Teams': '#8b5cf6',
+                                                                        'Founders': '#ec4899',
+                                                                        'CEO': '#14b8a6',
+                                                                        'Manager': '#f97316',
+                                                                        'Other': '#6366f1'
+                                                                    };
+                                                                    return (
+                                                                        <div
+                                                                            key={type}
+                                                                            className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+                                                                            onMouseEnter={() => setActiveEventIndex(index)}
+                                                                            onMouseLeave={() => setActiveEventIndex(undefined)}
+                                                                        >
+                                                                            <div className="w-3 h-3 rounded-full" style={{
+                                                                                backgroundColor: colors[type] || '#6366f1'
+                                                                            }} />
+                                                                            <span className="text-sm">{type}: {count}</span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+                                                            <LucideIcons.Users className="h-12 w-12 mb-2 opacity-50" />
+                                                            <p>No registrations yet</p>
                                                         </div>
-                                                        {dashboardStats.users.total > 0 && (
-                                                            <div className="mt-4 flex flex-wrap gap-3 justify-center">
-                                                                {Object.entries(dashboardStats.users.by_role).map(([role, count], index) => (
-                                                                    <div
-                                                                        key={role}
-                                                                        className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
-                                                                        style={{ opacity: activeUserIndex === undefined || activeUserIndex === index ? 1 : 0.6 }}
-                                                                        onMouseEnter={() => setActiveUserIndex(index)}
-                                                                        onMouseLeave={() => setActiveUserIndex(undefined)}
-                                                                    >
-                                                                        <div className="w-3 h-3 rounded-full" style={{
-                                                                            backgroundColor: {
-                                                                                'founder': '#8b5cf6',
-                                                                                'msme': '#ec4899',
-                                                                                'mentor': '#14b8a6',
-                                                                                'incubator': '#f97316',
-                                                                                'admin': '#6366f1'
-                                                                            }[role] || '#6366f1'
-                                                                        }} />
-                                                                        <span className="text-sm capitalize">{role.replace(/_/g, ' ')}</span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                ) : null}
-                                            </CardContent>
-                                        </Card>
-                                    </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+                                    </>
                                 )}
                             </TabsContent>
                             <TabsContent value="organisation" className="mt-0">
@@ -2374,142 +2632,145 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     </Card>
                                 )}
                             </TabsContent>
-                            <TabsContent value="engagement" className="mt-0 space-y-4">
-                                {submissions.length > 0 ? submissions.map((sub, id) => (
-                                    <Card
-                                        key={id}
-                                        onClick={() => setSelectedSubmission(sub)}
-                                        className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
-                                    >
-                                        <CardHeader className="pb-4">
-                                            <div className="flex justify-between items-start">
-                                                <div className="space-y-1 w-full">
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <div className='flex justify-between w-full'>
-                                                            <CardTitle className="tracking-normal text-lg font-medium w-full">
-                                                                {sub.challenge?.title || "Untitled Challenge"}
-                                                            </CardTitle>
-                                                            <div className="flex gap-2">
-                                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                                    <span>Comments</span>
-                                                                    <div className="flex items-center gap-1">
-                                                                        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
-                                                                            {sub.comments?.length || 0}
-                                                                        </span>
+                            <TabsContent value="engagement" className="mt-0">
+                                {submissions.length > 0 ? (
+                                    <div className="max-h-[600px] overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                                        {submissions.map((sub, id) => {
+                                            const AnimatedCard = () => {
+                                                const ref = useRef<HTMLDivElement>(null);
+                                                const { motion, useInView } = require('motion/react');
+                                                const inView = useInView(ref, { amount: 0.3, once: false });
+
+                                                return (
+                                                    <motion.div
+                                                        ref={ref}
+                                                        initial={{ scale: 0.9, opacity: 0 }}
+                                                        animate={inView ? { scale: 1, opacity: 1 } : { scale: 0.9, opacity: 0 }}
+                                                        transition={{ duration: 0.3, delay: 0.05 }}
+                                                    >
+                                                        <Card
+                                                            onClick={() => setSelectedSubmission(sub)}
+                                                            className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
+                                                        >
+                                                            <CardHeader className="pb-4">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div className="space-y-1 w-full">
+                                                                        <div className="flex flex-wrap items-center gap-2">
+                                                                            <div className='flex justify-between w-full'>
+                                                                                <CardTitle className="tracking-normal text-lg font-medium w-full">
+                                                                                    {sub.challenge?.title || "Untitled Challenge"}
+                                                                                </CardTitle>
+                                                                                <div className="flex gap-2">
+                                                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                                                        <span>Comments</span>
+                                                                                        <div className="flex items-center gap-1">
+                                                                                            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
+                                                                                                {sub.comments?.length || 0}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                                                        <span>Points</span>
+                                                                                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                                                            {sub.points ?? 0}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <CardDescription className="flex items-center text-sm text-muted-foreground">
+                                                                            {sub.challenge?.postedBy && (
+                                                                                <div className="flex items-center">
+                                                                                    <span className="font-medium">{sub.challenge?.postedBy?.companyName || "Untitled Challenge"}</span>
+                                                                                    <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
+                                                                                </div>
+                                                                            )}
+                                                                            <Badge
+                                                                                className={`px-3 py-1 text-xs font-semibold border rounded-sm 
+                                                                    ${statusBadgeClasses[sub.status]}`}
+                                                                            >
+                                                                                {statusLabels[sub.status]}
+
+                                                                            </Badge>
+                                                                            <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
+                                                                            <p className="text-sm text-muted-foreground flex items-center">
+                                                                                Submitted {formatPrettyDate(new Date(sub.createdAt))}
+                                                                                {sub.lastActive ? <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span> : ''}
+                                                                            </p>
+                                                                            {sub.lastActive && (
+                                                                                <p className="text-sm text-muted-foreground">
+                                                                                    Last active {timeAgoShort(new Date(sub.lastActive))}
+                                                                                </p>
+                                                                            )}
+                                                                        </CardDescription>
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                                    <span>Points</span>
-                                                                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                                        {sub.points ?? 0}
-                                                                    </span>
+                                                            </CardHeader>
+
+                                                            <CardFooter className="flex gap-2 items-center">
+                                                                {sub.contactName && (
+                                                                    <div className="flex items-center text-sm text-muted-foreground">
+                                                                        <span className="font-medium">By {sub.contactName}</span>
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex items-center gap-2 ml-auto">
+                                                                    {statusUpdates1[sub.solutionId] && (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleSolutionUpdateStatus(sub.solutionId);
+                                                                            }}
+                                                                            disabled={isUpdating1[sub.solutionId]}
+                                                                        >
+                                                                            {isUpdating1[sub.solutionId] ? (
+                                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                            ) : (
+                                                                                <LucideIcons.Save className="mr-2 h-4 w-4" />
+                                                                            )}
+                                                                            Update Status
+                                                                        </Button>
+                                                                    )}
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="sm"
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                                className="flex items-center gap-2"
+                                                                            >
+                                                                                {statusUpdates1[sub.status]}
+                                                                                <span>{statusLabels[sub.status]}</span>
+                                                                                <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+
+                                                                        <DropdownMenuContent>
+                                                                            {Object.values(SolutionStatus).map((status) => (
+                                                                                <DropdownMenuItem
+                                                                                    key={status}
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleStatusChange(sub.solutionId, status);
+                                                                                    }}
+                                                                                >
+                                                                                    <span>{statusLabels[status]}</span>
+                                                                                </DropdownMenuItem>
+                                                                            ))}
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
                                                                 </div>
-                                                            </div>
-                                                        </div>
+                                                            </CardFooter>
+                                                        </Card>
+                                                    </motion.div>
+                                                );
+                                            };
 
-                                                        {/* {sub.challenge && (
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="rounded-full px-3 py-1 text-xs font-medium bg-blue-50 text-blue-800 border-blue-200"
-                                                            >
-                                                                {sub.challenge?.sector && sub.challenge?.technologyArea
-                                                                    ? `${sub.challenge.sector} / ${sub.challenge.technologyArea}`
-                                                                    : sub.challenge?.sector || sub.challenge?.technologyArea || "N/A"}
-                                                            </Badge>
-                                                        )} */}
-                                                    </div>
-
-                                                    <CardDescription className="flex items-center text-sm text-muted-foreground">
-                                                        {sub.challenge?.postedBy && (
-                                                            <div className="flex items-center">
-                                                                <span className="font-medium">{sub.challenge?.postedBy?.companyName || "Untitled Challenge"}</span>
-                                                                <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
-                                                            </div>
-                                                        )}
-                                                        <Badge
-                                                            className={`px-3 py-1 text-xs font-semibold border rounded-sm 
-                                                                    ${statusBadgeClasses[sub.status]}`}
-                                                        >
-                                                            {statusLabels[sub.status]}
-
-                                                        </Badge>
-                                                        <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
-                                                        <p className="text-sm text-muted-foreground flex items-center">
-                                                            Submitted {formatPrettyDate(new Date(sub.createdAt))}
-                                                            {sub.lastActive ? <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span> : ''}
-                                                        </p>
-                                                        {/* {sub.contactName && (
-                                                            <div className="flex items-center">
-                                                                <span className="font-medium">By {sub.contactName}</span>
-                                                                <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
-                                                            </div>
-                                                        )} */}
-                                                        {sub.lastActive && (
-                                                            <p className="text-sm text-muted-foreground">
-                                                                Last active {timeAgoShort(new Date(sub.lastActive))}
-                                                            </p>
-                                                        )}
-                                                    </CardDescription>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-
-                                        <CardFooter className="flex gap-2 items-center">
-                                            {sub.contactName && (
-                                                <div className="flex items-center text-sm text-muted-foreground">
-                                                    <span className="font-medium">By {sub.contactName}</span>
-                                                </div>
-                                            )}
-                                            <div className="flex items-center gap-2 ml-auto">
-                                                {statusUpdates1[sub.solutionId] && (
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleSolutionUpdateStatus(sub.solutionId);
-                                                        }}
-                                                        disabled={isUpdating1[sub.solutionId]}
-                                                    >
-                                                        {isUpdating1[sub.solutionId] ? (
-                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                        ) : (
-                                                            <LucideIcons.Save className="mr-2 h-4 w-4" />
-                                                        )}
-                                                        Update Status
-                                                    </Button>
-                                                )}
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            className="flex items-center gap-2"
-                                                        >
-                                                            {statusUpdates1[sub.status]}
-                                                            <span>{statusLabels[sub.status]}</span>
-                                                            <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-
-                                                    <DropdownMenuContent>
-                                                        {Object.values(SolutionStatus).map((status) => (
-                                                            <DropdownMenuItem
-                                                                key={status}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleStatusChange(sub.solutionId, status);
-                                                                }}
-                                                            >
-                                                                <span>{statusLabels[status]}</span>
-                                                            </DropdownMenuItem>
-                                                        ))}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                        </CardFooter>
-                                    </Card>
-                                )) : (
+                                            return <AnimatedCard key={id} />;
+                                        })}
+                                    </div>
+                                ) : (
                                     <Card className="text-center text-muted-foreground py-16">
                                         <CardContent>You have not received any submissions yet.</CardContent>
                                     </Card>

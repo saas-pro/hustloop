@@ -35,7 +35,7 @@ export const CorporateChallengeCard = ({
 
     if (isLoading) {
         return (
-            <Card className="bg-card flex flex-col w-[18rem] antialiased border-none">
+            <Card className="bg-card flex flex-col w-full md:w-[18rem] antialiased border-none">
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Skeleton className="h-[60px] w-[60px] rounded-lg" />
@@ -61,7 +61,7 @@ export const CorporateChallengeCard = ({
     }
 
     return (
-        <Card className="bg-card flex flex-col w-[18rem] antialiased border-none" onClick={() => onViewDetails("CorporateChallenges", challenge)}>
+        <Card className="bg-card flex flex-col w-full md:w-[18rem] antialiased border-none" onClick={() => onViewDetails("CorporateChallenges", challenge)}>
             <CardHeader>
                 <div className="flex items-center gap-4">
                     <Image
