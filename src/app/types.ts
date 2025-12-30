@@ -1,5 +1,5 @@
 
-export type View = "home" | "blog" | "mentors" | "incubators" | "submitIP" | "pricing" | "msmes" | "solveChallenges" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile" | "joinasanMSME" | "browseTech" | "marketplace" | "browseMSME";
+export type View = "home" | "blog" | "mentors" | "incubators" | "submitIP" | "pricing" | "msmes" | "solveChallenges" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile" | "joinasanMSME" | "browseTech" | "marketplace" | "browseMSME" | "early-bird";
 export type DashboardTab = "overview" | "msmes" | "ip/technologies" | "incubators" | "engagements" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" | "aignite" | "connex" | "pitch-details";
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
 export type SolveChallengeTab = "overview" | "submission" | "team" | "settings"

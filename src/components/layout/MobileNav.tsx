@@ -30,7 +30,7 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
     { id: "incubators", label: "Incubators" },
     { id: "msmes", label: "MSMEs" },
     { id: "education", label: "Education" },
-    { id: "pricing", label: "Pricing" },
+    { id: "early-bird", label: "Early Bird" },
     { id: "blog", label: "Blog" },
     { id: "marketplace", label: "Marketplace" },
 ];
@@ -197,17 +197,15 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                                             isActive ? "text-primary" : "text-muted-foreground"
                                         );
 
-                                        if (item.label === "Pricing") {
+                                        if (item.id === "early-bird") {
                                             return (
                                                 <SheetClose key={item.id} asChild>
                                                     <Button
-                                                        asChild
                                                         variant="ghost"
+                                                        onClick={(e) => handleScrollToSection(e, 'newsletter-section')}
                                                         className={`w-full text-left ${className}`}
                                                     >
-                                                        <Link href="/pricing">
-                                                            {item.label}
-                                                        </Link>
+                                                        {item.label}
                                                     </Button>
                                                 </SheetClose>
                                             );
@@ -229,11 +227,13 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
 
                                 <SheetClose asChild >
                                     <Button
+                                        asChild
                                         variant="ghost"
-                                        onClick={(e) => handleScrollToSection(e, 'newsletter-section')}
                                         className="justify-start text-lg text-muted-foreground hover:text-primary transition-colors"
                                     >
-                                        Early Bird
+                                        <Link href="/pricing">
+                                            Pricing
+                                        </Link>
                                     </Button>
                                 </SheetClose>
 
