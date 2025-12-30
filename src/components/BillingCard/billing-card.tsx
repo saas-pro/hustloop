@@ -36,7 +36,7 @@ export default function PricingAccordion() {
             </div>
 
             <div className={`w-[95vw] max-w-7xl relative`}>
-                <Accordion type="single" collapsible defaultValue="pricing-plans">
+                <Accordion type="single" collapsible>
                     <AccordionItem
                         value="pricing-plans"
                         className={`rounded-xl border border-border px-6 shadow-xl shadow-primary/5`}

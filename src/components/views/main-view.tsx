@@ -343,6 +343,10 @@ export default function MainView() {
       localStorage.removeItem('token');
       localStorage.removeItem('authProvider');
       localStorage.removeItem('founder_role');
+
+      // Dispatch event to notify app of state change
+      window.dispatchEvent(new Event('storage'));
+
       setActiveView('home');
       router.push('/');
       toast({ title: "Logged Out", description: "You have been successfully logged out." });

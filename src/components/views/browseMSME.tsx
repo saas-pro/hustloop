@@ -615,7 +615,7 @@ export default function BrowseMSME({ isOpen, onOpenChange }: BrowseMSMEProps) {
                                                                         </Button>
                                                                     </PopoverTrigger>
 
-                                                                    <PopoverContent onFocusOutside={(e) => e.preventDefault()}>
+                                                                    <PopoverContent onFocusOutside={(e) => e.preventDefault()} className="w-fit">
                                                                         <input
                                                                             type="date"
                                                                             value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}

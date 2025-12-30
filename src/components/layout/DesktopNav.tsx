@@ -29,8 +29,8 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
     { id: "marketplace", label: "Marketplace" },
     { id: "education", label: "Education" },
     { id: "mentors", label: "Mentors" },
-    { id: "early-bird", label: "Early Bird" },
-    { id: "blog", label: "Blog" }
+    { id: "blog", label: "Blog" },
+    { id: "early-bird", label: "Early Bird" }
 ];
 
 
@@ -107,7 +107,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
     };
     const hideMarketplace =
         pathname === "/privacy-policy" || pathname === "/terms-of-service" || pathname === "/sif-aignite";
-    const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    const handleScrollToSection = (e: React.MouseEvent<any>, sectionId: string) => {
         e.preventDefault();
         if (pathname !== '/') {
             router.push('/');
@@ -384,17 +384,18 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                 {/* Wrap in UL for Semantic SEO */}
                 <ul className="hidden md:flex items-center gap-4 text-[18px] list-none">
                     <li>
-                        <Button asChild className="text-[18px] font-medium">
-                            <Link
-                                href="/pricing"
-                                onClick={() => {
-                                    document.body.classList.remove('nav-open');
-                                    setNavOpen(false);
-                                }}
-                            >
-                                Pricing
-                            </Link>
-                        </Button>
+                        <a
+                            href="/pricing"
+                            className={cn(
+                                "cursor-pointer font-medium pb-1 border-b-2 border-transparent text-muted-foreground transition-all duration-300 ease-in-out hover:text-foreground hover:border-primary"
+                            )}
+                            onClick={() => {
+                                document.body.classList.remove('nav-open');
+                                setNavOpen(false);
+                            }}
+                        >
+                            Pricing
+                        </a>
                     </li>
 
                     <li>
@@ -420,7 +421,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                     )}
                     aria-label="Main Navigation"
                 >
-                    <ul className="flex w-full justify-between list-none">
+                    <ul className="flex w-full justify-between items-center list-none">
                         {navItems
                             .filter((item) => !item.loggedIn || isLoggedIn)
                             .map((item, index) => {
@@ -433,13 +434,12 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                                 return (
                                     <li key={index}>
                                         {item.id === "early-bird" ? (
-                                            <a
-                                                href="#newsletter-section"
-                                                className={className}
+                                            <Button
                                                 onClick={(e) => handleScrollToSection(e, "newsletter-section")}
+                                                className="h-10 px-4 text-[16px] font-medium whitespace-nowrap"
                                             >
                                                 {item.label}
-                                            </a>
+                                            </Button>
                                         ) : (
 
                                             <button

@@ -93,17 +93,18 @@ export default function PricingPageClient() {
 
                                 <CardFooter className="flex-col items-start mt-4">
                                     <div className="flex items-baseline gap-3 mb-3">
-                                        {plan.originally && (
-                                            <span className="text-3xl  text-muted-foreground line-through">{plan.originally}</span>
-                                        )}
-
                                         <div className="flex flex-col">
-
-                                            <span className="text-4xl font-bold">{plan.price}</span>
+                                            <span className="text-4xl font-bold">{plan.price}
+                                                {plan.originally && (
+                                                    <span className="text-3xl font-headline ml-2 text-muted-foreground line-through ">{plan.originally}</span>
+                                                )}
+                                            </span>
                                             {(idx === 1 || idx === 2) && (
                                                 <span className="text-xs text-muted-foreground">INR + GST Applicable</span>
                                             )}
+
                                         </div>
+
                                     </div>
 
                                     <Button

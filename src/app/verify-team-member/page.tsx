@@ -30,6 +30,8 @@ function VerifyContent() {
             localStorage.removeItem('token');
             localStorage.removeItem('authProvider');
             localStorage.removeItem('founder_role');
+
+            window.dispatchEvent(new Event('storage'));
             toast({
                 title: "Please login again",
             });

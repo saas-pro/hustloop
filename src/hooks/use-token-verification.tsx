@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import type { UserRole, View } from '@/app/types';
+import { signOut } from 'firebase/auth';
 
 type AuthProvider = 'local' | 'google';
 
@@ -82,7 +83,6 @@ export const useTokenVerification = ({
                     setHasSubscription(false);
                     setAppliedPrograms({});
                     setAuthProvider(null);
-
                     localStorage.removeItem('isLoggedIn');
                     localStorage.removeItem('userRole');
                     localStorage.removeItem('user');
@@ -91,6 +91,9 @@ export const useTokenVerification = ({
                     localStorage.removeItem('token');
                     localStorage.removeItem('authProvider');
                     localStorage.removeItem('founder_role');
+
+                    // Dispatch event to notify app of state change
+                    window.dispatchEvent(new Event('storage'));
 
                     setActiveView('home');
                     router.push('/');
