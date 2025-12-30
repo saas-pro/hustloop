@@ -28,18 +28,18 @@ export default function PricingAccordion() {
     };
     return (
         <div className="flex flex-col items-center relative py-16 md:py-20 bg-background">
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 w-[95vw]">
                 <h2 className="text-3xl font-bold font-headline">Our Pricing</h2>
                 <p className="text-muted-foreground max-w-xl mx-auto mt-2">
                     Choose a plan that&apos;s right for your startup. All plans are designed to help you succeed.
                 </p>
             </div>
 
-            <div className={`w-full max-w-7xl relative`}>
-                <Accordion type="single" collapsible>
+            <div className={`w-[95vw] max-w-7xl relative`}>
+                <Accordion type="single" collapsible defaultValue="pricing-plans">
                     <AccordionItem
                         value="pricing-plans"
-                        className={`rounded-xl border border-border/50 px-6`}
+                        className={`rounded-xl border border-border px-6 shadow-xl shadow-primary/5`}
                     >
                         <AccordionTrigger className="w-full text-center text-xl font-semibold hover:no-underline p-6">
                             View Pricing Plans
@@ -52,7 +52,7 @@ export default function PricingAccordion() {
                                         key={plan.name}
                                         className={cn(
                                             "relative flex flex-col",
-                                            plan.primary ? "ring-2 ring-primary" : "border-border/50"
+                                            plan.primary ? "border-primary border-2" : "border-border/50"
                                         )}
                                     >
                                         {plan.tag && (
@@ -86,14 +86,17 @@ export default function PricingAccordion() {
                                         <CardFooter className="flex-col items-start mt-4">
                                             <div className="flex items-baseline gap-3 mb-3">
                                                 <div className="flex flex-col">
-                                                    <span className="text-4xl font-bold">{plan.price}</span>
+                                                    <span className="text-4xl font-bold">{plan.price}
+                                                        {plan.originally && (
+                                                            <span className="text-3xl font-headline ml-2 text-muted-foreground line-through ">{plan.originally}</span>
+                                                        )}
+                                                    </span>
                                                     {(idx === 1 || idx === 2) && (
                                                         <span className="text-xs text-muted-foreground">INR + GST Applicable</span>
                                                     )}
+
                                                 </div>
-                                                {plan.originally && (
-                                                    <span className="text-3xl  text-muted-foreground line-through">{plan.originally}</span>
-                                                )}
+
                                             </div>
 
                                             <Button

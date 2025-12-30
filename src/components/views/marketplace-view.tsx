@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Lightbulb, Microscope, Puzzle } from 'lucide-react';
 import type { View } from '@/app/types';
 import CircularText from '@/components/CircularText';
+import { Marquee } from '@/components/ui/marquee';
 
 const MsmesView = dynamic(() => import('./msmes'));
 const TechTransferView = dynamic(() => import('../browsetech/browsetech'));
@@ -40,7 +41,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-3xl w-[95vw] rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center font-headline">Marketplace</DialogTitle>
             <DialogDescription className="text-center">
@@ -65,19 +66,11 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                     </CardTitle>
                   </CardHeader>
 
-                  <CardContent className="flex-1 flex flex-col justify-between">
+                  <CardContent className="flex-1 flex flex-col justify-between pb-0 md:pb-6">
                     <div className="flex-1 flex flex-row items-center gap-4">
                       <p className="text-muted-foreground mb-4 flex-1">
                         Apply your skills to solve real-world problems posted by companies and MSMEs. Get rewarded and gain valuable experience.
                       </p>
-                      <div className="flex md:hidden justify-center items-center">
-                        <CircularText
-                          text="INCENTIVE*CHALLENGES*"
-                          spinDuration={10}
-                          onHover="pause"
-                          className='!h-36 !w-36 mb-4'
-                        />
-                      </div>
                     </div>
 
                     <Button
@@ -92,6 +85,15 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                       Browse Challenges <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardContent>
+                  <div className='md:hidden w-full flex flex-col items-center'>
+                    <div className="w-fit overflow-hidden py-1 px-4">
+                      <Marquee speed={12} className="w-[80vw]">
+                        <span className="text-[30px] sm:text-xs font-bold uppercase tracking-[0.2em] whitespace-nowrap">
+                          Solve Challenges • Reward Points • Impact •
+                        </span>
+                      </Marquee>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="hidden md:flex justify-center items-center m-6">
@@ -115,19 +117,11 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                     </CardTitle>
                   </CardHeader>
 
-                  <CardContent className="flex-1 flex flex-col justify-between">
+                  <CardContent className="flex-1 flex flex-col justify-between pb-0 md:pb-6">
                     <div className="flex-1 flex flex-row md:flex-row items-center gap-4">
                       <p className="text-muted-foreground mb-4 flex-1">
                         Discover and license cutting-edge technologies from universities and research institutions. Access innovative solutions and intellectual property ready for Monitize.
                       </p>
-                      <div className="flex md:hidden justify-center items-center">
-                        <CircularText
-                          text="TECHNOLOGY*TRANSFER*"
-                          spinDuration={10}
-                          onHover="pause"
-                          className='!h-36 !w-36 mb-4'
-                        />
-                      </div>
                     </div>
 
                     <Button onClick={(e) => {
@@ -139,8 +133,16 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                       Browse Technologies <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardContent>
+                  <div className='md:hidden w-full flex flex-col items-center'>
+                    <div className="w-fit overflow-hidden py-1 px-4">
+                      <Marquee speed={12} className="w-[80vw]">
+                        <span className="text-[30px] sm:text-xs font-bold uppercase tracking-[0.2em] whitespace-nowrap">
+                          Technology Transfer • Reward Points • Impact •
+                        </span>
+                      </Marquee>
+                    </div>
+                  </div>
                 </div>
-
                 <div className="hidden md:flex justify-center items-center m-6">
                   <CircularText
                     text="TECHNOLOGY*TRANSFER*"
@@ -163,19 +165,11 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                     </CardTitle>
                   </CardHeader>
 
-                  <CardContent className="flex-1 flex flex-col justify-between">
+                  <CardContent className="flex-1 flex flex-col justify-between pb-0 md:pb-6">
                     <div className="flex-1 flex flex-row justify-center items-center gap-4">
                       <p className="text-muted-foreground mb-4 flex-1">
                         Discover the ideal incubator that will provide the guidance, support, and resources needed to nurture your idea into a successful reality and accelerate your startup journey.
                       </p>
-                      <div className="flex md:hidden justify-center items-center">
-                        <CircularText
-                          text="STARTUP*DREAM*"
-                          spinDuration={10}
-                          onHover="pause"
-                          className='!h-36 !w-36 mb-4'
-                        />
-                      </div>
                     </div>
 
                     <Button
@@ -189,6 +183,15 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                       Find an Incubator <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardContent>
+                  <div className='md:hidden w-full flex flex-col items-center'>
+                    <div className="w-fit overflow-hidden py-1 px-4">
+                      <Marquee speed={12} className="w-[80vw]">
+                        <span className="text-[30px] sm:text-xs font-bold uppercase tracking-[0.2em] whitespace-nowrap">
+                          Incubate • Reward Points • Impact •
+                        </span>
+                      </Marquee>
+                    </div>
+                  </div>
                 </div>
                 <div className="hidden md:flex justify-center items-center m-6">
                   <CircularText

@@ -11,6 +11,7 @@ import { Loader2, Mail } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 import { Button } from "../ui/moving-border";
 import OfferHighlight from "../ui/offer-highlight";
+import { SilverBorderButton } from "../ui/silver-border-button";
 
 const newsletterSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -90,16 +91,16 @@ export default function NewsletterForm() {
               </FormItem>
             )}
           />
-          <Button
+          <SilverBorderButton
             type="submit"
             disabled={isSubmitting}
-            className="bg-accent border-none whitespace-nowrap"
+            className="w-fit !whitespace-nowrap !py-0 !px-6 h-10 text-sm"
           >
             <div className="flex items-center gap-2">
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              <span className="text-accent-foreground font-medium">Let Me In</span>
+              <span className="text-current font-medium">Let Me In</span>
             </div>
-          </Button>
+          </SilverBorderButton>
         </form>
       </Form>
     </div>

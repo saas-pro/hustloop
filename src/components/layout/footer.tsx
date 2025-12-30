@@ -52,7 +52,7 @@ export default function Footer() {
           </div>
 
           {/* Right: Social Icons */}
-          <div className="flex-1 flex justify-center md:justify-end">
+          <div className="flex-1 flex justify-center md:justify-end mb-3 md:mb-0">
             <div className="flex items-center gap-4">
               <a href="https://x.com/hustloop" target="_blank" aria-label="X" className="text-muted-foreground hover:text-primary transition-colors">
                 <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current">
@@ -70,7 +70,7 @@ export default function Footer() {
           </div>
         </div>
       </div>
-      <div className="w-full flex items-center justify-center pb-0 mb-0 h-[80px] md:h-[160px] lg:h-[200px] overflow-hidden">
+      <div className="flex-1 w-full flex items-center justify-center pb-0 mb-0 h-[80px] md:h-[160px] lg:h-[200px] overflow-hidden">
         <div className="w-full relative h-[160px] md:h-[320px] lg:h-[400px] flex items-end justify-center">
           <TextHoverEffect text="HUSTLOOP" duration={10} />
         </div>

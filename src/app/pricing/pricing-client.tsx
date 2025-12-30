@@ -60,7 +60,7 @@ export default function PricingPageClient() {
                                 key={plan.name}
                                 className={cn(
                                     "relative flex flex-col bg-card/50 backdrop-blur-sm",
-                                    plan.primary ? "ring-2 ring-primary" : "border-border/50"
+                                    plan.primary ? "border-2 border-primary" : "border-border/50"
                                 )}
                             >
                                 {plan.tag && (

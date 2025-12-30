@@ -32,8 +32,7 @@ const SolutionCard = ({ solutionSteps, scrollContainer }: SolutionCardsProps) =>
     offset: ['start start', 'end end'] // Track the entire duration of the scroll
   });
 
-  const headingY = useTransform(scrollYProgress, [0, 0.3], [100, 0]); // Start from below (100px) and move to position (0)
-  const headingOpacity = useTransform(scrollYProgress, [0, 0.2], [0, 1]); // Fade in
+
 
   // Pre-calculate all card scales - create individual transforms for each card
   const totalCards = Object.entries(solutionSteps).length;
@@ -51,9 +50,8 @@ const SolutionCard = ({ solutionSteps, scrollContainer }: SolutionCardsProps) =>
 
   return (
     <section className="relative py-16 md:py-20 bg-background" ref={containerRef}>
-      <motion.h3
+      <h3
         className="text-4xl font-bold text-current sticky top-8 text-center"
-        style={{ y: headingY, opacity: headingOpacity, willChange: "transform, opacity" }}
       >
         Choose your{' '}
         <span className="relative inline-block">
@@ -76,7 +74,7 @@ const SolutionCard = ({ solutionSteps, scrollContainer }: SolutionCardsProps) =>
           </svg>
         </span>{' '}
         to success
-      </motion.h3>
+      </h3>
       <div className="mx-auto my-10 max-w-7xl">
 
 

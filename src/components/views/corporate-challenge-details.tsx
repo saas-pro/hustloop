@@ -431,7 +431,7 @@ export default function CorporateChallengeDetails({
     : JSON.parse(challenge?.attachments || "[]");
   return (
     <Dialog open={!!challenge} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] max-w-[90vw] h-[90vh] flex flex-col p-0">
+      <DialogContent className="w-[90vw] max-w-[90vw] h-[90vh] flex flex-col p-0 rounded-lg">
         <DialogHeader className="p-6">
           <div className="flex items-center gap-4">
             <Image
@@ -478,531 +478,533 @@ export default function CorporateChallengeDetails({
           </TabsList>
 
           {/* <ScrollArea className="flex-grow mt-4 h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]"> */}
-          <ScrollArea className="flex-grow mt-4 h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]">
-            <div className="flex flex-col w-full mt-4">
-              <TabsContent value="summary">
-                <div className="space-y-8">
 
-                  {isChallengeExpiredOrStopped && (
-                    <div className="w-full bg-red-100 border-l-8 border-red-600 p-5 rounded text-red-900 shadow-sm">
-                      <div className="flex items-start space-x-3">
-                        <div className="text-red-600 text-xl">❗</div>
-                        <div>
-                          <h2 className="text-lg font-bold mb-1">
-                            {challenge.status === "stopped" && "This challenge has been Stopped"}
-                            {challenge.status === "expired" && "This challenge has been Ended"}
-                          </h2>
+          <div className="flex flex-col w-full mt-4">
+            <TabsContent value="summary" className='overflow-y-auto h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]'>
+              <div className="space-y-8">
 
+                {isChallengeExpiredOrStopped && (
+                  <div className="w-full bg-red-100 border-l-8 border-red-600 p-5 rounded text-red-900 shadow-sm">
+                    <div className="flex items-start space-x-3">
+                      <div className="text-red-600 text-xl">❗</div>
+                      <div>
+                        <h2 className="text-lg font-bold mb-1">
+                          {challenge.status === "stopped" && "This challenge has been Stopped"}
+                          {challenge.status === "expired" && "This challenge has been Ended"}
+                        </h2>
+
+                        <p className="text-sm leading-relaxed mb-2">
+                          All activity related to this challenge should be halted until further notice.
+                        </p>
+
+                        <p className="text-sm leading-relaxed mb-2">
+                          Effective immediately, this challenge is no longer accepting submissions.
+                          Our team is reviewing operational and safety requirements and will notify you
+                          when further updates are available. We appreciate your patience.
+                        </p>
+
+                        {challenge.status === "expired" && (
                           <p className="text-sm leading-relaxed mb-2">
-                            All activity related to this challenge should be halted until further notice.
+                            Explore other challenges to continue showcasing your skills.
                           </p>
+                        )}
 
-                          <p className="text-sm leading-relaxed mb-2">
-                            Effective immediately, this challenge is no longer accepting submissions.
-                            Our team is reviewing operational and safety requirements and will notify you
-                            when further updates are available. We appreciate your patience.
+
+                        <p className="text-sm leading-relaxed mb-4">
+                          If you have any questions, please reach out to support or email us at
+                          <a href="mailto:support@hustloop.com" className="font-semibold underline ml-1">
+                            support[@]hustloop.com
+                          </a>
+                        </p>
+
+                        {challenge.stop_date && (
+                          <p className="text-xs font-semibold text-red-700">
+                            Stopped on {new Date(challenge.stop_date).toLocaleString()}
                           </p>
-
-                          {challenge.status === "expired" && (
-                            <p className="text-sm leading-relaxed mb-2">
-                              Explore other challenges to continue showcasing your skills.
-                            </p>
-                          )}
-
-
-                          <p className="text-sm leading-relaxed mb-4">
-                            If you have any questions, please reach out to support or email us at
-                            <a href="mailto:support@hustloop.com" className="font-semibold underline ml-1">
-                              support[@]hustloop.com
-                            </a>
-                          </p>
-
-                          {challenge.stop_date && (
-                            <p className="text-xs font-semibold text-red-700">
-                              Stopped on {new Date(challenge.stop_date).toLocaleString()}
-                            </p>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
 
-                  <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-card via-card to-accent/5 p-6 md:p-8">
-                    {/* Animated gradient border effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-accent/20 via-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-card via-card to-accent/5 p-6 md:p-8">
+                  {/* Animated gradient border effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent/20 via-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-                    <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
-                      {/* Left side - Title section */}
-                      <div className="flex gap-4 items-start flex-1 max-w-[100%] md:max-w-[65%] pr-4">
-                        <div className="relative flex-shrink-0">
-                          <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full" />
-                          <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center shadow-lg">
-                            <Award className="h-7 w-7 text-white" />
-                          </div>
-                        </div>
-
-                        <div className="text-left flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h2 className="text-sm font-bold text-accent uppercase tracking-wider">
-                              Challenge Title
-                            </h2>
-                          </div>
-                          <h1 className="text-3xl md:text-5xl font-extrabold leading-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent break-words">
-                            {challenge.title}
-                          </h1>
+                  <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
+                    {/* Left side - Title section */}
+                    <div className="flex gap-4 items-start flex-1 max-w-[100%] md:max-w-[65%] pr-4">
+                      <div className="relative flex-shrink-0">
+                        <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full" />
+                        <div className="relative h-14 w-14 rounded-2xl bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center shadow-lg">
+                          <Award className="h-7 w-7 text-white" />
                         </div>
                       </div>
 
-                      {/* Right side - Timer */}
-                      <div className='flex items-center md:justify-end w-full md:w-auto flex-shrink-0'>
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-accent/10 blur-2xl rounded-full" />
-                          <div className="relative top-0 right-0 md:top-[3.2rem] md:right-[2rem]">
-                            <TimelineCounter
-                              endDate={challenge?.end_date}
-                              extendedEndDate={challenge.extended_end_date}
-                              status={challenge.status}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Decorative elements */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-accent/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-primary/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-                  </div>
-
-
-                  <div>
-                    <h3 className="text-2xl font-bold mb-4">About The Challenge</h3>
-                    <MarkdownViewer content={challenge.description} />
-                  </div>
-
-                  {attachments?.length > 0 && (
-                    <div>
-                      <h2 className="text-lg font-semibold mb-2">Attachments</h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                        {attachments.map((fileUrl: string, index: number) => {
-                          const fileName = fileUrl.split("/").pop();
-                          return (
-                            <div className="text-sm bg-accent/50 hover:bg-accent p-3 rounded-md flex items-center" key={index}>
-                              <a
-                                key={index}
-                                href={fileUrl}
-                                download
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-primary hover:text-primary/80 break-all w-full"
-                              >
-                                <FileText className="h-4 w-4 flex-shrink-0" />
-                                <span className="truncate">{fileName}</span>
-                              </a>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                    <Card className="bg-card/50 backdrop-blur-sm border">
-                      <CardHeader className="items-center">
-                        <FileText className="h-8 w-8 text-primary mb-2" />
-                        <CardTitle className="text-3xl font-bold">{challenge?.submission_count}</CardTitle>
-                        <p className="text-sm text-muted-foreground">Soltuion Count</p>
-                      </CardHeader>
-                    </Card>
-
-                    <Card className="bg-card/50 backdrop-blur-sm border">
-                      <CardHeader className="items-center">
-                        <Timer className="h-8 w-8 text-primary mb-2" />
-                        <CardTitle className="text-2xl font-bold">
-                          {new Date(challenge.end_date).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">End Date</p>
-                      </CardHeader>
-                    </Card>
-
-                    <Card className="bg-card/50 backdrop-blur-sm border">
-                      <CardHeader className="items-center">
-                        <IndianRupee className="h-8 w-8 text-primary mb-2" />
-                        <CardTitle className="text-2xl font-bold">
-                          {challenge.reward_amount ??
-                            `${challenge.reward_min} - ${challenge.reward_max}`}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">Reward Amount</p>
-                      </CardHeader>
-                    </Card>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3">Contact Information</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {/* Email Contact Card */}
-                      <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                              B
-                            </div>
-                            <div>
-                              <CardTitle className="text-base">Boopathi S</CardTitle>
-                              <CardDescription className="text-xs">Founder and CEO</CardDescription>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <a
-                            href="mailto:boopathi.s@hustloop.com"
-                            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group break-all"
-                          >
-                            <Mail className="h-4 w-4 flex-shrink-0" />
-                            <span className="group-hover:underline">boopathi.s[@]hustloop.com</span>
-                          </a>
-                        </CardContent>
-                      </Card>
-
-                      {/* Social Media Card */}
-                      {/* Instagram Card */}
-                      <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
-                              <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                              </svg>
-                            </div>
-                            <div>
-                              <CardTitle className="text-base">Instagram</CardTitle>
-                              <CardDescription className="text-xs">Follow us</CardDescription>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <a
-                            href="https://instagram.com/hustloop_official"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
-                          >
-                            <span className="group-hover:underline">@hustloop_official</span>
-                          </a>
-                        </CardContent>
-                      </Card>
-
-                      {/* LinkedIn Card */}
-                      <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-10 w-10 rounded-full bg-[#0077B5] flex items-center justify-center">
-                              <Linkedin className="h-5 w-5 text-white" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-base">LinkedIn</CardTitle>
-                              <CardDescription className="text-xs">Connect with us</CardDescription>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <a
-                            href="https://linkedin.com/company/hustloop"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
-                          >
-                            <span className="group-hover:underline">company/hustloop</span>
-                          </a>
-                        </CardContent>
-                      </Card>
-
-                      {/* X (Twitter) Card */}
-                      <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-10 w-10 rounded-full bg-black dark:bg-white flex items-center justify-center">
-                              <svg className="h-4 w-4 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                              </svg>
-                            </div>
-                            <div>
-                              <CardTitle className="text-base">X (Twitter)</CardTitle>
-                              <CardDescription className="text-xs">Follow us</CardDescription>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <a
-                            href="https://x.com/hustloop"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
-                          >
-                            <span className="group-hover:underline">@hustloop</span>
-                          </a>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-
-                  <div className="relative text-center rounded-lg my-12 py-10">
-
-                    {
-                      isChallengeExpiredOrStopped ? (
-                        <div className="w-full text-left bg-red-100 border-l-8 border-red-600 p-5 rounded text-red-900 shadow-sm">
-                          <div className="flex items-start space-x-3">
-                            <div className="text-red-600 text-xl">❗</div>
-                            <div>
-                              <h2 className="text-lg font-bold mb-1">
-                                {challenge.status === "stopped" && "This challenge has been Stopped"}
-                                {challenge.status === "expired" && "This challenge has been Ended"}
-                              </h2>
-
-                              <p className="text-sm leading-relaxed mb-2">
-                                All activity related to this challenge should be halted until further notice.
-                              </p>
-
-                              <p className="text-sm leading-relaxed mb-2">
-                                Effective immediately, this challenge is no longer accepting submissions.
-                                Our team is reviewing operational and safety requirements and will notify you
-                                when further updates are available. We appreciate your patience.
-                              </p>
-
-                              {challenge.status === "expired" && (
-                                <p className="text-sm leading-relaxed mb-2">
-                                  Explore other challenges to continue showcasing your skills.
-                                </p>
-                              )}
-
-
-                              <p className="text-sm leading-relaxed mb-4">
-                                If you have any questions, please reach out to support or email us at
-                                <a href="mailto:support@hustloop.com" className="font-semibold underline ml-1">
-                                  support[@]hustloop.com
-                                </a>
-                              </p>
-
-                              {challenge.stop_date && (
-                                <p className="text-xs font-semibold text-red-700">
-                                  Stopped on {new Date(challenge.stop_date).toLocaleString()}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <h2 className="text-3xl font-bold mb-4 font-headline">
-                            Ready to Solve This Challenge?
+                      <div className="text-left flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h2 className="text-sm font-bold text-accent uppercase tracking-wider">
+                            Challenge Title
                           </h2>
+                        </div>
+                        <h1 className="text-3xl md:text-5xl font-extrabold leading-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent break-words">
+                          {challenge.title}
+                        </h1>
+                      </div>
+                    </div>
 
-                          <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
-                            Submit your innovative solution and get a chance to win exciting rewards
-                            and partnerships.
-                          </p>
-                        </>
-                      )}
+                    {/* Right side - Timer */}
+                    <div className='flex items-center md:justify-end w-full md:w-auto flex-shrink-0'>
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-accent/10 blur-2xl rounded-full" />
+                        <div className="relative top-0 right-0 md:top-[3.2rem] md:right-[2rem]">
+                          <TimelineCounter
+                            endDate={challenge?.end_date}
+                            extendedEndDate={challenge.extended_end_date}
+                            status={challenge.status}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          {isChallengeExpiredOrStopped ? (
-                            <div />
-                          ) : isOtherUsers ? (
-                            <div className="flex gap-4 w-full justify-center">
-                              <Button disabled className="bg-gray-400 cursor-not-allowed">
-                                Not Allowed
-                              </Button>
-                            </div>
-                          ) : isAllowedFounder || isLoggedIn ? (
-                            <Button
-                              size="lg"
-                              className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                              onClick={() => {
-                                if (hasAgreed) {
-                                  setShowSubmissionForm(true);
-                                } else {
-                                  setShowTermsDialog(true);
-                                }
-                                handleApplyClick(challenge.id)
-                              }}
-                              disabled={isDisabled}
+                  {/* Decorative elements */}
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-accent/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-primary/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+                </div>
+
+
+                <div>
+                  <h3 className="text-2xl font-bold mb-4">About The Challenge</h3>
+                  <MarkdownViewer content={challenge.description} />
+                </div>
+
+                {attachments?.length > 0 && (
+                  <div>
+                    <h2 className="text-lg font-semibold mb-2">Attachments</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                      {attachments.map((fileUrl: string, index: number) => {
+                        const fileName = fileUrl.split("/").pop();
+                        return (
+                          <div className="text-sm bg-accent/50 hover:bg-accent p-3 rounded-md flex items-center" key={index}>
+                            <a
+                              key={index}
+                              href={fileUrl}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-primary hover:text-primary/80 break-all w-full"
                             >
-                              <Rocket className="mr-2 h-5 w-5" />
-                              Solve This Challenge
+                              <FileText className="h-4 w-4 flex-shrink-0" />
+                              <span className="truncate">{fileName}</span>
+                            </a>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                  <Card className="bg-card/50 backdrop-blur-sm border">
+                    <CardHeader className="items-center">
+                      <FileText className="h-8 w-8 text-primary mb-2" />
+                      <CardTitle className="text-3xl font-bold">{challenge?.submission_count}</CardTitle>
+                      <p className="text-sm text-muted-foreground">Soltuion Count</p>
+                    </CardHeader>
+                  </Card>
+
+                  <Card className="bg-card/50 backdrop-blur-sm border">
+                    <CardHeader className="items-center">
+                      <Timer className="h-8 w-8 text-primary mb-2" />
+                      <CardTitle className="text-2xl font-bold">
+                        {new Date(challenge.end_date).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">End Date</p>
+                    </CardHeader>
+                  </Card>
+
+                  <Card className="bg-card/50 backdrop-blur-sm border">
+                    <CardHeader className="items-center">
+                      <IndianRupee className="h-8 w-8 text-primary mb-2" />
+                      <CardTitle className="text-2xl font-bold">
+                        {challenge.reward_amount ??
+                          `${challenge.reward_min} - ${challenge.reward_max}`}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">Reward Amount</p>
+                    </CardHeader>
+                  </Card>
+                </div>
+                <Separator />
+                <div>
+                  <h3 className="text-xl font-semibold mb-3">Contact Information</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {/* Email Contact Card */}
+                    <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                            B
+                          </div>
+                          <div>
+                            <CardTitle className="text-base">Boopathi S</CardTitle>
+                            <CardDescription className="text-xs">Founder and CEO</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <a
+                          href="mailto:boopathi.s@hustloop.com"
+                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group break-all"
+                        >
+                          <Mail className="h-4 w-4 flex-shrink-0" />
+                          <span className="group-hover:underline">boopathi.s[@]hustloop.com</span>
+                        </a>
+                      </CardContent>
+                    </Card>
+
+                    {/* Social Media Card */}
+                    {/* Instagram Card */}
+                    <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
+                            <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <CardTitle className="text-base">Instagram</CardTitle>
+                            <CardDescription className="text-xs">Follow us</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <a
+                          href="https://instagram.com/hustloop_official"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
+                        >
+                          <span className="group-hover:underline">@hustloop_official</span>
+                        </a>
+                      </CardContent>
+                    </Card>
+
+                    {/* LinkedIn Card */}
+                    <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-10 w-10 rounded-full bg-[#0077B5] flex items-center justify-center">
+                            <Linkedin className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base">LinkedIn</CardTitle>
+                            <CardDescription className="text-xs">Connect with us</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <a
+                          href="https://linkedin.com/company/hustloop"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
+                        >
+                          <span className="group-hover:underline">company/hustloop</span>
+                        </a>
+                      </CardContent>
+                    </Card>
+
+                    {/* X (Twitter) Card */}
+                    <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-10 w-10 rounded-full bg-black dark:bg-white flex items-center justify-center">
+                            <svg className="h-4 w-4 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <CardTitle className="text-base">X (Twitter)</CardTitle>
+                            <CardDescription className="text-xs">Follow us</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <a
+                          href="https://x.com/hustloop"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
+                        >
+                          <span className="group-hover:underline">@hustloop</span>
+                        </a>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <div className="relative text-center rounded-lg my-12 py-10">
+
+                  {
+                    isChallengeExpiredOrStopped ? (
+                      <div className="w-full text-left bg-red-100 border-l-8 border-red-600 p-5 rounded text-red-900 shadow-sm">
+                        <div className="flex items-start space-x-3">
+                          <div className="text-red-600 text-xl">❗</div>
+                          <div>
+                            <h2 className="text-lg font-bold mb-1">
+                              {challenge.status === "stopped" && "This challenge has been Stopped"}
+                              {challenge.status === "expired" && "This challenge has been Ended"}
+                            </h2>
+
+                            <p className="text-sm leading-relaxed mb-2">
+                              All activity related to this challenge should be halted until further notice.
+                            </p>
+
+                            <p className="text-sm leading-relaxed mb-2">
+                              Effective immediately, this challenge is no longer accepting submissions.
+                              Our team is reviewing operational and safety requirements and will notify you
+                              when further updates are available. We appreciate your patience.
+                            </p>
+
+                            {challenge.status === "expired" && (
+                              <p className="text-sm leading-relaxed mb-2">
+                                Explore other challenges to continue showcasing your skills.
+                              </p>
+                            )}
+
+
+                            <p className="text-sm leading-relaxed mb-4">
+                              If you have any questions, please reach out to support or email us at
+                              <a href="mailto:support@hustloop.com" className="font-semibold underline ml-1">
+                                support[@]hustloop.com
+                              </a>
+                            </p>
+
+                            {challenge.stop_date && (
+                              <p className="text-xs font-semibold text-red-700">
+                                Stopped on {new Date(challenge.stop_date).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="text-3xl font-bold mb-4 font-headline">
+                          Ready to Solve This Challenge?
+                        </h2>
+
+                        <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
+                          Submit your innovative solution and get a chance to win exciting rewards
+                          and partnerships.
+                        </p>
+                      </>
+                    )}
+
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        {isChallengeExpiredOrStopped ? (
+                          <div />
+                        ) : isOtherUsers ? (
+                          <div className="flex gap-4 w-full justify-center">
+                            <Button disabled className="bg-gray-400 cursor-not-allowed">
+                              Not Allowed
                             </Button>
-                          ) : (
-                            <div className="flex gap-4 w-full justify-center mt-4">
-                              <Button onClick={() => setActiveView("login")}>Login</Button>
+                          </div>
+                        ) : isAllowedFounder || isLoggedIn ? (
+                          <Button
+                            size="lg"
+                            className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                            onClick={() => {
+                              if (hasAgreed) {
+                                setShowSubmissionForm(true);
+                              } else {
+                                setShowTermsDialog(true);
+                              }
+                              handleApplyClick(challenge.id)
+                            }}
+                            disabled={isDisabled}
+                          >
+                            <Rocket className="mr-2 h-5 w-5" />
+                            Solve This Challenge
+                          </Button>
+                        ) : (
+                          <div className="flex gap-4 w-full justify-center mt-4">
+                            <Button onClick={() => setActiveView("login")}>Login</Button>
 
-                              <Button
-                                onClick={() => setActiveView("signup")}
-                                className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                              >
-                                Sign Up
-                              </Button>
-                            </div>
-                          )}
-                        </TooltipTrigger>
+                            <Button
+                              onClick={() => setActiveView("signup")}
+                              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                            >
+                              Sign Up
+                            </Button>
+                          </div>
+                        )}
+                      </TooltipTrigger>
 
-                        {isDisabled && <TooltipContent>{tooltipContent}</TooltipContent>}
-                      </Tooltip>
-                    </TooltipProvider>
+                      {isDisabled && <TooltipContent>{tooltipContent}</TooltipContent>}
+                    </Tooltip>
+                  </TooltipProvider>
 
-                    {!isChallengeExpiredOrStopped && (
-                      <div className="hidden md:block absolute bottom-0 right-0 md:bottom-4 md:right-8 overflow-hidden">
-                        <CircularText
-                          text="INCENTIVE*CHALLENGES*"
-                          spinDuration={10}
-                          className="!h-32 !w-32 md:!h-48 md:!w-48"
-                          onHover='pause'
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              </TabsContent>
-            </div>
-
-            <TabsContent value="timeline">
-              <Card className="p-4 min-h-[400px]">
-                <div className="mb-8 text-left m-3">
-                  <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Clock className="h-8 w-8" />
-                    Challenge Timeline
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Track the progress of the challenge from start to finish.
-                  </p>
-                </div>
-
-                <CardContent className="flex flex-col items-center mt-6">
-
-                  {!isLoggedIn ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                        <Lock className="h-8 w-8" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
-                      <p className="max-w-xs text-sm">
-                        Please log in to view the challenge timeline.
-                      </p>
+                  {!isChallengeExpiredOrStopped && (
+                    <div className="hidden md:block absolute bottom-0 right-0 md:bottom-4 md:right-8 overflow-hidden">
+                      <CircularText
+                        text="INCENTIVE*CHALLENGES*"
+                        spinDuration={10}
+                        className="!h-32 !w-32 md:!h-48 md:!w-48"
+                        onHover='pause'
+                      />
                     </div>
-                  ) : (
-                    <>
-                      {events ? (
-                        <VerticalTimeline timeline={events} />
-                      ) : (
-                        <div className="space-y-6 w-full">
-                          {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex gap-4">
-                              <div className="flex flex-col items-center">
-                                <Skeleton className="h-10 w-10 rounded-full" />
-                                {i < 3 && <Skeleton className="w-0.5 h-16 mt-2" />}
-                              </div>
-                              <div className="flex-1 space-y-2 pb-8">
-                                <Skeleton className="h-6 w-1/3" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-2/3" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </>
                   )}
-
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-
-            <TabsContent value="announcement">
-              <Card className="border shadow-sm p-4 min-h-[400px]">
-                <div className="mb-8 text-left m-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                        <MessageSquare className="h-8 w-8" />
-                        Announcements
-                      </h2>
-                      <p className="text-muted-foreground">
-                        Updates and important information for this challenge.
-                      </p>
-                    </div>
-                    {localStorage.getItem("userRole") === "admin" && (
-                      <Button
-                        size="sm"
-                        className="w-full md:w-auto"
-                        onClick={() => {
-                          setCollaborationId(challenge.id)
-                          setIsAnnouncementDialogOpen(true);
-                        }}
-                      >
-                        + Create Announcement
-                      </Button>
-                    )}
-                  </div>
                 </div>
 
-                <CardContent className="p-4 pt-0">
-                  {!isLoggedIn ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                        <Lock className="h-8 w-8" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
-                      <p className="max-w-xs text-sm">Please log in to view announcements.</p>
-                    </div>
-                  ) : isFetchingAnnouncements ? (
-                    <div className="space-y-4">
-                      {[1, 2, 3].map((i) => (
-                        <Card key={i} className="p-5">
-                          <Skeleton className="h-6 w-3/4 mb-2" />
-                          <Skeleton className="h-4 w-full mb-2" />
-                          <Skeleton className="h-4 w-5/6" />
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <>
-                      {(!announcements || announcements.length === 0) && (
-                        <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                          <h3 className="text-lg font-semibold text-foreground">No Announcements Yet</h3>
-                          <p className="max-w-xs text-sm">
-                            Announcements related to this challenge will appear here.
-                          </p>
-                        </div>
-                      )}
+              </div>
+            </TabsContent>
+          </div>
 
-                      {announcements?.length > 0 && (
-                        <div className="space-y-4">
-                          {announcements.map((a) => (
-                            <Card
-                              key={a.id}
-                              className="group p-5 border shadow-sm hover:shadow-lg 
+          <TabsContent value="timeline" className='overflow-y-auto h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]'>
+            <Card className="p-4 min-h-[400px]">
+              <div className="mb-8 text-left m-3">
+                <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                  <Clock className="h-8 w-8" />
+                  Challenge Timeline
+                </h2>
+                <p className="text-muted-foreground">
+                  Track the progress of the challenge from start to finish.
+                </p>
+              </div>
+
+              <CardContent className="flex flex-col items-center mt-6">
+
+                {!isLoggedIn ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <Lock className="h-8 w-8" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
+                    <p className="max-w-xs text-sm">
+                      Please log in to view the challenge timeline.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {events ? (
+                      <VerticalTimeline timeline={events} />
+                    ) : (
+                      <div className="space-y-6 w-full">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                              <Skeleton className="h-10 w-10 rounded-full" />
+                              {i < 3 && <Skeleton className="w-0.5 h-16 mt-2" />}
+                            </div>
+                            <div className="flex-1 space-y-2 pb-8">
+                              <Skeleton className="h-6 w-1/3" />
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-4 w-2/3" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+
+          <TabsContent value="announcement" className='overflow-y-auto h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]'>
+            <Card className="border shadow-sm p-4 min-h-[400px]">
+              <div className="mb-8 text-left m-3">
+                <div className="flex flex-col md:flex-row items-center justify-between">
+                  <div>
+                    <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                      <MessageSquare className="h-8 w-8" />
+                      Announcements
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Updates and important information for this challenge.
+                    </p>
+                  </div>
+                  {localStorage.getItem("userRole") === "admin" && (
+                    <Button
+                      size="sm"
+                      className="w-full md:w-auto mt-3 md:mt-0"
+                      onClick={() => {
+                        setCollaborationId(challenge.id)
+                        setIsAnnouncementDialogOpen(true);
+                      }}
+                    >
+                      + Create Announcement
+                    </Button>
+                  )}
+                </div>
+
+              </div>
+
+              <CardContent className="p-4 pt-0">
+                {!isLoggedIn ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <Lock className="h-8 w-8" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
+                    <p className="max-w-xs text-sm">Please log in to view announcements.</p>
+                  </div>
+                ) : isFetchingAnnouncements ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i} className="p-5">
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-5/6" />
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {(!announcements || announcements.length === 0) && (
+                      <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                        <h3 className="text-lg font-semibold text-foreground">No Announcements Yet</h3>
+                        <p className="max-w-xs text-sm">
+                          Announcements related to this challenge will appear here.
+                        </p>
+                      </div>
+                    )}
+
+                    {announcements?.length > 0 && (
+                      <div className="space-y-4">
+                        {announcements.map((a) => (
+                          <Card
+                            key={a.id}
+                            className="group p-5 border shadow-sm hover:shadow-lg 
                   transition-all duration-300 rounded-xl relative
                   hover:border-primary/40 hover:bg-primary/5"
-                            >
-                              <div className="flex items-start justify-between mb-4">
-                                <div className="flex-1">
-                                  <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
-                                    {a.type === "alert" && <span className="text-red-500">⚠️</span>}
-                                    {a.type === "update" && <span className="text-blue-500">📢</span>}
-                                    {a.type === "deadline" && <span className="text-orange-500">⏳</span>}
-                                    {a.type === "result" && <span className="text-green-500">🏆</span>}
-                                    {a.type === "general" && <span className="text-primary">📝</span>}
-                                    {a.title}
-                                  </h3>
-                                </div>
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
+                                  {a.type === "alert" && <span className="text-red-500">⚠️</span>}
+                                  {a.type === "update" && <span className="text-blue-500">📢</span>}
+                                  {a.type === "deadline" && <span className="text-orange-500">⏳</span>}
+                                  {a.type === "result" && <span className="text-green-500">🏆</span>}
+                                  {a.type === "general" && <span className="text-primary">📝</span>}
+                                  {a.title}
+                                </h3>
+                              </div>
 
-                                <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2">
+                                <div className='hidden md:flex items-center gap-2'>
                                   <Badge
                                     variant="secondary"
                                     className="text-xs capitalize px-3 py-1 rounded-full"
@@ -1018,222 +1020,142 @@ export default function CorporateChallengeDetails({
                                       {a.createdBy}
                                     </Badge>
                                   )}
-
-                                  {localStorage.getItem("userRole") === "admin" && (
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                          <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                          className="cursor-pointer"
-                                          onClick={() => handleEditAnnouncement(a)}
-                                        >
-                                          <Pencil className="h-4 w-4 mr-2" />
-                                          Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          className="cursor-pointer text-destructive"
-                                          onClick={() => setDeleteAnnouncementId(a.id)}
-                                        >
-                                          <Trash2 className="h-4 w-4 mr-2" />
-                                          Delete
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  )}
                                 </div>
-                              </div>
 
-                              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                                {a.message}
-                              </p>
-
-                              {a.attachments.length > 0 && (
-                                <div className="space-y-2">
-                                  <p className="text-xs font-semibold text-muted-foreground">
-                                    Attachments:
-                                  </p>
-
-                                  <div className="flex gap-2">
-                                    📎
-                                    {a.attachments.map((url, i) => (
-                                      <a
-                                        key={i}
-                                        href={url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 text-sm text-primary font-medium 
-                              underline underline-offset-2 transition-all hover:text-primary/70"
+                                {localStorage.getItem("userRole") === "admin" && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onClick={() => handleEditAnnouncement(a)}
                                       >
-                                        Attachment {i + 1}
-                                      </a>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              <Separator className="my-4" />
-
-                              <div className="flex items-center justify-between text-xs text-muted-foreground opacity-80">
-                                <span>Posted on {new Date(a.createdAt).toLocaleString()}</span>
-                              </div>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-
-            <TabsContent value="hof" >
-              <Card className="border shadow-sm p-4 min-h-[400px]">
-                <div className="mb-8 text-left m-3">
-                  <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Trophy className="h-8 w-8" />
-                    Hall of Fame
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Celebrating the top innovators and contributors
-                  </p>
-                </div>
-
-                {!isLoggedIn ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                      <Lock className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
-                    <p className="max-w-xs text-sm">Please log in to view the Hall of Fame and see who&apos;s leading the challenge.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-10">
-                    {/* 1️⃣ Winner Podium Section */}
-                    {winners.length > 0 && (
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-amber-500/5 to-yellow-500/10 blur-3xl -z-10" />
-                        <div className="flex flex-wrap justify-center gap-6 md:gap-8">
-                          {winners.map((item, index) => (
-                            <div
-                              key={index}
-                              className="relative group w-full max-w-sm"
-                            >
-                              <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 to-amber-600 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
-                              <div className="relative flex flex-col items-center p-6 bg-card rounded-xl border border-yellow-200/50 dark:border-yellow-900/50 shadow-xl">
-                                <div className="absolute -top-5">
-                                  <div className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-4 py-1 rounded-full shadow-lg flex items-center gap-2 font-bold text-sm">
-                                    <Trophy className="h-4 w-4" />
-                                    WINNER
-                                  </div>
-                                </div>
-
-                                <div
-                                  className="h-24 w-24 rounded-full border-4 border-yellow-100 dark:border-yellow-900/30 flex items-center justify-center text-3xl font-bold text-white shadow-inner mb-4 mt-4"
-                                  style={(() => {
-                                    const name = item.contactName || "?";
-                                    const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-                                    const color1 = `hsl(${hash % 360}, 70%, 50%)`;
-                                    const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`;
-                                    return { background: `linear-gradient(135deg, ${color1}, ${color2})` };
-                                  })()}
-                                >
-                                  {item.contactName ? item.contactName.charAt(0).toUpperCase() : "?"}
-                                </div>
-
-                                <h3 className="text-xl font-bold text-center mb-1">{item.contactName}</h3>
-                                <p className="text-sm text-muted-foreground mb-4">{item.state}</p>
-
-                                <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/10 px-4 py-2 rounded-lg border border-yellow-100 dark:border-yellow-900/20">
-                                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                                  <span className="font-bold text-yellow-700 dark:text-yellow-400">{item.points} Points</span>
-
-                                </div>
-                                <span className="font-bold text-yellow-700 dark:text-yellow-400 mt-4">₹ {item.rewards} has been Rewarded</span>
+                                        <Pencil className="h-4 w-4 mr-2" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="cursor-pointer text-destructive"
+                                        onClick={() => setDeleteAnnouncementId(a.id)}
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
                               </div>
                             </div>
-                          ))}
-                        </div>
+                            <div className="flex items-center mb-2 gap-2 md:hidden">
+                              <Badge
+                                variant="secondary"
+                                className="text-xs capitalize px-3 py-1 rounded-full"
+                              >
+                                {a.type}
+                              </Badge>
+
+                              {a.createdBy && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs px-3 py-1 rounded-full"
+                                >
+                                  {a.createdBy}
+                                </Badge>
+                              )}
+                            </div>
+
+
+
+                            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                              {a.message}
+                            </p>
+
+                            {a.attachments.length > 0 && (
+                              <div className="space-y-2">
+                                <p className="text-xs font-semibold text-muted-foreground">
+                                  Attachments:
+                                </p>
+
+                                <div className="flex gap-2">
+                                  📎
+                                  {a.attachments.map((url, i) => (
+                                    <a
+                                      key={i}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 text-sm text-primary font-medium 
+                              underline underline-offset-2 transition-all hover:text-primary/70"
+                                    >
+                                      Attachment {i + 1}
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            <Separator className="my-4" />
+
+                            <div className="flex items-center justify-between text-xs text-muted-foreground opacity-80">
+                              <span>Posted on {new Date(a.createdAt).toLocaleString()}</span>
+                            </div>
+                          </Card>
+                        ))}
                       </div>
                     )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                    {/* 2️⃣ Leaderboard Section */}
-                    {scored.length > 0 && (
-                      <div className="space-y-4">
-                        <h3 className="text-xl font-bold flex items-center gap-2">
-                          <Medal className="h-5 w-5 text-primary" />
-                          Top Performers
-                        </h3>
-                        <Card className="overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm">
-                          <div className="overflow-x-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                                  <TableHead className="w-[100px]">Rank</TableHead>
-                                  <TableHead>Participant</TableHead>
-                                  <TableHead>Status</TableHead>
-                                  <TableHead className="text-right">Score</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {scored.map((item, index) => (
-                                  <TableRow key={index} className="hover:bg-muted/30 transition-colors">
-                                    <TableCell className="font-medium text-muted-foreground">
-                                      #{index + 1 + winners.length}
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="flex items-center gap-3">
-                                        <div
-                                          className="h-9 w-9 rounded-full text-white flex items-center justify-center text-sm font-bold shadow-sm"
-                                          style={(() => {
-                                            const name = item.contactName || "?";
-                                            const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-                                            const color1 = `hsl(${hash % 360}, 70%, 50%)`;
-                                            const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`;
-                                            return { background: `linear-gradient(135deg, ${color1}, ${color2})` };
-                                          })()}
-                                        >
-                                          {item.contactName ? item.contactName.charAt(0).toUpperCase() : "?"}
-                                        </div>
-                                        <span className="font-medium">{item.contactName}</span>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>
-                                      <Badge variant="outline" className="font-normal">
-                                        {item.state}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right font-bold text-primary">
-                                      {item.points}
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </Card>
-                      </div>
-                    )}
 
-                    {/* 3️⃣ Participants Grid */}
-                    {zeroPoints.length > 0 && (
-                      <div className="space-y-4">
-                        <h3 className="text-xl font-bold flex items-center gap-2">
-                          <Users className="h-5 w-5 text-muted-foreground" />
-                          All Participants
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                          {zeroPoints.map((item, index) => (
-                            <div
-                              key={index}
-                              className="group flex flex-col items-center p-4 rounded-xl border bg-card/30 hover:bg-card hover:shadow-md transition-all duration-300"
-                            >
+          <TabsContent value="hof" className='overflow-y-auto h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]'>
+            <Card className="border shadow-sm p-4 min-h-[400px]">
+              <div className="mb-8 text-left m-3">
+                <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                  <Trophy className="h-8 w-8" />
+                  Hall of Fame
+                </h2>
+                <p className="text-muted-foreground">
+                  Celebrating the top innovators and contributors
+                </p>
+              </div>
+
+              {!isLoggedIn ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <Lock className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
+                  <p className="max-w-xs text-sm">Please log in to view the Hall of Fame and see who&apos;s leading the challenge.</p>
+                </div>
+              ) : (
+                <div className="space-y-10">
+                  {/* 1️⃣ Winner Podium Section */}
+                  {winners.length > 0 && (
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-amber-500/5 to-yellow-500/10 blur-3xl -z-10" />
+                      <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+                        {winners.map((item, index) => (
+                          <div
+                            key={index}
+                            className="relative group w-full max-w-sm"
+                          >
+                            <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 to-amber-600 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
+                            <div className="relative flex flex-col items-center p-6 bg-card rounded-xl border border-yellow-200/50 dark:border-yellow-900/50 shadow-xl">
+                              <div className="absolute -top-5">
+                                <div className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-4 py-1 rounded-full shadow-lg flex items-center gap-2 font-bold text-sm">
+                                  <Trophy className="h-4 w-4" />
+                                  WINNER
+                                </div>
+                              </div>
+
                               <div
-                                className="h-12 w-12 rounded-full mb-3 text-white flex items-center justify-center text-lg font-bold shadow-sm group-hover:scale-110 transition-transform duration-300"
+                                className="h-24 w-24 rounded-full border-4 border-yellow-100 dark:border-yellow-900/30 flex items-center justify-center text-3xl font-bold text-white shadow-inner mb-4 mt-4"
                                 style={(() => {
                                   const name = item.contactName || "?";
                                   const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
@@ -1244,85 +1166,184 @@ export default function CorporateChallengeDetails({
                               >
                                 {item.contactName ? item.contactName.charAt(0).toUpperCase() : "?"}
                               </div>
-                              <p className="font-semibold text-sm text-center line-clamp-1 w-full">{item.contactName}</p>
-                              <p className="text-xs text-muted-foreground mt-1">{item.state}</p>
+
+                              <h3 className="text-xl font-bold text-center mb-1">{item.contactName}</h3>
+                              <p className="text-sm text-muted-foreground mb-4">{item.state}</p>
+
+                              <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/10 px-4 py-2 rounded-lg border border-yellow-100 dark:border-yellow-900/20">
+                                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                <span className="font-bold text-yellow-700 dark:text-yellow-400">{item.points} Points</span>
+
+                              </div>
+                              <span className="font-bold text-yellow-700 dark:text-yellow-400 mt-4">₹ {item.rewards} has been Rewarded</span>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
-
-                    {winners.length === 0 && scored.length === 0 && zeroPoints.length === 0 && (
-                      <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                        <h3 className="text-lg font-semibold text-foreground">No Participants Yet</h3>
-                        <p className="max-w-xs text-sm">
-                          No participants have joined this challenge yet.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="q/a">
-              {!isLoggedIn ? (
-                <Card className="border shadow-sm p-4 min-h-[400px]">
-                  <div className="mb-8 text-left m-3">
-                    <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                      <HelpCircle className="h-8 w-8" />
-                      Q/A Forum
-                    </h2>
-                    <p className="text-muted-foreground">
-                      Ask questions and collaborate with others on this challenge.
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                      <Lock className="h-8 w-8" />
                     </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
-                    <p className="max-w-xs text-sm">Please log in to view the Q/A forum.</p>
-                  </div>
-                  <CardContent>
-                  </CardContent>
-                </Card>
-              ) : (
-                <QAForum collaborationId={challenge?.id} isExpired={isChallengeExpiredOrStopped} />
-              )}
-            </TabsContent>
+                  )}
 
-            <TabsContent value="faq">
+                  {/* 2️⃣ Leaderboard Section */}
+                  {scored.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-bold flex items-center gap-2">
+                        <Medal className="h-5 w-5 text-primary" />
+                        Top Performers
+                      </h3>
+                      <Card className="overflow-hidden border-none shadow-md bg-card/50 backdrop-blur-sm">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                <TableHead className="w-[100px]">Rank</TableHead>
+                                <TableHead>Participant</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Score</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {scored.map((item, index) => (
+                                <TableRow key={index} className="hover:bg-muted/30 transition-colors">
+                                  <TableCell className="font-medium text-muted-foreground">
+                                    #{index + 1 + winners.length}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className="h-9 w-9 rounded-full text-white flex items-center justify-center text-sm font-bold shadow-sm"
+                                        style={(() => {
+                                          const name = item.contactName || "?";
+                                          const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                                          const color1 = `hsl(${hash % 360}, 70%, 50%)`;
+                                          const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`;
+                                          return { background: `linear-gradient(135deg, ${color1}, ${color2})` };
+                                        })()}
+                                      >
+                                        {item.contactName ? item.contactName.charAt(0).toUpperCase() : "?"}
+                                      </div>
+                                      <span className="font-medium">{item.contactName}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className="font-normal">
+                                      {item.state}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right font-bold text-primary">
+                                    {item.points}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </Card>
+                    </div>
+                  )}
+
+                  {/* 3️⃣ Participants Grid */}
+                  {zeroPoints.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-bold flex items-center gap-2">
+                        <Users className="h-5 w-5 text-muted-foreground" />
+                        All Participants
+                      </h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {zeroPoints.map((item, index) => (
+                          <div
+                            key={index}
+                            className="group flex flex-col items-center p-4 rounded-xl border bg-card/30 hover:bg-card hover:shadow-md transition-all duration-300"
+                          >
+                            <div
+                              className="h-12 w-12 rounded-full mb-3 text-white flex items-center justify-center text-lg font-bold shadow-sm group-hover:scale-110 transition-transform duration-300"
+                              style={(() => {
+                                const name = item.contactName || "?";
+                                const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                                const color1 = `hsl(${hash % 360}, 70%, 50%)`;
+                                const color2 = `hsl(${(hash + 120) % 360}, 70%, 50%)`;
+                                return { background: `linear-gradient(135deg, ${color1}, ${color2})` };
+                              })()}
+                            >
+                              {item.contactName ? item.contactName.charAt(0).toUpperCase() : "?"}
+                            </div>
+                            <p className="font-semibold text-sm text-center line-clamp-1 w-full">{item.contactName}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{item.state}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {winners.length === 0 && scored.length === 0 && zeroPoints.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                      <h3 className="text-lg font-semibold text-foreground">No Participants Yet</h3>
+                      <p className="max-w-xs text-sm">
+                        No participants have joined this challenge yet.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="q/a" className='overflow-y-auto h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]'>
+            {!isLoggedIn ? (
               <Card className="border shadow-sm p-4 min-h-[400px]">
-                <div>
+                <div className="mb-8 text-left m-3">
                   <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                     <HelpCircle className="h-8 w-8" />
-                    FAQ
+                    Q/A Forum
                   </h2>
                   <p className="text-muted-foreground">
-                    Answer to your questions about this challenge.
+                    Ask questions and collaborate with others on this challenge.
                   </p>
                 </div>
-                <CardContent >
-                  <Accordion
-                    type="single"
-                    collapsible
-                    className="w-full md:w-[95%] mx-auto"
-                  >
-                    {sampleFaqs.map((faq, index) => (
-                      <AccordionItem key={index} value={`item-${index}`}>
-                        <AccordionTrigger className='text-left hover:no-underline'>{faq.question}</AccordionTrigger>
-                        <AccordionContent className='leading-relaxed'>
-                          {faq.answer}
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-
+                <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <Lock className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">Access Required</h3>
+                  <p className="max-w-xs text-sm">Please log in to view the Q/A forum.</p>
+                </div>
+                <CardContent>
                 </CardContent>
               </Card>
-            </TabsContent>
-          </ScrollArea>
+            ) : (
+              <QAForum collaborationId={challenge?.id} isExpired={isChallengeExpiredOrStopped} />
+            )}
+          </TabsContent>
+
+          <TabsContent value="faq" className='overflow-y-auto h-[calc(90vh-350px)] md:h-[calc(90vh-250px)]'>
+            <Card className="border shadow-sm p-4 min-h-[400px]">
+              <div>
+                <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                  <HelpCircle className="h-8 w-8" />
+                  FAQ
+                </h2>
+                <p className="text-muted-foreground">
+                  Answer to your questions about this challenge.
+                </p>
+              </div>
+              <CardContent >
+                <Accordion
+                  type="single"
+                  collapsible
+                  className="w-full md:w-[95%] mx-auto"
+                >
+                  {sampleFaqs.map((faq, index) => (
+                    <AccordionItem key={index} value={`item-${index}`}>
+                      <AccordionTrigger className='text-left hover:no-underline'>{faq.question}</AccordionTrigger>
+                      <AccordionContent className='leading-relaxed'>
+                        {faq.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs >
       </DialogContent >
 

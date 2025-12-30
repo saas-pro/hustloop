@@ -432,7 +432,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0">
+        <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0 rounded-lg">
           <DialogHeader className="p-6">
             <DialogTitle className="text-3xl font-bold text-center font-headline">Innovation &amp; Growth Opportunities</DialogTitle>
             <DialogDescription className="text-center">

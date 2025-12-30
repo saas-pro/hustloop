@@ -15,9 +15,10 @@ export function Button({
   children,
   as: Component = "button",
   containerClassName,
-  borderClassName,
   duration,
   className,
+  borderClassName,
+  secondBorderClassName,
   ...otherProps
 }: {
   borderRadius?: string;
@@ -25,6 +26,7 @@ export function Button({
   as?: any;
   containerClassName?: string;
   borderClassName?: string;
+  secondBorderClassName?: string;
   duration?: number;
   className?: string;
   [key: string]: any;
@@ -47,8 +49,16 @@ export function Button({
         <MovingBorder duration={duration} rx="30%" ry="30%">
           <div
             className={cn(
-              "h-20 w-20 bg-[radial-gradient(#0ea5e9_40%,transparent_60%)] opacity-[0.8]",
+              "h-20 w-20 bg-[radial-gradient(hsl(var(--primary))_40%,transparent_60%)] opacity-[0.8]",
               borderClassName,
+            )}
+          />
+        </MovingBorder>
+        <MovingBorder duration={duration} rx="30%" ry="30%" offset={0.5}>
+          <div
+            className={cn(
+              "h-20 w-20 bg-[radial-gradient(hsl(var(--accent))_40%,transparent_60%)] opacity-[0.8]",
+              secondBorderClassName,
             )}
           />
         </MovingBorder>
@@ -56,7 +66,7 @@ export function Button({
 
       <div
         className={cn(
-          "relative flex h-fit w-full px-4 py-2 items-center justify-center border border-accent/50 bg-accent-900/[0.8] text-sm text-white antialiased backdrop-blur-xl",
+          "relative flex h-fit w-full px-4 py-2 items-center justify-center border border-accent/20 bg-accent-950/[0.9] text-sm text-white antialiased backdrop-blur-xl",
           className,
         )}
         style={{
@@ -74,12 +84,14 @@ export const MovingBorder = ({
   duration = 3000,
   rx,
   ry,
+  offset = 0,
   ...otherProps
 }: {
   children: React.ReactNode;
   duration?: number;
   rx?: string;
   ry?: string;
+  offset?: number;
   [key: string]: any;
 }) => {
   const pathRef = useRef<any>();
@@ -89,7 +101,8 @@ export const MovingBorder = ({
     const length = pathRef.current?.getTotalLength();
     if (length) {
       const pxPerMillisecond = length / duration;
-      progress.set((time * pxPerMillisecond) % length);
+      const initialProgress = offset * length;
+      progress.set((initialProgress + time * pxPerMillisecond) % length);
     }
   });
 

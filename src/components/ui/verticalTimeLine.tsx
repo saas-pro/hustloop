@@ -141,7 +141,7 @@ export default function VerticalTimeline({
 
 
   return (
-    <Timeline className="w-2/3">
+    <Timeline className="w-[70vw] md:w-2/3">
       {finalEvents.map((ev, i) => (
         <TimelineItem
           key={ev.id}

@@ -79,7 +79,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0 overflow-y-auto pb-3">
+            <DialogContent className="sm:max-w-6xl w-[90vw] h-[90vh] flex flex-col p-0 overflow-y-auto pb-3 rounded-lg">
                 <DialogHeader className="p-6">
                     <DialogTitle className="text-3xl font-bold text-center font-headline">Technology Transfer</DialogTitle>
                     <DialogDescription className="text-center">
@@ -99,10 +99,10 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                             </div>
 
                             {/* Skeleton Cards Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 pb-6 overflow-x-hidden gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 pb-6 overflow-x-hidden gap-8 w-full">
                                 {[...Array(6)].map((_, index) => (
                                     <div key={index} className="h-[22rem] w-full flex items-center justify-center">
-                                        <Card className="w-[20rem] h-[18rem] flex flex-col border-border/50">
+                                        <Card className="w-full h-[18rem] flex flex-col border-border/50">
                                             <CardHeader className="pb-3">
                                                 <Skeleton className="h-6 w-3/4 mb-2" />
                                                 <Skeleton className="h-4 w-1/2" />
@@ -150,7 +150,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                                                 title={profile.firstName + " " + profile.lastName}
                                                 containerClassName="w-[20rem]"
                                             >
-                                                <Card className="w-[20rem] h-[18rem] flex flex-col border-border/50 hover:border-accent/50 transition-colors bg-card shadow-xl" onClick={() => {
+                                                <Card className="w-[80vw] md:w-[20rem] h-[18rem] flex flex-col border-border/50 hover:border-accent/50 transition-colors bg-card shadow-xl" onClick={() => {
                                                     setTechId(profile.id);
                                                     onOpenChange(true);
                                                 }}>
@@ -158,9 +158,6 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                                                         <CardTitle className="text-xl font-bold line-clamp-2">
                                                             {profile.ipTitle}
                                                         </CardTitle>
-                                                        <CardDescription className="text-xs">
-                                                            by {profile.firstName + " " + profile.lastName}
-                                                        </CardDescription>
                                                     </CardHeader>
                                                     <CardContent className="flex-1 overflow-hidden">
                                                         <p className="text-sm text-muted-foreground line-clamp-4">
