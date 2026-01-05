@@ -202,6 +202,8 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
           role: data.role, token: data.token, hasSubscription: data.hasSubscription,
           name: data.name, email: data.email, authProvider: 'local', founder_role: data.founder_role
         });
+        // Dispatch storage event to trigger immediate update in pricing components
+        window.dispatchEvent(new Event('storage'));
       } else {
         toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
       }
@@ -241,6 +243,8 @@ export default function LoginModal({ isOpen, setIsOpen, activeView, setActiveVie
           role: data.role, token: data.token, hasSubscription: data.hasSubscription,
           name: data.name, email: data.email, authProvider: 'google', founder_role: data.founder_role
         });
+        // Dispatch storage event to trigger immediate update in pricing components
+        window.dispatchEvent(new Event('storage'));
       } else {
         toast({ variant: 'destructive', title: 'Login Failed', description: data.error || 'An error occurred.' });
       }

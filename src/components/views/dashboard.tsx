@@ -1,5 +1,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, useInView } from "motion/react";
+import { io, Socket } from 'socket.io-client';
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -40,6 +42,22 @@ import { DeleteConfirmationDialog } from '../ui/DeleteConfirmationDialog';
 import { useSearchParams } from "next/navigation";
 import SubmissionDetailsModal from "./submission-details-modal";
 import AnimatedList from "@/components/AnimatedList";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarHeader,
+    SidebarInset,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarProvider,
+    SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 const settingsFormSchema = z.object({
     name: z
@@ -225,6 +243,197 @@ const statusBadgeClasses: Record<SolutionStatus, string> = {
 const iconNames = Object.keys(LucideIcons).filter(k => k !== 'createLucideIcon' && k !== 'icons' && k !== 'default');
 
 
+const formatPrettyDate = (date: Date) => {
+    const months = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    const suffix =
+        day % 10 === 1 && day !== 11 ? "st" :
+            day % 10 === 2 && day !== 12 ? "nd" :
+                day % 10 === 3 && day !== 13 ? "rd" : "th";
+
+    return `${month} ${day}${suffix} ${year}`;
+}
+
+const timeAgoShort = (date: Date) => {
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+
+    const intervals = [
+        { label: "y", seconds: 31536000 },
+        { label: "m", seconds: 2592000 },
+        { label: "w", seconds: 604800 },
+        { label: "d", seconds: 86400 },
+        { label: "h", seconds: 3600 },
+        { label: "min", seconds: 60 }
+    ];
+
+    for (let interval of intervals) {
+        const count = Math.floor(seconds / interval.seconds);
+        if (count > 0) {
+            return `${count}${interval.label} ago`;
+        }
+    }
+
+    return "just now";
+}
+
+const AnimatedCard = ({
+    sub,
+    setSelectedSubmission,
+    statusBadgeClasses,
+    statusLabels,
+    statusUpdates1,
+    handleSolutionUpdateStatus,
+    isUpdating1,
+    handleStatusChange
+}: {
+    sub: Submission;
+    setSelectedSubmission: (sub: Submission) => void;
+    statusBadgeClasses: Record<string, string>;
+    statusLabels: Record<string, string>;
+    statusUpdates1: Record<string, any>;
+    handleSolutionUpdateStatus: (id: string) => void;
+    isUpdating1: Record<string, boolean>;
+    handleStatusChange: (id: string, status: any) => void;
+}) => {
+    const ref = useRef<HTMLDivElement>(null);
+    const inView = useInView(ref, { amount: 0.3, once: true });
+
+    return (
+        <motion.div
+            ref={ref}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={inView ? { scale: 1, opacity: 1 } : { scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 }}
+        >
+            <Card
+                onClick={() => setSelectedSubmission(sub)}
+                className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
+            >
+                <CardHeader className="pb-4">
+                    <div className="flex justify-between items-start">
+                        <div className="space-y-1 w-full">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className='flex justify-between w-full'>
+                                    <CardTitle className="tracking-normal text-lg font-medium w-full">
+                                        {sub.challenge?.title || "Untitled Challenge"}
+                                    </CardTitle>
+                                    <div className="flex gap-2">
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <span>Comments</span>
+                                            <div className="flex items-center gap-1">
+                                                <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
+                                                    {sub.comments?.length || 0}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <span>Points</span>
+                                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                                {sub.status === SolutionStatus.solution_accepted_points ||
+                                                    sub.status === SolutionStatus.winner
+                                                    ? "50"
+                                                    : "0"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <CardDescription className="flex items-center text-sm text-muted-foreground">
+                                {sub.challenge?.postedBy && (
+                                    <div className="flex items-center">
+                                        <span className="font-medium">{sub.challenge?.postedBy?.companyName || "Untitled Challenge"}</span>
+                                        <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
+                                    </div>
+                                )}
+                                <Badge
+                                    className={`px-3 py-1 text-xs font-semibold border rounded-sm 
+                                ${statusBadgeClasses[sub.status]}`}
+                                >
+                                    {statusLabels[sub.status]}
+
+                                </Badge>
+                                <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
+                                <div className="text-sm text-muted-foreground flex items-center">
+                                    Submitted {formatPrettyDate(new Date(sub.createdAt))}
+                                    {sub.lastActive ? <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span> : ''}
+                                </div>
+                                {sub.lastActive && (
+                                    <p className="text-sm text-muted-foreground">
+                                        Last active {timeAgoShort(new Date(sub.lastActive))}
+                                    </p>
+                                )}
+                            </CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+
+                <CardFooter className="flex gap-2 items-center">
+                    {sub.contactName && (
+                        <div className="flex items-center text-sm text-muted-foreground">
+                            <span className="font-medium">By {sub.contactName}</span>
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2 ml-auto">
+                        {statusUpdates1[sub.solutionId] && (
+                            <Button
+                                size="sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSolutionUpdateStatus(sub.solutionId);
+                                }}
+                                disabled={isUpdating1[sub.solutionId]}
+                            >
+                                {isUpdating1[sub.solutionId] ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <LucideIcons.Save className="mr-2 h-4 w-4" />
+                                )}
+                                Update Status
+                            </Button>
+                        )}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex items-center gap-2"
+                                >
+                                    {statusUpdates1[sub.status]}
+                                    <span>{statusLabels[sub.status]}</span>
+                                    <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent>
+                                {Object.values(SolutionStatus).map((status) => (
+                                    <DropdownMenuItem
+                                        key={status}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleStatusChange(sub.solutionId, status);
+                                        }}
+                                    >
+                                        <span>{statusLabels[status]}</span>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </CardFooter>
+            </Card>
+        </motion.div>
+    );
+};
+
 const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) => void, title: string }) => (
     <Card className="mt-0 bg-card/50 backdrop-blur-sm border-border/50 text-center flex flex-col items-center justify-center p-8 min-h-[400px]">
         <LucideIcons.Lock className="h-12 w-12 text-primary mb-4" />
@@ -239,16 +448,19 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
 export default function DashboardView({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: DashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+    const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
     const [adminContentTab, setAdminContentTab] = useState('blog');
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [emailChangeRequested, setEmailChangeRequested] = useState(false);
     const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
+    const isMobile = useIsMobile();
 
 
 
     // Admin state
     const [users, setUsers] = useState<AppUser[]>([]);
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+    const [togglingPlans, setTogglingPlans] = useState<Record<string, boolean>>({});
     const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
     const [userToBan, setUserToBan] = useState<AppUser | null>(null);
     const [selectedUserForDetails, setSelectedUserForDetails] = useState<AppUser | null>(null);
@@ -266,7 +478,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [activeSolutionIndex, setActiveSolutionIndex] = useState<number | undefined>(undefined);
     const [activeUserIndex, setActiveUserIndex] = useState<number | undefined>(undefined);
     const [activeEventIndex, setActiveEventIndex] = useState<number | undefined>(undefined);
-
+    const [activePitchTokenIndex, setActivePitchTokenIndex] = useState<number | undefined>(undefined);
     // Event config state
     const [eventConfig, setEventConfig] = useState<{ event_name: string; is_enabled: boolean } | null>(null);
     const [isTogglingEvent, setIsTogglingEvent] = useState(false);
@@ -475,45 +687,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         fetchUsers(page, itemsPerPage);
     };
 
-    function formatPrettyDate(date: Date) {
-        const months = [
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        ];
 
-        const day = date.getDate();
-        const month = months[date.getMonth()];
-        const year = date.getFullYear();
-
-        const suffix =
-            day % 10 === 1 && day !== 11 ? "st" :
-                day % 10 === 2 && day !== 12 ? "nd" :
-                    day % 10 === 3 && day !== 13 ? "rd" : "th";
-
-        return `${month} ${day}${suffix} ${year}`;
-    }
-
-    function timeAgoShort(date: Date) {
-        const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-
-        const intervals = [
-            { label: "y", seconds: 31536000 },
-            { label: "m", seconds: 2592000 },
-            { label: "w", seconds: 604800 },
-            { label: "d", seconds: 86400 },
-            { label: "h", seconds: 3600 },
-            { label: "min", seconds: 60 }
-        ];
-
-        for (let interval of intervals) {
-            const count = Math.floor(seconds / interval.seconds);
-            if (count > 0) {
-                return `${count}${interval.label} ago`;
-            }
-        }
-
-        return "just now";
-    }
 
 
 
@@ -614,6 +788,55 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     useEffect(() => {
         getSubmissions()
     }, [getSubmissions])
+
+    useEffect(() => {
+        if (submissions.length === 0) return;
+
+        const socket: Socket = io(`${API_BASE_URL}`, {
+            path: '/socket.io',
+            transports: ['websocket', 'polling']
+        });
+
+        socket.connect();
+
+        submissions.forEach(sub => {
+            socket.emit('join_solution', { solutionId: sub.solutionId });
+        });
+
+        socket.on('solution_status_updated', (data: any) => {
+            setSubmissions(prevSubmissions =>
+                prevSubmissions.map(sub =>
+                    sub.solutionId === data.solutionId
+                        ? {
+                            ...sub,
+                            status: data.status,
+                            points: data.points,
+                            updatedAt: data.updated_at
+                        }
+                        : sub
+                )
+            );
+
+            const formatStatus = (status: string) =>
+                status
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+
+            toast({
+                title: 'Status Updated',
+                description: `Solution status changed to: ${formatStatus(data.status)}`,
+            });
+        });
+
+        return () => {
+            submissions.forEach(sub => {
+                socket.emit('leave_solution', { solutionId: sub.solutionId });
+            });
+            socket.off('solution_status_updated');
+            socket.disconnect();
+        };
+    }, [submissions, toast]);
 
 
     const handleResetSubscribers = async () => {
@@ -1040,6 +1263,64 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const handleDeleteUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User deleted successfully.', 'Deletion Failed');
     const handleToggleBanUser = async (userId: string) => handleApiResponse(await fetch(`${API_BASE_URL}/api/users/${userId}/toggle-ban`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }), 'User status updated.', 'Update Failed');
 
+    const handleTogglePlan = async (userId: string, planName: string, currentStatus: boolean) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+
+        const key = `${userId}-${planName}`;
+        setTogglingPlans((prev: Record<string, boolean>) => ({ ...prev, [key]: true }));
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admin/activate-free-plan`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    plan_name: planName,
+                    is_active: !currentStatus
+                }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                toast({
+                    title: "Success",
+                    description: `Plan ${planName} ${!currentStatus ? 'activated' : 'revoked'} for user.`
+                });
+
+                setUsers(prevUsers => prevUsers.map(u => {
+                    if (u.uid === userId) {
+                        const updatedPlans = !currentStatus
+                            ? [...(u.active_plans || []), planName]
+                            : (u.active_plans || []).filter(p => p !== planName);
+                        return { ...u, active_plans: updatedPlans };
+                    }
+                    return u;
+                }));
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: data.message || "Failed to update plan."
+                });
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "An error occurred while toggling the plan."
+            });
+        } finally {
+            setTogglingPlans((prev: Record<string, boolean>) => ({ ...prev, [key]: false }));
+        }
+    };
+
 
 
     const handleEditPost = (post: BlogPost) => {
@@ -1300,10 +1581,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setisipOverview(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "ip/technologies", "aignite", "engagement", "pitch-details", "settings"];
+    const adminTabs = ["overview", "users", "ip/technologies", "aignite", "engagement", "blog", "sessions", "subscribers", "plans", "pitch-details", "settings"];
     const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
-    const techTransferTabs = ["overview", "submission", "engagements", "mentors", "settings"];
+    const techTransferTabs = ["overview", "submission", "engagement", "mentors", "settings"];
     const filteredTabs = isTechTransfer ? techTransferTabs : availableTabs
     const tabsToRender = filteredTabs.filter(tab => tab !== "overview");
     const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
@@ -1892,1523 +2173,1570 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-6xl h-[90vh] flex flex-col p-0">
-                <DialogHeader className="p-6 shrink-0">
-                    <DialogTitle className="text-3xl font-bold font-headline capitalize">
-                        {userRole} Dashboard
-                    </DialogTitle>
-                    <DialogDescription>
-                        Welcome back, {user.name}! Here&apos;s an overview of your startup journey.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="flex-grow flex flex-col min-h-0 p-4 pt-0">
-                    <Tabs value={activeTab} className="flex flex-col flex-grow min-h-0">
-                        <TabsList
-                            className={`
-                                grid 
-                                grid-cols-3       
-                                sm:grid-cols-3    
-                                md:grid-cols-4 
-                                justify-center    
-                                ${isTechTransfer ? "lg:grid-cols-4" : (userRole === 'admin' ? "lg:grid-cols-6" : "lg:grid-cols-5")}
-                                gap-2 h-fit
-                                items-center       
-                                bg-muted/50 rounded-lg p-1
-                                mb-4 sm:mb-6 lg:mb-10 z-10`}
-                        >
+            <DialogContent className={cn("sm:max-w-6xl flex flex-col rounded-lg p-0", isMobile ? "h-[90vh]" : "h-[90vh]")}>
+                {!isMobile && (
+                    <DialogHeader className="p-6 shrink-0">
+                        <DialogTitle className="text-3xl font-bold font-headline capitalize">
+                            {userRole} Dashboard
+                        </DialogTitle>
+                        <DialogDescription>
+                            Welcome back, {user.name}! Here&apos;s an overview of your startup journey.
+                        </DialogDescription>
+                    </DialogHeader>
+                )}
+                <div className="flex-grow flex min-h-0 overflow-hidden">
+                    <SidebarProvider defaultOpen={isSidebarMinimized}>
+                        <Tabs value={activeTab} className="flex flex-grow min-h-0">
+                            {/* Vertical Collapsible Sidebar */}
+                            <Sidebar collapsible="icon" className="border-r border-border bg-muted/30">
+                                <SidebarHeader className="h-14 flex items-start relative right-0 justify-start border-b border-border/50">
+                                    <SidebarTrigger className="h-8 w-8 text-muted-foreground hover:text-accent-foreground" />
+                                </SidebarHeader>
+                                <SidebarContent className="p-2">
+                                    <SidebarGroup>
+                                        <SidebarGroupContent>
+                                            <SidebarMenu>
+                                                {tabsToRender.map((tab) => {
+                                                    const iconMap: Record<DashboardTab | string, keyof typeof LucideIcons> = {
+                                                        overview: "LayoutDashboard",
+                                                        users: "Users",
+                                                        "ip/technologies": "FileSignature",
+                                                        aignite: "Zap",
+                                                        engagement: "Handshake",
+                                                        plans: "CreditCard",
+                                                        "pitch-details": "Presentation",
+                                                        settings: "Settings",
+                                                        msmes: "Briefcase",
+                                                        incubators: "Lightbulb",
+                                                        mentors: "Users",
+                                                        submission: "FileText",
+                                                        blog: "BookOpen",
+                                                        sessions: "GraduationCap",
+                                                        subscribers: "Mail"
+                                                    };
 
-                            {tabsToRender.map((tab) => {
-                                const Icon = (
-                                    LucideIcons[
-                                    tab === "msmes"
-                                        ? "Briefcase"
-                                        : tab === "incubators"
-                                            ? "Lightbulb"
-                                            : tab === "ip/technologies"
-                                                ? "FileSignature"
-                                                : tab === "engagements"
-                                                    ? "Handshake"
-                                                    : tab === "engagement"
-                                                        ? "Handshake"
-                                                        : tab === "mentors"
-                                                            ? "Users"
-                                                            : tab === "submission"
-                                                                ? "FileText"
-                                                                : tab === "settings"
-                                                                    ? "Settings"
-                                                                    : tab === "users"
-                                                                        ? "User"
-                                                                        : tab === "subscribers"
-                                                                            ? "Mail"
-                                                                            : tab === "pitch-details"
-                                                                                ? "Presentation"
-                                                                                : "BookOpen"
+                                                    const iconName = iconMap[tab as DashboardTab] || "HelpCircle";
+                                                    const Icon = (LucideIcons[iconName] || LucideIcons.HelpCircle) as React.ComponentType<LucideProps>;
 
-                                    ] || LucideIcons.HelpCircle
-                                ) as React.ComponentType<LucideProps>;
-
-                                return (
-                                    <TabsTrigger
-                                        key={tab}
-                                        value={tab}
-                                        onClick={() => setActiveTab(tab as DashboardTab)}
-                                        className="
-                                            flex items-center justify-center gap-2 
-                                            rounded-md bg-card 
-                                            text-sm sm:text-base 
-                                            data-[state=active]:bg-accent data-[state=active]:text-accent-foreground 
-                                            hover:bg-accent/20 transition
+                                                    return (
+                                                        <SidebarMenuItem key={tab} className="relative right-2 ">
+                                                            <SidebarMenuButton
+                                                                isActive={activeTab === tab}
+                                                                onClick={() => setActiveTab(tab as DashboardTab)}
+                                                                tooltip={tab}
+                                                                className="capitalize"
+                                                            >
+                                                                <Icon className="h-5 w-5" />
+                                                                <span>{tab}</span>
+                                                            </SidebarMenuButton>
+                                                        </SidebarMenuItem>
+                                                    );
+                                                })}
+                                            </SidebarMenu>
+                                        </SidebarGroupContent>
+                                    </SidebarGroup>
+                                </SidebarContent>
+                                <SidebarFooter className="p-4 border-t border-border/50">
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="
+                                            h-8 w-8
+                                            rounded-full bg-accent
+                                            flex items-center justify-center
+                                            text-accent-foreground font-bold
+                                            relative
+                                            group-data-[state=collapsed]:h-4
+                                            group-data-[state=collapsed]:w-4
+                                            group-data-[state=collapsed]:p-4
+                                            group-data-[state=collapsed]:right-2
                                         "
-                                    >
-                                        <Icon className="h-4 w-4" />
-                                        <span className="truncate">{tab}</span>
-                                    </TabsTrigger>
-
-                                );
-                            })}
-                        </TabsList>
-                        <div className="flex-grow overflow-y-auto pb-6 w-full" >
-                            <TabsContent value="overview" className="mt-0 space-y-6">
-                                {userRole === 'admin' && (
-                                    <>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
-                                            {/* Users Pie Chart */}
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                                <CardHeader>
-                                                    <CardTitle>Users</CardTitle>
-                                                    <CardDescription>Role breakdown</CardDescription>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    {isLoadingStats ? (
-                                                        <div className="flex justify-center items-center h-[300px]">
-                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                        </div>
-                                                    ) : dashboardStats?.users ? (
-                                                        <>
-                                                            <div className="relative">
-                                                                <ResponsiveContainer width="100%" height={280}>
-                                                                    <PieChart>
-                                                                        <Pie
-                                                                            data={dashboardStats.users.total === 0 ? [{ name: 'No data', value: 0 }] : Object.entries(dashboardStats.users.by_role).filter(([_, count]) => (count as number) > 0).map(([role, count]) => ({
-                                                                                name: role.replace(/_/g, ' '),
-                                                                                value: count as number
-                                                                            }))}
-                                                                            dataKey="value"
-                                                                            nameKey="name"
-                                                                            cx="50%"
-                                                                            cy="45%"
-                                                                            innerRadius={90}
-                                                                            outerRadius={120}
-                                                                            paddingAngle={2}
-                                                                            activeIndex={activeUserIndex}
-                                                                            activeShape={{
-                                                                                outerRadius: 125,
-                                                                                strokeWidth: 1,
-                                                                                cursor: 'pointer'
-                                                                            } as any}
-                                                                            inactiveShape={{
-                                                                                opacity: 0.6
-                                                                            } as any}
-                                                                            isAnimationActive={true}
-                                                                            animationBegin={0}
-                                                                            animationDuration={400}
-                                                                            animationEasing="ease-in-out"
-                                                                        >
-                                                                            {dashboardStats.users.total === 0 ? (
-                                                                                <Cell fill="#e5e7eb" />
-                                                                            ) : (
-                                                                                Object.keys(dashboardStats.users.by_role).map((role, index) => {
-                                                                                    const colors: Record<string, string> = {
-                                                                                        'founder': '#8b5cf6',
-                                                                                        'msme': '#ec4899',
-                                                                                        'mentor': '#14b8a6',
-                                                                                        'incubator': '#f97316',
-                                                                                        'admin': '#6366f1'
-                                                                                    };
-                                                                                    return <Cell key={`cell-${index}`} fill={colors[role] || '#6366f1'} />;
-                                                                                })
-                                                                            )}
-                                                                        </Pie>
-                                                                        {dashboardStats.users.total > 0 && (
-                                                                            <Tooltip
-                                                                                contentStyle={{
-                                                                                    borderRadius: 12,
-                                                                                }}
-                                                                            />
-                                                                        )}
-                                                                    </PieChart>
-                                                                </ResponsiveContainer>
-                                                                <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
-                                                                    <p className="text-3xl font-bold">{dashboardStats.users.total}</p>
-                                                                    <p className="text-xs text-muted-foreground whitespace-nowrap">Total Users</p>
-                                                                </div>
-                                                            </div>
-                                                            {dashboardStats.users.total > 0 && (
-                                                                <div className="mt-4 flex flex-wrap gap-3 justify-center">
-                                                                    {Object.entries(dashboardStats.users.by_role).map(([role, count], index) => (
-                                                                        <div
-                                                                            key={role}
-                                                                            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
-                                                                            style={{ opacity: activeUserIndex === undefined || activeUserIndex === index ? 1 : 0.6 }}
-                                                                            onMouseEnter={() => setActiveUserIndex(index)}
-                                                                            onMouseLeave={() => setActiveUserIndex(undefined)}
-                                                                        >
-                                                                            <div className="w-3 h-3 rounded-full" style={{
-                                                                                backgroundColor: {
-                                                                                    'founder': '#8b5cf6',
-                                                                                    'msme': '#ec4899',
-                                                                                    'mentor': '#14b8a6',
-                                                                                    'incubator': '#f97316',
-                                                                                    'admin': '#6366f1'
-                                                                                }[role] || '#6366f1'
-                                                                            }} />
-                                                                            <span className="text-sm capitalize">{role.replace(/_/g, ' ')}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </>
-                                                    ) : null}
-                                                </CardContent>
-                                            </Card>
-
-                                            {/* Challenge Pie Chart */}
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                                <CardHeader>
-                                                    <CardTitle>Challenge</CardTitle>
-                                                    <CardDescription>Status breakdown</CardDescription>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    {isLoadingStats ? (
-                                                        <div className="flex justify-center items-center h-[300px]">
-                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                        </div>
-                                                    ) : dashboardStats?.collaborations ? (
-                                                        <>
-                                                            <div className="relative">
-                                                                <ResponsiveContainer width="100%" height={280}>
-                                                                    <PieChart>
-                                                                        <Pie
-                                                                            data={dashboardStats.collaborations.total === 0 ? [{ name: 'No data', value: 0 }] : Object.entries(dashboardStats.collaborations.by_status).filter(([_, count]) => (count as number) > 0).map(([status, count]) => ({
-                                                                                name: status.replace(/_/g, ' '),
-                                                                                value: count as number
-                                                                            }))}
-                                                                            dataKey="value"
-                                                                            nameKey="name"
-                                                                            cx="50%"
-                                                                            cy="45%"
-                                                                            innerRadius={90}
-                                                                            outerRadius={120}
-                                                                            paddingAngle={2}
-                                                                            activeIndex={activeCollaborationIndex}
-                                                                            activeShape={{
-                                                                                outerRadius: 125,
-                                                                                strokeWidth: 1,
-                                                                                cursor: 'pointer'
-                                                                            } as any}
-                                                                            inactiveShape={{
-                                                                                opacity: 0.6
-                                                                            } as any}
-                                                                            isAnimationActive={true}
-                                                                            animationBegin={0}
-                                                                            animationDuration={400}
-                                                                            animationEasing="ease-in-out"
-                                                                        >
-                                                                            {dashboardStats.collaborations.total === 0 ? (
-                                                                                <Cell fill="#e5e7eb" />
-                                                                            ) : (
-                                                                                Object.keys(dashboardStats.collaborations.by_status).map((status, index) => {
-                                                                                    const colors: Record<string, string> = {
-                                                                                        'active': '#10b981',
-                                                                                        'completed': '#6366f1',
-                                                                                        'stopped': '#f59e0b',
-                                                                                        'expired': '#ef4444'
-                                                                                    };
-                                                                                    return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
-                                                                                })
-                                                                            )}
-                                                                        </Pie>
-                                                                        {dashboardStats.collaborations.total > 0 && (
-                                                                            <Tooltip
-                                                                                contentStyle={{
-                                                                                    borderRadius: 12,
-                                                                                }}
-                                                                            />
-                                                                        )}
-                                                                    </PieChart>
-                                                                </ResponsiveContainer>
-                                                                <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
-                                                                    <p className="text-3xl font-bold">{dashboardStats.collaborations.total}</p>
-                                                                    <p className="text-xs text-muted-foreground whitespace-nowrap">Total Challenges</p>
-                                                                </div>
-                                                            </div>
-                                                            {dashboardStats.collaborations.total > 0 && (
-                                                                <div className="mt-4 flex flex-wrap gap-3 justify-center">
-                                                                    {Object.entries(dashboardStats.collaborations.by_status).map(([status, count], index) => (
-                                                                        <div
-                                                                            key={status}
-                                                                            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
-                                                                            style={{ opacity: activeCollaborationIndex === undefined || activeCollaborationIndex === index ? 1 : 0.6 }}
-                                                                            onMouseEnter={() => setActiveCollaborationIndex(index)}
-                                                                            onMouseLeave={() => setActiveCollaborationIndex(undefined)}
-                                                                        >
-                                                                            <div className="w-3 h-3 rounded-full" style={{
-                                                                                backgroundColor: {
-                                                                                    'active': '#10b981',
-                                                                                    'completed': '#6366f1',
-                                                                                    'stopped': '#f59e0b',
-                                                                                    'expired': '#ef4444'
-                                                                                }[status] || '#6366f1'
-                                                                            }} />
-                                                                            <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </>
-                                                    ) : null}
-                                                </CardContent>
-                                            </Card>
-
-                                            {/* Solutions Pie Chart */}
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                                <CardHeader>
-                                                    <CardTitle>Solutions</CardTitle>
-                                                    <CardDescription>Status breakdown</CardDescription>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    {isLoadingStats ? (
-                                                        <div className="flex justify-center items-center h-[300px]">
-                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                        </div>
-                                                    ) : dashboardStats?.solutions ? (
-                                                        <>
-                                                            <div className="relative">
-                                                                <ResponsiveContainer width="100%" height={280}>
-                                                                    <PieChart>
-                                                                        <Pie
-                                                                            data={dashboardStats.solutions.total === 0 ? [{ name: 'No data', value: 0 }] : Object.entries(dashboardStats.solutions.by_status).map(([status, count]) => ({
-                                                                                name: status.replace(/_/g, ' '),
-                                                                                value: count as number
-                                                                            }))}
-                                                                            dataKey="value"
-                                                                            nameKey="name"
-                                                                            cx="50%"
-                                                                            cy="45%"
-                                                                            innerRadius={90}
-                                                                            outerRadius={120}
-                                                                            paddingAngle={2}
-                                                                            activeIndex={activeSolutionIndex}
-                                                                            activeShape={{
-                                                                                outerRadius: 125,
-                                                                                strokeWidth: 1,
-                                                                                cursor: 'pointer'
-                                                                            } as any}
-                                                                            inactiveShape={{
-                                                                                opacity: 0.6
-                                                                            } as any}
-                                                                            isAnimationActive={true}
-                                                                            animationBegin={0}
-                                                                            animationDuration={400}
-                                                                            animationEasing="ease-in-out"
-                                                                        >
-                                                                            {dashboardStats.solutions.total === 0 ? (
-                                                                                <Cell fill="#e5e7eb" />
-                                                                            ) : (
-                                                                                Object.keys(dashboardStats.solutions.by_status).map((status, index) => {
-                                                                                    const colors: Record<string, string> = {
-                                                                                        'new': '#3b82f6',
-                                                                                        'under_review': '#f59e0b',
-                                                                                        'duplicate': '#a855f7',
-                                                                                        'rejected': '#ef4444',
-                                                                                        'solution_accepted_points': '#10b981',
-                                                                                        'triaged': '#f97316',
-                                                                                        'need_info': '#06b6d4',
-                                                                                        'winner': '#eab308'
-                                                                                    };
-                                                                                    return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
-                                                                                })
-                                                                            )}
-                                                                        </Pie>
-                                                                        {dashboardStats.solutions.total > 0 && (
-                                                                            <Tooltip contentStyle={{
-                                                                                borderRadius: 12,
-                                                                            }} />
-                                                                        )}
-                                                                    </PieChart>
-                                                                </ResponsiveContainer>
-                                                                <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
-                                                                    <p className="text-3xl font-bold">{dashboardStats.solutions.total}</p>
-                                                                    <p className="text-xs text-muted-foreground whitespace-nowrap">Total Submissions</p>
-                                                                </div>
-                                                            </div>
-                                                            {dashboardStats.solutions.total > 0 && (
-                                                                <div className="mt-4 flex flex-wrap gap-3 justify-center">
-                                                                    {Object.entries(dashboardStats.solutions.by_status).map(([status, count], index) => (
-                                                                        <div
-                                                                            key={status}
-                                                                            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
-                                                                            style={{ opacity: activeSolutionIndex === undefined || activeSolutionIndex === index ? 1 : 0.6 }}
-                                                                            onMouseEnter={() => setActiveSolutionIndex(index)}
-                                                                            onMouseLeave={() => setActiveSolutionIndex(undefined)}
-                                                                        >
-                                                                            <div className="w-3 h-3 rounded-full" style={{
-                                                                                backgroundColor: {
-                                                                                    'new': '#3b82f6',
-                                                                                    'under_review': '#f59e0b',
-                                                                                    'duplicate': '#a855f7',
-                                                                                    'rejected': '#ef4444',
-                                                                                    'solution_accepted_points': '#10b981',
-                                                                                    'triaged': '#f97316',
-                                                                                    'need_info': '#06b6d4',
-                                                                                    'winner': '#eab308'
-                                                                                }[status] || '#6366f1'
-                                                                            }} />
-                                                                            <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </>
-                                                    ) : null}
-                                                </CardContent>
-                                            </Card>
-
-                                            {/* Tech Transfer IPs Pie Chart */}
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                                <CardHeader>
-                                                    <CardTitle>Tech Transfer IPs</CardTitle>
-                                                    <CardDescription>Status breakdown</CardDescription>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    {isLoadingStats ? (
-                                                        <div className="flex justify-center items-center h-[300px]">
-                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                        </div>
-                                                    ) : dashboardStats?.tech_transfer ? (
-                                                        <>
-                                                            <div className="relative">
-                                                                <ResponsiveContainer width="100%" height={280}>
-                                                                    <PieChart>
-                                                                        <Pie
-                                                                            data={dashboardStats.tech_transfer.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.tech_transfer.by_status).map(([status, count]) => ({
-                                                                                name: status.replace(/_/g, ' '),
-                                                                                value: count as number
-                                                                            }))}
-                                                                            dataKey="value"
-                                                                            nameKey="name"
-                                                                            cx="50%"
-                                                                            cy="45%"
-                                                                            innerRadius={90}
-                                                                            outerRadius={120}
-                                                                            paddingAngle={2}
-                                                                            activeIndex={activeTechTransferIndex}
-                                                                            activeShape={{
-                                                                                outerRadius: 125,
-                                                                                strokeWidth: 1,
-                                                                                cursor: 'pointer'
-                                                                            } as any}
-                                                                            inactiveShape={{
-                                                                                opacity: 0.6
-                                                                            } as any}
-                                                                            isAnimationActive={true}
-
-                                                                            animationBegin={0}
-                                                                            animationDuration={400}
-                                                                            animationEasing="ease-in-out"
-                                                                        >
-                                                                            {dashboardStats.tech_transfer.total === 0 ? (
-                                                                                <Cell fill="#e5e7eb" />
-                                                                            ) : (
-                                                                                Object.keys(dashboardStats.tech_transfer.by_status).map((status, index) => {
-                                                                                    const colors: Record<string, string> = {
-                                                                                        'pending': '#f59e0b',
-                                                                                        'approved': '#10b981',
-                                                                                        'rejected': '#ef4444',
-                                                                                        'need_info': '#3b82f6',
-                                                                                        'monitized': '#8b5cf6'
-                                                                                    };
-                                                                                    return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
-                                                                                })
-                                                                            )}
-                                                                        </Pie>
-                                                                        {dashboardStats.tech_transfer.total > 0 && (
-                                                                            <Tooltip
-                                                                                contentStyle={{
-                                                                                    borderRadius: 12,
-                                                                                }}
-                                                                            />
-                                                                        )}
-                                                                    </PieChart>
-                                                                </ResponsiveContainer>
-                                                                <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
-                                                                    <p className="text-3xl font-bold">{dashboardStats.tech_transfer.total}</p>
-                                                                    <p className="text-xs text-muted-foreground whitespace-nowrap">Total Submissions</p>
-                                                                </div>
-                                                            </div>
-                                                            {dashboardStats.tech_transfer.total > 0 && (
-                                                                <div className="mt-4 flex flex-wrap gap-3 justify-center">
-                                                                    {Object.entries(dashboardStats.tech_transfer.by_status).map(([status, count], index) => (
-                                                                        <div
-                                                                            key={status}
-                                                                            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
-                                                                            style={{ opacity: activeTechTransferIndex === undefined || activeTechTransferIndex === index ? 1 : 0.6 }}
-                                                                            onMouseEnter={() => setActiveTechTransferIndex(index)}
-                                                                            onMouseLeave={() => setActiveTechTransferIndex(undefined)}
-                                                                        >
-                                                                            <div className="w-3 h-3 rounded-full" style={{
-                                                                                backgroundColor: {
-                                                                                    'pending': '#f59e0b',
-                                                                                    'approved': '#10b981',
-                                                                                    'rejected': '#ef4444',
-                                                                                    'need_info': '#3b82f6',
-                                                                                    'monitized': '#8b5cf6'
-                                                                                }[status] || '#6366f1'
-                                                                            }} />
-                                                                            <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </>
-                                                    ) : null}
-                                                </CardContent>
-                                            </Card>
-
-                                            {/* Newsletter Subscribers Card */}
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                                <CardHeader>
-                                                    <CardTitle>Newsletter Subscribers</CardTitle>
-                                                    <CardDescription>Total waitlist subscribers</CardDescription>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    {newsletterSubscribers > 0 ? (
-                                                        <div className="relative">
-                                                            <ResponsiveContainer width="100%" height={280}>
-                                                                <PieChart>
-                                                                    <Pie
-                                                                        data={[{ name: 'Subscribers', value: newsletterSubscribers }]}
-                                                                        dataKey="value"
-                                                                        nameKey="name"
-                                                                        cx="50%"
-                                                                        cy="45%"
-                                                                        innerRadius={90}
-                                                                        outerRadius={120}
-                                                                        fill="#8b5cf6"
-                                                                        paddingAngle={0}
-                                                                        isAnimationActive={true}
-                                                                        animationBegin={0}
-                                                                        animationDuration={400}
-                                                                        animationEasing="ease-in-out"
-                                                                    >
-                                                                        <Cell fill="#8b5cf6" />
-                                                                    </Pie>
-                                                                    <Tooltip
-                                                                        contentStyle={{
-                                                                            borderRadius: 12,
-                                                                        }}
-                                                                    />
-                                                                </PieChart>
-                                                            </ResponsiveContainer>
-                                                            <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
-                                                                <p className="text-4xl font-bold">{newsletterSubscribers}</p>
-                                                                <p className="text-sm text-muted-foreground">Subscribers</p>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-                                                            <p>No subscribers yet</p>
-                                                        </div>
-                                                    )}
-                                                </CardContent>
-                                            </Card>
-
-                                            {/* Event Configuration Card */}
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                                <CardHeader>
-                                                    <div className="flex justify-between items-start">
-                                                        <div>
-                                                            <CardTitle>Event Registrations</CardTitle>
-                                                            <CardDescription>Aignite registration breakdown</CardDescription>
-                                                        </div>
-                                                        <div className="flex items-center gap-3">
-                                                            {isTogglingEvent ? <LucideIcons.Loader2 className="h-4 w-4 animate-spin" /> : <Switch
-                                                                checked={eventConfig?.is_enabled || false}
-                                                                onCheckedChange={handleToggleEvent}
-                                                                disabled={isTogglingEvent}
-                                                                className="data-[state=checked]:bg-green-600"
-                                                            />}
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-sm font-medium">
-                                                                    {eventConfig?.is_enabled ? "Is Running" : "Not Running"}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    {isLoadingStats ? (
-                                                        <div className="flex justify-center items-center h-[300px]">
-                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                        </div>
-                                                    ) : registrations && registrations.length > 0 ? (
-                                                        <>
-                                                            <div className="relative">
-                                                                <ResponsiveContainer width="100%" height={280}>
-                                                                    <PieChart>
-                                                                        <Pie
-                                                                            data={Object.entries(
-                                                                                registrations.reduce((acc: Record<string, number>, reg) => {
-                                                                                    const type = reg.who_you_are || 'Other';
-                                                                                    acc[type] = (acc[type] || 0) + 1;
-                                                                                    return acc;
-                                                                                }, {})
-                                                                            ).map(([name, value]) => ({ name, value }))}
-                                                                            dataKey="value"
-                                                                            nameKey="name"
-                                                                            cx="50%"
-                                                                            cy="45%"
-                                                                            innerRadius={90}
-                                                                            outerRadius={120}
-                                                                            paddingAngle={2}
-                                                                            activeIndex={activeEventIndex}
-                                                                            activeShape={{
-                                                                                outerRadius: 125,
-                                                                                strokeWidth: 1,
-                                                                                cursor: 'pointer'
-                                                                            } as any}
-                                                                            inactiveShape={{
-                                                                                opacity: 0.6
-                                                                            } as any}
-                                                                            isAnimationActive={true}
-                                                                            animationBegin={0}
-                                                                            animationDuration={400}
-                                                                            animationEasing="ease-in-out"
-                                                                        >
-                                                                            {Object.keys(
-                                                                                registrations.reduce((acc: Record<string, number>, reg) => {
-                                                                                    const type = reg.who_you_are || 'Other';
-                                                                                    acc[type] = (acc[type] || 0) + 1;
-                                                                                    return acc;
-                                                                                }, {})
-                                                                            ).map((type, index) => {
-                                                                                const colors: Record<string, string> = {
-                                                                                    'Marketing Teams': '#8b5cf6',
-                                                                                    'Founders': '#ec4899',
-                                                                                    'CEO': '#14b8a6',
-                                                                                    'Manager': '#f97316',
-                                                                                    'Other': '#6366f1'
-                                                                                };
-                                                                                return <Cell key={`cell-${index}`} fill={colors[type] || '#6366f1'} />;
-                                                                            })}
-                                                                        </Pie>
-                                                                        <Tooltip
-                                                                            contentStyle={{
-                                                                                borderRadius: 12,
-                                                                            }}
-                                                                        />
-                                                                    </PieChart>
-                                                                </ResponsiveContainer>
-                                                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                                                    <p className="text-4xl font-bold">{registrations.length}</p>
-                                                                    <p className="text-sm text-muted-foreground">Total</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                                                                {Object.entries(
-                                                                    registrations.reduce((acc: Record<string, number>, reg) => {
-                                                                        const type = reg.who_you_are || 'Other';
-                                                                        acc[type] = (acc[type] || 0) + 1;
-                                                                        return acc;
-                                                                    }, {})
-                                                                ).map(([type, count], index) => {
-                                                                    const colors: Record<string, string> = {
-                                                                        'Marketing Teams': '#8b5cf6',
-                                                                        'Founders': '#ec4899',
-                                                                        'CEO': '#14b8a6',
-                                                                        'Manager': '#f97316',
-                                                                        'Other': '#6366f1'
-                                                                    };
-                                                                    return (
-                                                                        <div
-                                                                            key={type}
-                                                                            className="flex items-center gap-2 cursor-pointer hover:opacity-80"
-                                                                            onMouseEnter={() => setActiveEventIndex(index)}
-                                                                            onMouseLeave={() => setActiveEventIndex(undefined)}
-                                                                        >
-                                                                            <div className="w-3 h-3 rounded-full" style={{
-                                                                                backgroundColor: colors[type] || '#6366f1'
-                                                                            }} />
-                                                                            <span className="text-sm">{type}: {count}</span>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-                                                            <LucideIcons.Users className="h-12 w-12 mb-2 opacity-50" />
-                                                            <p>No registrations yet</p>
-                                                        </div>
-                                                    )}
-                                                </CardContent>
-                                            </Card>
+                                        >
+                                            {user.name.charAt(0)}
                                         </div>
-                                    </>
-                                )}
-                            </TabsContent>
-                            <TabsContent value="organisation" className="mt-0">
-                                {hasSubscription || userRole === 'admin' ? (
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>Organisation Collaborations</CardTitle>
-                                            <CardDescription>
-                                                Your ongoing and potential collaborations with MSMEs.
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p>You have no active collaboration proposals.</p>
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    <LockedContent setActiveView={setActiveView} title="MSMEs" />
-                                )}
-                            </TabsContent>
-                            <TabsContent value="incubators" className="mt-0">
-                                {hasSubscription || userRole === 'admin' ? (
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>Incubator Applications</CardTitle>
-                                            <CardDescription>Status of your applications to incubators.</CardDescription>
-                                        </CardHeader>
-                                        <CardContent><p>You have not applied to any incubators yet.</p></CardContent>
-                                    </Card>
-                                ) :
-                                    <LockedContent setActiveView={setActiveView} title="Incubators" />
-                                }
-                            </TabsContent>
-                            <TabsContent value="mentors" className="mt-0">
-                                <div className="text-center py-16 text-muted-foreground">
-                                    <p>You have not had any mentor sessions yet.</p>
-                                    <Button variant="link" onClick={() => setActiveView('mentors')}>Book a session</Button>
-                                </div>
-                            </TabsContent>
-                            <TabsContent value="submission" className="mt-0">
-                                {userRole === 'admin' || (
-                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                        <CardHeader>
-                                            <CardTitle>My Submissions</CardTitle>
-                                            <CardDescription>Your submissions for corporate challenges.</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            {loading ? (
-                                                <p>Loading...</p>
-                                            ) : mySubmissions.length === 0 ? (
-                                                <p>You have no active submissions.</p>
-                                            ) : (
-                                                <div className="space-y-4">
-                                                    {mySubmissions.map((submission) => (
-                                                        <div
-                                                            key={submission.id}
-                                                            onClick={(e) => { e.stopPropagation(); setCommentingSubmissionId(submission.id) }}
-                                                            className="p-4 border rounded-lg flex justify-between items-center transition-all cursor-pointer hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-ring"
-                                                            tabIndex={0}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === "Enter" || e.key === " ") {
-                                                                    e.preventDefault()
-                                                                    setCommentingSubmissionId(submission.id);
-                                                                }
-                                                            }}
-                                                        >
-                                                            <div>
-                                                                <p className="font-semibold">{submission.ipTitle}</p>
-                                                                <p className="text-sm text-muted-foreground">Status: {submission.approvalStatus}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </TabsContent>
-                            <TabsContent value="engagement" className="mt-0">
-                                {submissions.length > 0 ? (
-                                    <div className="max-h-[600px] overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-                                        {submissions.map((sub, id) => {
-                                            const AnimatedCard = () => {
-                                                const ref = useRef<HTMLDivElement>(null);
-                                                const { motion, useInView } = require('motion/react');
-                                                const inView = useInView(ref, { amount: 0.3, once: false });
-
-                                                return (
-                                                    <motion.div
-                                                        ref={ref}
-                                                        initial={{ scale: 0.9, opacity: 0 }}
-                                                        animate={inView ? { scale: 1, opacity: 1 } : { scale: 0.9, opacity: 0 }}
-                                                        transition={{ duration: 0.3, delay: 0.05 }}
-                                                    >
-                                                        <Card
-                                                            onClick={() => setSelectedSubmission(sub)}
-                                                            className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors"
-                                                        >
-                                                            <CardHeader className="pb-4">
-                                                                <div className="flex justify-between items-start">
-                                                                    <div className="space-y-1 w-full">
-                                                                        <div className="flex flex-wrap items-center gap-2">
-                                                                            <div className='flex justify-between w-full'>
-                                                                                <CardTitle className="tracking-normal text-lg font-medium w-full">
-                                                                                    {sub.challenge?.title || "Untitled Challenge"}
-                                                                                </CardTitle>
-                                                                                <div className="flex gap-2">
-                                                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                                                        <span>Comments</span>
-                                                                                        <div className="flex items-center gap-1">
-                                                                                            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/70 text-xs font-medium">
-                                                                                                {sub.comments?.length || 0}
-                                                                                            </span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                                                        <span>Points</span>
-                                                                                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                                                            {sub.points ?? 0}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        <CardDescription className="flex items-center text-sm text-muted-foreground">
-                                                                            {sub.challenge?.postedBy && (
-                                                                                <div className="flex items-center">
-                                                                                    <span className="font-medium">{sub.challenge?.postedBy?.companyName || "Untitled Challenge"}</span>
-                                                                                    <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
-                                                                                </div>
-                                                                            )}
-                                                                            <Badge
-                                                                                className={`px-3 py-1 text-xs font-semibold border rounded-sm 
-                                                                    ${statusBadgeClasses[sub.status]}`}
-                                                                            >
-                                                                                {statusLabels[sub.status]}
-
-                                                                            </Badge>
-                                                                            <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
-                                                                            <p className="text-sm text-muted-foreground flex items-center">
-                                                                                Submitted {formatPrettyDate(new Date(sub.createdAt))}
-                                                                                {sub.lastActive ? <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span> : ''}
-                                                                            </p>
-                                                                            {sub.lastActive && (
-                                                                                <p className="text-sm text-muted-foreground">
-                                                                                    Last active {timeAgoShort(new Date(sub.lastActive))}
-                                                                                </p>
-                                                                            )}
-                                                                        </CardDescription>
-                                                                    </div>
-                                                                </div>
-                                                            </CardHeader>
-
-                                                            <CardFooter className="flex gap-2 items-center">
-                                                                {sub.contactName && (
-                                                                    <div className="flex items-center text-sm text-muted-foreground">
-                                                                        <span className="font-medium">By {sub.contactName}</span>
-                                                                    </div>
-                                                                )}
-                                                                <div className="flex items-center gap-2 ml-auto">
-                                                                    {statusUpdates1[sub.solutionId] && (
-                                                                        <Button
-                                                                            size="sm"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleSolutionUpdateStatus(sub.solutionId);
-                                                                            }}
-                                                                            disabled={isUpdating1[sub.solutionId]}
-                                                                        >
-                                                                            {isUpdating1[sub.solutionId] ? (
-                                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                                            ) : (
-                                                                                <LucideIcons.Save className="mr-2 h-4 w-4" />
-                                                                            )}
-                                                                            Update Status
-                                                                        </Button>
-                                                                    )}
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                size="sm"
-                                                                                onClick={(e) => e.stopPropagation()}
-                                                                                className="flex items-center gap-2"
-                                                                            >
-                                                                                {statusUpdates1[sub.status]}
-                                                                                <span>{statusLabels[sub.status]}</span>
-                                                                                <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-
-                                                                        <DropdownMenuContent>
-                                                                            {Object.values(SolutionStatus).map((status) => (
-                                                                                <DropdownMenuItem
-                                                                                    key={status}
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        handleStatusChange(sub.solutionId, status);
-                                                                                    }}
-                                                                                >
-                                                                                    <span>{statusLabels[status]}</span>
-                                                                                </DropdownMenuItem>
-                                                                            ))}
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                </div>
-                                                            </CardFooter>
-                                                        </Card>
-                                                    </motion.div>
-                                                );
-                                            };
-
-                                            return <AnimatedCard key={id} />;
-                                        })}
+                                        <div className="flex flex-col min-w-0 group-data-[state=collapsed]:hidden">
+                                            <span className="text-sm font-medium truncate">{user.name}</span>
+                                            <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+                                        </div>
                                     </div>
-                                ) : (
-                                    <Card className="text-center text-muted-foreground py-16">
-                                        <CardContent>You have not received any submissions yet.</CardContent>
-                                    </Card>
-                                )}
-                            </TabsContent>
+                                </SidebarFooter>
+                            </Sidebar>
 
-                            {userRole === "admin" && (
-                                <>
-                                    <TabsContent value="users" className="mt-0">
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader>
-                                                <CardTitle>User Management</CardTitle>
-                                                <CardDescription>Approve, ban, or delete user accounts.</CardDescription>
+                            {/* Main Content Area */}
+                            <SidebarInset className="flex-grow flex flex-col min-h-0 bg-background/50">
+                                {/* Mobile Header with Trigger */}
+                                <div className="md:hidden flex items-center h-14 border-b border-border bg-muted/30 px-4 py-12 rounded-lg">
+                                    <SidebarTrigger className="h-9 w-9" />
+                                    <span className="ml-4 font-bold capitalize">{activeTab}</span>
+                                </div>
+                                <div className={cn("flex-grow overflow-y-auto pb-6 w-full", isMobile ? "px-4 pt-4" : "px-6")} >
+                                    <TabsContent value="plans" className="mt-0 outline-none">
+                                        <PlansManagementView />
+                                    </TabsContent>
+                                    <TabsContent value="overview" className="mt-0 space-y-6">
+                                        {userRole === 'admin' && (
+                                            <>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
+                                                    {/* Users Pie Chart */}
+                                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                        <CardHeader>
+                                                            <CardTitle>Users</CardTitle>
+                                                            <CardDescription>Role breakdown</CardDescription>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            {isLoadingStats ? (
+                                                                <div className="flex justify-center items-center h-[300px]">
+                                                                    <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                                </div>
+                                                            ) : dashboardStats?.users ? (
+                                                                <>
+                                                                    <div className="relative">
+                                                                        <ResponsiveContainer width="100%" height={280}>
+                                                                            <PieChart>
+                                                                                <Pie
+                                                                                    data={dashboardStats.users.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.users.by_role).filter(([_, count]) => (count as number) > 0).map(([role, count]) => ({
+                                                                                        name: role.replace(/_/g, ' '),
+                                                                                        value: count as number
+                                                                                    }))}
+                                                                                    dataKey="value"
+                                                                                    nameKey="name"
+                                                                                    cx="50%"
+                                                                                    cy="45%"
+                                                                                    innerRadius={90}
+                                                                                    outerRadius={120}
+                                                                                    paddingAngle={2}
+                                                                                    activeIndex={activeUserIndex}
+                                                                                    activeShape={{
+                                                                                        outerRadius: 125,
+                                                                                        strokeWidth: 1,
+                                                                                        cursor: 'pointer'
+                                                                                    } as any}
+                                                                                    inactiveShape={{
+                                                                                        opacity: 0.6
+                                                                                    } as any}
+                                                                                    isAnimationActive={true}
+                                                                                    animationBegin={0}
+                                                                                    animationDuration={400}
+                                                                                    animationEasing="ease-in-out"
+                                                                                >
+                                                                                    {dashboardStats.users.total === 0 ? (
+                                                                                        <Cell fill="#e5e7eb" />
+                                                                                    ) : (
+                                                                                        Object.keys(dashboardStats.users.by_role).map((role, index) => {
+                                                                                            const colors: Record<string, string> = {
+                                                                                                'founder': '#8b5cf6',
+                                                                                                'msme': '#ec4899',
+                                                                                                'mentor': '#14b8a6',
+                                                                                                'incubator': '#f97316',
+                                                                                                'admin': '#6366f1'
+                                                                                            };
+                                                                                            return <Cell key={`cell-${index}`} fill={colors[role] || '#6366f1'} />;
+                                                                                        })
+                                                                                    )}
+                                                                                </Pie>
+                                                                                {dashboardStats.users.total > 0 && (
+                                                                                    <Tooltip
+                                                                                        contentStyle={{
+                                                                                            borderRadius: 12,
+                                                                                        }}
+                                                                                    />
+                                                                                )}
+                                                                            </PieChart>
+                                                                        </ResponsiveContainer>
+                                                                        <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                            <p className="text-3xl font-bold">{dashboardStats.users.total}</p>
+                                                                            <p className="text-xs text-muted-foreground whitespace-nowrap">Total Users</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    {dashboardStats.users.total > 0 && (
+                                                                        <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                            {Object.entries(dashboardStats.users.by_role).map(([role, count], index) => (
+                                                                                <div
+                                                                                    key={role}
+                                                                                    className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                                    style={{ opacity: activeUserIndex === undefined || activeUserIndex === index ? 1 : 0.6 }}
+                                                                                    onMouseEnter={() => setActiveUserIndex(index)}
+                                                                                    onMouseLeave={() => setActiveUserIndex(undefined)}
+                                                                                >
+                                                                                    <div className="w-3 h-3 rounded-full" style={{
+                                                                                        backgroundColor: {
+                                                                                            'founder': '#8b5cf6',
+                                                                                            'msme': '#ec4899',
+                                                                                            'mentor': '#14b8a6',
+                                                                                            'incubator': '#f97316',
+                                                                                            'admin': '#6366f1'
+                                                                                        }[role] || '#6366f1'
+                                                                                    }} />
+                                                                                    <span className="text-sm capitalize">{role.replace(/_/g, ' ')}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            ) : null}
+                                                        </CardContent>
+                                                    </Card>
 
-                                            </CardHeader>
-                                            <CardContent>
-                                                {isLoadingUsers ? (
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead>User</TableHead>
-                                                                <TableHead>Role</TableHead>
-                                                                <TableHead>Status</TableHead>
-                                                                <TableHead>Details</TableHead>
-                                                                <TableHead>Actions</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {Array.from({ length: 10 }).map((_, i) => (
-                                                                <TableRow key={i}>
-                                                                    <TableCell>
-                                                                        <div className="space-y-2">
-                                                                            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                                                                            <div className="h-3 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                    {/* Challenge Pie Chart */}
+                                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                        <CardHeader>
+                                                            <CardTitle>Challenge</CardTitle>
+                                                            <CardDescription>Status breakdown</CardDescription>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            {isLoadingStats ? (
+                                                                <div className="flex justify-center items-center h-[300px]">
+                                                                    <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                                </div>
+                                                            ) : dashboardStats?.collaborations ? (
+                                                                <>
+                                                                    <div className="relative">
+                                                                        <ResponsiveContainer width="100%" height={280}>
+                                                                            <PieChart>
+                                                                                <Pie
+                                                                                    data={dashboardStats.collaborations.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.collaborations.by_status).filter(([_, count]) => (count as number) > 0).map(([status, count]) => ({
+                                                                                        name: status.replace(/_/g, ' '),
+                                                                                        value: count as number
+                                                                                    }))}
+                                                                                    dataKey="value"
+                                                                                    nameKey="name"
+                                                                                    cx="50%"
+                                                                                    cy="45%"
+                                                                                    innerRadius={90}
+                                                                                    outerRadius={120}
+                                                                                    paddingAngle={2}
+                                                                                    activeIndex={activeCollaborationIndex}
+                                                                                    activeShape={{
+                                                                                        outerRadius: 125,
+                                                                                        strokeWidth: 1,
+                                                                                        cursor: 'pointer'
+                                                                                    } as any}
+                                                                                    inactiveShape={{
+                                                                                        opacity: 0.6
+                                                                                    } as any}
+                                                                                    isAnimationActive={true}
+                                                                                    animationBegin={0}
+                                                                                    animationDuration={400}
+                                                                                    animationEasing="ease-in-out"
+                                                                                >
+                                                                                    {dashboardStats.collaborations.total === 0 ? (
+                                                                                        <Cell fill="#e5e7eb" />
+                                                                                    ) : (
+                                                                                        Object.keys(dashboardStats.collaborations.by_status).map((status, index) => {
+                                                                                            const colors: Record<string, string> = {
+                                                                                                'active': '#10b981',
+                                                                                                'completed': '#6366f1',
+                                                                                                'stopped': '#f59e0b',
+                                                                                                'expired': '#ef4444'
+                                                                                            };
+                                                                                            return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
+                                                                                        })
+                                                                                    )}
+                                                                                </Pie>
+                                                                                {dashboardStats.collaborations.total > 0 && (
+                                                                                    <Tooltip
+                                                                                        contentStyle={{
+                                                                                            borderRadius: 12,
+                                                                                        }}
+                                                                                    />
+                                                                                )}
+                                                                            </PieChart>
+                                                                        </ResponsiveContainer>
+                                                                        <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                            <p className="text-3xl font-bold">{dashboardStats.collaborations.total}</p>
+                                                                            <p className="text-xs text-muted-foreground whitespace-nowrap">Total Challenges</p>
                                                                         </div>
-                                                                    </TableCell>
-                                                                    <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
-                                                                    <TableCell><div className="h-4 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
-                                                                    <TableCell><div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
-                                                                    <TableCell>
-                                                                        <div className="flex gap-2">
-                                                                            <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                                                                            <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                    </div>
+                                                                    {dashboardStats.collaborations.total > 0 && (
+                                                                        <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                            {Object.entries(dashboardStats.collaborations.by_status).map(([status, count], index) => (
+                                                                                <div
+                                                                                    key={status}
+                                                                                    className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                                    style={{ opacity: activeCollaborationIndex === undefined || activeCollaborationIndex === index ? 1 : 0.6 }}
+                                                                                    onMouseEnter={() => setActiveCollaborationIndex(index)}
+                                                                                    onMouseLeave={() => setActiveCollaborationIndex(undefined)}
+                                                                                >
+                                                                                    <div className="w-3 h-3 rounded-full" style={{
+                                                                                        backgroundColor: {
+                                                                                            'active': '#10b981',
+                                                                                            'completed': '#6366f1',
+                                                                                            'stopped': '#f59e0b',
+                                                                                            'expired': '#ef4444'
+                                                                                        }[status] || '#6366f1'
+                                                                                    }} />
+                                                                                    <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
+                                                                                </div>
+                                                                            ))}
                                                                         </div>
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
-                                                ) : (
-                                                    <>
-                                                        <Table>
-                                                            <TableHeader>
-                                                                <TableRow>
-                                                                    <TableHead>User</TableHead>
-                                                                    <TableHead>Role</TableHead>
-                                                                    <TableHead>Status</TableHead>
-                                                                    <TableHead>Details</TableHead>
-                                                                    <TableHead>Actions</TableHead>
-                                                                </TableRow>
-                                                            </TableHeader>
-                                                            <TableBody>
-                                                                {users.map(u => (
-                                                                    <TableRow key={u.uid}>
-                                                                        <TableCell>
-                                                                            <div>
-                                                                                <div className="font-medium">{u.name}</div>
-                                                                                <div className="text-sm text-muted-foreground">{u.email}</div>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell className="capitalize">{u.role}</TableCell>
-                                                                        <TableCell>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-9 w-9"
-                                                                                onClick={() => {
-                                                                                    setSelectedUserForDetails(u);
-                                                                                    fetchUserDetails(u.uid);
-                                                                                }}
+                                                                    )}
+                                                                </>
+                                                            ) : null}
+                                                        </CardContent>
+                                                    </Card>
+
+                                                    {/* Solutions Pie Chart */}
+                                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                        <CardHeader>
+                                                            <CardTitle>Solutions</CardTitle>
+                                                            <CardDescription>Status breakdown</CardDescription>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            {isLoadingStats ? (
+                                                                <div className="flex justify-center items-center h-[300px]">
+                                                                    <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                                </div>
+                                                            ) : dashboardStats?.solutions ? (
+                                                                <>
+                                                                    <div className="relative">
+                                                                        <ResponsiveContainer width="100%" height={280}>
+                                                                            <PieChart>
+                                                                                <Pie
+                                                                                    data={dashboardStats.solutions.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.solutions.by_status).map(([status, count]) => ({
+                                                                                        name: status.replace(/_/g, ' '),
+                                                                                        value: count as number
+                                                                                    }))}
+                                                                                    dataKey="value"
+                                                                                    nameKey="name"
+                                                                                    cx="50%"
+                                                                                    cy="45%"
+                                                                                    innerRadius={90}
+                                                                                    outerRadius={120}
+                                                                                    paddingAngle={2}
+                                                                                    activeIndex={activeSolutionIndex}
+                                                                                    activeShape={{
+                                                                                        outerRadius: 125,
+                                                                                        strokeWidth: 1,
+                                                                                        cursor: 'pointer'
+                                                                                    } as any}
+                                                                                    inactiveShape={{
+                                                                                        opacity: 0.6
+                                                                                    } as any}
+                                                                                    isAnimationActive={true}
+                                                                                    animationBegin={0}
+                                                                                    animationDuration={400}
+                                                                                    animationEasing="ease-in-out"
+                                                                                >
+                                                                                    {dashboardStats.solutions.total === 0 ? (
+                                                                                        <Cell fill="#e5e7eb" />
+                                                                                    ) : (
+                                                                                        Object.keys(dashboardStats.solutions.by_status).map((status, index) => {
+                                                                                            const colors: Record<string, string> = {
+                                                                                                'new': '#3b82f6',
+                                                                                                'under_review': '#f59e0b',
+                                                                                                'duplicate': '#a855f7',
+                                                                                                'rejected': '#ef4444',
+                                                                                                'solution_accepted_points': '#10b981',
+                                                                                                'triaged': '#f97316',
+                                                                                                'need_info': '#06b6d4',
+                                                                                                'winner': '#eab308'
+                                                                                            };
+                                                                                            return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
+                                                                                        })
+                                                                                    )}
+                                                                                </Pie>
+                                                                                {dashboardStats.solutions.total > 0 && (
+                                                                                    <Tooltip contentStyle={{
+                                                                                        borderRadius: 12,
+                                                                                    }} />
+                                                                                )}
+                                                                            </PieChart>
+                                                                        </ResponsiveContainer>
+                                                                        <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                            <p className="text-3xl font-bold">{dashboardStats.solutions.total}</p>
+                                                                            <p className="text-xs text-muted-foreground whitespace-nowrap">Total Submissions</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    {dashboardStats.solutions.total > 0 && (
+                                                                        <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                            {Object.entries(dashboardStats.solutions.by_status).map(([status, count], index) => (
+                                                                                <div
+                                                                                    key={status}
+                                                                                    className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                                    style={{ opacity: activeSolutionIndex === undefined || activeSolutionIndex === index ? 1 : 0.6 }}
+                                                                                    onMouseEnter={() => setActiveSolutionIndex(index)}
+                                                                                    onMouseLeave={() => setActiveSolutionIndex(undefined)}
+                                                                                >
+                                                                                    <div className="w-3 h-3 rounded-full" style={{
+                                                                                        backgroundColor: {
+                                                                                            'new': '#3b82f6',
+                                                                                            'under_review': '#f59e0b',
+                                                                                            'duplicate': '#a855f7',
+                                                                                            'rejected': '#ef4444',
+                                                                                            'solution_accepted_points': '#10b981',
+                                                                                            'triaged': '#f97316',
+                                                                                            'need_info': '#06b6d4',
+                                                                                            'winner': '#eab308'
+                                                                                        }[status] || '#6366f1'
+                                                                                    }} />
+                                                                                    <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            ) : null}
+                                                        </CardContent>
+                                                    </Card>
+
+                                                    {/* Tech Transfer IPs Pie Chart */}
+                                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                        <CardHeader>
+                                                            <CardTitle>Tech Transfer IPs</CardTitle>
+                                                            <CardDescription>Status breakdown</CardDescription>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            {isLoadingStats ? (
+                                                                <div className="flex justify-center items-center h-[300px]">
+                                                                    <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                                </div>
+                                                            ) : dashboardStats?.tech_transfer ? (
+                                                                <>
+                                                                    <div className="relative">
+                                                                        <ResponsiveContainer width="100%" height={280}>
+                                                                            <PieChart>
+                                                                                <Pie
+                                                                                    data={dashboardStats.tech_transfer.total === 0 ? [{ name: 'No data', value: 1 }] : Object.entries(dashboardStats.tech_transfer.by_status).map(([status, count]) => ({
+                                                                                        name: status.replace(/_/g, ' '),
+                                                                                        value: count as number
+                                                                                    }))}
+                                                                                    dataKey="value"
+                                                                                    nameKey="name"
+                                                                                    cx="50%"
+                                                                                    cy="45%"
+                                                                                    innerRadius={90}
+                                                                                    outerRadius={120}
+                                                                                    paddingAngle={2}
+                                                                                    activeIndex={activeTechTransferIndex}
+                                                                                    activeShape={{
+                                                                                        outerRadius: 125,
+                                                                                        strokeWidth: 1,
+                                                                                        cursor: 'pointer'
+                                                                                    } as any}
+                                                                                    inactiveShape={{
+                                                                                        opacity: 0.6
+                                                                                    } as any}
+                                                                                    isAnimationActive={true}
+
+                                                                                    animationBegin={0}
+                                                                                    animationDuration={400}
+                                                                                    animationEasing="ease-in-out"
+                                                                                >
+                                                                                    {dashboardStats.tech_transfer.total === 0 ? (
+                                                                                        <Cell fill="#e5e7eb" />
+                                                                                    ) : (
+                                                                                        Object.keys(dashboardStats.tech_transfer.by_status).map((status, index) => {
+                                                                                            const colors: Record<string, string> = {
+                                                                                                'pending': '#f59e0b',
+                                                                                                'approved': '#10b981',
+                                                                                                'rejected': '#ef4444',
+                                                                                                'need_info': '#3b82f6',
+                                                                                                'monitized': '#8b5cf6'
+                                                                                            };
+                                                                                            return <Cell key={`cell-${index}`} fill={colors[status] || '#6366f1'} />;
+                                                                                        })
+                                                                                    )}
+                                                                                </Pie>
+                                                                                {dashboardStats.tech_transfer.total > 0 && (
+                                                                                    <Tooltip
+                                                                                        contentStyle={{
+                                                                                            borderRadius: 12,
+                                                                                        }}
+                                                                                    />
+                                                                                )}
+                                                                            </PieChart>
+                                                                        </ResponsiveContainer>
+                                                                        <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                            <p className="text-3xl font-bold">{dashboardStats.tech_transfer.total}</p>
+                                                                            <p className="text-xs text-muted-foreground whitespace-nowrap">Total Submissions</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    {dashboardStats.tech_transfer.total > 0 && (
+                                                                        <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                                                                            {Object.entries(dashboardStats.tech_transfer.by_status).map(([status, count], index) => (
+                                                                                <div
+                                                                                    key={status}
+                                                                                    className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-100"
+                                                                                    style={{ opacity: activeTechTransferIndex === undefined || activeTechTransferIndex === index ? 1 : 0.6 }}
+                                                                                    onMouseEnter={() => setActiveTechTransferIndex(index)}
+                                                                                    onMouseLeave={() => setActiveTechTransferIndex(undefined)}
+                                                                                >
+                                                                                    <div className="w-3 h-3 rounded-full" style={{
+                                                                                        backgroundColor: {
+                                                                                            'pending': '#f59e0b',
+                                                                                            'approved': '#10b981',
+                                                                                            'rejected': '#ef4444',
+                                                                                            'need_info': '#3b82f6',
+                                                                                            'monitized': '#8b5cf6'
+                                                                                        }[status] || '#6366f1'
+                                                                                    }} />
+                                                                                    <span className="text-sm capitalize">{status.replace(/_/g, ' ')}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            ) : null}
+                                                        </CardContent>
+                                                    </Card>
+
+                                                    {/* Newsletter Subscribers Card */}
+                                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                        <CardHeader>
+                                                            <CardTitle>Newsletter Subscribers</CardTitle>
+                                                            <CardDescription>Total waitlist subscribers</CardDescription>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            {newsletterSubscribers > 0 ? (
+                                                                <div className="relative">
+                                                                    <ResponsiveContainer width="100%" height={280}>
+                                                                        <PieChart>
+                                                                            <Pie
+                                                                                data={[{ name: 'Subscribers', value: newsletterSubscribers }]}
+                                                                                dataKey="value"
+                                                                                nameKey="name"
+                                                                                cx="50%"
+                                                                                cy="45%"
+                                                                                innerRadius={90}
+                                                                                outerRadius={120}
+                                                                                fill="#8b5cf6"
+                                                                                paddingAngle={0}
+                                                                                isAnimationActive={true}
+                                                                                animationBegin={0}
+                                                                                animationDuration={400}
+                                                                                animationEasing="ease-in-out"
                                                                             >
-                                                                                <LucideIcons.Info className="h-5 w-5" />
-                                                                            </Button>
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            <div>
-                                                                                {u.status === 'banned' ? (
-                                                                                    <Badge variant="destructive">Banned</Badge>
-                                                                                ) : u.status === 'active' ? (
-                                                                                    <Badge variant="default">Active</Badge>
-                                                                                ) : (
-                                                                                    <Badge variant="secondary">Pending</Badge>
-                                                                                )}
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell>
-
-                                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                                {u.status === 'pending' && (
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        onClick={() => { /* Handle approve logic */ }}
-                                                                                        className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground min-w-[90px]"
-                                                                                    >
-                                                                                        <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
-                                                                                        Approve
-                                                                                    </Button>
-                                                                                )}
-
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant={u.status === 'banned' ? "outline" : "secondary"}
-                                                                                    onClick={() => setUserToBan(u)}
-                                                                                    className="flex-1 min-w-[90px]"
-                                                                                >
-                                                                                    <LucideIcons.Ban className="mr-2 h-4 w-4" />
-                                                                                    {u.status === 'banned' ? "Unban" : "Ban"}
-                                                                                </Button>
-
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="destructive"
-                                                                                    onClick={() => setUserToDelete(u)}
-                                                                                    className="flex-1 min-w-[90px]"
-                                                                                >
-                                                                                    <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
-                                                                                    Delete
-                                                                                </Button>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                ))}
-                                                            </TableBody>
-                                                        </Table>
-
-                                                        {/* Optimized Pagination Controls */}
-                                                        {totalPages > 1 && (
-                                                            <div className="flex justify-center mt-6">
-                                                                <Pagination>
-                                                                    <PaginationContent>
-                                                                        <PaginationItem>
-                                                                            <PaginationPrevious
-                                                                                href="#"
-                                                                                onClick={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    if (currentPage > 1) handlePageChange(currentPage - 1);
+                                                                                <Cell fill="#8b5cf6" />
+                                                                            </Pie>
+                                                                            <Tooltip
+                                                                                contentStyle={{
+                                                                                    borderRadius: 12,
                                                                                 }}
-                                                                                className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                                                                             />
-                                                                        </PaginationItem>
+                                                                        </PieChart>
+                                                                    </ResponsiveContainer>
+                                                                    <div className="absolute top-[120px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center -z-10 pointer-events-none">
+                                                                        <p className="text-4xl font-bold">{newsletterSubscribers}</p>
+                                                                        <p className="text-sm text-muted-foreground">Subscribers</p>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+                                                                    <p>No subscribers yet</p>
+                                                                </div>
+                                                            )}
+                                                        </CardContent>
+                                                    </Card>
 
-                                                                        {/* Show first page */}
-                                                                        <PaginationItem>
-                                                                            <PaginationLink
-                                                                                href="#"
-                                                                                onClick={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    handlePageChange(1);
-                                                                                }}
-                                                                                isActive={currentPage === 1}
-                                                                                className="cursor-pointer"
-                                                                            >
-                                                                                1
-                                                                            </PaginationLink>
-                                                                        </PaginationItem>
+                                                    {/* Event Configuration Card */}
+                                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                        <CardHeader>
+                                                            <div className="flex justify-between items-start">
+                                                                <div>
+                                                                    <CardTitle>Event Registrations</CardTitle>
+                                                                    <CardDescription>Aignite registration breakdown</CardDescription>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    {isTogglingEvent ? <LucideIcons.Loader2 className="h-4 w-4 animate-spin" /> : <Switch
+                                                                        checked={eventConfig?.is_enabled || false}
+                                                                        onCheckedChange={handleToggleEvent}
+                                                                        disabled={isTogglingEvent}
+                                                                        className="data-[state=checked]:bg-green-600"
+                                                                    />}
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-sm font-medium">
+                                                                            {eventConfig?.is_enabled ? "Is Running" : "Not Running"}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            {isLoadingStats ? (
+                                                                <div className="flex justify-center items-center h-[300px]">
+                                                                    <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                                </div>
+                                                            ) : registrations && registrations.length > 0 ? (
+                                                                <>
+                                                                    <div className="relative">
+                                                                        <ResponsiveContainer width="100%" height={280}>
+                                                                            <PieChart>
+                                                                                <Pie
+                                                                                    data={Object.entries(
+                                                                                        registrations.reduce((acc: Record<string, number>, reg) => {
+                                                                                            const type = reg.who_you_are || 'Other';
+                                                                                            acc[type] = (acc[type] || 0) + 1;
+                                                                                            return acc;
+                                                                                        }, {})
+                                                                                    ).map(([name, value]) => ({ name, value }))}
+                                                                                    dataKey="value"
+                                                                                    nameKey="name"
+                                                                                    cx="50%"
+                                                                                    cy="45%"
+                                                                                    innerRadius={90}
+                                                                                    outerRadius={120}
+                                                                                    paddingAngle={2}
+                                                                                    activeIndex={activeEventIndex}
+                                                                                    activeShape={{
+                                                                                        outerRadius: 125,
+                                                                                        strokeWidth: 1,
+                                                                                        cursor: 'pointer'
+                                                                                    } as any}
+                                                                                    inactiveShape={{
+                                                                                        opacity: 0.6
+                                                                                    } as any}
+                                                                                    isAnimationActive={true}
+                                                                                    animationBegin={0}
+                                                                                    animationDuration={400}
+                                                                                    animationEasing="ease-in-out"
+                                                                                >
+                                                                                    {Object.keys(
+                                                                                        registrations.reduce((acc: Record<string, number>, reg) => {
+                                                                                            const type = reg.who_you_are || 'Other';
+                                                                                            acc[type] = (acc[type] || 0) + 1;
+                                                                                            return acc;
+                                                                                        }, {})
+                                                                                    ).map((type, index) => {
+                                                                                        const colors: Record<string, string> = {
+                                                                                            'Marketing Teams': '#8b5cf6',
+                                                                                            'Founders': '#ec4899',
+                                                                                            'CEO': '#14b8a6',
+                                                                                            'Manager': '#f97316',
+                                                                                            'Other': '#6366f1'
+                                                                                        };
+                                                                                        return <Cell key={`cell-${index}`} fill={colors[type] || '#6366f1'} />;
+                                                                                    })}
+                                                                                </Pie>
+                                                                                <Tooltip
+                                                                                    contentStyle={{
+                                                                                        borderRadius: 12,
+                                                                                    }}
+                                                                                />
+                                                                            </PieChart>
+                                                                        </ResponsiveContainer>
+                                                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                                            <p className="text-4xl font-bold">{registrations.length}</p>
+                                                                            <p className="text-sm text-muted-foreground">Total</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                                                                        {Object.entries(
+                                                                            registrations.reduce((acc: Record<string, number>, reg) => {
+                                                                                const type = reg.who_you_are || 'Other';
+                                                                                acc[type] = (acc[type] || 0) + 1;
+                                                                                return acc;
+                                                                            }, {})
+                                                                        ).map(([type, count], index) => {
+                                                                            const colors: Record<string, string> = {
+                                                                                'Marketing Teams': '#8b5cf6',
+                                                                                'Founders': '#ec4899',
+                                                                                'CEO': '#14b8a6',
+                                                                                'Manager': '#f97316',
+                                                                                'Other': '#6366f1'
+                                                                            };
+                                                                            return (
+                                                                                <div
+                                                                                    key={type}
+                                                                                    className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+                                                                                    onMouseEnter={() => setActiveEventIndex(index)}
+                                                                                    onMouseLeave={() => setActiveEventIndex(undefined)}
+                                                                                >
+                                                                                    <div className="w-3 h-3 rounded-full" style={{
+                                                                                        backgroundColor: colors[type] || '#6366f1'
+                                                                                    }} />
+                                                                                    <span className="text-sm">{type}: {count}</span>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+                                                                    <LucideIcons.Users className="h-12 w-12 mb-2 opacity-50" />
+                                                                    <p>No registrations yet</p>
+                                                                </div>
+                                                            )}
+                                                        </CardContent>
+                                                    </Card>
+                                                </div>
 
-                                                                        {/* Show ellipsis if needed */}
-                                                                        {currentPage > 3 && (
-                                                                            <PaginationItem>
-                                                                                <PaginationEllipsis />
-                                                                            </PaginationItem>
-                                                                        )}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-6">
+                                                    {/* Pitching Tokens Card */}
+                                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                        <CardHeader>
+                                                            <CardTitle>Pitching Tokens</CardTitle>
+                                                            <CardDescription>Tokens usage and pitching submissions</CardDescription>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            {isLoadingStats ? (
+                                                                <div className="flex justify-center items-center h-[300px]">
+                                                                    <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                                </div>
+                                                            ) : dashboardStats?.stats ? (
+                                                                <>
+                                                                    <div className="relative">
+                                                                        <ResponsiveContainer width="100%" height={280}>
+                                                                            <PieChart>
+                                                                                <Pie
+                                                                                    data={[
+                                                                                        { name: 'Used', value: dashboardStats.stats.tokens_used },
+                                                                                        { name: 'Unused', value: dashboardStats.stats.tokens_unused },
+                                                                                        { name: 'Submitted', value: dashboardStats.stats.unique_submissions },
+                                                                                    ].filter(d => d.value > 0)}
+                                                                                    dataKey="value"
+                                                                                    nameKey="name"
+                                                                                    cx="50%"
+                                                                                    cy="45%"
+                                                                                    innerRadius={90}
+                                                                                    outerRadius={120}
+                                                                                    paddingAngle={2}
+                                                                                    activeIndex={activePitchTokenIndex}
+                                                                                    activeShape={{
+                                                                                        outerRadius: 125,
+                                                                                        strokeWidth: 1,
+                                                                                        cursor: 'pointer'
+                                                                                    } as any}
+                                                                                    inactiveShape={{
+                                                                                        opacity: 0.6
+                                                                                    } as any}
+                                                                                    isAnimationActive={true}
+                                                                                    animationBegin={0}
+                                                                                    animationDuration={400}
+                                                                                    animationEasing="ease-in-out"
+                                                                                >
+                                                                                    <Cell fill="#10b981" />
+                                                                                    <Cell fill="#6366f1" />
+                                                                                    <Cell fill="#f97316" />
+                                                                                </Pie>
+                                                                                <Tooltip
+                                                                                    contentStyle={{
+                                                                                        borderRadius: 12,
+                                                                                    }}
+                                                                                />
+                                                                            </PieChart>
+                                                                        </ResponsiveContainer>
+                                                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -z-10">
+                                                                            <p className="text-4xl font-bold">{dashboardStats.stats.tokens_sent}</p>
+                                                                            <p className="text-sm text-muted-foreground">Total Tokens</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="mt-4 flex flex-wrap gap-4 justify-center">
+                                                                        <div
+                                                                            className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+                                                                            onMouseEnter={() => setActivePitchTokenIndex(0)}
+                                                                            onMouseLeave={() => setActivePitchTokenIndex(undefined)}
+                                                                        >
+                                                                            <div className="w-3 h-3 rounded-full bg-[#10b981]" />
+                                                                            <span className="text-sm">Used: {dashboardStats.stats.tokens_used}</span>
+                                                                        </div>
+                                                                        <div
+                                                                            className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+                                                                            onMouseEnter={() => setActivePitchTokenIndex(1)}
+                                                                            onMouseLeave={() => setActivePitchTokenIndex(undefined)}
+                                                                        >
+                                                                            <div className="w-3 h-3 rounded-full bg-[#6366f1]" />
+                                                                            <span className="text-sm">Unused: {dashboardStats.stats.tokens_unused}</span>
+                                                                        </div>
+                                                                        <div
+                                                                            className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+                                                                            onMouseEnter={() => setActivePitchTokenIndex(2)}
+                                                                            onMouseLeave={() => setActivePitchTokenIndex(undefined)}
+                                                                        >
+                                                                            <div className="w-3 h-3 rounded-full bg-[#f97316]" />
+                                                                            <span className="text-sm">Submitted: {dashboardStats.stats.unique_submissions}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+                                                                    <LucideIcons.Ticket className="h-12 w-12 mb-2 opacity-50" />
+                                                                    <p>No token data available</p>
+                                                                </div>
+                                                            )}
+                                                        </CardContent>
+                                                    </Card>
+                                                </div>
+                                            </>
+                                        )}
+                                    </TabsContent>
+                                    <TabsContent value="organisation" className="mt-0">
+                                        {hasSubscription || userRole === 'admin' ? (
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader>
+                                                    <CardTitle>Organisation Collaborations</CardTitle>
+                                                    <CardDescription>
+                                                        Your ongoing and potential collaborations with MSMEs.
+                                                    </CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <p>You have no active collaboration proposals.</p>
+                                                </CardContent>
+                                            </Card>
+                                        ) : (
+                                            <LockedContent setActiveView={setActiveView} title="MSMEs" />
+                                        )}
+                                    </TabsContent>
+                                    <TabsContent value="incubators" className="mt-0">
+                                        {hasSubscription || userRole === 'admin' ? (
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader>
+                                                    <CardTitle>Incubator Applications</CardTitle>
+                                                    <CardDescription>Status of your applications to incubators.</CardDescription>
+                                                </CardHeader>
+                                                <CardContent><p>You have not applied to any incubators yet.</p></CardContent>
+                                            </Card>
+                                        ) :
+                                            <LockedContent setActiveView={setActiveView} title="Incubators" />
+                                        }
+                                    </TabsContent>
+                                    <TabsContent value="mentors" className="mt-0">
+                                        <div className="text-center py-16 text-muted-foreground">
+                                            <p>You have not had any mentor sessions yet.</p>
+                                            <Button variant="link" onClick={() => setActiveView('mentors')}>Book a session</Button>
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="submission" className="mt-0">
+                                        {userRole === 'admin' || (
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <CardHeader>
+                                                    <CardTitle>My Submissions</CardTitle>
+                                                    <CardDescription>Your submissions for corporate challenges.</CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    {loading ? (
+                                                        <p>Loading...</p>
+                                                    ) : mySubmissions.length === 0 ? (
+                                                        <p>You have no active submissions.</p>
+                                                    ) : (
+                                                        <div className="space-y-4">
+                                                            {mySubmissions.map((submission) => (
+                                                                <div
+                                                                    key={submission.id}
+                                                                    onClick={(e) => { e.stopPropagation(); setCommentingSubmissionId(submission.id) }}
+                                                                    className="p-4 border rounded-lg flex justify-between items-center transition-all cursor-pointer hover:bg-accent/20 focus:outline-none focus:ring-2 focus:ring-ring"
+                                                                    tabIndex={0}
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === "Enter" || e.key === " ") {
+                                                                            e.preventDefault()
+                                                                            setCommentingSubmissionId(submission.id);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <div>
+                                                                        <p className="font-semibold">{submission.ipTitle}</p>
+                                                                        <p className="text-sm text-muted-foreground">Status: {submission.approvalStatus}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                    </TabsContent>
+                                    <TabsContent value="engagement" className="mt-0">
+                                        {submissions.length > 0 ? (
+                                            <div className="max-h-[600px] overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                                                {submissions.map((sub) => (
+                                                    <AnimatedCard
+                                                        key={sub.solutionId}
+                                                        sub={sub}
+                                                        setSelectedSubmission={setSelectedSubmission}
+                                                        statusBadgeClasses={statusBadgeClasses}
+                                                        statusLabels={statusLabels}
+                                                        statusUpdates1={statusUpdates1}
+                                                        handleSolutionUpdateStatus={handleSolutionUpdateStatus}
+                                                        isUpdating1={isUpdating1}
+                                                        handleStatusChange={handleStatusChange}
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <Card className="text-center text-muted-foreground py-16">
+                                                <CardContent>You have not received any submissions yet.</CardContent>
+                                            </Card>
+                                        )}
+                                    </TabsContent>
 
-                                                                        {/* Show pages around current page */}
-                                                                        {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                                                            .filter(page => {
-                                                                                // Show pages within 1 of current page, excluding first and last
-                                                                                return page > 1 && page < totalPages && Math.abs(page - currentPage) <= 1;
-                                                                            })
-                                                                            .map(page => (
-                                                                                <PaginationItem key={page}>
+                                    {userRole === "admin" && (
+                                        <>
+                                            <TabsContent value="users" className="mt-0">
+                                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                    <CardHeader>
+                                                        <CardTitle>User Management</CardTitle>
+                                                        <CardDescription>Approve, ban, or delete user accounts.</CardDescription>
+
+                                                    </CardHeader>
+                                                    <CardContent>
+                                                        {isLoadingUsers ? (
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow>
+                                                                        <TableHead>User</TableHead>
+                                                                        <TableHead>Role</TableHead>
+                                                                        <TableHead>Plans</TableHead>
+                                                                        <TableHead>Status</TableHead>
+                                                                        <TableHead>Details</TableHead>
+                                                                        <TableHead>Actions</TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {Array.from({ length: 10 }).map((_, i) => (
+                                                                        <TableRow key={i}>
+                                                                            <TableCell>
+                                                                                <div className="space-y-2">
+                                                                                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                                    <div className="h-3 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                                </div>
+                                                                            </TableCell>
+                                                                            <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                            <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                            <TableCell><div className="h-4 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                            <TableCell><div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                            <TableCell>
+                                                                                <div className="flex gap-2">
+                                                                                    <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                                    <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                                </div>
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    ))}
+                                                                </TableBody>
+                                                            </Table>
+                                                        ) : (
+                                                            <>
+                                                                <Table>
+                                                                    <TableHeader>
+                                                                        <TableRow>
+                                                                            <TableHead>User</TableHead>
+                                                                            <TableHead>Role</TableHead>
+                                                                            <TableHead>Plans</TableHead>
+                                                                            <TableHead>Status</TableHead>
+                                                                            <TableHead>Details</TableHead>
+                                                                            <TableHead>Actions</TableHead>
+                                                                        </TableRow>
+                                                                    </TableHeader>
+                                                                    <TableBody>
+                                                                        {users.map(u => (
+                                                                            <TableRow key={u.uid}>
+                                                                                <TableCell>
+                                                                                    <div>
+                                                                                        <div className="font-medium">{u.name}</div>
+                                                                                        <div className="text-sm text-muted-foreground">{u.email}</div>
+                                                                                    </div>
+                                                                                </TableCell>
+                                                                                <TableCell className="capitalize">{u.role}</TableCell>
+                                                                                <TableCell>
+                                                                                    <div className="flex flex-col gap-2">
+                                                                                        {u.role === 'founder' && u.founder_role === "Solve Organisation's challenge" && (
+                                                                                            <div className="flex items-center space-x-2">
+                                                                                                <Switch
+                                                                                                    id={`premium-${u.uid}`}
+                                                                                                    checked={u.active_plans?.includes('Premium')}
+                                                                                                    onCheckedChange={() => handleTogglePlan(u.uid, 'Premium', u.active_plans?.includes('Premium') || false)}
+                                                                                                    disabled={togglingPlans[`${u.uid}-Premium`]}
+                                                                                                />
+                                                                                                <label htmlFor={`premium-${u.uid}`} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1">
+                                                                                                    Premium
+                                                                                                    {togglingPlans[`${u.uid}-Premium`] && <LucideIcons.Loader2 className="h-3 w-3 animate-spin" />}
+                                                                                                </label>
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {u.role === 'founder' && u.founder_role === "Submit an innovative idea" && (
+                                                                                            <div className="flex items-center space-x-2">
+                                                                                                <Switch
+                                                                                                    id={`standard-${u.uid}`}
+                                                                                                    checked={u.active_plans?.includes('Standard')}
+                                                                                                    onCheckedChange={() => handleTogglePlan(u.uid, 'Standard', u.active_plans?.includes('Standard') || false)}
+                                                                                                    disabled={togglingPlans[`${u.uid}-Standard`]}
+                                                                                                />
+                                                                                                <label htmlFor={`standard-${u.uid}`} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1">
+                                                                                                    Standard
+                                                                                                    {togglingPlans[`${u.uid}-Standard`] && <LucideIcons.Loader2 className="h-3 w-3 animate-spin" />}
+                                                                                                </label>
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {u.role !== 'founder' && (
+                                                                                            <span className="text-xs text-muted-foreground italic">No founder role</span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </TableCell>
+                                                                                <TableCell>
+                                                                                    <div>
+                                                                                        {u.status === 'banned' ? (
+                                                                                            <Badge variant="destructive">Banned</Badge>
+                                                                                        ) : u.status === 'active' ? (
+                                                                                            <Badge variant="default">Active</Badge>
+                                                                                        ) : (
+                                                                                            <Badge variant="secondary">Pending</Badge>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </TableCell>
+                                                                                <TableCell>
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-9 w-9"
+                                                                                        onClick={() => {
+                                                                                            setSelectedUserForDetails(u);
+                                                                                            fetchUserDetails(u.uid);
+                                                                                        }}
+                                                                                    >
+                                                                                        <LucideIcons.Info className="h-5 w-5" />
+                                                                                    </Button>
+                                                                                </TableCell>
+                                                                                <TableCell>
+
+                                                                                    <div className="flex flex-wrap items-center gap-2">
+                                                                                        {u.status === 'pending' && (
+                                                                                            <Button
+                                                                                                size="sm"
+                                                                                                onClick={() => { /* Handle approve logic */ }}
+                                                                                                className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground min-w-[90px]"
+                                                                                            >
+                                                                                                <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
+                                                                                                Approve
+                                                                                            </Button>
+                                                                                        )}
+
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            variant={u.status === 'banned' ? "outline" : "secondary"}
+                                                                                            onClick={() => setUserToBan(u)}
+                                                                                            className="flex-1 min-w-[90px]"
+                                                                                        >
+                                                                                            <LucideIcons.Ban className="mr-2 h-4 w-4" />
+                                                                                            {u.status === 'banned' ? "Unban" : "Ban"}
+                                                                                        </Button>
+
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            variant="destructive"
+                                                                                            onClick={() => setUserToDelete(u)}
+                                                                                            className="flex-1 min-w-[90px]"
+                                                                                        >
+                                                                                            <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
+                                                                                            Delete
+                                                                                        </Button>
+                                                                                    </div>
+                                                                                </TableCell>
+                                                                            </TableRow>
+                                                                        ))}
+                                                                    </TableBody>
+                                                                </Table>
+
+                                                                {/* Optimized Pagination Controls */}
+                                                                {totalPages > 1 && (
+                                                                    <div className="flex justify-center mt-6">
+                                                                        <Pagination>
+                                                                            <PaginationContent>
+                                                                                <PaginationItem>
+                                                                                    <PaginationPrevious
+                                                                                        href="#"
+                                                                                        onClick={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            if (currentPage > 1) handlePageChange(currentPage - 1);
+                                                                                        }}
+                                                                                        className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                                    />
+                                                                                </PaginationItem>
+
+                                                                                {/* Show first page */}
+                                                                                <PaginationItem>
                                                                                     <PaginationLink
                                                                                         href="#"
                                                                                         onClick={(e) => {
                                                                                             e.preventDefault();
-                                                                                            handlePageChange(page);
+                                                                                            handlePageChange(1);
                                                                                         }}
-                                                                                        isActive={currentPage === page}
+                                                                                        isActive={currentPage === 1}
                                                                                         className="cursor-pointer"
                                                                                     >
-                                                                                        {page}
+                                                                                        1
                                                                                     </PaginationLink>
                                                                                 </PaginationItem>
-                                                                            ))}
 
-                                                                        {/* Show ellipsis if needed */}
-                                                                        {currentPage < totalPages - 2 && (
-                                                                            <PaginationItem>
-                                                                                <PaginationEllipsis />
-                                                                            </PaginationItem>
-                                                                        )}
+                                                                                {/* Show ellipsis if needed */}
+                                                                                {currentPage > 3 && (
+                                                                                    <PaginationItem>
+                                                                                        <PaginationEllipsis />
+                                                                                    </PaginationItem>
+                                                                                )}
 
-                                                                        {/* Show last page */}
-                                                                        {totalPages > 1 && (
-                                                                            <PaginationItem>
-                                                                                <PaginationLink
-                                                                                    href="#"
-                                                                                    onClick={(e) => {
-                                                                                        e.preventDefault();
-                                                                                        handlePageChange(totalPages);
-                                                                                    }}
-                                                                                    isActive={currentPage === totalPages}
-                                                                                    className="cursor-pointer"
-                                                                                >
-                                                                                    {totalPages}
-                                                                                </PaginationLink>
-                                                                            </PaginationItem>
-                                                                        )}
+                                                                                {/* Show pages around current page */}
+                                                                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                                                                    .filter(page => {
+                                                                                        // Show pages within 1 of current page, excluding first and last
+                                                                                        return page > 1 && page < totalPages && Math.abs(page - currentPage) <= 1;
+                                                                                    })
+                                                                                    .map(page => (
+                                                                                        <PaginationItem key={page}>
+                                                                                            <PaginationLink
+                                                                                                href="#"
+                                                                                                onClick={(e) => {
+                                                                                                    e.preventDefault();
+                                                                                                    handlePageChange(page);
+                                                                                                }}
+                                                                                                isActive={currentPage === page}
+                                                                                                className="cursor-pointer"
+                                                                                            >
+                                                                                                {page}
+                                                                                            </PaginationLink>
+                                                                                        </PaginationItem>
+                                                                                    ))}
 
-                                                                        <PaginationItem>
-                                                                            <PaginationNext
-                                                                                href="#"
-                                                                                onClick={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    if (currentPage < totalPages) handlePageChange(currentPage + 1);
-                                                                                }}
-                                                                                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                            />
-                                                                        </PaginationItem>
-                                                                    </PaginationContent>
-                                                                </Pagination>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    </TabsContent>
-                                    <TabsContent value="ip/technologies" className="mt-0">
-                                        <Tabs defaultValue="ip/technologies" className="w-full " value={activeSubTab}
-                                            onValueChange={setActiveSubTab}
-                                        >
-                                            <TabsContent value="ip/technologies" className="mt-0">
-                                                {isLoadingIps ? (
-                                                    <div className="space-y-4">
-                                                        {[1, 2, 3].map((i) => (
-                                                            <div key={i} className="border rounded-md p-4 space-y-3 animate-pulse">
-                                                                <div className="flex justify-between items-start">
-                                                                    <div className="space-y-2 flex-1">
-                                                                        <div className="h-6 bg-muted rounded w-2/3"></div>
-                                                                        <div className="h-4 bg-muted rounded w-1/3"></div>
+                                                                                {/* Show ellipsis if needed */}
+                                                                                {currentPage < totalPages - 2 && (
+                                                                                    <PaginationItem>
+                                                                                        <PaginationEllipsis />
+                                                                                    </PaginationItem>
+                                                                                )}
+
+                                                                                {/* Show last page */}
+                                                                                {totalPages > 1 && (
+                                                                                    <PaginationItem>
+                                                                                        <PaginationLink
+                                                                                            href="#"
+                                                                                            onClick={(e) => {
+                                                                                                e.preventDefault();
+                                                                                                handlePageChange(totalPages);
+                                                                                            }}
+                                                                                            isActive={currentPage === totalPages}
+                                                                                            className="cursor-pointer"
+                                                                                        >
+                                                                                            {totalPages}
+                                                                                        </PaginationLink>
+                                                                                    </PaginationItem>
+                                                                                )}
+
+                                                                                <PaginationItem>
+                                                                                    <PaginationNext
+                                                                                        href="#"
+                                                                                        onClick={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                                                                                        }}
+                                                                                        className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                                    />
+                                                                                </PaginationItem>
+                                                                            </PaginationContent>
+                                                                        </Pagination>
                                                                     </div>
-                                                                    <div className="h-6 w-20 bg-muted rounded"></div>
-                                                                </div>
-                                                                <div className="space-y-2">
-                                                                    <div className="h-4 bg-muted rounded w-full"></div>
-                                                                    <div className="h-4 bg-muted rounded w-5/6"></div>
-                                                                </div>
-                                                                <div className="flex justify-end gap-2">
-                                                                    <div className="h-9 w-24 bg-muted rounded"></div>
-                                                                    <div className="h-9 w-32 bg-muted rounded"></div>
-                                                                </div>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                            <TabsContent value="ip/technologies" className="mt-0">
+                                                <Tabs defaultValue="ip/technologies" className="w-full " value={activeSubTab}
+                                                    onValueChange={setActiveSubTab}
+                                                >
+                                                    <TabsContent value="ip/technologies" className="mt-0">
+                                                        {isLoadingIps ? (
+                                                            <div className="space-y-4">
+                                                                {[1, 2, 3].map((i) => (
+                                                                    <div key={i} className="border rounded-md p-4 space-y-3 animate-pulse">
+                                                                        <div className="flex justify-between items-start">
+                                                                            <div className="space-y-2 flex-1">
+                                                                                <div className="h-6 bg-muted rounded w-2/3"></div>
+                                                                                <div className="h-4 bg-muted rounded w-1/3"></div>
+                                                                            </div>
+                                                                            <div className="h-6 w-20 bg-muted rounded"></div>
+                                                                        </div>
+                                                                        <div className="space-y-2">
+                                                                            <div className="h-4 bg-muted rounded w-full"></div>
+                                                                            <div className="h-4 bg-muted rounded w-5/6"></div>
+                                                                        </div>
+                                                                        <div className="flex justify-end gap-2">
+                                                                            <div className="h-9 w-24 bg-muted rounded"></div>
+                                                                            <div className="h-9 w-32 bg-muted rounded"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                ) : techTransferIps.length === 0 ? (
-                                                    <p className="text-center text-muted-foreground py-8">
-                                                        No IP submissions found.
-                                                    </p>
-                                                ) : (
-                                                    <Accordion type="single" collapsible className="w-full" value={expandedAccordion}
-                                                        onValueChange={setExpandedAccordion}>
-                                                        {Object.keys(groupedIps).map((organizationName) => (
-                                                            <AccordionItem value={`org-${organizationName}`} key={organizationName} className="border-b">
-                                                                <AccordionTrigger className="flex items-center justify-between gap-4 p-4 hover:no-underline data-[state=open]:bg-muted/50 rounded-md transition-colors">
-                                                                    <p className="font-medium truncate">
-                                                                        {organizationName}
-                                                                        <span className="text-sm text-muted-foreground ml-2">
-                                                                            ({groupedIps[organizationName].length} submissions)
-                                                                        </span>
-                                                                    </p>
-                                                                </AccordionTrigger>
-                                                                <AccordionContent className="p-4">
-                                                                    <div className="space-y-4">
-                                                                        {groupedIps[organizationName].map((ip) => (
-                                                                            <div
-                                                                                key={ip.id}
-                                                                                id={ip.id}
-                                                                                onClick={(e) => setCommentingSubmissionId(ip.id)}
-                                                                                className={`border rounded-md p-4 space-y-2 transition-all cursor-pointer hover:bg-accent/20 hover:text-accent-foreground focus:outline-none focus:ring-2 
+                                                        ) : techTransferIps.length === 0 ? (
+                                                            <p className="text-center text-muted-foreground py-8">
+                                                                No IP submissions found.
+                                                            </p>
+                                                        ) : (
+                                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                                <CardHeader>
+                                                                    <CardTitle>Ip/Technologies</CardTitle>
+                                                                    <CardDescription>Approve, Reject, or delete IP's.</CardDescription>
+                                                                </CardHeader>
+                                                                <CardContent>
+                                                                    <Accordion type="single" collapsible className="w-full" value={expandedAccordion}
+                                                                        onValueChange={setExpandedAccordion}>
+                                                                        {Object.keys(groupedIps).map((organizationName) => (
+                                                                            <AccordionItem value={`org-${organizationName}`} key={organizationName} className="border-b">
+                                                                                <AccordionTrigger className="flex items-center justify-between gap-4 p-4 hover:no-underline data-[state=open]:bg-muted/50 rounded-md transition-colors">
+                                                                                    <p className="font-medium truncate">
+                                                                                        {organizationName}
+                                                                                        <span className="text-sm text-muted-foreground ml-2">
+                                                                                            ({groupedIps[organizationName].length} submissions)
+                                                                                        </span>
+                                                                                    </p>
+                                                                                </AccordionTrigger>
+                                                                                <AccordionContent className="p-4">
+                                                                                    <div className="space-y-4">
+                                                                                        {groupedIps[organizationName].map((ip) => (
+                                                                                            <div
+                                                                                                key={ip.id}
+                                                                                                id={ip.id}
+                                                                                                onClick={(e) => setCommentingSubmissionId(ip.id)}
+                                                                                                className={`border rounded-md p-4 space-y-2 transition-all cursor-pointer hover:bg-accent/20 hover:text-accent-foreground focus:outline-none focus:ring-2 
                                                                         ${highlightedId === ip.id ? "highlight" : ""}
                                                                         focus:ring-ring`}
-                                                                                tabIndex={0}
-                                                                                onKeyDown={(e) => {
-                                                                                    if (e.key === "Enter" || e.key === " ") {
-                                                                                        e.preventDefault();
-                                                                                        setCommentingSubmissionId(ip.id);
-                                                                                    }
-                                                                                }}
-                                                                            >
-                                                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                                                                    <div className="flex justify-between w-full items-center">
-                                                                                        <div className="flex gap-2">
-                                                                                            <p className="font-semibold text-lg text-foreground">{ip.ipTitle}</p>
-                                                                                            <Badge
-                                                                                                className={`px-3 py-1 text-xs font-semibold border rounded-sm capitalize
-                                                                                                        ${ip.approvalStatus === "approved"
-                                                                                                        ? "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300"
-                                                                                                        : ip.approvalStatus === "rejected"
-                                                                                                            ? "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300"
-                                                                                                            : ip.approvalStatus === "needInfo"
-                                                                                                                ? "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300"
-                                                                                                                : "border-gray-400 text-gray-700 bg-gray-50 dark:border-gray-500 dark:text-gray-300"
-                                                                                                    }`}
-                                                                                            >
-                                                                                                {ip.approvalStatus}
-                                                                                            </Badge>
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <DropdownMenu>
-                                                                                                <DropdownMenuTrigger asChild>
-                                                                                                    <Button
-                                                                                                        variant="ghost"
-                                                                                                        size="icon"
-                                                                                                        onClick={(e) => e.stopPropagation()}
-                                                                                                    >
-                                                                                                        <LucideIcons.MoreVertical className="h-5 w-5" />
-                                                                                                    </Button>
-                                                                                                </DropdownMenuTrigger>
-                                                                                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                                                                                    <DropdownMenuItem
-                                                                                                        onClick={(e) => {
-                                                                                                            e.stopPropagation()
-                                                                                                            setDeleteTargetId(ip.id)
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
-                                                                                                        Delete
-                                                                                                    </DropdownMenuItem>
-                                                                                                </DropdownMenuContent>
-                                                                                            </DropdownMenu>
-                                                                                        </div>
-
-                                                                                    </div>
-
-                                                                                </div>
-                                                                                <div className="text-sm text-muted-foreground space-y-1" >
-                                                                                    <p>
-                                                                                        <strong>Inventor:</strong> {ip.firstName} {ip.lastName}
-                                                                                    </p>
-                                                                                    <div className="max-h-24 overflow-y-auto pr-2">
-                                                                                        <p className="line-clamp-3">
-                                                                                            <strong>Summary: </strong>
-                                                                                            {ip.summary}
-                                                                                        </p>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <div className="pt-4 flex justify-between items-center">
-                                                                                    <div className="flex items-center gap-2 ml-auto">
-                                                                                        {statusUpdates[ip.id] && (
-                                                                                            <Button
-                                                                                                size="sm"
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation();
-                                                                                                    handleUpdateStatus(ip.id);
+                                                                                                tabIndex={0}
+                                                                                                onKeyDown={(e) => {
+                                                                                                    if (e.key === "Enter" || e.key === " ") {
+                                                                                                        e.preventDefault();
+                                                                                                        setCommentingSubmissionId(ip.id);
+                                                                                                    }
                                                                                                 }}
-                                                                                                disabled={isUpdating[ip.id]}
                                                                                             >
-                                                                                                {isUpdating[ip.id] ? (
-                                                                                                    <LucideIcons.Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                                                                ) : (
-                                                                                                    <LucideIcons.Save className="mr-2 h-4 w-4" />
-                                                                                                )}
-                                                                                                Update Status
-                                                                                            </Button>
-                                                                                        )}
+                                                                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                                                                    <div className="flex justify-between w-full items-center">
+                                                                                                        <div className="flex gap-2">
+                                                                                                            <p className="font-semibold text-lg text-foreground">{ip.ipTitle}</p>
+                                                                                                            <Badge
+                                                                                                                className={`px-3 py-1 text-xs font-semibold border rounded-sm capitalize
+                                                                                                        ${ip.approvalStatus === "approved"
+                                                                                                                        ? "border-green-500 text-green-700 bg-green-50 dark:border-green-400 dark:text-green-300"
+                                                                                                                        : ip.approvalStatus === "rejected"
+                                                                                                                            ? "border-red-500 text-red-700 bg-red-50 dark:border-red-400 dark:text-red-300"
+                                                                                                                            : ip.approvalStatus === "needInfo"
+                                                                                                                                ? "border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-400 dark:text-blue-300"
+                                                                                                                                : "border-gray-400 text-gray-700 bg-gray-50 dark:border-gray-500 dark:text-gray-300"
+                                                                                                                    }`}
+                                                                                                            >
+                                                                                                                {ip.approvalStatus}
+                                                                                                            </Badge>
+                                                                                                        </div>
+                                                                                                        <div>
+                                                                                                            <DropdownMenu>
+                                                                                                                <DropdownMenuTrigger asChild>
+                                                                                                                    <Button
+                                                                                                                        variant="ghost"
+                                                                                                                        size="icon"
+                                                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                                                    >
+                                                                                                                        <LucideIcons.MoreVertical className="h-5 w-5" />
+                                                                                                                    </Button>
+                                                                                                                </DropdownMenuTrigger>
+                                                                                                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                                                                                                    <DropdownMenuItem
+                                                                                                                        onClick={(e) => {
+                                                                                                                            e.stopPropagation()
+                                                                                                                            setDeleteTargetId(ip.id)
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
+                                                                                                                        Delete
+                                                                                                                    </DropdownMenuItem>
+                                                                                                                </DropdownMenuContent>
+                                                                                                            </DropdownMenu>
+                                                                                                        </div>
 
-                                                                                        <DropdownMenu>
-                                                                                            <DropdownMenuTrigger asChild>
-                                                                                                <Button
-                                                                                                    variant="outline"
-                                                                                                    size="sm"
-                                                                                                    onClick={(e) => e.stopPropagation()} // ✅ stop click bubbling when opening dropdown
-                                                                                                >
-                                                                                                    Actions
-                                                                                                    <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
-                                                                                                </Button>
-                                                                                            </DropdownMenuTrigger>
+                                                                                                    </div>
 
-                                                                                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}> {/* ✅ Stop bubbling inside dropdown */}
-                                                                                                <>
-                                                                                                    <DropdownMenuItem
-                                                                                                        onClick={(e) => {
-                                                                                                            e.stopPropagation(); // ✅ Prevent triggering parent div click
-                                                                                                            handleActionClick(ip.id, "approved");
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
-                                                                                                        <span>Approve</span>
-                                                                                                    </DropdownMenuItem>
+                                                                                                </div>
+                                                                                                <div className="text-sm text-muted-foreground space-y-1" >
+                                                                                                    <p>
+                                                                                                        <strong>Inventor:</strong> {ip.firstName} {ip.lastName}
+                                                                                                    </p>
+                                                                                                    <div className="max-h-24 overflow-y-auto pr-2">
+                                                                                                        <p className="line-clamp-3">
+                                                                                                            <strong>Summary: </strong>
+                                                                                                            {ip.summary}
+                                                                                                        </p>
+                                                                                                    </div>
+                                                                                                </div>
 
-                                                                                                    <DropdownMenuItem
-                                                                                                        className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
-                                                                                                        onClick={(e) => {
-                                                                                                            e.stopPropagation();
-                                                                                                            handleActionClick(ip.id, "rejected");
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        <LucideIcons.XCircle className="mr-2 h-4 w-4" />
-                                                                                                        <span>Reject</span>
-                                                                                                    </DropdownMenuItem>
+                                                                                                <div className="pt-4 flex justify-between items-center">
+                                                                                                    <div className="flex items-center gap-2 ml-auto">
+                                                                                                        {statusUpdates[ip.id] && (
+                                                                                                            <Button
+                                                                                                                size="sm"
+                                                                                                                onClick={(e) => {
+                                                                                                                    e.stopPropagation();
+                                                                                                                    handleUpdateStatus(ip.id);
+                                                                                                                }}
+                                                                                                                disabled={isUpdating[ip.id]}
+                                                                                                            >
+                                                                                                                {isUpdating[ip.id] ? (
+                                                                                                                    <LucideIcons.Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                                                                ) : (
+                                                                                                                    <LucideIcons.Save className="mr-2 h-4 w-4" />
+                                                                                                                )}
+                                                                                                                Update Status
+                                                                                                            </Button>
+                                                                                                        )}
 
-                                                                                                    <DropdownMenuItem
-                                                                                                        className="focus:bg-muted"
-                                                                                                        onClick={(e) => {
-                                                                                                            e.stopPropagation();
-                                                                                                            handleActionClick(ip.id, "needInfo");
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        <LucideIcons.XCircle className="mr-2 h-4 w-4" />
-                                                                                                        <span>Need Info</span>
-                                                                                                    </DropdownMenuItem>
-                                                                                                </>
-                                                                                            </DropdownMenuContent>
-                                                                                        </DropdownMenu>
+                                                                                                        <DropdownMenu>
+                                                                                                            <DropdownMenuTrigger asChild>
+                                                                                                                <Button
+                                                                                                                    variant="outline"
+                                                                                                                    size="sm"
+                                                                                                                    onClick={(e) => e.stopPropagation()} // ✅ stop click bubbling when opening dropdown
+                                                                                                                >
+                                                                                                                    Actions
+                                                                                                                    <LucideIcons.ChevronDown className="ml-2 h-4 w-4" />
+                                                                                                                </Button>
+                                                                                                            </DropdownMenuTrigger>
 
+                                                                                                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}> {/* ✅ Stop bubbling inside dropdown */}
+                                                                                                                <>
+                                                                                                                    <DropdownMenuItem
+                                                                                                                        onClick={(e) => {
+                                                                                                                            e.stopPropagation(); // ✅ Prevent triggering parent div click
+                                                                                                                            handleActionClick(ip.id, "approved");
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
+                                                                                                                        <span>Approve</span>
+                                                                                                                    </DropdownMenuItem>
+
+                                                                                                                    <DropdownMenuItem
+                                                                                                                        className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+                                                                                                                        onClick={(e) => {
+                                                                                                                            e.stopPropagation();
+                                                                                                                            handleActionClick(ip.id, "rejected");
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        <LucideIcons.XCircle className="mr-2 h-4 w-4" />
+                                                                                                                        <span>Reject</span>
+                                                                                                                    </DropdownMenuItem>
+
+                                                                                                                    <DropdownMenuItem
+                                                                                                                        className="focus:bg-muted"
+                                                                                                                        onClick={(e) => {
+                                                                                                                            e.stopPropagation();
+                                                                                                                            handleActionClick(ip.id, "needInfo");
+                                                                                                                        }}
+                                                                                                                    >
+                                                                                                                        <LucideIcons.XCircle className="mr-2 h-4 w-4" />
+                                                                                                                        <span>Need Info</span>
+                                                                                                                    </DropdownMenuItem>
+                                                                                                                </>
+                                                                                                            </DropdownMenuContent>
+                                                                                                        </DropdownMenu>
+
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        ))}
                                                                                     </div>
-                                                                                </div>
-                                                                            </div>
+                                                                                </AccordionContent>
+                                                                            </AccordionItem>
                                                                         ))}
-                                                                    </div>
-                                                                </AccordionContent>
-                                                            </AccordionItem>
-                                                        ))}
-                                                    </Accordion>
-                                                )}
-                                                <DeleteConfirmationDialog
-                                                    open={!!deleteTargetId}
-                                                    onOpenChange={(open) => {
-                                                        if (!open) setDeleteTargetId(null)
-                                                    }}
-                                                    submissionId={deleteTargetId || ""}
-                                                    onDelete={(id) => {
-                                                        deleteSubmission(String(id), setMySubmissions)
-                                                        setDeleteTargetId(null)
-                                                    }}
-                                                />
-                                                <div className="absolute bottom-4 right-4">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="default"
-                                                        className="px-12 py-6 rounded-full text-sm font-medium flex items-center gap-2 shadow-md"
-                                                        onClick={() => setActiveSubTab("restoreips")}
-                                                    >
-                                                        <LucideIcons.RotateCcw className="h-4 w-4" />
-                                                        Restore IPs
-                                                    </Button>
-                                                </div>
-                                            </TabsContent>
+                                                                    </Accordion>
 
-                                            <TabsContent value="restoreips" className="mt-0">
-                                                {isLoadingRestoreIps ? (
-                                                    <div className="flex justify-center items-center h-48">
-                                                        <Loader2 className="h-8 w-8 animate-spin" />
-                                                    </div>
-                                                ) : restoreIps.length === 0 ? (
-                                                    <p className="text-center text-muted-foreground py-8">
-                                                        No deleted or restorable IPs found.
-                                                    </p>
-                                                ) : (
-                                                    <div className="space-y-4 pb-20"> {/* Add bottom padding so button doesn’t overlap content */}
-                                                        {restoreIps?.map((ip: any, index) => (
-                                                            <div
-                                                                key={index}
-                                                                className="border rounded-md p-4 space-y-2 hover:bg-muted/30 transition-all"
+                                                                </CardContent>
+                                                            </Card>
+
+                                                        )}
+                                                        <DeleteConfirmationDialog
+                                                            open={!!deleteTargetId}
+                                                            onOpenChange={(open) => {
+                                                                if (!open) setDeleteTargetId(null)
+                                                            }}
+                                                            submissionId={deleteTargetId || ""}
+                                                            onDelete={(id) => {
+                                                                deleteSubmission(String(id), setMySubmissions)
+                                                                setDeleteTargetId(null)
+                                                            }}
+                                                        />
+                                                        <div className="absolute bottom-4 right-4">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="default"
+                                                                className="px-12 py-6 rounded-full text-sm font-medium flex items-center gap-2 shadow-md"
+                                                                onClick={() => setActiveSubTab("restoreips")}
                                                             >
-                                                                <div className="flex justify-between items-center">
-                                                                    <p className="font-semibold">{ip.ipTitle}</p>
-                                                                    <AlertDialog>
-                                                                        <AlertDialogTrigger asChild>
-                                                                            <Button size="sm" variant="outline">
-                                                                                <LucideIcons.RotateCcw className="mr-2 h-4 w-4" />
-                                                                                Restore
-                                                                            </Button>
-                                                                        </AlertDialogTrigger>
+                                                                <LucideIcons.RotateCcw className="h-4 w-4" />
+                                                                Restore IPs
+                                                            </Button>
+                                                        </div>
+                                                    </TabsContent>
 
-                                                                        <AlertDialogContent>
-                                                                            <AlertDialogHeader>
-                                                                                <AlertDialogTitle>Restore this IP submission?</AlertDialogTitle>
-                                                                                <AlertDialogDescription>
-                                                                                    This action will restore <strong>{ip.ipTitle}</strong> back to the main IP list.
-                                                                                    Are you sure you want to continue?
-                                                                                </AlertDialogDescription>
-                                                                            </AlertDialogHeader>
-
-                                                                            <AlertDialogFooter>
-                                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                                <AlertDialogAction
-                                                                                    onClick={() => handleRestore(ip.id)}
-                                                                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                                                                >
-                                                                                    Yes, Restore
-                                                                                </AlertDialogAction>
-                                                                            </AlertDialogFooter>
-                                                                        </AlertDialogContent>
-                                                                    </AlertDialog>
-                                                                </div>
-
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    <strong>Inventor:</strong> {ip.inventorName}
-                                                                </p>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    <strong>Summary:</strong> {ip.summary}
-                                                                </p>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    <strong>Organization:</strong> {ip.organization}
-                                                                </p>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    <strong>Deleted by:</strong> {ip.action_by_user_name}
-                                                                </p>
+                                                    <TabsContent value="restoreips" className="mt-0">
+                                                        {isLoadingRestoreIps ? (
+                                                            <div className="flex justify-center items-center h-48">
+                                                                <Loader2 className="h-8 w-8 animate-spin" />
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                )}
+                                                        ) : restoreIps.length === 0 ? (
+                                                            <p className="text-center text-muted-foreground py-8">
+                                                                No deleted or restorable IPs found.
+                                                            </p>
+                                                        ) : (
+                                                            <div className="space-y-4 pb-20"> {/* Add bottom padding so button doesn’t overlap content */}
+                                                                {restoreIps?.map((ip: any, index) => (
+                                                                    <div
+                                                                        key={index}
+                                                                        className="border rounded-md p-4 space-y-2 hover:bg-muted/30 transition-all"
+                                                                    >
+                                                                        <div className="flex justify-between items-center">
+                                                                            <p className="font-semibold">{ip.ipTitle}</p>
+                                                                            <AlertDialog>
+                                                                                <AlertDialogTrigger asChild>
+                                                                                    <Button size="sm" variant="outline">
+                                                                                        <LucideIcons.RotateCcw className="mr-2 h-4 w-4" />
+                                                                                        Restore
+                                                                                    </Button>
+                                                                                </AlertDialogTrigger>
 
-                                                {/* 🔙 Back button fixed to bottom-right */}
-                                                <div className="absolute bottom-4 right-4">
-                                                    <Button
-                                                        size="sm"
-                                                        className="px-12 py-6"
-                                                        onClick={() => setActiveSubTab("ip/technologies")}
-                                                    >
-                                                        <LucideIcons.ArrowLeft className="mr-2 h-4 w-4" />
-                                                        Back
-                                                    </Button>
-                                                </div>
+                                                                                <AlertDialogContent>
+                                                                                    <AlertDialogHeader>
+                                                                                        <AlertDialogTitle>Restore this IP submission?</AlertDialogTitle>
+                                                                                        <AlertDialogDescription>
+                                                                                            This action will restore <strong>{ip.ipTitle}</strong> back to the main IP list.
+                                                                                            Are you sure you want to continue?
+                                                                                        </AlertDialogDescription>
+                                                                                    </AlertDialogHeader>
+
+                                                                                    <AlertDialogFooter>
+                                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                                        <AlertDialogAction
+                                                                                            onClick={() => handleRestore(ip.id)}
+                                                                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                                                                        >
+                                                                                            Yes, Restore
+                                                                                        </AlertDialogAction>
+                                                                                    </AlertDialogFooter>
+                                                                                </AlertDialogContent>
+                                                                            </AlertDialog>
+                                                                        </div>
+
+                                                                        <p className="text-sm text-muted-foreground">
+                                                                            <strong>Inventor:</strong> {ip.inventorName}
+                                                                        </p>
+                                                                        <p className="text-sm text-muted-foreground">
+                                                                            <strong>Summary:</strong> {ip.summary}
+                                                                        </p>
+                                                                        <p className="text-sm text-muted-foreground">
+                                                                            <strong>Organization:</strong> {ip.organization}
+                                                                        </p>
+                                                                        <p className="text-sm text-muted-foreground">
+                                                                            <strong>Deleted by:</strong> {ip.action_by_user_name}
+                                                                        </p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {/* 🔙 Back button fixed to bottom-right */}
+                                                        <div className="absolute bottom-4 right-4">
+                                                            <Button
+                                                                size="sm"
+                                                                className="px-12 py-6"
+                                                                onClick={() => setActiveSubTab("ip/technologies")}
+                                                            >
+                                                                <LucideIcons.ArrowLeft className="mr-2 h-4 w-4" />
+                                                                Back
+                                                            </Button>
+                                                        </div>
+                                                    </TabsContent>
+
+
+                                                </Tabs>
                                             </TabsContent>
 
+                                            <TabsContent value="subscribers" className="mt-0">
+                                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                    <CardHeader>
+                                                        <CardTitle>Newsletter Subscribers</CardTitle>
+                                                        <CardDescription>List of all users subscribed to the newsletter.</CardDescription>
 
-                                        </Tabs>
-                                    </TabsContent>
+                                                        <div className="flex justify-end gap-2 pt-2">
+                                                            <Button variant="outline" onClick={handleExportCSV}>
+                                                                <LucideIcons.Download className="mr-2 h-4 w-4" /> Export CSV
+                                                            </Button>
 
-                                    <TabsContent value="subscribers" className="mt-0">
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader>
-                                                <CardTitle>Newsletter Subscribers</CardTitle>
-                                                <CardDescription>List of all users subscribed to the newsletter.</CardDescription>
+                                                            {selectedSubscribers.length > 0 && (
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <Button variant="destructive">
+                                                                            <LucideIcons.Trash className="mr-2 h-4 w-4" /> Delete Selected ({selectedSubscribers.length})
+                                                                        </Button>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                This action cannot be undone. It will permanently delete the selected subscriber(s).
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                            <AlertDialogAction onClick={handleDeleteSubscribers}>
+                                                                                Delete
+                                                                            </AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
+                                                            )}
+                                                        </div>
+                                                    </CardHeader>
 
-                                                <div className="flex justify-end gap-2 pt-2">
-                                                    <Button variant="outline" onClick={handleExportCSV}>
-                                                        <LucideIcons.Download className="mr-2 h-4 w-4" /> Export CSV
-                                                    </Button>
+                                                    <CardContent>
+                                                        {isLoadingSubscribers ? (
+                                                            <div className="flex justify-center items-center h-48">
+                                                                <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                            </div>
+                                                        ) : subscribers.length > 0 ? (
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow>
+                                                                        <TableHead className="w-4">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={selectedSubscribers.length === subscribers.length}
+                                                                                onChange={(e) =>
+                                                                                    setSelectedSubscribers(
+                                                                                        e.target.checked ? subscribers.map((s) => s.id) : []
+                                                                                    )
+                                                                                }
+                                                                            />
+                                                                        </TableHead>
+                                                                        <TableHead>Email</TableHead>
+                                                                        <TableHead>Subscribed Date</TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {subscribers.map((sub) => (
+                                                                        <TableRow key={sub.id}>
+                                                                            <TableCell>
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={selectedSubscribers.includes(sub.id)}
+                                                                                    onChange={(e) =>
+                                                                                        setSelectedSubscribers((prev: any) =>
+                                                                                            e.target.checked
+                                                                                                ? [...prev, sub.id]
+                                                                                                : prev.filter((id: any) => id !== sub.id)
+                                                                                        )
+                                                                                    }
+                                                                                />
+                                                                            </TableCell>
+                                                                            <TableCell className="font-medium">{sub.email}</TableCell>
+                                                                            <TableCell>
+                                                                                {new Date(sub.subscribed_at).toLocaleDateString()}
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    ))}
+                                                                </TableBody>
+                                                            </Table>
+                                                        ) : (
+                                                            <p className="text-center text-muted-foreground py-8">
+                                                                There are no newsletter subscribers yet.
+                                                            </p>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
 
-                                                    {selectedSubscribers.length > 0 && (
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="destructive">
-                                                                    <LucideIcons.Trash className="mr-2 h-4 w-4" /> Delete Selected ({selectedSubscribers.length})
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        This action cannot be undone. It will permanently delete the selected subscriber(s).
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={handleDeleteSubscribers}>
-                                                                        Delete
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    )}
-                                                </div>
-                                            </CardHeader>
-
-                                            <CardContent>
-                                                {isLoadingSubscribers ? (
-                                                    <div className="flex justify-center items-center h-48">
-                                                        <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                    </div>
-                                                ) : subscribers.length > 0 ? (
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead className="w-4">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={selectedSubscribers.length === subscribers.length}
-                                                                        onChange={(e) =>
-                                                                            setSelectedSubscribers(
-                                                                                e.target.checked ? subscribers.map((s) => s.id) : []
-                                                                            )
-                                                                        }
-                                                                    />
-                                                                </TableHead>
-                                                                <TableHead>Email</TableHead>
-                                                                <TableHead>Subscribed Date</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {subscribers.map((sub) => (
-                                                                <TableRow key={sub.id}>
-                                                                    <TableCell>
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            checked={selectedSubscribers.includes(sub.id)}
-                                                                            onChange={(e) =>
-                                                                                setSelectedSubscribers((prev: any) =>
-                                                                                    e.target.checked
-                                                                                        ? [...prev, sub.id]
-                                                                                        : prev.filter((id: any) => id !== sub.id)
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                    </TableCell>
-                                                                    <TableCell className="font-medium">{sub.email}</TableCell>
-                                                                    <TableCell>
-                                                                        {new Date(sub.subscribed_at).toLocaleDateString()}
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
-                                                ) : (
-                                                    <p className="text-center text-muted-foreground py-8">
-                                                        There are no newsletter subscribers yet.
-                                                    </p>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    </TabsContent>
-
-                                    {/* <TabsContent value="subscribers" className="mt-0">
+                                            {/* <TabsContent value="subscribers" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader>
                                                 <CardTitle>Newsletter Subscribers</CardTitle>
@@ -3452,180 +3780,180 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             </CardContent>
                                         </Card>
                                     </TabsContent> */}
-                                    <TabsContent value="aignite" className="mt-0">
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader>
-                                                <div className="flex justify-between items-center">
-                                                    <div className="flex flex-col">
-                                                        <CardTitle>Aignite Registrations</CardTitle>
-                                                        <CardDescription className="mt-2">
-                                                            Total Registrations: {isLoading ? (
-                                                                <div className="flex justify-center items-center h-48">
-                                                                    <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
-                                                                </div>
-                                                            ) : totalRegistrations}
-                                                        </CardDescription>
-                                                    </div>
+                                            <TabsContent value="aignite" className="mt-0">
+                                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                    <CardHeader>
+                                                        <div className="flex justify-between items-center">
+                                                            <div className="flex flex-col">
+                                                                <CardTitle>Aignite Registrations</CardTitle>
+                                                                <CardDescription className="mt-2">
+                                                                    Total Registrations: {isLoading ? (
+                                                                        <div className="flex justify-center items-center h-48">
+                                                                            <LucideIcons.Loader2 className="h-8 w-8 animate-spin" />
+                                                                        </div>
+                                                                    ) : totalRegistrations}
+                                                                </CardDescription>
+                                                            </div>
 
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            className="bg-accent text-accent-foreground hover:bg-accent/90"
-                                                            size="sm"
-                                                            onClick={handleExportAigniteCSV}
-                                                        >
-                                                            <LucideIcons.Download className="mr-2 h-4 w-4" />
-                                                            Export CSV
-                                                        </Button>
+                                                            <div className="flex gap-2">
+                                                                <Button
+                                                                    className="bg-accent text-accent-foreground hover:bg-accent/90"
+                                                                    size="sm"
+                                                                    onClick={handleExportAigniteCSV}
+                                                                >
+                                                                    <LucideIcons.Download className="mr-2 h-4 w-4" />
+                                                                    Export CSV
+                                                                </Button>
 
-                                                        {selectedIds.length > 0 && (
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button
-                                                                        variant="destructive"
-                                                                        size="sm"
-                                                                        className="flex items-center"
-                                                                        disabled={isDeleting}
-                                                                    >
-                                                                        <LucideIcons.Trash className="mr-2 h-4 w-4" />
-                                                                        {isDeleting ? "Deleting..." : `Delete Selected (${selectedIds.length})`}
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
+                                                                {selectedIds.length > 0 && (
+                                                                    <AlertDialog>
+                                                                        <AlertDialogTrigger asChild>
+                                                                            <Button
+                                                                                variant="destructive"
+                                                                                size="sm"
+                                                                                className="flex items-center"
+                                                                                disabled={isDeleting}
+                                                                            >
+                                                                                <LucideIcons.Trash className="mr-2 h-4 w-4" />
+                                                                                {isDeleting ? "Deleting..." : `Delete Selected (${selectedIds.length})`}
+                                                                            </Button>
+                                                                        </AlertDialogTrigger>
 
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            This will permanently delete {selectedIds.length} registration(s).
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                        <AlertDialogAction onClick={handleDeleteSelected}>
-                                                                            Confirm Delete
-                                                                        </AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </CardHeader>
+                                                                        <AlertDialogContent>
+                                                                            <AlertDialogHeader>
+                                                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                                                <AlertDialogDescription>
+                                                                                    This will permanently delete {selectedIds.length} registration(s).
+                                                                                </AlertDialogDescription>
+                                                                            </AlertDialogHeader>
+                                                                            <AlertDialogFooter>
+                                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                                <AlertDialogAction onClick={handleDeleteSelected}>
+                                                                                    Confirm Delete
+                                                                                </AlertDialogAction>
+                                                                            </AlertDialogFooter>
+                                                                        </AlertDialogContent>
+                                                                    </AlertDialog>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </CardHeader>
 
-                                            <CardContent>
-                                                <div className="overflow-x-auto rounded-lg border border-border/50">
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead>
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={
-                                                                            selectedIds.length === registrations?.length &&
-                                                                            registrations.length > 0
-                                                                        }
-                                                                        onChange={selectAll}
-                                                                    />
-                                                                </TableHead>
-                                                                {registrationColumns.map((col) => (
-                                                                    <TableHead key={col}>{col}</TableHead>
-                                                                ))}
-                                                            </TableRow>
-                                                        </TableHeader>
-
-                                                        <TableBody>
-                                                            {registrations?.length > 0 ? (
-                                                                registrations.map((reg) => (
-                                                                    <TableRow key={reg.id}>
-                                                                        <TableCell>
+                                                    <CardContent>
+                                                        <div className="overflow-x-auto rounded-lg border border-border/50">
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow>
+                                                                        <TableHead>
                                                                             <input
                                                                                 type="checkbox"
-                                                                                checked={selectedIds.includes(reg.id)}
-                                                                                onChange={() => toggleSelect(reg.id)}
+                                                                                checked={
+                                                                                    selectedIds.length === registrations?.length &&
+                                                                                    registrations.length > 0
+                                                                                }
+                                                                                onChange={selectAll}
                                                                             />
-                                                                        </TableCell>
-                                                                        <TableCell>{reg.full_name}</TableCell>
-                                                                        <TableCell>{reg.email_address}</TableCell>
-                                                                        <TableCell>{reg.phone_number}</TableCell>
-                                                                        <TableCell>{reg.who_you_are}</TableCell>
-                                                                        <TableCell>
-                                                                            {new Date(reg.registered_at).toLocaleString()}
-                                                                        </TableCell>
+                                                                        </TableHead>
+                                                                        {registrationColumns.map((col) => (
+                                                                            <TableHead key={col}>{col}</TableHead>
+                                                                        ))}
                                                                     </TableRow>
-                                                                ))
-                                                            ) : (
-                                                                <TableRow>
-                                                                    <TableCell colSpan={registrationColumns.length + 1} className="text-center py-12 text-lg text-muted-foreground">
-                                                                        No registrations found for this page.
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            )}
+                                                                </TableHeader>
 
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
-                                                {totalPages > 1 && (
-                                                    <div className="flex justify-center mt-6">
-                                                        <Pagination>
-                                                            <PaginationContent>
-                                                                <PaginationItem>
-                                                                    <PaginationPrevious
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            if (currentPage > 1) onPageChange(currentPage - 1);
-                                                                        }}
-                                                                        className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                    />
-                                                                </PaginationItem>
+                                                                <TableBody>
+                                                                    {registrations?.length > 0 ? (
+                                                                        registrations.map((reg) => (
+                                                                            <TableRow key={reg.id}>
+                                                                                <TableCell>
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        checked={selectedIds.includes(reg.id)}
+                                                                                        onChange={() => toggleSelect(reg.id)}
+                                                                                    />
+                                                                                </TableCell>
+                                                                                <TableCell>{reg.full_name}</TableCell>
+                                                                                <TableCell>{reg.email_address}</TableCell>
+                                                                                <TableCell>{reg.phone_number}</TableCell>
+                                                                                <TableCell>{reg.who_you_are}</TableCell>
+                                                                                <TableCell>
+                                                                                    {new Date(reg.registered_at).toLocaleString()}
+                                                                                </TableCell>
+                                                                            </TableRow>
+                                                                        ))
+                                                                    ) : (
+                                                                        <TableRow>
+                                                                            <TableCell colSpan={registrationColumns.length + 1} className="text-center py-12 text-lg text-muted-foreground">
+                                                                                No registrations found for this page.
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    )}
 
-                                                                {Array.from({ length: totalPages }, (_, i) => {
-                                                                    const pageNumber = i + 1;
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+                                                        {totalPages > 1 && (
+                                                            <div className="flex justify-center mt-6">
+                                                                <Pagination>
+                                                                    <PaginationContent>
+                                                                        <PaginationItem>
+                                                                            <PaginationPrevious
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (currentPage > 1) onPageChange(currentPage - 1);
+                                                                                }}
+                                                                                className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                            />
+                                                                        </PaginationItem>
 
-                                                                    if (
-                                                                        pageNumber === 1 ||
-                                                                        pageNumber === totalPages ||
-                                                                        Math.abs(pageNumber - currentPage) <= 1
-                                                                    ) {
-                                                                        return (
-                                                                            <PaginationItem key={pageNumber}>
-                                                                                <PaginationLink
-                                                                                    onClick={(e) => {
-                                                                                        e.preventDefault();
-                                                                                        onPageChange(pageNumber);
-                                                                                    }}
-                                                                                    isActive={currentPage === pageNumber}
-                                                                                    className="cursor-pointer"
-                                                                                >
-                                                                                    {pageNumber}
-                                                                                </PaginationLink>
-                                                                            </PaginationItem>
-                                                                        );
-                                                                    } else if (
-                                                                        pageNumber === currentPage - 2 ||
-                                                                        pageNumber === currentPage + 2
-                                                                    ) {
-                                                                        return <span key={pageNumber} className="px-2">...</span>;
-                                                                    }
+                                                                        {Array.from({ length: totalPages }, (_, i) => {
+                                                                            const pageNumber = i + 1;
 
-                                                                    return null;
-                                                                })}
+                                                                            if (
+                                                                                pageNumber === 1 ||
+                                                                                pageNumber === totalPages ||
+                                                                                Math.abs(pageNumber - currentPage) <= 1
+                                                                            ) {
+                                                                                return (
+                                                                                    <PaginationItem key={pageNumber}>
+                                                                                        <PaginationLink
+                                                                                            onClick={(e) => {
+                                                                                                e.preventDefault();
+                                                                                                onPageChange(pageNumber);
+                                                                                            }}
+                                                                                            isActive={currentPage === pageNumber}
+                                                                                            className="cursor-pointer"
+                                                                                        >
+                                                                                            {pageNumber}
+                                                                                        </PaginationLink>
+                                                                                    </PaginationItem>
+                                                                                );
+                                                                            } else if (
+                                                                                pageNumber === currentPage - 2 ||
+                                                                                pageNumber === currentPage + 2
+                                                                            ) {
+                                                                                return <span key={pageNumber} className="px-2">...</span>;
+                                                                            }
 
-                                                                <PaginationItem>
-                                                                    <PaginationNext
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            if (currentPage < totalPages) onPageChange(currentPage + 1);
-                                                                        }}
-                                                                        className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                    />
-                                                                </PaginationItem>
-                                                            </PaginationContent>
-                                                        </Pagination>
-                                                    </div>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    </TabsContent>
-                                    {/* <TabsContent value="connex" className="mt-0">
+                                                                            return null;
+                                                                        })}
+
+                                                                        <PaginationItem>
+                                                                            <PaginationNext
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (currentPage < totalPages) onPageChange(currentPage + 1);
+                                                                                }}
+                                                                                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                            />
+                                                                        </PaginationItem>
+                                                                    </PaginationContent>
+                                                                </Pagination>
+                                                            </div>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                            {/* <TabsContent value="connex" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader>
                                                 <div className="flex justify-between items-center">
@@ -3799,390 +4127,392 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         </Card>
                                     </TabsContent>
 */}
-                                    <TabsContent value="pitch-details" className="space-y-4">
-                                        <Card>
-                                            <CardHeader className="flex flex-row items-center justify-between">
-                                                <div>
-                                                    <CardTitle>Pitching Details</CardTitle>
-                                                    <CardDescription>Manage pitching submissions and details.</CardDescription>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    {selectedPitchIds.length > 0 && (
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="destructive" size="sm">
-                                                                    <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
-                                                                    Delete Selected ({selectedPitchIds.length})
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        This action cannot be undone. This will permanently delete the selected pitching details.
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={handleDeletePitching} disabled={isDeletingPitch}>
-                                                                        {isDeletingPitch ? "Deleting..." : "Delete"}
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    )}
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                {/* Search Input */}
-                                                <div className="mb-4">
-                                                    <div className="relative">
-                                                        <LucideIcons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                        <Input
-                                                            placeholder="Search by solution title or company name..."
-                                                            value={pitchSearchQuery}
-                                                            onChange={(e) => setPitchSearchQuery(e.target.value)}
-                                                            className="pl-10"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="rounded-md border">
-                                                    <Table>
-                                                        <TableHeader>
-                                                            <TableRow>
-                                                                <TableHead className="w-[50px]">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={(() => {
-                                                                            const filtered = pitchingDetails.filter(p =>
-                                                                                p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                                p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                            );
-                                                                            return filtered.length > 0 && selectedPitchIds.length === filtered.length;
-                                                                        })()}
-                                                                        onChange={() => {
-                                                                            const filtered = pitchingDetails.filter(p =>
-                                                                                p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                                p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                            );
-                                                                            if (selectedPitchIds.length === filtered.length) {
-                                                                                setSelectedPitchIds([]);
-                                                                            } else {
-                                                                                setSelectedPitchIds(filtered.map(p => p.id));
-                                                                            }
-                                                                        }}
-                                                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                                    />
-                                                                </TableHead>
-                                                                <TableHead>Founder Name</TableHead>
-                                                                <TableHead>Solution Title</TableHead>
-                                                                <TableHead>Company</TableHead>
-                                                                <TableHead>Requirements</TableHead>
-                                                                <TableHead>Pitch Date</TableHead>
-                                                                <TableHead>Pitch Time</TableHead>
-                                                                <TableHead className="text-right">Actions</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {isLoadingPitching ? (
-                                                                Array.from({ length: 5 }).map((_, i) => (
-                                                                    <TableRow key={i}>
-                                                                        <TableCell><div className="h-4 w-4 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                        <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                        <TableCell><div className="h-4 w-32 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                        <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                        <TableCell><div className="h-4 w-40 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                        <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                        <TableCell><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                        <TableCell><div className="h-4 w-8 bg-gray-200 rounded animate-pulse ml-auto" /></TableCell>
+                                            <TabsContent value="pitch-details" className="space-y-4">
+                                                <Card>
+                                                    <CardHeader className="flex flex-row items-center justify-between">
+                                                        <div>
+                                                            <CardTitle>Pitching Details</CardTitle>
+                                                            <CardDescription>Manage pitching submissions and details.</CardDescription>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            {selectedPitchIds.length > 0 && (
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <Button variant="destructive" size="sm">
+                                                                            <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
+                                                                            Delete Selected ({selectedPitchIds.length})
+                                                                        </Button>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                This action cannot be undone. This will permanently delete the selected pitching details.
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                            <AlertDialogAction onClick={handleDeletePitching} disabled={isDeletingPitch}>
+                                                                                {isDeletingPitch ? "Deleting..." : "Delete"}
+                                                                            </AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
+                                                            )}
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardContent>
+                                                        {/* Search Input */}
+                                                        <div className="mb-4">
+                                                            <div className="relative">
+                                                                <LucideIcons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                                <Input
+                                                                    placeholder="Search by solution title or company name..."
+                                                                    value={pitchSearchQuery}
+                                                                    onChange={(e) => setPitchSearchQuery(e.target.value)}
+                                                                    className="pl-10"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div className="rounded-md border">
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow>
+                                                                        <TableHead className="w-[50px]">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={(() => {
+                                                                                    const filtered = pitchingDetails.filter(p =>
+                                                                                        p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                        p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                                    );
+                                                                                    return filtered.length > 0 && selectedPitchIds.length === filtered.length;
+                                                                                })()}
+                                                                                onChange={() => {
+                                                                                    const filtered = pitchingDetails.filter(p =>
+                                                                                        p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                        p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                                    );
+                                                                                    if (selectedPitchIds.length === filtered.length) {
+                                                                                        setSelectedPitchIds([]);
+                                                                                    } else {
+                                                                                        setSelectedPitchIds(filtered.map(p => p.id));
+                                                                                    }
+                                                                                }}
+                                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                                            />
+                                                                        </TableHead>
+                                                                        <TableHead>Founder Name</TableHead>
+                                                                        <TableHead>Solution Title</TableHead>
+                                                                        <TableHead>Company</TableHead>
+                                                                        <TableHead>Requirements</TableHead>
+                                                                        <TableHead>Pitch Date</TableHead>
+                                                                        <TableHead>Pitch Time</TableHead>
+                                                                        <TableHead className="text-right">Actions</TableHead>
                                                                     </TableRow>
-                                                                ))
-                                                            ) : (() => {
-                                                                const filtered = pitchingDetails.filter(p =>
-                                                                    p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                    p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                );
-                                                                return filtered.length === 0;
-                                                            })() ? (
-                                                                <TableRow>
-                                                                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                                                                        No pitching details found.
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ) : (
-                                                                pitchingDetails
-                                                                    .filter(p =>
-                                                                        p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                        p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                    )
-                                                                    .map((pitch) => (
-                                                                        <TableRow key={pitch.id}>
-                                                                            <TableCell>
-                                                                                <input
-                                                                                    type="checkbox"
-                                                                                    checked={selectedPitchIds.includes(pitch.id)}
-                                                                                    onChange={() => togglePitchSelect(pitch.id)}
-                                                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                                                />
-                                                                            </TableCell>
-                                                                            <TableCell className="font-medium">{pitch.founder_name}</TableCell>
-                                                                            <TableCell>{pitch.solution_title}</TableCell>
-                                                                            <TableCell>{pitch.company_name}</TableCell>
-                                                                            <TableCell className="max-w-xs">
-                                                                                <div className="line-clamp-2 text-sm text-muted-foreground">
-                                                                                    {pitch.requirements || 'N/A'}
-                                                                                </div>
-                                                                            </TableCell>
-                                                                            <TableCell>
-                                                                                {(() => {
-                                                                                    const date = new Date(pitch.pitch_date);
-                                                                                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                                                                    return `${months[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}`;
-                                                                                })()}
-                                                                            </TableCell>
-                                                                            <TableCell>
-                                                                                {(() => {
-                                                                                    const [hours, minutes] = pitch.pitch_time.split(':');
-                                                                                    const hour = parseInt(hours);
-                                                                                    const ampm = hour >= 12 ? 'PM' : 'AM';
-                                                                                    const displayHour = hour % 12 || 12;
-                                                                                    return `${displayHour}:${minutes} ${ampm}`;
-                                                                                })()}
-                                                                            </TableCell>
-                                                                            <TableCell className="text-right">
-                                                                                <AlertDialog>
-                                                                                    <AlertDialogTrigger asChild>
-                                                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive/90">
-                                                                                            <LucideIcons.Trash2 className="h-4 w-4" />
-                                                                                        </Button>
-                                                                                    </AlertDialogTrigger>
-                                                                                    <AlertDialogContent>
-                                                                                        <AlertDialogHeader>
-                                                                                            <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
-                                                                                            <AlertDialogDescription>
-                                                                                                This will permanently delete the pitching details for {pitch.solution_title}.
-                                                                                            </AlertDialogDescription>
-                                                                                        </AlertDialogHeader>
-                                                                                        <AlertDialogFooter>
-                                                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                                            <AlertDialogAction
-                                                                                                onClick={async () => {
-                                                                                                    setIsDeletingPitch(true);
-                                                                                                    const token = localStorage.getItem('token');
-                                                                                                    try {
-                                                                                                        await fetch(`${API_BASE_URL}/api/pitching/delete/${pitch.id}`, {
-                                                                                                            method: 'DELETE',
-                                                                                                            headers: { 'Authorization': `Bearer ${token}` }
-                                                                                                        });
-                                                                                                        toast({ title: "Deleted", description: "Pitching detail deleted." });
-                                                                                                        fetchPitchingDetails();
-                                                                                                    } catch (e) {
-                                                                                                        toast({ variant: 'destructive', title: "Error", description: "Failed to delete." });
-                                                                                                    } finally {
-                                                                                                        setIsDeletingPitch(false);
-                                                                                                    }
-                                                                                                }}
-                                                                                            >
-                                                                                                Delete
-                                                                                            </AlertDialogAction>
-                                                                                        </AlertDialogFooter>
-                                                                                    </AlertDialogContent>
-                                                                                </AlertDialog>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {isLoadingPitching ? (
+                                                                        Array.from({ length: 5 }).map((_, i) => (
+                                                                            <TableRow key={i}>
+                                                                                <TableCell><div className="h-4 w-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-32 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-40 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-8 bg-gray-200 rounded animate-pulse ml-auto" /></TableCell>
+                                                                            </TableRow>
+                                                                        ))
+                                                                    ) : (() => {
+                                                                        const filtered = pitchingDetails.filter(p =>
+                                                                            p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                            p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                        );
+                                                                        return filtered.length === 0;
+                                                                    })() ? (
+                                                                        <TableRow>
+                                                                            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                                                                                No pitching details found.
                                                                             </TableCell>
                                                                         </TableRow>
-                                                                    ))
-                                                            )}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
+                                                                    ) : (
+                                                                        pitchingDetails
+                                                                            .filter(p =>
+                                                                                p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                            )
+                                                                            .map((pitch) => (
+                                                                                <TableRow key={pitch.id}>
+                                                                                    <TableCell>
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            checked={selectedPitchIds.includes(pitch.id)}
+                                                                                            onChange={() => togglePitchSelect(pitch.id)}
+                                                                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                                                        />
+                                                                                    </TableCell>
+                                                                                    <TableCell className="font-medium">{pitch.founder_name}</TableCell>
+                                                                                    <TableCell>{pitch.solution_title}</TableCell>
+                                                                                    <TableCell>{pitch.company_name}</TableCell>
+                                                                                    <TableCell className="max-w-xs">
+                                                                                        <div className="line-clamp-2 text-sm text-muted-foreground">
+                                                                                            {pitch.requirements || 'N/A'}
+                                                                                        </div>
+                                                                                    </TableCell>
+                                                                                    <TableCell>
+                                                                                        {(() => {
+                                                                                            const date = new Date(pitch.pitch_date);
+                                                                                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                                                                            return `${months[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}`;
+                                                                                        })()}
+                                                                                    </TableCell>
+                                                                                    <TableCell>
+                                                                                        {(() => {
+                                                                                            const [hours, minutes] = pitch.pitch_time.split(':');
+                                                                                            const hour = parseInt(hours);
+                                                                                            const ampm = hour >= 12 ? 'PM' : 'AM';
+                                                                                            const displayHour = hour % 12 || 12;
+                                                                                            return `${displayHour}:${minutes} ${ampm}`;
+                                                                                        })()}
+                                                                                    </TableCell>
+                                                                                    <TableCell className="text-right">
+                                                                                        <AlertDialog>
+                                                                                            <AlertDialogTrigger asChild>
+                                                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive/90">
+                                                                                                    <LucideIcons.Trash2 className="h-4 w-4" />
+                                                                                                </Button>
+                                                                                            </AlertDialogTrigger>
+                                                                                            <AlertDialogContent>
+                                                                                                <AlertDialogHeader>
+                                                                                                    <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                                                                                                    <AlertDialogDescription>
+                                                                                                        This will permanently delete the pitching details for {pitch.solution_title}.
+                                                                                                    </AlertDialogDescription>
+                                                                                                </AlertDialogHeader>
+                                                                                                <AlertDialogFooter>
+                                                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                                                    <AlertDialogAction
+                                                                                                        onClick={async () => {
+                                                                                                            setIsDeletingPitch(true);
+                                                                                                            const token = localStorage.getItem('token');
+                                                                                                            try {
+                                                                                                                await fetch(`${API_BASE_URL}/api/pitching/delete/${pitch.id}`, {
+                                                                                                                    method: 'DELETE',
+                                                                                                                    headers: { 'Authorization': `Bearer ${token}` }
+                                                                                                                });
+                                                                                                                toast({ title: "Deleted", description: "Pitching detail deleted." });
+                                                                                                                fetchPitchingDetails();
+                                                                                                            } catch (e) {
+                                                                                                                toast({ variant: 'destructive', title: "Error", description: "Failed to delete." });
+                                                                                                            } finally {
+                                                                                                                setIsDeletingPitch(false);
+                                                                                                            }
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        Delete
+                                                                                                    </AlertDialogAction>
+                                                                                                </AlertDialogFooter>
+                                                                                            </AlertDialogContent>
+                                                                                        </AlertDialog>
+                                                                                    </TableCell>
+                                                                                </TableRow>
+                                                                            ))
+                                                                    )}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+                                            <TabsContent value="blog" className="mt-0 space-y-6">
+                                                <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">
+                                                    <TabsList className="grid w-full grid-cols-2">
+                                                        <TabsTrigger value="blogCreate" onClick={cancelEdit}>{editingPost ? 'Edit Post' : 'Create New'}</TabsTrigger>
+                                                        <TabsTrigger value="blogView">View All</TabsTrigger>
+                                                    </TabsList>
+                                                    <TabsContent value="blogCreate" className="mt-4">
+                                                        <Card><CardHeader><CardTitle>{editingPost ? 'Edit Blog Post' : 'Create New Blog Post'}</CardTitle></CardHeader><CardContent><Form {...blogForm}><form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-4"><FormField control={blogForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="excerpt" render={({ field }) => (<FormItem><FormLabel>Excerpt</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>Content</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="image" render={({ field }) => (<FormItem><FormLabel>Image URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="hint" render={({ field }) => (<FormItem><FormLabel>Image Hint</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><div className="flex gap-2"><Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">{editingPost ? 'Update Post' : 'Publish Post'}</Button>{editingPost && <Button variant="ghost" onClick={cancelEdit}>Cancel</Button>}</div></form></Form></CardContent></Card>
+                                                    </TabsContent>
+                                                    <TabsContent value="blogView" className="mt-4">
+                                                        <Card><CardHeader><CardTitle>Existing Blog Posts</CardTitle></CardHeader><CardContent className="space-y-4">
+                                                            {blogPosts.map((post) => (
+                                                                <div key={post.id} className="flex items-center justify-between p-2 border rounded-md">
+                                                                    <div className="flex items-center gap-4">
+                                                                        <Image src={post.image} alt={post.title} width={60} height={40} className="rounded-md object-cover" data-ai-hint={post.hint} />
+                                                                        <p className="font-medium">{post.title}</p>
+                                                                    </div>
+                                                                    <div className="flex gap-2">
+                                                                        <Button variant="outline" size="sm" onClick={() => handleEditPost(post)}><LucideIcons.Edit className="mr-2 h-4 w-4" />Edit</Button>
+                                                                        <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'blog', id: post.id })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                            {blogPosts.length === 0 && <p className="text-center text-muted-foreground py-4">No blog posts found.</p>}
+                                                        </CardContent></Card>
+                                                    </TabsContent>
+                                                </Tabs>
+                                            </TabsContent>
+                                            <TabsContent value="sessions" className="mt-0 space-y-6">
+                                                <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">
+                                                    <TabsList className="grid w-full grid-cols-2">
+                                                        <TabsTrigger value="sessionCreate" onClick={cancelEdit}>{editingProgram ? 'Edit Program' : 'Create New'}</TabsTrigger>
+                                                        <TabsTrigger value="sessionView">View All</TabsTrigger>
+                                                    </TabsList>
+                                                    <TabsContent value="sessionCreate" className="mt-4">
+                                                        <Card><CardHeader><CardTitle>{editingProgram ? 'Edit Education Program' : 'Create New Education Program'}</CardTitle></CardHeader><CardContent><Form {...programForm}><form onSubmit={programForm.handleSubmit(onProgramSubmit)} className="space-y-6"><FormField control={programForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={programForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} /><Separator /><div><h3 className="text-lg font-medium mb-2">Sessions</h3>{sessionFields.map((field, index) => (<div key={field.id} className="grid grid-cols-4 gap-2 items-end mb-2 p-2 border rounded-lg"><FormField control={programForm.control} name={`sessions.${index}.language`} render={({ field }) => (<FormItem><FormLabel>Language</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={programForm.control} name={`sessions.${index}.date`} render={({ field }) => (<FormItem><FormLabel>Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={programForm.control} name={`sessions.${index}.time`} render={({ field }) => (<FormItem><FormLabel>Time</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><Button type="button" variant="ghost" onClick={() => removeSession(index)}><LucideIcons.Trash2 className="h-4 w-4" /></Button></div>))}<Button type="button" variant="outline" size="sm" onClick={() => appendSession({ language: 'English', date: '', time: '' })}><LucideIcons.PlusCircle className="mr-2 h-4 w-4" />Add Session</Button></div><Separator /><div><h3 className="text-lg font-medium mb-2">Features</h3>{featureFields.map((field, index) => (<div key={field.id} className="grid grid-cols-3 gap-2 items-end mb-2 p-2 border rounded-lg"><FormField control={programForm.control} name={`features.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Feature Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={programForm.control} name={`features.${index}.icon`} render={({ field }) => (<FormItem><FormLabel>Icon</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select icon" /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{iconNames.map(icon => <SelectItem key={icon} value={icon}>{icon}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>)} /><Button type="button" variant="ghost" onClick={() => removeFeature(index)}><LucideIcons.Trash2 className="h-4 w-4" /></Button></div>))}<Button type="button" variant="outline" size="sm" onClick={() => appendFeature({ name: '', icon: 'Check' })}><LucideIcons.PlusCircle className="mr-2 h-4 w-4" />Add Feature</Button></div><div className="flex gap-2"><Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">{editingProgram ? 'Update Program' : 'Publish Program'}</Button>{editingProgram && <Button variant="ghost" onClick={cancelEdit}>Cancel</Button>}</div></form></Form></CardContent></Card>
+                                                    </TabsContent>
+                                                    <TabsContent value="sessionView" className="mt-4">
+                                                        <Card><CardHeader><CardTitle>Existing Education Programs</CardTitle></CardHeader><CardContent className="space-y-4">
+                                                            {educationPrograms.map((program) => (
+                                                                <div key={program.id} className="flex items-center justify-between p-2 border rounded-md">
+                                                                    <p className="font-medium">{program.title}</p>
+                                                                    <div className="flex gap-2">
+                                                                        <Button variant="outline" size="sm" onClick={() => handleEditProgram(program)}><LucideIcons.Edit className="mr-2 h-4 w-4" />Edit</Button>
+                                                                        <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'program', id: program.id })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                            {educationPrograms.length === 0 && <p className="text-center text-muted-foreground py-4">No education programs found.</p>}
+                                                        </CardContent></Card>
+                                                    </TabsContent>
+                                                </Tabs>
+                                            </TabsContent>
+                                        </>
+                                    )}
+                                    <TabsContent value="settings" className="mt-0">
+                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <CardHeader>
+                                                <CardTitle>Account Settings</CardTitle>
+                                                <CardDescription>Manage your account and payment information.</CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="space-y-8">
+                                                <Form {...settingsForm}>
+                                                    <form
+                                                        onSubmit={settingsForm.handleSubmit(onSettingsSubmit)}
+                                                        className="space-y-4"
+                                                    >
+                                                        <div>
+                                                            <h3 className="text-lg font-medium mb-4">Profile</h3>
+                                                            <div className="space-y-4">
+                                                                {/* Name Field */}
+                                                                <FormField
+                                                                    control={settingsForm.control}
+                                                                    name="name"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel>Full Name</FormLabel>
+                                                                            <FormControl>
+                                                                                <Input placeholder="Your full name" {...field} />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+
+                                                                {/* Email Field */}
+                                                                <FormField
+                                                                    control={settingsForm.control}
+                                                                    name="email"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel>Email</FormLabel>
+                                                                            <div className="relative">
+                                                                                <FormControl>
+                                                                                    <Input
+                                                                                        type="email"
+                                                                                        placeholder="your@email.com"
+                                                                                        {...field}
+                                                                                        readOnly={!isEditingEmail}
+                                                                                        className="pr-28" // make space for buttons
+                                                                                    />
+                                                                                </FormControl>
+
+                                                                                {/* Buttons inside input */}
+                                                                                <div className="absolute inset-y-0 right-3 flex items-center gap-1">
+                                                                                    {emailChangeRequested ? (
+                                                                                        // Step 3: After Change request → Resend
+                                                                                        <Button
+                                                                                            type="button"
+                                                                                            variant="outline"
+                                                                                            size="sm"
+                                                                                            className="text-xs flex items-center gap-1"
+                                                                                            disabled={loadingResend}
+                                                                                            onClick={() => handleResendEmail(field.value)}
+                                                                                        >
+                                                                                            {loadingResend ? (
+                                                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                                                            ) : (
+                                                                                                "Resend"
+                                                                                            )}
+                                                                                        </Button>
+                                                                                    ) : !isEditingEmail ? (
+                                                                                        // Step 1: Default → Edit
+                                                                                        <Button
+                                                                                            type="button"
+                                                                                            variant="link"
+                                                                                            className="p-0 h-auto text-sm"
+                                                                                            onClick={() => {
+                                                                                                setIsEditingEmail(true);
+                                                                                                setEmailChangeRequested(false); // reset state
+                                                                                            }}
+                                                                                        >
+                                                                                            Edit
+                                                                                        </Button>
+                                                                                    ) : (
+                                                                                        // Step 2: While editing → Change
+                                                                                        <Button
+                                                                                            type="button"
+                                                                                            variant="default"
+                                                                                            size="sm"
+                                                                                            className="text-xs flex items-center gap-1"
+                                                                                            disabled={loadingChange}
+                                                                                            onClick={async () => {
+                                                                                                await handleChangeEmail(field.value);
+                                                                                                setEmailChangeRequested(true);  // ✅ Resend will show
+                                                                                                setIsEditingEmail(false);       // input locks, but still shows Resend
+                                                                                            }}
+                                                                                        >
+                                                                                            {loadingChange ? (
+                                                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                                                            ) : (
+                                                                                                "Change"
+                                                                                            )}
+                                                                                        </Button>
+                                                                                    )}
+                                                                                </div>
+
+                                                                            </div>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <Button
+                                                            type="submit"
+                                                            className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                                                        >
+                                                            Save Changes
+                                                        </Button>
+                                                    </form>
+                                                </Form>
+
+                                                {(authProvider === 'local') && (
+                                                    <>
+                                                        <Separator />
+                                                        <PasswordChangeForm />
+                                                    </>
+                                                )}
                                             </CardContent>
                                         </Card>
                                     </TabsContent>
-                                    <TabsContent value="blog" className="mt-0 space-y-6">
-                                        <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">
-                                            <TabsList className="grid w-full grid-cols-2">
-                                                <TabsTrigger value="blogCreate" onClick={cancelEdit}>{editingPost ? 'Edit Post' : 'Create New'}</TabsTrigger>
-                                                <TabsTrigger value="blogView">View All</TabsTrigger>
-                                            </TabsList>
-                                            <TabsContent value="blogCreate" className="mt-4">
-                                                <Card><CardHeader><CardTitle>{editingPost ? 'Edit Blog Post' : 'Create New Blog Post'}</CardTitle></CardHeader><CardContent><Form {...blogForm}><form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-4"><FormField control={blogForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="excerpt" render={({ field }) => (<FormItem><FormLabel>Excerpt</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>Content</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="image" render={({ field }) => (<FormItem><FormLabel>Image URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="hint" render={({ field }) => (<FormItem><FormLabel>Image Hint</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><div className="flex gap-2"><Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">{editingPost ? 'Update Post' : 'Publish Post'}</Button>{editingPost && <Button variant="ghost" onClick={cancelEdit}>Cancel</Button>}</div></form></Form></CardContent></Card>
-                                            </TabsContent>
-                                            <TabsContent value="blogView" className="mt-4">
-                                                <Card><CardHeader><CardTitle>Existing Blog Posts</CardTitle></CardHeader><CardContent className="space-y-4">
-                                                    {blogPosts.map((post) => (
-                                                        <div key={post.id} className="flex items-center justify-between p-2 border rounded-md">
-                                                            <div className="flex items-center gap-4">
-                                                                <Image src={post.image} alt={post.title} width={60} height={40} className="rounded-md object-cover" data-ai-hint={post.hint} />
-                                                                <p className="font-medium">{post.title}</p>
-                                                            </div>
-                                                            <div className="flex gap-2">
-                                                                <Button variant="outline" size="sm" onClick={() => handleEditPost(post)}><LucideIcons.Edit className="mr-2 h-4 w-4" />Edit</Button>
-                                                                <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'blog', id: post.id })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    {blogPosts.length === 0 && <p className="text-center text-muted-foreground py-4">No blog posts found.</p>}
-                                                </CardContent></Card>
-                                            </TabsContent>
-                                        </Tabs>
-                                    </TabsContent>
-                                    <TabsContent value="sessions" className="mt-0 space-y-6">
-                                        <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">
-                                            <TabsList className="grid w-full grid-cols-2">
-                                                <TabsTrigger value="sessionCreate" onClick={cancelEdit}>{editingProgram ? 'Edit Program' : 'Create New'}</TabsTrigger>
-                                                <TabsTrigger value="sessionView">View All</TabsTrigger>
-                                            </TabsList>
-                                            <TabsContent value="sessionCreate" className="mt-4">
-                                                <Card><CardHeader><CardTitle>{editingProgram ? 'Edit Education Program' : 'Create New Education Program'}</CardTitle></CardHeader><CardContent><Form {...programForm}><form onSubmit={programForm.handleSubmit(onProgramSubmit)} className="space-y-6"><FormField control={programForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={programForm.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} /><Separator /><div><h3 className="text-lg font-medium mb-2">Sessions</h3>{sessionFields.map((field, index) => (<div key={field.id} className="grid grid-cols-4 gap-2 items-end mb-2 p-2 border rounded-lg"><FormField control={programForm.control} name={`sessions.${index}.language`} render={({ field }) => (<FormItem><FormLabel>Language</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={programForm.control} name={`sessions.${index}.date`} render={({ field }) => (<FormItem><FormLabel>Date</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={programForm.control} name={`sessions.${index}.time`} render={({ field }) => (<FormItem><FormLabel>Time</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><Button type="button" variant="ghost" onClick={() => removeSession(index)}><LucideIcons.Trash2 className="h-4 w-4" /></Button></div>))}<Button type="button" variant="outline" size="sm" onClick={() => appendSession({ language: 'English', date: '', time: '' })}><LucideIcons.PlusCircle className="mr-2 h-4 w-4" />Add Session</Button></div><Separator /><div><h3 className="text-lg font-medium mb-2">Features</h3>{featureFields.map((field, index) => (<div key={field.id} className="grid grid-cols-3 gap-2 items-end mb-2 p-2 border rounded-lg"><FormField control={programForm.control} name={`features.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Feature Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={programForm.control} name={`features.${index}.icon`} render={({ field }) => (<FormItem><FormLabel>Icon</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select icon" /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{iconNames.map(icon => <SelectItem key={icon} value={icon}>{icon}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>)} /><Button type="button" variant="ghost" onClick={() => removeFeature(index)}><LucideIcons.Trash2 className="h-4 w-4" /></Button></div>))}<Button type="button" variant="outline" size="sm" onClick={() => appendFeature({ name: '', icon: 'Check' })}><LucideIcons.PlusCircle className="mr-2 h-4 w-4" />Add Feature</Button></div><div className="flex gap-2"><Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">{editingProgram ? 'Update Program' : 'Publish Program'}</Button>{editingProgram && <Button variant="ghost" onClick={cancelEdit}>Cancel</Button>}</div></form></Form></CardContent></Card>
-                                            </TabsContent>
-                                            <TabsContent value="sessionView" className="mt-4">
-                                                <Card><CardHeader><CardTitle>Existing Education Programs</CardTitle></CardHeader><CardContent className="space-y-4">
-                                                    {educationPrograms.map((program) => (
-                                                        <div key={program.id} className="flex items-center justify-between p-2 border rounded-md">
-                                                            <p className="font-medium">{program.title}</p>
-                                                            <div className="flex gap-2">
-                                                                <Button variant="outline" size="sm" onClick={() => handleEditProgram(program)}><LucideIcons.Edit className="mr-2 h-4 w-4" />Edit</Button>
-                                                                <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'program', id: program.id })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    {educationPrograms.length === 0 && <p className="text-center text-muted-foreground py-4">No education programs found.</p>}
-                                                </CardContent></Card>
-                                            </TabsContent>
-                                        </Tabs>
-                                    </TabsContent>
-                                </>
-                            )}
-                            <TabsContent value="settings" className="mt-0">
-                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                    <CardHeader>
-                                        <CardTitle>Account Settings</CardTitle>
-                                        <CardDescription>Manage your account and payment information.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-8">
-                                        <Form {...settingsForm}>
-                                            <form
-                                                onSubmit={settingsForm.handleSubmit(onSettingsSubmit)}
-                                                className="space-y-4"
-                                            >
-                                                <div>
-                                                    <h3 className="text-lg font-medium mb-4">Profile</h3>
-                                                    <div className="space-y-4">
-                                                        {/* Name Field */}
-                                                        <FormField
-                                                            control={settingsForm.control}
-                                                            name="name"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Full Name</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input placeholder="Your full name" {...field} />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-
-                                                        {/* Email Field */}
-                                                        <FormField
-                                                            control={settingsForm.control}
-                                                            name="email"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>Email</FormLabel>
-                                                                    <div className="relative">
-                                                                        <FormControl>
-                                                                            <Input
-                                                                                type="email"
-                                                                                placeholder="your@email.com"
-                                                                                {...field}
-                                                                                readOnly={!isEditingEmail}
-                                                                                className="pr-28" // make space for buttons
-                                                                            />
-                                                                        </FormControl>
-
-                                                                        {/* Buttons inside input */}
-                                                                        <div className="absolute inset-y-0 right-3 flex items-center gap-1">
-                                                                            {emailChangeRequested ? (
-                                                                                // Step 3: After Change request → Resend
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="outline"
-                                                                                    size="sm"
-                                                                                    className="text-xs flex items-center gap-1"
-                                                                                    disabled={loadingResend}
-                                                                                    onClick={() => handleResendEmail(field.value)}
-                                                                                >
-                                                                                    {loadingResend ? (
-                                                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                                                    ) : (
-                                                                                        "Resend"
-                                                                                    )}
-                                                                                </Button>
-                                                                            ) : !isEditingEmail ? (
-                                                                                // Step 1: Default → Edit
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="link"
-                                                                                    className="p-0 h-auto text-sm"
-                                                                                    onClick={() => {
-                                                                                        setIsEditingEmail(true);
-                                                                                        setEmailChangeRequested(false); // reset state
-                                                                                    }}
-                                                                                >
-                                                                                    Edit
-                                                                                </Button>
-                                                                            ) : (
-                                                                                // Step 2: While editing → Change
-                                                                                <Button
-                                                                                    type="button"
-                                                                                    variant="default"
-                                                                                    size="sm"
-                                                                                    className="text-xs flex items-center gap-1"
-                                                                                    disabled={loadingChange}
-                                                                                    onClick={async () => {
-                                                                                        await handleChangeEmail(field.value);
-                                                                                        setEmailChangeRequested(true);  // ✅ Resend will show
-                                                                                        setIsEditingEmail(false);       // input locks, but still shows Resend
-                                                                                    }}
-                                                                                >
-                                                                                    {loadingChange ? (
-                                                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                                                    ) : (
-                                                                                        "Change"
-                                                                                    )}
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-
-                                                                    </div>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <Button
-                                                    type="submit"
-                                                    className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                                                >
-                                                    Save Changes
-                                                </Button>
-                                            </form>
-                                        </Form>
-
-                                        {(authProvider === 'local') && (
-                                            <>
-                                                <Separator />
-                                                <PasswordChangeForm />
-                                            </>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                        </div>
-                    </Tabs>
+                                </div>
+                            </SidebarInset>
+                        </Tabs>
+                    </SidebarProvider>
                 </div>
                 {
                     commentingSubmissionId !== null && (
@@ -4489,6 +4819,253 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         </Dialog >
     );
 }
+
+const PlansManagementView = () => {
+    const { toast } = useToast();
+    const [plans, setPlans] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [updatingPlanId, setUpdatingPlanId] = useState<number | null>(null);
+
+    const fetchPlans = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/plans`);
+            if (response.ok) {
+                const data = await response.json();
+                setPlans(data.plans || data);
+            } else {
+                toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch plans' });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not connect to server' });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+
+    useEffect(() => {
+        fetchPlans();
+    }, [fetchPlans]);
+
+    const handleUpdatePlan = async (planId: number, data: any) => {
+        setUpdatingPlanId(planId);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/admin/plans/${planId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                toast({ title: 'Success', description: 'Plan updated successfully' });
+                fetchPlans();
+            } else {
+                const errorData = await response.json();
+                toast({ variant: 'destructive', title: 'Update Failed', description: errorData.error || 'Failed to update plan' });
+            }
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not update plan' });
+        } finally {
+            setUpdatingPlanId(null);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <LucideIcons.Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6 p-1">
+            <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-bold tracking-tight">Plan Management</h2>
+                <p className="text-muted-foreground">Manage all plan details including pricing, features, and promotional content.</p>
+            </div>
+
+            <div className="grid gap-6">
+                {plans.map((plan) => (
+                    <Card key={plan.id} className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
+                        <CardHeader className="bg-muted/30 pb-4">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <CardTitle className="text-xl">{plan.name}</CardTitle>
+                                    <CardDescription>{plan.description || "No description provided"}</CardDescription>
+                                </div>
+                                <Badge variant={plan.is_active ? "default" : "secondary"}>
+                                    {plan.is_active ? "Active" : "Inactive"}
+                                </Badge>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <form className="grid grid-cols-1 gap-6" onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+
+                                // Parse features from textarea (one per line)
+                                const featuresText = formData.get('features') as string;
+                                const features = featuresText
+                                    .split('\n')
+                                    .map(f => f.trim())
+                                    .filter(f => f.length > 0);
+
+                                const updates = {
+                                    price_in_paise: Math.round(parseFloat(formData.get('price_in_inr') as string) * 100),
+                                    tax_percentage: parseInt(formData.get('tax_percentage') as string),
+                                    duration_days: parseInt(formData.get('duration_days') as string),
+                                    description: formData.get('description') as string,
+                                    features: features,
+                                    name: formData.get('name') as string,
+                                    tag: formData.get('tag') as string || null,
+                                    originally: formData.get('originally') as string || null,
+                                    offer: formData.get('offer') as string || null,
+                                };
+
+                                handleUpdatePlan(plan.id, updates);
+                            }}>
+                                {/* Basic Info Section */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Basic Information</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Plan Name</label>
+                                            <Input
+                                                name="name"
+                                                type="text"
+                                                defaultValue={plan.name}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Tag (Optional)</label>
+                                            <Input
+                                                name="tag"
+                                                type="text"
+                                                defaultValue={plan.tag || ""}
+                                                placeholder="e.g., Popular, Best Value"
+                                            />
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                            <label className="text-sm font-medium">Description</label>
+                                            <Input
+                                                name="description"
+                                                type="text"
+                                                defaultValue={plan.description || ""}
+                                                placeholder="Brief description of the plan"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                {/* Pricing Section */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Pricing & Duration</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Base Price (INR)</label>
+                                            <Input
+                                                name="price_in_inr"
+                                                type="number"
+                                                defaultValue={plan.price_in_paise / 100}
+                                                required
+                                                min="0"
+                                                step="0.01"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">GST Percentage (%)</label>
+                                            <Input
+                                                name="tax_percentage"
+                                                type="number"
+                                                defaultValue={plan.tax_percentage || 18}
+                                                required
+                                                min="0"
+                                                max="100"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Duration (Days)</label>
+                                            <Input
+                                                name="duration_days"
+                                                type="number"
+                                                defaultValue={plan.duration_days}
+                                                required
+                                                min="1"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Promotional Pricing */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Original Price (Optional)</label>
+                                            <Input
+                                                name="originally"
+                                                type="text"
+                                                defaultValue={plan.originally || ""}
+                                                placeholder="e.g., ₹3999"
+                                            />
+                                            <p className="text-xs text-muted-foreground">Display strikethrough price for promotions</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Offer Label (Optional)</label>
+                                            <Input
+                                                name="offer"
+                                                type="text"
+                                                defaultValue={plan.offer || ""}
+                                                placeholder="e.g., 25% OFF"
+                                            />
+                                            <p className="text-xs text-muted-foreground">Display promotional badge</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                {/* Features Section */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Features</h3>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Plan Features (one per line)</label>
+                                        <textarea
+                                            name="features"
+                                            className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            defaultValue={Array.isArray(plan.features) ? plan.features.join('\n') : ''}
+                                            placeholder="Enter each feature on a new line"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Each line will be displayed as a separate feature bullet point</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end pt-4">
+                                    <Button type="submit" disabled={updatingPlanId === plan.id} className="w-full md:w-auto">
+                                        {updatingPlanId === plan.id ? (
+                                            <>
+                                                <LucideIcons.Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Updating...
+                                            </>
+                                        ) : (
+                                            "Save Changes"
+                                        )}
+                                    </Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 const staticChartData = [
     { year: 2025, activity: 0 }, { year: 2026, activity: 0 }, { year: 2027, activity: 0 },

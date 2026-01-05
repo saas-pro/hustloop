@@ -21,32 +21,49 @@ import { set } from "date-fns";
 
 
 export type Incubator = {
+  id: string;
   name: string;
   image: string;
   hint: string;
   location: string;
+  type: string[];
+  contactEmail?: string;
+  contactPhone?: string;
   rating: number;
   reviews: number;
   description: string;
-  metrics: {
-    startups: string;
-    funding: string;
-    successRate: string;
+  socialLinks?: {
+    website?: string;
+    linkedin?: string;
+    twitter?: string;
+    facebook?: string;
+    instagram?: string;
+    youtube?: string;
   };
-  focus: string[];
-  details: {
-    overview: string;
-    services: { title: string; description: string }[];
-    benefits: string[];
-    eligibility: {
-      focusAreas: string;
-      requirements: string[];
+  metrics: {
+    startupsSupported: string;
+    fundedStartupsPercent: string;
+    startupsOutsideLocationPercent: string;
+    totalFundingRaised: string;
+  };
+  partners?: string[];
+  // Kept for backward compatibility but made optional
+  details?: {
+    overview?: string;
+    services?: { title: string; description: string }[];
+    benefits?: string[];
+    eligibility?: {
+      focusAreas?: string;
+      requirements?: string[];
     };
-    timeline: {
-      event: string;
-      period: string;
+    timeline?: {
+      event?: string;
+      period?: string;
     }[];
   };
+  focus: string[];
+  user_id?: string;
+  is_owner?: boolean;
 };
 
 interface IncubatorsViewProps {
@@ -140,8 +157,10 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
         setIsLoading(true);
         setError(null);
         try {
-          const apiBaseUrl = API_BASE_URL;
-          const response = await fetch(`${apiBaseUrl}/api/incubators`);
+          const token = localStorage.getItem("token");
+          const response = await fetch(`${API_BASE_URL}/api/incubators`, {
+            headers: token ? { "Authorization": `Bearer ${token}` } : {}
+          });
           if (!response.ok) {
             throw new Error('Failed to fetch incubators.');
           }
@@ -152,6 +171,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
           // Fallback static data
           setIncubators([
             {
+              id: "fallback-1",
               name: "Fallback Incubator",
               image: "https://placehold.co/600x400",
               hint: "fallback",
@@ -159,7 +179,12 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
               rating: 5,
               reviews: 10,
               description: "This is a fallback incubator shown when the API is unavailable.",
-              metrics: { startups: "10+", funding: "$1M+", successRate: "90%" },
+              metrics: {
+                startupsSupported: "20+",
+                fundedStartupsPercent: "40%",
+                startupsOutsideLocationPercent: "30%",
+                totalFundingRaised: "$5M"
+              },
               focus: ["Tech", "Innovation"],
               details: {
                 overview: "Fallback overview.",
@@ -168,6 +193,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
                 eligibility: { focusAreas: "All", requirements: ["None"] },
                 timeline: [{ event: "Application", period: "Year-round" }],
               },
+              type: ["Incubator"]
             },
           ]);
           setError(null); // Hide error, show fallback
@@ -180,25 +206,13 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
   }, [isOpen]);
 
   const handleViewDetails = (incubator: Incubator) => {
-    if (hasSubscription) {
-      setSelectedIncubator(incubator);
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Subscription Required",
-        description: "You need an active subscription to view full details and apply to incubators.",
-        action: <ToastAction altText="Upgrade" onClick={() => {
-          onOpenChange(false);
-          setActiveView('pricing');
-        }}>Upgrade Plan</ToastAction>,
-      });
-    }
+    setSelectedIncubator(incubator);
   };
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0">
+        <DialogContent className="sm:max-w-5xl h-[90vh] w-[90vw] rounded-lg lg:w-full flex flex-col p-0">
           <DialogHeader className="p-6">
             <DialogTitle className="text-3xl font-bold text-center font-headline">Startup Incubation Hub</DialogTitle>
             <DialogDescription className="text-center">
@@ -208,7 +222,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
             </DialogDescription>
           </DialogHeader>
           <div className="flex-grow overflow-y-auto px-6">
-            { !allowAccess && !isLoggedIn ? (
+            {!allowAccess && !isLoggedIn ? (
               <LoginPrompt setActiveView={setActiveView} contentType="incubators" />
             ) : isLoading ? (
               <LoadingSkeleton />
@@ -222,50 +236,68 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {incubators.map((incubator, index) => {
                   return (
-                    <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
-                      <CardHeader className="p-0">
-                        <Image src={incubator.image} alt={incubator.name} width={600} height={400} className="w-full h-53 object-cover" data-ai-hint={incubator.hint} />
+                    <Card key={index} className="flex flex-col bg-card/40 backdrop-blur-md border-border/50 hover:border-accent/40 transition-all duration-300 group shadow-lg hover:shadow-accent/10 h-full overflow-hidden">
+                      <CardHeader className="p-0 relative h-32 bg-gradient-to-br from-accent/10 to-transparent flex items-center justify-center">
+                        <div className="absolute top-4 right-4 z-10">
+                          <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm border-accent/20 text-accent">
+                            {incubator.type[0] || 'Incubator'}
+                          </Badge>
+                        </div>
+                        <div className="relative w-20 h-20 transition-all duration-500 group-hover:scale-110">
+                          {incubator.image ? (
+                            <Image
+                              src={'/icons/corporate-incu.png'}
+                              alt={incubator.name}
+                              fill
+                              className="object-contain"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-accent/5 rounded-xl border border-accent/10">
+                              <span className="text-xl font-bold text-accent">{incubator.name.charAt(0)}</span>
+                            </div>
+                          )}
+                        </div>
                       </CardHeader>
-                      <CardContent className="flex-grow p-4 space-y-3">
-                        <CardTitle className="text-xl">{incubator.name}</CardTitle>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star key={i} className={`h-4 w-4 ${i < incubator.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/30'}`} />
-                            ))}
-                            <span className="ml-1">({incubator.reviews})</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
+
+                      <CardContent className="flex-grow p-5 space-y-4">
+                        <div className="space-y-1">
+                          <CardTitle className="text-xl font-bold font-headline transition-colors uppercase tracking-tight">{incubator.name}</CardTitle>
+                          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-widest leading-none">
+                            <MapPin className="h-3 w-3 text-blue-500" />
                             <span>{incubator.location}</span>
                           </div>
                         </div>
-                        <CardDescription>{incubator.description}</CardDescription>
 
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          {incubator.focus.map(area => <Badge key={area} variant="secondary">{area}</Badge>)}
+                        <CardDescription className="text-sm line-clamp-2 text-muted-foreground leading-relaxed">
+                          {incubator.description}
+                        </CardDescription>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {incubator.focus.map(area => (
+                            <Badge key={area} variant="outline" className="text-[10px] py-0 border-blue-500/20 bg-blue-500/5 text-blue-300">
+                              {area}
+                            </Badge>
+                          ))}
                         </div>
 
-                        <Separator className="my-4 bg-border/50" />
-
-                        <div className="grid grid-cols-3 text-center">
-                          <div>
-                            <p className="text-lg font-bold">{incubator.metrics.startups}</p>
-                            <p className="text-xs text-muted-foreground">Startups</p>
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/30">
+                          <div className="text-left">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Supported</p>
+                            <p className="text-lg font-bold font-headline">{incubator.metrics.startupsSupported}</p>
                           </div>
-                          <div>
-                            <p className="text-lg font-bold">{incubator.metrics.funding}</p>
-                            <p className="text-xs text-muted-foreground">Avg Funding</p>
-                          </div>
-                          <div>
-                            <p className="text-lg font-bold">{incubator.metrics.successRate}</p>
-                            <p className="text-xs text-muted-foreground">Success Rate</p>
+                          <div className="text-right">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Funded (%)</p>
+                            <p className="text-lg font-bold font-headline text-blue-500">{incubator.metrics.fundedStartupsPercent}</p>
                           </div>
                         </div>
                       </CardContent>
-                      <CardFooter className="p-4">
-                        <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" onClick={() => handleViewDetails(incubator)}>
-                          View Details
+
+                      <CardFooter className="p-5 pt-0">
+                        <Button
+                          className="w-full bg-accent hover:bg-accent/90 text-white font-semibold transition-all group-hover:shadow-[0_0_20px_-5px_rgba(var(--accent-rgb),0.4)]"
+                          onClick={() => handleViewDetails(incubator)}
+                        >
+                          Explore Program ({incubator.rating || 0} ★ | {incubator.reviews || 0} Reviews)
                         </Button>
                       </CardFooter>
                     </Card>

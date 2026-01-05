@@ -39,13 +39,16 @@ import { CommentSection } from "../comment-section";
 import { DeleteConfirmationDialog } from '../ui/DeleteConfirmationDialog'
 import MarkdownEditor from "../ui/markdown";
 import { MoreVertical, Trash2 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import SubmissionDetailsModal from "./submission-details-modal";
 import TeamMembers from "./team-members";
 import { LoadingButton } from "../ui/loading-button";
 import { ContributionGraph } from "../ui/contribution-graph";
 import removeMarkdown from "remove-markdown";
 import { EmailUpdateForm } from "../ui/EmailUpdateForm";
+import { io, Socket } from 'socket.io-client';
+import { SubscriptionDetails } from "../Subscription/subscription-details";
 
 const settingsFormSchema = z.object({
     name: z
@@ -298,7 +301,24 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
     </Card>
 );
 
-export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: SolveChallengeDashboardViewProps) {
+export default function SolveChallengeDashboardView({
+    isOpen,
+    onOpenChange,
+    user,
+    userRole,
+    authProvider,
+    hasSubscription,
+    setActiveView,
+    setUser,
+    activateTab,
+    id
+}: SolveChallengeDashboardViewProps) {
+    const router = useRouter();
+    const [subscriptionReminder, setSubscriptionReminder] = useState<{
+        status: 'expired' | 'expiring_soon' | 'active';
+        daysLeft: number;
+        planName: string;
+    } | null>(null);
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<SolveChallengeTab>("overview");
     const [adminContentTab, setAdminContentTab] = useState('blog');
@@ -501,6 +521,61 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
     useEffect(() => {
         getSubmissions()
     }, [getSubmissions])
+
+    // Real-time WebSocket listener for solution status updates
+    useEffect(() => {
+        if (submissions.length === 0) return;
+
+        const socket: Socket = io(`${API_BASE_URL}`, {
+            path: '/socket.io',
+            transports: ['websocket', 'polling']
+        });
+
+        socket.connect();
+
+        // Join rooms for all submissions
+        submissions.forEach(sub => {
+            socket.emit('join_solution', { solutionId: sub.solutionId });
+        });
+
+        // Listen for status updates
+        socket.on('solution_status_updated', (data: any) => {
+            console.log('Real-time solution update:', data);
+
+            setSubmissions(prevSubmissions =>
+                prevSubmissions.map(sub =>
+                    sub.solutionId === data.solutionId
+                        ? {
+                            ...sub,
+                            status: data.status,
+                            points: data.points,
+                            reward_amount: data.reward_amount,
+                            updatedAt: data.updated_at
+                        }
+                        : sub
+                )
+            );
+
+            const formatStatus = (status: string) =>
+                status
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+
+            toast({
+                title: 'Status Updated',
+                description: `Solution status changed to: ${formatStatus(data.status)}`,
+            });
+        });
+
+        return () => {
+            submissions.forEach(sub => {
+                socket.emit('leave_solution', { solutionId: sub.solutionId });
+            });
+            socket.off('solution_status_updated');
+            socket.disconnect();
+        };
+    }, [submissions, toast]);
 
     const [selectedSubscribers, setSelectedSubscribers] = useState<number[]>([]);
 
@@ -1232,12 +1307,12 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
 
     const [isTechTransfer, setIsTechTransfer] = useState(false)
     const [isipOverview, setisipOverview] = useState(false)
+    const [founder_role, setFounderRole] = useState<string | null>(null);
 
     useEffect(() => {
         const founder_role = localStorage.getItem("founder_role");
-        if (founder_role === "List a technology for licensing") {
-            setIsTechTransfer(true);
-            setisipOverview(true)
+        if (founder_role === "Solve Organisation's challenge") {
+            setFounderRole(founder_role)
         } else {
             setIsTechTransfer(false)
             setisipOverview(false)
@@ -1581,6 +1656,52 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
 
     }, [toast, activeTab, selectedYear]);
 
+    // Fetch subscription data for reminder
+    useEffect(() => {
+        const fetchSubscription = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user/subscription`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const sub = data.subscription;
+
+                    if (sub && sub.end_date) {
+                        const today = new Date();
+                        const endDate = new Date(sub.end_date);
+                        const diffTime = endDate.getTime() - today.getTime();
+                        const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                        if (daysLeft <= 0) {
+                            setSubscriptionReminder({
+                                status: 'expired',
+                                daysLeft: daysLeft,
+                                planName: sub.plan_name || 'Premium'
+                            });
+                        } else if (daysLeft <= 10) {
+                            setSubscriptionReminder({
+                                status: 'expiring_soon',
+                                daysLeft: daysLeft,
+                                planName: sub.plan_name || 'Premium'
+                            });
+                        } else {
+                            setSubscriptionReminder(null);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching subscription for reminder:', error);
+            }
+        };
+
+        fetchSubscription();
+    }, []);
+
 
     const [expandedAccordion, setExpandedAccordion] = useState<string | undefined>(undefined);
     const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -1611,12 +1732,12 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                             if (!orgName) {
                                 toast({
                                     title: "IP Not Found",
-                                    description: `No IP record found matching ID: ${id}`,
+                                    description: `No IP record found matching ID: ${id} `,
                                     variant: "destructive",
                                 });
                             }
                             if (orgName) {
-                                const accordionValue = `org-${orgName}`;
+                                const accordionValue = `org - ${orgName} `;
                                 setExpandedAccordion(accordionValue);
                                 setTimeout(() => {
                                     const el = document.getElementById(id);
@@ -1884,15 +2005,10 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                     <Tabs value={activeTab} className="flex flex-col flex-grow min-h-0">
                         <TabsList
                             className={`
-                                grid 
-                                grid-cols-3       
-                                sm:grid-cols-3    
-                                md:grid-cols-4     
+                            grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4     
                                 ${isTechTransfer ? "lg:grid-cols-4" : (userRole === 'admin' ? "lg:grid-cols-6" : "lg:grid-cols-4")}
-                                gap-2 h-fit
-                                items-stretch       
-                                bg-muted/50 rounded-lg p-1
-                                mb-4 sm:mb-6 lg:mb-10 z-10`}
+                            gap-2 h-fit items-stretch bg-muted/50 rounded-lg p-1
+                            mb-4 sm:mb-6 lg:mb-10 z-10`}
                         >
                             {solveChallenge.map((tab) => {
                                 const Icon = (
@@ -1942,6 +2058,26 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                         </TabsList>
                         <div className="flex-grow overflow-y-auto pb-6 w-full" >
                             <TabsContent value="overview" className="mt-0 space-y-6">
+                                {subscriptionReminder && (
+                                    <div className="bg-red-100/40 border border-red-200 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-sm">
+                                        <div className="space-y-1 text-center sm:text-left">
+                                            <h3 className="text-xl font-bold text-red-500">
+                                                {user.name}, your {subscriptionReminder.planName} plan {subscriptionReminder.status === 'expired' ? 'has expired' : 'expires soon'}!
+                                            </h3>
+                                            <p className="text-red-500/80">
+                                                {subscriptionReminder.status === 'expired'
+                                                    ? 'Renew now to continue participating and earning rewards.'
+                                                    : `You have ${subscriptionReminder.daysLeft} days left. Renew now to keep participating in exciting challenges.`}
+                                            </p>
+                                        </div>
+                                        {subscriptionReminder.status === 'expired' && <Button
+                                            onClick={() => router.push('/pricing')}
+                                            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-2 rounded-xl h-auto shrink-0"
+                                        >
+                                            Renew Now
+                                        </Button>}
+                                    </div>
+                                )}
                                 {/* Total Rewards Card */}
                                 <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                     <CardHeader>
@@ -2089,30 +2225,6 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                             onClick={() => setSelectedSubmission(sub)}
                                             className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 cursor-pointer transition-colors relative"
                                         >
-                                            {/* ⋯ Menu */}
-                                            <div className="absolute top-3 right-3">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                            <MoreVertical className="h-5 w-5" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem
-                                                            className="text-red-500 cursor-pointer"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setDeleteTargetId(sub.solutionId);
-                                                                setConfirmText("");
-                                                            }}
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-
                                             {/* Card Header */}
                                             <CardHeader>
                                                 <div className="flex justify-between items-start">
@@ -2129,7 +2241,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                             <span className="w-1 h-1 rounded-full bg-foreground/40 inline-block mx-2"></span>
                                                             <Badge
                                                                 className={`px-3 py-1 text-xs font-semibold border rounded-sm 
-                                        ${statusBadgeClasses[sub.status]}`}
+                                        ${statusBadgeClasses[sub.status]} `}
                                                             >
                                                                 {statusLabels[sub.status]}
                                                             </Badge>
@@ -2157,29 +2269,6 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                     </span>
                                                 </div>
                                             </CardFooter>
-
-                                            {/* Delete confirmation block */}
-                                            {deleteTargetId === sub.solutionId && (
-                                                <div
-                                                    className="p-4 border-t border-border bg-muted/30 flex flex-col sm:flex-row sm:items-center gap-2"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <Input
-                                                        placeholder="Type 'delete' to confirm"
-                                                        value={confirmText}
-                                                        onChange={(e) => setConfirmText(e.target.value)}
-                                                        className="text-sm"
-                                                    />
-                                                    <LoadingButton
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() => handleDelete(sub.solutionId)}
-                                                        isLoading={isDeleting}
-                                                    >
-                                                        Confirm Delete
-                                                    </LoadingButton>
-                                                </div>
-                                            )}
                                         </Card>
                                     ))
                                 ) : (
@@ -2253,6 +2342,8 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                         </Form>
                                         <EmailUpdateForm currentEmail={settingsForm.watch('email')} />
                                         <Separator />
+                                        <SubscriptionDetails user={user} founder_role={founder_role} />
+                                        <Separator />
 
                                         <div>
                                             <div className="flex items-center justify-between mb-4">
@@ -2270,7 +2361,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                             </div>
                                             <Form {...paymentForm}>
                                                 <form onSubmit={paymentForm.handleSubmit(onPaymentMethodSubmit)} className="space-y-4">
-                                                    
+
                                                     <FormField
                                                         control={paymentForm.control}
                                                         name="paymentCategory"
@@ -2298,7 +2389,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                         )}
                                                     />
 
-                                                    
+
                                                     <FormField
                                                         control={paymentForm.control}
                                                         name="paymentMethod"
@@ -2402,7 +2493,7 @@ export default function SolveChallengeDashboard({ isOpen, setUser, onOpenChange,
                                                     )}
                                                 </form>
                                             </Form>
-                                        </div> 
+                                        </div>
 
                                         {(authProvider === 'local') && (
                                             <>

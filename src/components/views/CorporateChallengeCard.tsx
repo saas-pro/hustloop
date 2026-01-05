@@ -1,8 +1,8 @@
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "../ui/progress";
-import Image from "next/image";
 import { useChallengeProgress } from "@/components/ui/useChallengeProgress";
 import removeMarkdown from "remove-markdown";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,54 +23,45 @@ export const CorporateChallengeCard = ({
         challenge.status === "stopped" ||
         challenge.status === "expired";
 
-    const [isLoading, setIsLoading] = useState(true);
+    // const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 1000);
-
-        return () => clearTimeout(timer);
-    }, []);
-
-    if (isLoading) {
-        return (
-            <Card className="bg-card flex flex-col w-full md:w-[18rem] antialiased border-none">
-                <CardHeader>
-                    <div className="flex items-center gap-4">
-                        <Skeleton className="h-[60px] w-[60px] rounded-lg" />
-                        <div className="flex-1 space-y-2">
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-3 w-3/4" />
-                            <Skeleton className="h-5 w-1/2" />
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                    <Skeleton className="h-3 w-full mb-2" />
-                    <Skeleton className="h-3 w-full mb-2" />
-                    <Skeleton className="h-3 w-2/3" />
-                </CardContent>
-                <CardFooter className="flex-col items-start space-y-2">
-                    <Skeleton className="h-5 w-1/3" />
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-2 w-full" />
-                </CardFooter>
-            </Card>
-        );
-    }
+    // if (isLoading) {
+    //     return (
+    //         <Card className="bg-card flex flex-col w-full md:w-[18rem] antialiased border-none">
+    //             <CardHeader>
+    //                 <div className="flex items-center gap-4">
+    //                     <Skeleton className="h-[60px] w-[60px] rounded-lg" />
+    //                     <div className="flex-1 space-y-2">
+    //                         <Skeleton className="h-4 w-full" />
+    //                         <Skeleton className="h-3 w-3/4" />
+    //                         <Skeleton className="h-5 w-1/2" />
+    //                     </div>
+    //                 </div>
+    //             </CardHeader>
+    //             <CardContent className="flex-grow">
+    //                 <Skeleton className="h-3 w-full mb-2" />
+    //                 <Skeleton className="h-3 w-full mb-2" />
+    //                 <Skeleton className="h-3 w-2/3" />
+    //             </CardContent>
+    //             <CardFooter className="flex-col items-start space-y-2">
+    //                 <Skeleton className="h-5 w-1/3" />
+    //                 <Skeleton className="h-10 w-full" />
+    //                 <Skeleton className="h-2 w-full" />
+    //             </CardFooter>
+    //         </Card>
+    //     );
+    // }
 
     return (
         <Card className="bg-card flex flex-col w-full md:w-[18rem] antialiased border-none" onClick={() => onViewDetails("CorporateChallenges", challenge)}>
             <CardHeader>
                 <div className="flex items-center gap-4">
-                    <Image
-                        src={challenge.logo_url || "https://api.hustloop.com/static/images/building.png"}
-                        alt={`${challenge.company_name} logo`}
-                        width={60}
-                        height={60}
-                        className="rounded-lg"
-                    />
+                    <Avatar className="h-[60px] w-[60px] rounded-lg">
+                        <AvatarImage src={challenge.logo_url} alt={challenge.company_name} />
+                        <AvatarFallback className="rounded-lg font-headline bg-accent/30 backdrop-blur-md text-black text-xl font-bold flex items-center justify-center border border-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                            {challenge.company_avatar || (challenge.company_name ? challenge.company_name[0] : "C")}
+                        </AvatarFallback>
+                    </Avatar>
                     <div>
                         <CardTitle className={`text-base line-clamp-1 ${isClosed ? "text-red-600" : ""}`}>
                             {challenge.title}

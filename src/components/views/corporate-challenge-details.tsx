@@ -49,6 +49,8 @@ import TimelineCounter from '../ui/timeline-counter';
 import { Skeleton } from '../ui/skeleton';
 import { AnnouncementDialog } from './AnnouncementDialog';
 import CircularText from '@/components/CircularText';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,7 +69,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
 import { string } from 'zod';
-import { Avatar } from '@radix-ui/react-avatar';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CorporateChallengeDetailsProps {
   challenge: CorporateChallenge | null;
@@ -201,6 +203,7 @@ export default function CorporateChallengeDetails({
   hasSubscription,
   setActiveView
 }: CorporateChallengeDetailsProps) {
+  const isMobile = useIsMobile();
   const { progress, daysRemaining } = useChallengeProgress(challenge);
   const [challengeId, setChallengeId] = useState()
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
@@ -244,6 +247,26 @@ export default function CorporateChallengeDetails({
 
     getHallOfFame();
   }, [challenge]);
+
+  const [isSolutionSubmitted, setIsSolutionSubmitted] = useState(false);
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const challengeId = challenge?.id;
+        if (!challengeId) return;
+        const res = await fetch(`${API_BASE_URL}/api/solution/check/${challengeId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+        const { message } = await res.json();
+        setIsSolutionSubmitted(message.hasSubmitted);
+      } catch (error) {
+        console.error("Failed to fetch solution check:", error);
+      }
+    }
+    check();
+  }, [challenge?.id]);
 
   const fetchAnnouncements = useCallback(async () => {
     if (!challenge?.id) return;
@@ -399,6 +422,7 @@ export default function CorporateChallengeDetails({
 
   const handleSubmissionSuccess = () => {
     setShowSubmissionForm(false);
+    setIsSolutionSubmitted(true);
   };
 
   const handleCancelSubmission = () => {
@@ -434,13 +458,12 @@ export default function CorporateChallengeDetails({
       <DialogContent className="w-[90vw] max-w-[90vw] h-[90vh] flex flex-col p-0 rounded-lg">
         <DialogHeader className="p-6">
           <div className="flex items-center gap-4">
-            <Image
-              src={challenge.logo_url || "https://api.hustloop.com/static/images/building.png"}
-              alt={`${challenge.company_name} logo`}
-              width={80}
-              height={80}
-              className="rounded-lg"
-            />
+            <Avatar className="h-[60px] w-[60px] rounded-lg">
+              <AvatarImage src={challenge.logo_url} alt={challenge.company_name} />
+              <AvatarFallback className="rounded-lg font-headline bg-accent/30 backdrop-blur-md text-black text-xl font-bold flex items-center justify-center border border-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                {challenge.company_avatar || (challenge.company_name ? challenge.company_name[0] : "C")}
+              </AvatarFallback>
+            </Avatar>
             <div>
 
               <DialogTitle className="text-3xl font-bold font-headline text-left">
@@ -464,7 +487,7 @@ export default function CorporateChallengeDetails({
               <span className="flex items-center gap-2">
                 Announcements
                 {announcements && announcements.length >= 0 && (
-                  <span className="inline-flex items-center justify-center h-5 w-5 font-semibold rounded-full bg-primary text-primary-foreground">
+                  <span className="inline-flex items-center font-headline justify-center h-5 w-5 font-semibold rounded-full bg-primary text-primary-foreground">
                     {announcements.length}
                   </span>
                 )}
@@ -548,14 +571,14 @@ export default function CorporateChallengeDetails({
                             Challenge Title
                           </h2>
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-extrabold leading-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent break-words">
+                        <h1 className="text-3xl md:text-5xl font-extrabold leading-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text break-words">
                           {challenge.title}
                         </h1>
                       </div>
                     </div>
 
                     {/* Right side - Timer */}
-                    <div className='flex items-center md:justify-end w-full md:w-auto flex-shrink-0'>
+                    <div className='flex items-center justify-center md:justify-end w-full md:w-auto flex-shrink-0'>
                       <div className="relative">
                         <div className="absolute inset-0 bg-accent/10 blur-2xl rounded-full" />
                         <div className="relative top-0 right-0 md:top-[3.2rem] md:right-[2rem]">
@@ -611,7 +634,7 @@ export default function CorporateChallengeDetails({
                     <CardHeader className="items-center">
                       <FileText className="h-8 w-8 text-primary mb-2" />
                       <CardTitle className="text-3xl font-bold">{challenge?.submission_count}</CardTitle>
-                      <p className="text-sm text-muted-foreground">Soltuion Count</p>
+                      <p className="text-sm text-muted-foreground">Solutions Submitted</p>
                     </CardHeader>
                   </Card>
 
@@ -619,13 +642,15 @@ export default function CorporateChallengeDetails({
                     <CardHeader className="items-center">
                       <Timer className="h-8 w-8 text-primary mb-2" />
                       <CardTitle className="text-2xl font-bold">
-                        {new Date(challenge.end_date).toLocaleDateString('en-GB', {
+                        {new Date(challenge.extended_end_date || challenge.end_date).toLocaleDateString('en-GB', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric'
                         })}
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground">End Date</p>
+                      <p className="text-sm text-muted-foreground">
+                        {challenge.extended_end_date ? "End Date Extended" : "End Date"}
+                      </p>
                     </CardHeader>
                   </Card>
 
@@ -643,109 +668,140 @@ export default function CorporateChallengeDetails({
                 <Separator />
                 <div>
                   <h3 className="text-xl font-semibold mb-3">Contact Information</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className={isMobile ? "flex justify-center flex-wrap gap-4 py-4" : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"}>
                     {/* Email Contact Card */}
-                    <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
-                      <CardHeader className="pb-3">
+                    <Card className={cn("bg-muted/30 border hover:border-primary/50 transition-all duration-300", isMobile ? "rounded-full p-2" : "")}>
+                      <CardHeader className={isMobile ? "p-0" : "pb-3"}>
                         <div className="flex items-center gap-2">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                          <a href="mailto:boopathi.s@hustloop.com" className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold hover:bg-primary hover:text-white transition-colors">
                             B
-                          </div>
-                          <div>
-                            <CardTitle className="text-base">Boopathi S</CardTitle>
-                            <CardDescription className="text-xs">Founder and CEO</CardDescription>
-                          </div>
+                          </a>
+                          {!isMobile && (
+                            <div>
+                              <CardTitle className="text-base">Boopathi S</CardTitle>
+                              <CardDescription className="text-xs">Founder and CEO</CardDescription>
+                            </div>
+                          )}
                         </div>
                       </CardHeader>
-                      <CardContent className="pt-0">
-                        <a
-                          href="mailto:boopathi.s@hustloop.com"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group break-all"
-                        >
-                          <Mail className="h-4 w-4 flex-shrink-0" />
-                          <span className="group-hover:underline">boopathi.s[@]hustloop.com</span>
-                        </a>
-                      </CardContent>
+                      {!isMobile && (
+                        <CardContent className="pt-0">
+                          <a
+                            href="mailto:boopathi.s@hustloop.com"
+                            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group break-all"
+                          >
+                            <Mail className="h-4 w-4 flex-shrink-0" />
+                            <span className="group-hover:underline">boopathi s</span>
+                          </a>
+                        </CardContent>
+                      )}
                     </Card>
 
                     {/* Social Media Card */}
                     {/* Instagram Card */}
-                    <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
-                      <CardHeader className="pb-3">
+                    <Card className={cn("bg-muted/30 border hover:border-primary/50 transition-all duration-300", isMobile ? "rounded-full p-2" : "")}>
+                      <CardHeader className={isMobile ? "p-0" : "pb-3"}>
                         <div className="flex items-center gap-2">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
-                            <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <a
+                            href="https://instagram.com/hustloop_official"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center text-white hover:opacity-80 transition-opacity"
+                          >
+                            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                               <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                             </svg>
-                          </div>
-                          <div>
-                            <CardTitle className="text-base">Instagram</CardTitle>
-                            <CardDescription className="text-xs">Follow us</CardDescription>
-                          </div>
+                          </a>
+                          {!isMobile && (
+                            <div>
+                              <CardTitle className="text-base">Instagram</CardTitle>
+                              <CardDescription className="text-xs">Follow us</CardDescription>
+                            </div>
+                          )}
                         </div>
                       </CardHeader>
-                      <CardContent className="pt-0">
-                        <a
-                          href="https://instagram.com/hustloop_official"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
-                        >
-                          <span className="group-hover:underline">@hustloop_official</span>
-                        </a>
-                      </CardContent>
+                      {!isMobile && (
+                        <CardContent className="pt-0">
+                          <a
+                            href="https://instagram.com/hustloop_official"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
+                          >
+                            <span className="group-hover:underline">@hustloop_official</span>
+                          </a>
+                        </CardContent>
+                      )}
                     </Card>
 
                     {/* LinkedIn Card */}
-                    <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
-                      <CardHeader className="pb-3">
+                    <Card className={cn("bg-muted/30 border hover:border-primary/50 transition-all duration-300", isMobile ? "rounded-full p-2" : "")}>
+                      <CardHeader className={isMobile ? "p-0" : "pb-3"}>
                         <div className="flex items-center gap-2">
-                          <div className="h-10 w-10 rounded-full bg-[#0077B5] flex items-center justify-center">
-                            <Linkedin className="h-5 w-5 text-white" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-base">LinkedIn</CardTitle>
-                            <CardDescription className="text-xs">Connect with us</CardDescription>
-                          </div>
+                          <a
+                            href="https://linkedin.com/company/hustloop"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-10 w-10 rounded-full bg-[#0077B5] flex items-center justify-center text-white hover:opacity-80 transition-opacity"
+                          >
+                            <Linkedin className="h-5 w-5" />
+                          </a>
+                          {!isMobile && (
+                            <div>
+                              <CardTitle className="text-base">LinkedIn</CardTitle>
+                              <CardDescription className="text-xs">Connect with us</CardDescription>
+                            </div>
+                          )}
                         </div>
                       </CardHeader>
-                      <CardContent className="pt-0">
-                        <a
-                          href="https://linkedin.com/company/hustloop"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
-                        >
-                          <span className="group-hover:underline">company/hustloop</span>
-                        </a>
-                      </CardContent>
+                      {!isMobile && (
+                        <CardContent className="pt-0">
+                          <a
+                            href="https://linkedin.com/company/hustloop"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
+                          >
+                            <span className="group-hover:underline">@hustloop</span>
+                          </a>
+                        </CardContent>
+                      )}
                     </Card>
 
                     {/* X (Twitter) Card */}
-                    <Card className="bg-muted/30 border hover:border-primary/50 transition-all duration-300">
-                      <CardHeader className="pb-3">
+                    <Card className={cn("bg-muted/30 border hover:border-primary/50 transition-all duration-300", isMobile ? "rounded-full p-2" : "")}>
+                      <CardHeader className={isMobile ? "p-0" : "pb-3"}>
                         <div className="flex items-center gap-2">
-                          <div className="h-10 w-10 rounded-full bg-black dark:bg-white flex items-center justify-center">
-                            <svg className="h-4 w-4 text-white dark:text-black" fill="currentColor" viewBox="0 0 24 24">
+                          <a
+                            href="https://x.com/hustloop"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-10 w-10 rounded-full bg-black dark:bg-white flex items-center justify-center text-white dark:text-black hover:opacity-80 transition-opacity"
+                          >
+                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                             </svg>
-                          </div>
-                          <div>
-                            <CardTitle className="text-base">X (Twitter)</CardTitle>
-                            <CardDescription className="text-xs">Follow us</CardDescription>
-                          </div>
+                          </a>
+                          {!isMobile && (
+                            <div>
+                              <CardTitle className="text-base">X (Twitter)</CardTitle>
+                              <CardDescription className="text-xs">Follow us</CardDescription>
+                            </div>
+                          )}
                         </div>
                       </CardHeader>
-                      <CardContent className="pt-0">
-                        <a
-                          href="https://x.com/hustloop"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
-                        >
-                          <span className="group-hover:underline">@hustloop</span>
-                        </a>
-                      </CardContent>
+                      {!isMobile && (
+                        <CardContent className="pt-0">
+                          <a
+                            href="https://x.com/hustloop"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
+                          >
+                            <span className="group-hover:underline">@hustloop</span>
+                          </a>
+                        </CardContent>
+                      )}
                     </Card>
                   </div>
                 </div>
@@ -802,8 +858,7 @@ export default function CorporateChallengeDetails({
                         </h2>
 
                         <p className="max-w-2xl mx-auto text-muted-foreground mb-8">
-                          Submit your innovative solution and get a chance to win exciting rewards
-                          and partnerships.
+                          Submit breakthrough solutions to real challenges and unlock rewards and real-world adoption.
                         </p>
                       </>
                     )}
@@ -831,10 +886,10 @@ export default function CorporateChallengeDetails({
                               }
                               handleApplyClick(challenge.id)
                             }}
-                            disabled={isDisabled}
+                            disabled={isDisabled || isSolutionSubmitted}
                           >
                             <Rocket className="mr-2 h-5 w-5" />
-                            Solve This Challenge
+                            {isSolutionSubmitted ? "Solution Submitted" : "Solve This Challenge"}
                           </Button>
                         ) : (
                           <div className="flex gap-4 w-full justify-center mt-4">
@@ -1197,7 +1252,7 @@ export default function CorporateChallengeDetails({
                               <TableRow className="bg-muted/50 hover:bg-muted/50">
                                 <TableHead className="w-[100px]">Rank</TableHead>
                                 <TableHead>Participant</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead>State</TableHead>
                                 <TableHead className="text-right">Score</TableHead>
                               </TableRow>
                             </TableHeader>

@@ -72,6 +72,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { io, Socket } from 'socket.io-client';
 
 
 
@@ -469,6 +470,61 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
             checkProfile();
         }
     }, [isMsmeRole, checkProfile]);
+
+    // Real-time WebSocket listener for solution status updates
+    useEffect(() => {
+        if (submissions.length === 0) return;
+
+        const socket: Socket = io(`${API_BASE_URL}`, {
+            path: '/socket.io',
+            transports: ['websocket', 'polling']
+        });
+
+        socket.connect();
+
+        // Join rooms for all submissions
+        submissions.forEach(sub => {
+            socket.emit('join_solution', { solutionId: sub.solutionId });
+        });
+
+        // Listen for status updates
+        socket.on('solution_status_updated', (data: any) => {
+            console.log('Real-time solution update:', data);
+
+            setSubmissions(prevSubmissions =>
+                prevSubmissions.map(sub =>
+                    sub.solutionId === data.solutionId
+                        ? {
+                            ...sub,
+                            status: data.status,
+                            points: data.points,
+                            reward_amount: data.reward_amount,
+                            updatedAt: data.updated_at
+                        }
+                        : sub
+                )
+            );
+
+            const formatStatus = (status: string) =>
+                status
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+
+            toast({
+                title: 'Status Updated',
+                description: `Solution status changed to: ${formatStatus(data.status)}`,
+            });
+        });
+
+        return () => {
+            submissions.forEach(sub => {
+                socket.emit('leave_solution', { solutionId: sub.solutionId });
+            });
+            socket.off('solution_status_updated');
+            socket.disconnect();
+        };
+    }, [submissions, toast]);
 
     const [isProfileSubmitted, setIsProfileSubmitted] = useState(false);
     const [isEditable, setIsEditable] = useState(false);

@@ -1,6 +1,6 @@
 
 export type View = "home" | "blog" | "mentors" | "incubators" | "submitIP" | "pricing" | "msmes" | "solveChallenges" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile" | "joinasanMSME" | "browseTech" | "marketplace" | "browseMSME" | "early-bird";
-export type DashboardTab = "overview" | "msmes" | "ip/technologies" | "incubators" | "engagements" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" | "aignite" | "connex" | "pitch-details";
+export type DashboardTab = "overview" | "msmes" | "ip/technologies" | "incubators" | "engagements" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" | "aignite" | "connex" | "pitch-details" | "plans";
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
 export type SolveChallengeTab = "overview" | "submission" | "team" | "settings"
 export type TechTransferTab = "overview" | "submission" | "engagements" | "settings"
@@ -68,7 +68,9 @@ export type AppUser = {
   role: UserRole;
   auth_provider: 'local' | 'google' | 'linkedin';
   status: UserStatus;
+  founder_role: founderRole;
   email_verified: boolean;
+  active_plans?: string[];
   created_at: string;
 };
 

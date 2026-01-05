@@ -2,7 +2,7 @@
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Briefcase, PlayCircle, Globe, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins, Puzzle, Microscope, FileSearch, Layers, Network, Sprout } from "lucide-react";
+import { Lightbulb, Briefcase, PlayCircle, Globe, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins, Puzzle, Microscope, FileSearch, Layers, Network, Sprout, Instagram } from "lucide-react";
 import { ReactTyped } from "react-typed";
 import { useState, useEffect, useCallback } from "react";
 import SolutionCard from '../SolutionCard';
@@ -795,7 +795,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
   return (
     <div
       ref={scrollContainerRef}
-      className={`relative pointer-events-auto h-[100dvh] w-full bg-background text-foreground overflow-x-hidden overflow-y-auto ${navOpen ? "overflow-hidden" : ""
+      className={`relative pointer-events-auto h-screen w-full bg-background text-foreground overflow-x-hidden overflow-y-auto ${navOpen ? "overflow-hidden" : ""
         } `}
     >
       {/* Hero Section */}
@@ -803,10 +803,11 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
         <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} scrollContainerRef={scrollContainerRef} />
       </section>
 
-      {/* Sentinel goes here, after hero */}
-      <div id="hero-sentinel" className='h-1'>
-
-      </div>
+      <div
+        id="hero-sentinel"
+        className="h-[100dvh] pointer-events-none"
+        style={{ marginTop: '-100dvh' }}
+      />
 
       {/* Start Your Journey Section with native scroll-based zoom */}
       <motion.div
@@ -1145,14 +1146,38 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                   <a href="mailto:support@hustloop.com" className="text-primary hover:underline">support[@]hustloop.com</a>
                 </div>
                 <div className="flex items-center gap-4">
-                  <a href="#" aria-label="X" className="text-muted-foreground hover:text-primary transition-colors">
+                  <a
+                    href="https://x.com/hustloop"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current"><title>X</title><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.931L18.901 1.153Zm-1.653 19.57h2.608L6.856 2.597H4.062l13.185 18.126Z" /></svg>
                   </a>
-                  <a href="https://www.linkedin.com/company/hustloop/" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors">
+                  <a
+                    href="https://www.linkedin.com/company/hustloop/"
+                    aria-label="LinkedIn"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Linkedin className="h-5 w-5" />
                   </a>
-                  <a href="mailto:support@hustloop.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
+                  <a
+                    href="mailto:support@hustloop.com"
+                    aria-label="Email"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
                     <Mail className="h-5 w-5" />
+                  </a>
+                  <a
+                    href="https://www.instagram.com/hustloop_official"
+                    aria-label="Instagram"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Instagram className="h-5 w-5" />
                   </a>
                 </div>
               </CardContent>
@@ -1165,12 +1190,12 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                     name="fullName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Full Name</FormLabel>
+                        <FormLabel>Full Name <span className="text-red-500">*</span></FormLabel>
                         <div className="relative">
                           <FormControl>
-                            <Input placeholder="Enter your full name" {...field} className="pr-16" />
+                            <Input placeholder="Enter your full name" {...field} className="pr-16" required />
                           </FormControl>
-                          <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${field.value?.length >= 300 ? "text-red-500" : "text-muted-foreground"} `}>
+                          <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${field.value?.length >= 300 ? "text-red-500" : "text-muted-foreground"}`}>
                             {field.value?.length || 0}/300
                           </span>
                         </div>
@@ -1178,17 +1203,21 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={contactForm.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email Address</FormLabel>
-                        <FormControl><Input type="email" placeholder="Enter your email address" {...field} /></FormControl>
+                        <FormLabel>Email Address <span className="text-red-500">*</span></FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="Enter your email address" {...field} required />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={contactForm.control}
                     name="phone"
@@ -1203,30 +1232,33 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                               maxLength={10}
                               {...field}
                               className="pr-16"
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                field.onChange(value);
+                              }}
+                              value={field.value || ''}
                             />
                           </FormControl>
-
-                          <span
-                            className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${(field.value?.length ?? 0) > 10 ? "text-red-500" : "text-muted-foreground"
-                              } `}
-                          >
+                          <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${(field.value?.length ?? 0) > 10 ? "text-red-500" : "text-muted-foreground"}`}>
                             {(field.value?.length ?? 0)}/10
                           </span>
                         </div>
-
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={contactForm.control}
                     name="subject"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Subject</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>Subject <span className="text-red-500">*</span></FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} required>
                           <FormControl>
-                            <SelectTrigger><SelectValue placeholder="Select a subject" /></SelectTrigger>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a subject" />
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="general">General Inquiry</SelectItem>
@@ -1241,17 +1273,23 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={contactForm.control}
                     name="message"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Message</FormLabel>
+                        <FormLabel>Message <span className="text-red-500">*</span></FormLabel>
                         <div className="relative">
                           <FormControl>
-                            <Textarea placeholder="How can we help you?" {...field} className="pb-6" />
+                            <Textarea
+                              placeholder="How can we help you?"
+                              {...field}
+                              className="pb-6"
+                              required
+                            />
                           </FormControl>
-                          <span className={`absolute right-3 bottom-2 text-xs ${field.value?.length >= 500 ? "text-red-500" : "text-muted-foreground"} `}>
+                          <span className={`absolute right-3 bottom-2 text-xs ${field.value?.length >= 500 ? "text-red-500" : "text-muted-foreground"}`}>
                             {field.value?.length || 0}/500
                           </span>
                         </div>
@@ -1274,6 +1312,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
         </div>
       </section>
       <Footer />
-    </div >
+    </div>
   );
 }

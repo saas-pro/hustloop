@@ -1,7 +1,10 @@
 const plans = [
     {
+        id: 0,
         name: "Free",
         price: "₹0",
+        price_in_paise: 0,
+        billing_cycle: "lifetime",
         description: "Kickstart with technology discovery and foundational support at no cost.",
         features: [
             "Technology / IP (Intellectual Property)",
@@ -9,11 +12,13 @@ const plans = [
         ],
         cta: "Get Started",
         primary: false,
-        note: "Payment integration coming soon."
     },
     {
+        id: 1,
         name: "Standard",
         price: "₹999",
+        price_in_paise: 99900,
+        billing_cycle: "monthly",
         originally: "₹1499",
         offer: "33% OFF",
         description: "Accelerate incubation with full access and priority support.",
@@ -23,14 +28,16 @@ const plans = [
             "45 Days Duration",
             "Priority Support"
         ],
-        cta: "Get Started",
+        cta: "Buy Now",
         primary: false,
-        note: "Payment integration coming soon."
     },
     {
+        id: 2,
         name: "Premium",
         tag: "Popular",
         price: "₹2999",
+        price_in_paise: 299900,
+        billing_cycle: "monthly",
         originally: "₹3999",
         offer: "25% OFF",
         description: "Solve Organisation's challenge with submissions and 24/7 priority support.",
@@ -40,12 +47,15 @@ const plans = [
             "60 days duration",
             "24/7 priority support"
         ],
-        cta: "Get Started",
+        cta: "Buy Now",
         primary: true,
-        note: "Payment integration coming soon."
     },
     {
+        id: 3,
         name: "Enterprise",
+        price: "Custom",
+        price_in_paise: 0,
+        billing_cycle: "custom",
         description: "High-touch support with fully customizable problem‑solving solutions and dedicated expert assistance.",
         features: [
             "Tailored Solutions",
@@ -54,8 +64,7 @@ const plans = [
         ],
         cta: "Contact Us",
         primary: false,
-        note: "Payment integration coming soon."
     }
 ];
 
-export default plans
+export default plans;

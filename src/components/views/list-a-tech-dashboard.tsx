@@ -43,6 +43,7 @@ import { useSearchParams } from "next/navigation";
 import { ContributionGraph } from "../ui/contribution-graph";
 import { EmailUpdateForm } from "../ui/EmailUpdateForm";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { SubscriptionDetails } from "../Subscription/subscription-details";
 
 const settingsFormSchema = z.object({
     name: z
@@ -1125,9 +1126,10 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
 
     const [isTechTransfer, setIsTechTransfer] = useState(false)
     const [isipOverview, setisipOverview] = useState(false)
-
+    const [founder_role, set_founder_role] = useState<string | null>("");
     useEffect(() => {
         const founder_role = localStorage.getItem("founder_role");
+        set_founder_role(founder_role);
         if (founder_role === "List a technology for licensing") {
             setIsTechTransfer(true);
             setisipOverview(true)
@@ -3201,6 +3203,8 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
                                             </form>
                                         </Form>
                                         <EmailUpdateForm currentEmail={settingsForm.watch('email')} />
+                                        <Separator />
+                                        <SubscriptionDetails user={user} founder_role={founder_role} />
                                         <Separator />
 
                                         <div>

@@ -1,6 +1,6 @@
 
 "use client";
-import { Linkedin, Mail } from "lucide-react";
+import { Instagram, Linkedin, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import NewsletterForm from "./newsletter-form";
 import Image from 'next/image';
@@ -55,23 +55,32 @@ export default function Footer() {
           <div className="flex-1 flex justify-center md:justify-end mb-3 md:mb-0">
             <div className="flex items-center gap-4">
               <a href="https://x.com/hustloop" target="_blank" aria-label="X" className="text-muted-foreground hover:text-primary transition-colors">
-                <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current">
+                <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 fill-current">
                   <title>X</title>
                   <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.931L18.901 1.153Zm-1.653 19.57h2.608L6.856 2.597H4.062l13.185 18.126Z" />
                 </svg>
               </a>
               <a href="https://www.linkedin.com/company/hustloop/" target="_blank" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors">
-                <Linkedin className="h-5 w-5" />
+                <Linkedin className="h-6 w-6" />
               </a>
               <a href="mailto:support@hustloop.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
-                <Mail className="h-5 w-5" />
+                <Mail className="h-6 w-6" />
+              </a>
+              <a
+                href="https://www.instagram.com/hustloop_official"
+                aria-label="Instagram"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Instagram className="h-6 w-6" />
               </a>
             </div>
           </div>
         </div>
       </div>
-      <div className="flex-1 w-full flex items-center justify-center pb-0 mb-0 h-[80px] md:h-[160px] lg:h-[200px] overflow-hidden">
-        <div className="w-full relative h-[160px] md:h-[320px] lg:h-[400px] flex items-end justify-center">
+      <div className="flex-1 w-full flex items-start justify-center overflow-hidden h-[80px] md:h-[100px] lg:h-[200px]">
+        <div className="w-full relative h-[120px] md:h-[200px] lg:h-[400px] flex items-start justify-center">
           <TextHoverEffect text="HUSTLOOP" duration={10} />
         </div>
       </div>

@@ -41,7 +41,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-3xl w-[95vw] rounded-lg">
+        <DialogContent className="max-w-3xl rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center font-headline">Marketplace</DialogTitle>
             <DialogDescription className="text-center">
@@ -87,9 +87,9 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                   </CardContent>
                   <div className='md:hidden w-full flex flex-col items-center'>
                     <div className="w-fit overflow-hidden py-1 px-4">
-                      <Marquee speed={12} className="w-[80vw]">
+                      <Marquee speed={18} className="w-[80vw]">
                         <span className="text-[30px] sm:text-xs font-bold uppercase tracking-[0.2em] whitespace-nowrap">
-                          Solve Challenges • Reward Points • Impact •
+                          INCENTIVE CHALLENGES • 
                         </span>
                       </Marquee>
                     </div>
@@ -135,9 +135,9 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                   </CardContent>
                   <div className='md:hidden w-full flex flex-col items-center'>
                     <div className="w-fit overflow-hidden py-1 px-4">
-                      <Marquee speed={12} className="w-[80vw]">
+                      <Marquee speed={18} className="w-[80vw]">
                         <span className="text-[30px] sm:text-xs font-bold uppercase tracking-[0.2em] whitespace-nowrap">
-                          Technology Transfer • Reward Points • Impact •
+                          TECHNOLOGY TRANSFER • 
                         </span>
                       </Marquee>
                     </div>
@@ -185,9 +185,9 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                   </CardContent>
                   <div className='md:hidden w-full flex flex-col items-center'>
                     <div className="w-fit overflow-hidden py-1 px-4">
-                      <Marquee speed={12} className="w-[80vw]">
+                      <Marquee speed={18} className="w-[80vw]">
                         <span className="text-[30px] sm:text-xs font-bold uppercase tracking-[0.2em] whitespace-nowrap">
-                          Incubate • Reward Points • Impact •
+                          DREAM STARTUP • 
                         </span>
                       </Marquee>
                     </div>

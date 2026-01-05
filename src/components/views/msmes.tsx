@@ -56,6 +56,7 @@ export type CorporateChallenge = {
   extended_end_date?: string | null;
   attachments: [];
   qa_count: number;
+  company_avatar: string | null;
 };
 
 export type MSMEChallenge = {
@@ -198,6 +199,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
           const apiBaseUrl = API_BASE_URL;
           const response = await fetch(`${apiBaseUrl}/api/get-collaboration?challenge_type=corporate`, {
             headers: {
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             }
           });

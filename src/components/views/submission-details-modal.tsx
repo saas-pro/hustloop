@@ -93,7 +93,7 @@ export default function SubmissionDetailsModal({
     const [isOtherType, setIsOtherType] = useState<boolean>(false);
 
     const isCommentsDisabled =
-        (submission?.challenge?.status === 'stopped') || (submission?.status === 'solution_accepted_points' || submission?.status === 'rejected');
+        (submission?.challenge?.status === 'stopped') || (submission?.status === 'rejected');
 
     const scrollToBottom = useCallback(() => {
         commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });

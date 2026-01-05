@@ -173,15 +173,15 @@ export default function TimelineCounter({
                 </div>
 
                 {extendedEndDate && !timeRemaining.isExpired && (
-                    <div className="absolute top-20 md:top-24 w-full h-32 md:h-48">
+                    <div className="absolute top-20 w-full h-32 md:h-48">
                         {/* Gradient Lines */}
                         <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-primary to-transparent h-[2px] w-3/4 blur-sm" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-primary to-transparent h-px w-3/4" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-accent to-transparent h-[5px] w-1/4 blur-sm" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-0 bg-gradient-to-r from-transparent via-accent to-transparent h-px w-1/4" />
 
-                        <div className="flex-1 flex justify-center mt-[2.5px]">
-                            <p className="text-xs text-muted-foreground">
+                        <div className="flex-1 flex justify-center mt-[8.5px]">
+                            <p className="text-[14px] text-muted-foreground">
                                 ⚡ Extended until {new Date(extendedEndDate).toLocaleDateString(
                                     'en-US',
                                     { month: 'short', day: 'numeric', year: 'numeric' }

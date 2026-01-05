@@ -157,13 +157,7 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
     return (
         <div>
             <div className="fixed flex top-6 right-4 z-50 pointer-events-auto text-current">
-                <div>
-                    <ThemeToggleDropdown heroVisible={heroVisible} activeView={"home"} setActiveView={function (view: View): void {
-                        throw new Error("Function not implemented.");
-                    }} isLoggedIn={false} onLogout={function (): void {
-                        throw new Error("Function not implemented.");
-                    }} isLoading={false} />
-                </div>
+
                 {!isStaticPage ? (
 
                     <Sheet>
@@ -179,10 +173,19 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                                     <BrandLogo inSheet={true} />
                                 </SheetClose>
                                 <SheetClose asChild>
-                                    <Button variant="ghost" size="icon" className="h-10 w-10">
-                                        <X className="h-6 w-6" />
-                                        <span className="sr-only">Close</span>
-                                    </Button>
+                                    <div className='flex gap-2'>
+                                        <div>
+                                            <ThemeToggleDropdown heroVisible={heroVisible} activeView={"home"} setActiveView={function (view: View): void {
+                                                throw new Error("Function not implemented.");
+                                            }} isLoggedIn={false} onLogout={function (): void {
+                                                throw new Error("Function not implemented.");
+                                            }} isLoading={false} />
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-10 w-10">
+                                            <X className="h-6 w-6" />
+                                            <span className="sr-only">Close</span>
+                                        </Button>
+                                    </div>
                                 </SheetClose>
                             </div>
 
