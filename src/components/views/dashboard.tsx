@@ -1296,7 +1296,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             if (activeTab === 'pitch-details') fetchPitchingDetails();
             if (activeTab === 'events') fetchEvents();
         }
-    }, [activeTab, userRole, fetchUsers, fetchPitchingDetails, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations, fetchDashboardStats]);
+    }, [activeTab, userRole, fetchUsers, fetchPitchingDetails, fetchBlogPosts, fetchEvents, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations, fetchDashboardStats]);
 
 
     const togglePitchSelect = (id: string) => {
@@ -3439,7 +3439,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                             <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                                                 <CardHeader>
                                                                     <CardTitle>Ip/Technologies</CardTitle>
-                                                                    <CardDescription>Approve, Reject, or delete IP's.</CardDescription>
+                                                                    <CardDescription>Approve, Reject, or delete IP&apos;s.</CardDescription>
                                                                 </CardHeader>
                                                                 <CardContent>
                                                                     <Accordion type="single" collapsible className="w-full" value={expandedAccordion}
@@ -4468,7 +4468,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                             <div className="flex items-center gap-3">
                                                                                 <div className="h-10 w-16 relative rounded-md overflow-hidden bg-muted">
                                                                                     {event.image_url ? (
-                                                                                        <img src={event.image_url} alt={event.title} className="object-cover w-full h-full" />
+                                                                                        <Image src={event.image_url} alt={event.title} className="object-cover w-full h-full" />
                                                                                     ) : (
                                                                                         <LucideIcons.Image className="h-5 w-5 m-auto mt-2.5 text-muted-foreground" />
                                                                                     )}

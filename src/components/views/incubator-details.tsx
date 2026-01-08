@@ -63,7 +63,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingButton } from '@/components/ui/loading-button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
@@ -140,13 +140,7 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
     }
   }, [firebaseUser]);
 
-  useEffect(() => {
-    if (incubator?.id) {
-      fetchReviews();
-    }
-  }, [incubator?.id]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     if (!incubator?.id) return;
     setIsLoadingReviews(true);
     try {
@@ -160,7 +154,15 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
     } finally {
       setIsLoadingReviews(false);
     }
-  };
+  }, [incubator?.id]);
+
+  useEffect(() => {
+    if (incubator?.id) {
+      fetchReviews();
+    }
+  }, [incubator?.id, fetchReviews]);
+
+
 
   const handleSubmitReview = async () => {
     if (!isLoggedIn) {

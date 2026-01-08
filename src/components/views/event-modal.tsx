@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -101,6 +101,21 @@ export default function EventModal({
     }
   };
 
+  const fetchEventDetails = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setFormData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching event:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [eventId]);
+
   useEffect(() => {
     if (isOpen && eventId && (mode === 'edit' || mode === 'view')) {
       fetchEventDetails();
@@ -116,22 +131,9 @@ export default function EventModal({
         register_enabled: true
       });
     }
-  }, [isOpen, eventId, mode]);
+  }, [isOpen, eventId, mode, fetchEventDetails]);
 
-  const fetchEventDetails = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setFormData(data);
-      }
-    } catch (error) {
-      console.error('Error fetching event:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -302,8 +304,8 @@ export default function EventModal({
         <div className="relative">
           {/* Banner Image */}
           <div className="relative h-auto md:h-[90vh]">
-            <img
-              src={formData.image_url}
+            <Image
+              src={formData?.image_url || ""}
               alt={formData.title || "Event"}
               className="object-cover w-full h-full"
             />

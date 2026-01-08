@@ -249,9 +249,10 @@ export default function PricingPageClient() {
                                 description: "Your subscription has been activated.",
                             });
                         } else {
+                            const verifyData = await verifyRes.json();
                             toast({
                                 title: "Verification Failed",
-                                description: verifyData.message || "Something went wrong.",
+                                description: verifyData?.message || "Something went wrong.",
                                 variant: "destructive"
                             });
                         }

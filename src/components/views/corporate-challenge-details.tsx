@@ -465,7 +465,7 @@ export default function CorporateChallengeDetails({
             <Avatar className="h-[60px] w-[60px] rounded-lg">
               <AvatarImage src={challenge.logo_url} alt={challenge.company_name} />
               <AvatarFallback className="rounded-lg font-headline bg-accent/30 backdrop-blur-md text-black text-xl font-bold flex items-center justify-center border border-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
-                {challenge.company_avatar || (challenge.company_name ? challenge.company_name[0] : "C")}
+                {challenge.company_name ? challenge.company_name[0] : "C"}
               </AvatarFallback>
             </Avatar>
             <div>
