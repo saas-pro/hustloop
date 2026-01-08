@@ -37,6 +37,7 @@ import { GoogleGeminiEffect } from "@/components/ui/google-gemini-effect";
 import { motion, useScroll, useTransform } from "motion/react";
 import Prism from '../Prism';
 import { ContainerScroll } from '../ui/container-scroll-animation';
+import { TestimonialsMarquee } from "@/components/testimonials-marquee"
 
 const contactFormSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters.").max(300, "Full name must not exceed 300 characters."),
@@ -799,14 +800,14 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
         } `}
     >
       {/* Hero Section */}
-      <section id="hero-section" className={`min-h-[100dvh] sticky top-0 overflow-hidden ${navOpen ? 'relative' : 'sticky top-0'} `}>
+      <section id="hero-section" className={`min-h-[100vh] sticky top-0 overflow-hidden ${navOpen ? 'relative' : 'sticky top-0'} `}>
         <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} scrollContainerRef={scrollContainerRef} />
       </section>
 
       <div
         id="hero-sentinel"
-        className="h-[100dvh] pointer-events-none"
-        style={{ marginTop: '-100dvh' }}
+        className="h-[100vh] pointer-events-none"
+        style={{ marginTop: '-100vh' }}
       />
 
       {/* Start Your Journey Section with native scroll-based zoom */}
@@ -1008,7 +1009,19 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
       <section className='w-full mx-auto'>
         <PricingData />
       </section>
-
+      <section className="relative overflow-hidden bg-background">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              What Our Users Say
+            </h2>
+            <p className="text-muted-foreground">
+              Join thousands of satisfied users who have transformed their workflow with Hustloop.
+            </p>
+          </div>
+          <TestimonialsMarquee />
+        </div>
+      </section>
 
       <section className="relative py-16 md:py-20 bg-background">
         <div className="container mx-auto px-4 text-center">
@@ -1107,6 +1120,8 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
           </Card>
         </div>
       </section>
+
+
 
       {/* Call to Action Section */}
       <section id="contact-section" className="relative py-16 md:py-20 bg-background">
