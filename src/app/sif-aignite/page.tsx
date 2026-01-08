@@ -54,23 +54,33 @@ function RegistrationForm() {
     const { toast } = useToast();
     const router = useRouter();
 
-    const eventName = "SIF's-Aignite";
+    const [eventName, setEventName] = useState("SIF's-Aignite");
     const [isEventEnabled, setIsEventEnabled] = useState<boolean | null>(null);
     const [isCheckingEvent, setIsCheckingEvent] = useState(true);
+    const pathname = usePathname();
 
     // Check event availability on component mount
     useEffect(() => {
         const checkEventAvailability = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/event-config/aignite`);
-                const data = await response.json();
+                // Fetch event details based on the current registration route
+                const response = await fetch(`${API_BASE_URL}/api/events/by-route?route=${pathname}`);
 
-                if (!data.is_enabled) {
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Check if registration is enabled for this specific event
+                    if (!data.register_enabled) {
+                        router.push('/404');
+                        return;
+                    }
+
+                    setEventName(data.title);
+                    setIsEventEnabled(true);
+                } else {
+                    // If event not found or not visible, redirect to 404
                     router.push('/404');
-                    return;
                 }
-
-                setIsEventEnabled(true);
             } catch (error) {
                 console.error('Error checking event availability:', error);
                 router.push('/404');
@@ -80,7 +90,7 @@ function RegistrationForm() {
         };
 
         checkEventAvailability();
-    }, [router]);
+    }, [router, pathname]);
 
     const form = useForm<RegistrationSchema>({
         resolver: zodResolver(registrationSchema),
@@ -93,6 +103,11 @@ function RegistrationForm() {
             otherWhoYouAre: "",
         },
     });
+
+    // Update form's eventName when it's fetched
+    useEffect(() => {
+        form.setValue('eventName', eventName);
+    }, [eventName, form]);
 
     const { formState: { isSubmitting }, reset, watch, getValues } = form; // Added getValues
 

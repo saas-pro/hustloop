@@ -3,8 +3,10 @@
 import { Suspense, useState, useEffect } from "react";
 import MainView from "@/components/views/main-view";
 import PageLoader from "@/components/layout/page-loader";
+import EventModal from "@/components/views/event-modal";
 import { useTokenVerification } from "@/hooks/use-token-verification";
 import type { UserRole, View } from "@/app/types";
+import { API_BASE_URL } from "@/lib/api";
 
 type AuthProvider = 'local' | 'google';
 
@@ -25,6 +27,8 @@ export default function Home() {
   const [hasSubscription, setHasSubscription] = useState(false);
   const [appliedPrograms, setAppliedPrograms] = useState<Record<string, string>>({});
   const [activeView, setActiveView] = useState<View>("home");
+  const [isEventModalOpen, setEventModalOpen] = useState(false);
+  const [activeEvent, setActiveEvent] = useState<any>(null);
 
   useTokenVerification({
     setLoggedIn,
@@ -37,15 +41,36 @@ export default function Home() {
   });
 
   useEffect(() => {
+    const fetchActiveEvent = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000'}/api/events`);
+        if (response.ok) {
+          const data = await response.json();
+          const active = data.find((ev: any) => ev.visible);
+          if (active) {
+            setActiveEvent(active);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching active event:', error);
+      }
+    };
+    fetchActiveEvent();
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setIsAnimating(true);
       setTimeout(() => {
         setShowLoader(false);
+        if (activeEvent) {
+          setEventModalOpen(true);
+        }
       }, 250);
     }, 3500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [activeEvent]);
 
   return (
     <>
@@ -59,6 +84,14 @@ export default function Home() {
         >
           <PageLoader />
         </div>
+      )}
+      {activeEvent && (
+        <EventModal
+          isOpen={isEventModalOpen}
+          onOpenChange={setEventModalOpen}
+          eventId={activeEvent.id}
+          mode="view"
+        />
       )}
     </>
   );

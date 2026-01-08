@@ -14,7 +14,6 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Loader2 } from "lucide-react";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import EventModal from './event-modal';
 import SubmitIPDashboard from "./submit-your-ip";
 import { CommentSection } from "../comment-section";
 import Unauthorized from "@/app/unauthorized";
@@ -108,7 +107,6 @@ export default function MainView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { auth } = useFirebaseAuth();
-  const [isEventModalOpen, setEventModalOpen] = useState(false);
   const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
   const [isCommentSectionMaximized, setIsCommentSectionMaximized] = useState(false);
   const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
@@ -162,10 +160,7 @@ export default function MainView() {
 
   useEffect(() => {
     loadStateFromStorage();
-    setEventModalOpen(true);
 
-
-    // Listen for the custom storage event
     window.addEventListener('storage', loadStateFromStorage);
 
     return () => {
@@ -343,6 +338,7 @@ export default function MainView() {
       localStorage.removeItem('token');
       localStorage.removeItem('authProvider');
       localStorage.removeItem('founder_role');
+      localStorage.removeItem("rzp_device_id");
 
       // Dispatch event to notify app of state change
       window.dispatchEvent(new Event('storage'));
@@ -684,10 +680,6 @@ export default function MainView() {
         />
       )}
 
-      {/* <EventModal
-        isOpen={isEventModalOpen}
-        onOpenChange={setEventModalOpen}
-      /> */}
     </div>
   );
 }

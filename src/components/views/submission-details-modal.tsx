@@ -38,6 +38,7 @@ import {
 import { Submission } from '@/app/types';
 import { SolutionMarkdownViewer } from '../ui/SolutionMarkdownViewer';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { AvatarCircles } from '@/components/ui/avatar-circles';
 
 interface FileData {
     name: string;
@@ -468,34 +469,19 @@ export default function SubmissionDetailsModal({
                                                             : `Team Members (${submission.team_members.length}):`}
                                                     </p>
 
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                        {submission.team_members.map((member, index) => (
-                                                            <div
-                                                                key={member.userId || index}
-                                                                className="flex items-center gap-2 p-2 border rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
-                                                            >
-                                                                <Avatar className="h-8 w-8">
-                                                                    <AvatarFallback className="text-xs font-semibold">
-                                                                        {member.name?.charAt(0) || 'T'}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="flex items-center gap-1 mb-1">
-                                                                        <p className="text-sm font-medium truncate">
-                                                                            {member.name}
-                                                                        </p>
-                                                                        {member.userId === submission.user_id && (
-                                                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary whitespace-nowrap flex-shrink-0">
-                                                                                Creator
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                    <p className="text-xs text-muted-foreground truncate">
-                                                                        {member.email}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        ))}
+                                                    <div className="flex items-center gap-4">
+                                                        <AvatarCircles
+                                                            avatarUrls={submission.team_members.map(member => ({
+                                                                imageUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random&color=fff`,
+                                                                profileUrl: member.name // Or a link to their profile if available
+                                                            }))}
+                                                            numPeople={submission.team_members.length > 5 ? submission.team_members.length - 5 : 0}
+                                                        />
+                                                        <div className="flex flex-col">
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {submission.team_members.map(m => m.name).join(", ")}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}

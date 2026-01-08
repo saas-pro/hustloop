@@ -8,6 +8,13 @@ import { MarkdownViewer } from './ui/markdownViewer';
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { Loader2 } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { DialogHeader, DialogFooter } from './ui/dialog';
 
 
 interface TechTransferViewProps {
@@ -28,11 +35,157 @@ interface IPDetails {
   supportingFileUrl: string | string[];
 }
 
+interface TechContactModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  techtransferId: string;
+  techtransferName: string;
+}
+
+const TechContactModal = ({ isOpen, onClose, techtransferId, techtransferName }: TechContactModalProps) => {
+  const [loading, setLoading] = useState(false);
+  const [who, setWho] = useState("");
+  const [formData, setFormData] = useState({
+    requester_name: "",
+    requester_email: "",
+    contact_number: "",
+    purpose: "",
+    company_name: "",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (who === "Company" && !formData.company_name) {
+      toast({ title: "Error", description: "Company name is required", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/tech-contact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          techtransfer_id: techtransferId,
+          techtransfer_name: techtransferName,
+          ...formData,
+          who,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: "Success", description: data.message });
+        onClose();
+      } else {
+        toast({ title: "Error", description: data.error || "Failed to send inquiry", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Contact Us</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="req_name">Full Name <span className="text-red-500">*</span></Label>
+              <Input
+                id="req_name"
+                required
+                placeholder="John Doe"
+                value={formData.requester_name}
+                onChange={(e) => setFormData({ ...formData, requester_name: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="req_email">Email Address <span className="text-red-500">*</span></Label>
+              <Input
+                id="req_email"
+                type="email"
+                required
+                placeholder="john@example.com"
+                value={formData.requester_email}
+                onChange={(e) => setFormData({ ...formData, requester_email: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="tt_id">Tech Transfer ID</Label>
+            <Input id="tt_id" value={techtransferId} disabled />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="tt_name">Tech Transfer Name</Label>
+            <Input id="tt_name" value={techtransferName} disabled />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="who">Who are you? <span className="text-red-500">*</span></Label>
+            <Select onValueChange={setWho} required>
+              <SelectTrigger>
+                <SelectValue placeholder="Select your role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Student">Student</SelectItem>
+                <SelectItem value="Researcher">Researcher</SelectItem>
+                <SelectItem value="Company">Company</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {who === "Company" && (
+            <div className="grid gap-2">
+              <Label htmlFor="company_name">Company Name <span className="text-red-500">*</span></Label>
+              <Input
+                id="company_name"
+                required
+                value={formData.company_name}
+                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+              />
+            </div>
+          )}
+          <div className="grid gap-2">
+            <Label htmlFor="contact_number">Contact Number (optional)</Label>
+            <Input
+              id="contact_number"
+              value={formData.contact_number}
+              onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="purpose">What is the purpose? <span className="text-red-500">*</span></Label>
+            <Textarea
+              id="purpose"
+              required
+              value={formData.purpose}
+              onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={loading} className='w-full'>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
   const [ipDetails, setIpDetails] = useState<IPDetails | null>(null);
   const [isFetchingIpDetails, setIsFetchingIpDetails] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   const handleCloseDialog = useCallback(() => {
     setIsDialogOpen(false);
@@ -126,9 +279,15 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="faq">FAQ</TabsTrigger>
             </TabsList>
-          </div>
 
+          </div>
+          <div className="flex justify-end mr-4">
+            <Button onClick={() => setIsContactModalOpen(true)} className="bg-primary hover:bg-primary/90">
+              Contact Us
+            </Button>
+          </div>
           <TabsContent value="overview" className="flex-grow overflow-y-auto p-4 space-y-4 mt-0">
+
             {ipDetails && (
               <Card className="mb-0 border-primary/50 bg-primary-foreground/20">
                 <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
@@ -239,6 +398,14 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
           </TabsContent>
         </Tabs>
       </DialogContent>
+      {ipDetails && (
+        <TechContactModal
+          isOpen={isContactModalOpen}
+          onClose={() => setIsContactModalOpen(false)}
+          techtransferId={techId.toString()}
+          techtransferName={ipDetails.ipTitle}
+        />
+      )}
     </Dialog>
   )
 }

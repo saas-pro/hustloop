@@ -41,6 +41,7 @@ import { CommentSection } from "../comment-section";
 import { DeleteConfirmationDialog } from '../ui/DeleteConfirmationDialog';
 import { useSearchParams } from "next/navigation";
 import SubmissionDetailsModal from "./submission-details-modal";
+import EventModal from "./event-modal";
 import AnimatedList from "@/components/AnimatedList";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -479,6 +480,24 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [activeUserIndex, setActiveUserIndex] = useState<number | undefined>(undefined);
     const [activeEventIndex, setActiveEventIndex] = useState<number | undefined>(undefined);
     const [activePitchTokenIndex, setActivePitchTokenIndex] = useState<number | undefined>(undefined);
+
+    interface Event {
+        id: string;
+        title: string;
+        description: string;
+        image_url: string;
+        visible: boolean;
+        register_enabled: boolean;
+        phone: string;
+        duration_info: string;
+        created_at: string;
+        updated_at: string;
+    }
+    const [events, setEvents] = useState<Event[]>([]);
+    const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+    const [isEventModalOpen, setEventModalOpen] = useState(false);
+    const [selectedEventId, setSelectedEventId] = useState<string | undefined>(undefined);
+    const [eventModalMode, setEventModalMode] = useState<'create' | 'edit'>('create');
     // Event config state
     const [eventConfig, setEventConfig] = useState<{ event_name: string; is_enabled: boolean } | null>(null);
     const [isTogglingEvent, setIsTogglingEvent] = useState(false);
@@ -680,6 +699,81 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setIsTogglingEvent(false);
         }
     };
+
+
+    const fetchEvents = useCallback(async () => {
+        setIsLoadingEvents(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            setIsLoadingEvents(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/events`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setEvents(data);
+            }
+        } catch (error) {
+            console.error('Error fetching events:', error);
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not fetch events.' });
+        } finally {
+            setIsLoadingEvents(false);
+        }
+    }, [toast]);
+
+    const handleToggleEventField = async (eventId: string, field: 'visible' | 'register_enabled', currentValue: boolean) => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ [field]: !currentValue })
+            });
+
+            if (response.ok) {
+                setEvents(prev => prev.map(ev => ev.id === eventId ? { ...ev, [field]: !currentValue } : ev));
+                toast({ title: 'Success', description: `Event ${field === 'visible' ? 'visibility' : 'registration'} updated.` });
+            } else {
+                toast({ variant: 'destructive', title: 'Error', description: 'Failed to update event.' });
+            }
+        } catch (error) {
+            console.error(`Error updating event ${field}:`, error);
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not update event.' });
+        }
+    };
+
+    const handleDeleteEvent = async (eventId: string) => {
+        if (!confirm('Are you sure you want to delete this event?')) return;
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                setEvents(prev => prev.filter(ev => ev.id !== eventId));
+                toast({ title: 'Success', description: 'Event deleted successfully.' });
+            } else {
+                toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete event.' });
+            }
+        } catch (error) {
+            console.error('Error deleting event:', error);
+            toast({ variant: 'destructive', title: 'Network Error', description: 'Could not delete event.' });
+        }
+    };
+
 
 
 
@@ -1195,14 +1289,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             if (activeTab === 'users') fetchUsers(1, 10);
             if (activeTab === 'aignite') fetchRegistrations(1);
             // if (activeTab === 'connex') fetchConnex(1);
-            // if (activeTab === 'blog') fetchBlogPosts();
-            // if (activeTab === 'sessions') fetchEducationPrograms();
+            if (activeTab === 'blog') fetchBlogPosts();
+            if (activeTab === 'sessions') fetchEducationPrograms();
             if (activeTab === 'ip/technologies') fetchIps();
-            // if (activeTab === 'subscribers') fetchSubscribers();
+            if (activeTab === 'subscribers') fetchSubscribers();
             if (activeTab === 'pitch-details') fetchPitchingDetails();
+            if (activeTab === 'events') fetchEvents();
         }
     }, [activeTab, userRole, fetchUsers, fetchPitchingDetails, fetchBlogPosts, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations, fetchDashboardStats]);
-
 
 
     const togglePitchSelect = (id: string) => {
@@ -1581,12 +1675,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setisipOverview(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "ip/technologies", "aignite", "engagement", "blog", "sessions", "subscribers", "plans", "pitch-details", "settings"];
-    const founderTabs = ["overview", "msmes", "incubators", "mentors", "submission", "settings"];
-    const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
-    const techTransferTabs = ["overview", "submission", "engagement", "mentors", "settings"];
-    const filteredTabs = isTechTransfer ? techTransferTabs : availableTabs
-    const tabsToRender = filteredTabs.filter(tab => tab !== "overview");
+    const adminTabs = ["overview", "users", "ip/technologies", "aignite", "engagement", "blog", "sessions", "subscribers", "plans", "pitch-details", "events", "settings"];
     const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
 
     const [techtransferData, setTechtransferData] = useState<{
@@ -2196,7 +2285,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     <SidebarGroup>
                                         <SidebarGroupContent>
                                             <SidebarMenu>
-                                                {tabsToRender.map((tab) => {
+                                                {adminTabs.map((tab) => {
                                                     const iconMap: Record<DashboardTab | string, keyof typeof LucideIcons> = {
                                                         overview: "LayoutDashboard",
                                                         users: "Users",
@@ -2212,7 +2301,8 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         submission: "FileText",
                                                         blog: "BookOpen",
                                                         sessions: "GraduationCap",
-                                                        subscribers: "Mail"
+                                                        subscribers: "Mail",
+                                                        events: "Calendar"
                                                     };
 
                                                     const iconName = iconMap[tab as DashboardTab] || "HelpCircle";
@@ -2734,19 +2824,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                 <div>
                                                                     <CardTitle>Event Registrations</CardTitle>
                                                                     <CardDescription>Aignite registration breakdown</CardDescription>
-                                                                </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    {isTogglingEvent ? <LucideIcons.Loader2 className="h-4 w-4 animate-spin" /> : <Switch
-                                                                        checked={eventConfig?.is_enabled || false}
-                                                                        onCheckedChange={handleToggleEvent}
-                                                                        disabled={isTogglingEvent}
-                                                                        className="data-[state=checked]:bg-green-600"
-                                                                    />}
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-sm font-medium">
-                                                                            {eventConfig?.is_enabled ? "Is Running" : "Not Running"}
-                                                                        </span>
-                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </CardHeader>
@@ -3736,50 +3813,6 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 </Card>
                                             </TabsContent>
 
-                                            {/* <TabsContent value="subscribers" className="mt-0">
-                                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-                                            <CardHeader>
-                                                <CardTitle>Newsletter Subscribers</CardTitle>
-                                                <CardDescription>List of all users subscribed to the newsletter.</CardDescription>
-                                                <div className="flex justify-end gap-2 pt-2">
-                                                    <Button variant="outline" onClick={handleExportCSV}><LucideIcons.Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="destructive"><LucideIcons.Trash className="mr-2 h-4 w-4" /> Reset List</Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    This action cannot be undone. This will permanently delete all newsletter subscribers.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={handleResetSubscribers}>Reset</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent>
-                                                {isLoadingSubscribers ? <div className="flex justify-center items-center h-48"><LucideIcons.Loader2 className="h-8 w-8 animate-spin" /></div> : (
-                                                    <Table><TableHeader><TableRow><TableHead>Email</TableHead><TableHead>Subscribed Date</TableHead></TableRow></TableHeader><TableBody>
-                                                        {subscribers.map(sub => (
-                                                            <TableRow key={sub.id}>
-                                                                <TableCell className="font-medium">{sub.email}</TableCell>
-                                                                <TableCell>{new Date(sub.subscribed_at).toLocaleDateString()}</TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody></Table>
-                                                )}
-                                                {subscribers.length === 0 && !isLoadingSubscribers && (
-                                                    <p className="text-center text-muted-foreground py-8">There are no newsletter subscribers yet.</p>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    </TabsContent> */}
                                             <TabsContent value="aignite" className="mt-0">
                                                 <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                                     <CardHeader>
@@ -4380,7 +4413,117 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 </Tabs>
                                             </TabsContent>
                                         </>
+
                                     )}
+                                    <TabsContent value="events" className="m-0 space-y-6">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <h1 className="text-3xl font-bold font-headline">Event Management</h1>
+                                                <p className="text-muted-foreground">Manage dynamic events shown on the home page.</p>
+                                            </div>
+                                            <Button onClick={() => {
+                                                setEventModalMode('create');
+                                                setSelectedEventId(undefined);
+                                                setEventModalOpen(true);
+                                            }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                                                <LucideIcons.Plus className="mr-2 h-4 w-4" />
+                                                Create Event
+                                            </Button>
+                                        </div>
+
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>All Events</CardTitle>
+                                                <CardDescription>A list of all events created in the system.</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="rounded-md border overflow-hidden">
+                                                    <Table>
+                                                        <TableHeader className="bg-muted/50">
+                                                            <TableRow>
+                                                                <TableHead>Event</TableHead>
+                                                                <TableHead>Status</TableHead>
+                                                                <TableHead>Registration</TableHead>
+                                                                <TableHead>Created</TableHead>
+                                                                <TableHead className="text-right">Actions</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {isLoadingEvents ? (
+                                                                <TableRow>
+                                                                    <TableCell colSpan={5} className="h-24 text-center">
+                                                                        <LucideIcons.Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ) : events.length === 0 ? (
+                                                                <TableRow>
+                                                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                                                        No events found.
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ) : (
+                                                                events.map((event) => (
+                                                                    <TableRow key={event.id}>
+                                                                        <TableCell>
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="h-10 w-16 relative rounded-md overflow-hidden bg-muted">
+                                                                                    {event.image_url ? (
+                                                                                        <img src={event.image_url} alt={event.title} className="object-cover w-full h-full" />
+                                                                                    ) : (
+                                                                                        <LucideIcons.Image className="h-5 w-5 m-auto mt-2.5 text-muted-foreground" />
+                                                                                    )}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <div className="font-medium">{event.title}</div>
+                                                                                    <div className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">{event.description}</div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                        <TableCell>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Switch
+                                                                                    checked={event.visible}
+                                                                                    onCheckedChange={() => handleToggleEventField(event.id, 'visible', event.visible)}
+                                                                                />
+                                                                                <span className="text-sm">{event.visible ? 'Visible' : 'Hidden'}</span>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                        <TableCell>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Switch
+                                                                                    checked={event.register_enabled}
+                                                                                    onCheckedChange={() => handleToggleEventField(event.id, 'register_enabled', event.register_enabled)}
+                                                                                />
+                                                                                <span className="text-sm">{event.register_enabled ? 'Enabled' : 'Disabled'}</span>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                        <TableCell className="text-sm text-muted-foreground">
+                                                                            {new Date(event.created_at).toLocaleDateString()}
+                                                                        </TableCell>
+                                                                        <TableCell className="text-right">
+                                                                            <div className="flex justify-end gap-2">
+                                                                                <Button variant="outline" size="sm" onClick={() => {
+                                                                                    setEventModalMode('edit');
+                                                                                    setSelectedEventId(event.id);
+                                                                                    setEventModalOpen(true);
+                                                                                }}>
+                                                                                    Edit
+                                                                                </Button>
+                                                                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteEvent(event.id)}>
+                                                                                    <LucideIcons.Trash2 className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                ))
+                                                            )}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </TabsContent>
+
                                     <TabsContent value="settings" className="mt-0">
                                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                             <CardHeader>
@@ -4525,6 +4668,13 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 <SubmissionDetailsModal
                     submission={selectedSubmission}
                     onOpenChange={(isOpen) => !isOpen && setSelectedSubmission(null)}
+                />
+                <EventModal
+                    isOpen={isEventModalOpen}
+                    onOpenChange={setEventModalOpen}
+                    eventId={selectedEventId}
+                    mode={eventModalMode}
+                    onUpdated={fetchEvents}
                 />
                 <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the user account and remove their data from our servers.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToDelete) { handleDeleteUser(userToDelete.uid); setUserToDelete(null); } }}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                 <AlertDialog open={!!userToBan} onOpenChange={(open) => !open && setUserToBan(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will {userToBan?.status === 'banned' ? "unban" : "ban"} the user, {userToBan?.status === 'banned' ? "allowing" : "preventing"} them from logging in. Do you want to continue?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (userToBan) { handleToggleBanUser(userToBan.uid); setUserToBan(null); } }}>{userToBan?.status === 'banned' ? "Unban User" : "Ban User"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>

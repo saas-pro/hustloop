@@ -15,6 +15,7 @@ import { Check, Home, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
+import SubscriptionSuccessPopup from "@/components/SubscriptionSuccessPopup";
 
 declare global {
     interface Window {
@@ -30,6 +31,7 @@ export default function PricingPageClient() {
     const [activeSubscription, setActiveSubscription] = useState<any>(null);
     const [loadingSubscription, setLoadingSubscription] = useState(true);
     const [userProfile, setUserProfile] = useState<any>(null);
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
     // Fetch user's active subscription
     useEffect(() => {
@@ -142,9 +144,27 @@ export default function PricingPageClient() {
         };
     }, []);
 
+    // Effect to automatically active Free plan for "List a technology for licensing" role
+    useEffect(() => {
+        if (userProfile?.founder_role === "List a technology for licensing" && plans.length > 0) {
+            const freePlan = plans.find(p => p.name === "Free" || p.price_in_paise === 0);
+            if (freePlan && (!activeSubscription || activeSubscription.plan_id !== freePlan.id)) {
+                setActiveSubscription({
+                    plan_id: freePlan.id,
+                    plan_name: freePlan.name,
+                    status: "active"
+                });
+            }
+        }
+    }, [userProfile, plans, activeSubscription]);
+
     // Check if a plan is allowed for the user's role
     const isPlanAllowed = (planName: string) => {
         if (!userProfile?.founder_role) return true;
+
+        if (userProfile.founder_role === "List a technology for licensing") {
+            return planName === "Free";
+        }
 
         if (userProfile.founder_role === "Solve Organisation's challenge") {
             return planName === "Premium";
@@ -214,14 +234,20 @@ export default function PricingPageClient() {
                             })
                         });
 
-                        const verifyData = await verifyRes.json();
-
                         if (verifyRes.ok) {
+                            const subscriptionRes = await fetch(`${API_BASE_URL}/api/user/subscription`, {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+
+                            if (subscriptionRes.ok) {
+                                const subscriptionData = await subscriptionRes.json();
+                                setActiveSubscription(subscriptionData.subscription);
+                                setShowSuccessPopup(true);
+                            }
                             toast({
                                 title: "Payment Successful!",
-                                description: "Your subscription is being activated.",
+                                description: "Your subscription has been activated.",
                             });
-                            router.push('/');
                         } else {
                             toast({
                                 title: "Verification Failed",
@@ -271,11 +297,6 @@ export default function PricingPageClient() {
                 title: "Current Plan",
                 description: "This is your active subscription plan.",
             });
-            return;
-        }
-
-        if (idx === 0) {
-            // Free plan logic if any
             return;
         }
 
@@ -350,11 +371,15 @@ export default function PricingPageClient() {
                                         <div className="flex items-center">
                                             <CardTitle>{plan.name}</CardTitle>
                                             {plan.offer && (
-                                                <Badge className="ml-2 bg-green-100 text-green-800 border rounded-sm py-1 px-2">{plan.offer}</Badge>
+                                                <Badge className="ml-2 bg-green-500/20 text-green-500 border border-green-500/50 rounded-sm py-1 px-2">{plan.offer}</Badge>
                                             )}
                                         </div>
+                                        {plan.name === "Premium" && <span className="font-headline text-md text-muted-foreground">Billed as {plan.price} {(plan.originally) && (
+                                            <span className="text-lg font-headline text-muted-foreground line-through ">{plan.originally}</span>
+                                        )} per year
 
-                                        <CardDescription>{plan.description}</CardDescription>
+                                        </span>}
+                                        <CardDescription className="font-sans font-normal">{plan.description}</CardDescription>
                                     </CardHeader>
 
                                     <CardContent className="flex-grow">
@@ -371,11 +396,18 @@ export default function PricingPageClient() {
                                     <CardFooter className="flex-col items-start mt-4">
                                         <div className="flex items-baseline gap-3 mb-3">
                                             <div className="flex flex-col">
-                                                <span className="text-4xl font-bold">{plan.price}
-                                                    {plan.originally && (
-                                                        <span className="text-3xl font-headline ml-2 text-muted-foreground line-through ">{plan.originally}</span>
-                                                    )}
-                                                </span>
+                                                {plan.name === "Premium" ? (
+                                                    <div className="flex flex-col">
+
+                                                        <span className="text-3xl font-bold mt-1">₹{Math.round(plan.price_in_paise / 100 / 12)} <span className="text-sm font-normal text-muted-foreground">/ month</span></span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-4xl font-bold">{plan.price}
+                                                        {plan.originally && (
+                                                            <span className="text-3xl font-headline ml-2 text-muted-foreground line-through ">{plan.originally}</span>
+                                                        )}
+                                                    </span>
+                                                )}
                                                 {(idx === 1 || idx === 2) && (
                                                     <span className="text-xs text-muted-foreground">INR + GST Applicable</span>
                                                 )}
@@ -422,6 +454,7 @@ export default function PricingPageClient() {
                     <Footer />
                 </div>
             </div>
+            <SubscriptionSuccessPopup isOpen={showSuccessPopup} onClose={() => setShowSuccessPopup(false)} />
         </div>
     );
 }
