@@ -59,6 +59,7 @@ import {
     SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { SubscriptionDetails } from "../subscription-details/subscription";
 
 const settingsFormSchema = z.object({
     name: z
@@ -1287,7 +1288,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 }
             }
             if (activeTab === 'users') fetchUsers(1, 10);
-            if (activeTab === 'aignite') fetchRegistrations(1);
+            if (activeTab === 'registration') fetchRegistrations(1);
             // if (activeTab === 'connex') fetchConnex(1);
             if (activeTab === 'blog') fetchBlogPosts();
             if (activeTab === 'sessions') fetchEducationPrograms();
@@ -1675,7 +1676,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setisipOverview(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "ip/technologies", "aignite", "engagement", "blog", "sessions", "subscribers", "plans", "pitch-details", "events", "settings"];
+    const adminTabs = ["overview", "users", "ip/technologies", "registration", "engagement", "blog", "sessions", "subscribers", "plans", "pitch-details", "events", "settings"];
     const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
 
     const [techtransferData, setTechtransferData] = useState<{
@@ -2290,9 +2291,9 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         overview: "LayoutDashboard",
                                                         users: "Users",
                                                         "ip/technologies": "FileSignature",
-                                                        aignite: "Zap",
+                                                        registration: "Zap",
                                                         engagement: "Handshake",
-                                                        plans: "CreditCard",
+                                                        plans: "Crown",
                                                         "pitch-details": "Presentation",
                                                         settings: "Settings",
                                                         msmes: "Briefcase",
@@ -2302,7 +2303,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         blog: "BookOpen",
                                                         sessions: "GraduationCap",
                                                         subscribers: "Mail",
-                                                        events: "Calendar"
+                                                        events: "Calendar",
                                                     };
 
                                                     const iconName = iconMap[tab as DashboardTab] || "HelpCircle";
@@ -3813,12 +3814,12 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 </Card>
                                             </TabsContent>
 
-                                            <TabsContent value="aignite" className="mt-0">
+                                            <TabsContent value="registration" className="mt-0">
                                                 <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                                     <CardHeader>
                                                         <div className="flex justify-between items-center">
                                                             <div className="flex flex-col">
-                                                                <CardTitle>Aignite Registrations</CardTitle>
+                                                                <CardTitle>Event Registrations</CardTitle>
                                                                 <CardDescription className="mt-2">
                                                                     Total Registrations: {isLoading ? (
                                                                         <div className="flex justify-center items-center h-48">
@@ -4431,97 +4432,89 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             </Button>
                                         </div>
 
-                                        <Card>
-                                            <CardHeader>
-                                                <CardTitle>All Events</CardTitle>
-                                                <CardDescription>A list of all events created in the system.</CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="rounded-md border overflow-hidden">
-                                                    <Table>
-                                                        <TableHeader className="bg-muted/50">
-                                                            <TableRow>
-                                                                <TableHead>Event</TableHead>
-                                                                <TableHead>Status</TableHead>
-                                                                <TableHead>Registration</TableHead>
-                                                                <TableHead>Created</TableHead>
-                                                                <TableHead className="text-right">Actions</TableHead>
+                                        <div className="rounded-md border overflow-hidden">
+                                            <Table>
+                                                <TableHeader className="bg-muted/50">
+                                                    <TableRow>
+                                                        <TableHead>Event</TableHead>
+                                                        <TableHead>Status</TableHead>
+                                                        <TableHead>Registration</TableHead>
+                                                        <TableHead>Created</TableHead>
+                                                        <TableHead className="text-right">Actions</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {isLoadingEvents ? (
+                                                        <TableRow>
+                                                            <TableCell colSpan={5} className="h-24 text-center">
+                                                                <LucideIcons.Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ) : events.length === 0 ? (
+                                                        <TableRow>
+                                                            <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                                                No events found.
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ) : (
+                                                        events.map((event) => (
+                                                            <TableRow key={event.id}>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="h-10 w-16 relative rounded-md overflow-hidden bg-muted">
+                                                                            {event.image_url ? (
+                                                                                <Image src={event.image_url} width={128} height={128} alt={event.title} className="object-cover w-full h-full" />
+                                                                            ) : (
+                                                                                <LucideIcons.Image className="h-5 w-5 m-auto mt-2.5 text-muted-foreground" />
+                                                                            )}
+                                                                        </div>
+                                                                        <div>
+                                                                            <div className="font-medium">{event.title}</div>
+                                                                            <div className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">{event.description}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Switch
+                                                                            checked={event.visible}
+                                                                            onCheckedChange={() => handleToggleEventField(event.id, 'visible', event.visible)}
+                                                                        />
+                                                                        <span className="text-sm">{event.visible ? 'Visible' : 'Hidden'}</span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Switch
+                                                                            checked={event.register_enabled}
+                                                                            onCheckedChange={() => handleToggleEventField(event.id, 'register_enabled', event.register_enabled)}
+                                                                        />
+                                                                        <span className="text-sm">{event.register_enabled ? 'Enabled' : 'Disabled'}</span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="text-sm text-muted-foreground">
+                                                                    {new Date(event.created_at).toLocaleDateString()}
+                                                                </TableCell>
+                                                                <TableCell className="text-right">
+                                                                    <div className="flex justify-end gap-2">
+                                                                        <Button variant="outline" size="sm" onClick={() => {
+                                                                            setEventModalMode('edit');
+                                                                            setSelectedEventId(event.id);
+                                                                            setEventModalOpen(true);
+                                                                        }}>
+                                                                            Edit
+                                                                        </Button>
+                                                                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteEvent(event.id)}>
+                                                                            <LucideIcons.Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                </TableCell>
                                                             </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {isLoadingEvents ? (
-                                                                <TableRow>
-                                                                    <TableCell colSpan={5} className="h-24 text-center">
-                                                                        <LucideIcons.Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ) : events.length === 0 ? (
-                                                                <TableRow>
-                                                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                                                        No events found.
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ) : (
-                                                                events.map((event) => (
-                                                                    <TableRow key={event.id}>
-                                                                        <TableCell>
-                                                                            <div className="flex items-center gap-3">
-                                                                                <div className="h-10 w-16 relative rounded-md overflow-hidden bg-muted">
-                                                                                    {event.image_url ? (
-                                                                                        <Image src={event.image_url} alt={event.title} className="object-cover w-full h-full" />
-                                                                                    ) : (
-                                                                                        <LucideIcons.Image className="h-5 w-5 m-auto mt-2.5 text-muted-foreground" />
-                                                                                    )}
-                                                                                </div>
-                                                                                <div>
-                                                                                    <div className="font-medium">{event.title}</div>
-                                                                                    <div className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">{event.description}</div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Switch
-                                                                                    checked={event.visible}
-                                                                                    onCheckedChange={() => handleToggleEventField(event.id, 'visible', event.visible)}
-                                                                                />
-                                                                                <span className="text-sm">{event.visible ? 'Visible' : 'Hidden'}</span>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Switch
-                                                                                    checked={event.register_enabled}
-                                                                                    onCheckedChange={() => handleToggleEventField(event.id, 'register_enabled', event.register_enabled)}
-                                                                                />
-                                                                                <span className="text-sm">{event.register_enabled ? 'Enabled' : 'Disabled'}</span>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell className="text-sm text-muted-foreground">
-                                                                            {new Date(event.created_at).toLocaleDateString()}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right">
-                                                                            <div className="flex justify-end gap-2">
-                                                                                <Button variant="outline" size="sm" onClick={() => {
-                                                                                    setEventModalMode('edit');
-                                                                                    setSelectedEventId(event.id);
-                                                                                    setEventModalOpen(true);
-                                                                                }}>
-                                                                                    Edit
-                                                                                </Button>
-                                                                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteEvent(event.id)}>
-                                                                                    <LucideIcons.Trash2 className="h-4 w-4" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                ))
-                                                            )}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
+                                                        ))
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
                                     </TabsContent>
 
                                     <TabsContent value="settings" className="mt-0">
@@ -4692,7 +4685,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                 </AlertDialog>
 
                 <Dialog open={!!selectedUserForDetails} onOpenChange={(open) => !open && setSelectedUserForDetails(null)}>
-                    <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+                    <DialogContent className="w-[80vw] max-w-[80vw]  max-h-[90vh] flex flex-col">
                         <DialogHeader>
                             <DialogTitle>User Details</DialogTitle>
                             <DialogDescription>
@@ -4758,6 +4751,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         </div>
                                     </div>
                                 </div>
+
+                                {userDetailsData.founder_role && <div className="my-10">
+                                    <Separator />
+                                    <div className="mt-6">
+                                        <h3 className="text-lg font-semibold mb-3">Subscription</h3>
+                                        <SubscriptionDetails user={userDetailsData} founder_role={userDetailsData.founder_role} />
+                                    </div>
+                                </div>}
 
                                 <Separator />
 

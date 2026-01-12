@@ -761,7 +761,7 @@ export function SolutionSubmissionForm({ challengeId, onSubmissionSuccess, onCan
                     setFinalSuccessOpen(open);
                 }}
             >
-                <DialogContent className="max-w-lg">
+                <DialogContent className="max-w-lg bg-background">
                     <DialogHeader>
                         <DialogTitle>Solution Submitted</DialogTitle>
                     </DialogHeader>

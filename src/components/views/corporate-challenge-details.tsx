@@ -464,20 +464,20 @@ export default function CorporateChallengeDetails({
           <div className="flex items-center gap-4">
             <Avatar className="h-[60px] w-[60px] rounded-lg">
               <AvatarImage src={challenge.logo_url} alt={challenge.company_name} />
-              <AvatarFallback className="rounded-lg font-headline bg-accent/30 backdrop-blur-md text-black text-xl font-bold flex items-center justify-center border border-white/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
+              <AvatarFallback className="rounded-lg font-headline bg-accent/80 text-current text-xl font-bold flex items-center justify-center border border-white/20">
                 {challenge.company_name ? challenge.company_name[0] : "C"}
               </AvatarFallback>
             </Avatar>
             <div>
 
               <DialogTitle className="text-3xl font-bold font-headline text-left">
-                {challenge.company_name}
+                {challenge.company_name ? <span className='text-black'>{challenge.company_name.replace(/x/gi, '█')}</span> : ''}
               </DialogTitle>
               <div className="text-left flex flex-col gap-2">
                 <DialogDescription className="line-clamp-3">
                   {challenge.company_description}
                 </DialogDescription>
-                <p className="text-sm text-muted-foreground">A challenge by {challenge.company_name} {challenge.affiliated_by && <span className="text-muted-foreground font-bold font-headline">(Affiliated By {challenge.affiliated_by})</span>}</p>
+                <p className="text-sm text-muted-foreground">A challenge by {challenge.company_name ? challenge.company_name.replace(/x/gi, '█') : ''} {challenge.affiliated_by && <span className="text-muted-foreground font-bold font-headline">(Affiliated By {challenge.affiliated_by})</span>}</p>
               </div>
             </div>
           </div>

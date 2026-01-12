@@ -174,13 +174,18 @@ export default function EventModal({
   const handleRegisterClick = () => {
     onOpenChange(false);
     const route = formData.registration_route || '/sif-aignite';
-    router.push(route);
+    if (route.match(/^(https?:\/\/|www\.)/i)) {
+      const url = route.startsWith('http') ? route : `https://${route}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      router.push(route);
+    }
   };
 
   if (mode === 'edit' || mode === 'create') {
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{mode === 'create' ? 'Create New Event' : 'Edit Event'}</DialogTitle>
             <DialogDescription>
@@ -203,7 +208,7 @@ export default function EventModal({
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Event Description"
-                rows={4}
+                rows={7}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -217,7 +222,8 @@ export default function EventModal({
                       <Image
                         src={formData.image_url}
                         alt="Preview"
-                        fill
+                        width={128}
+                        height={128}
                         className="object-cover"
                         unoptimized={!formData.image_url.startsWith('/')}
                       />
@@ -307,6 +313,8 @@ export default function EventModal({
             <Image
               src={formData?.image_url || ""}
               alt={formData.title || "Event"}
+              height={100}
+              width={100}
               className="object-cover w-full h-full"
             />
             {/* Dark gradient for readability */}

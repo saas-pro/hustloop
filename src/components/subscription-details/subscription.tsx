@@ -31,7 +31,7 @@ export function SubscriptionDetails({ user, founder_role }: SubscriptionDetailsP
             }
 
             try {
-                const response = await fetch(`${API_BASE_URL}/api/user/subscription`, {
+                const response = await fetch(`${API_BASE_URL}/api/user/subscription/${user.uid}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -47,7 +47,7 @@ export function SubscriptionDetails({ user, founder_role }: SubscriptionDetailsP
         };
 
         fetchSubscription();
-    }, [founder_role]);
+    }, [founder_role,user.uid]);
 
     if (loading || plansLoading) {
         return (
@@ -88,8 +88,12 @@ export function SubscriptionDetails({ user, founder_role }: SubscriptionDetailsP
                         <p className="text-lg font-semibold">{planName}</p>
                     </div>
                     <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">Remaining Days</p>
-                        <p className="text-lg font-semibold">{activeSubscription?.days_remaining} Days</p>
+                        <p className="text-sm font-medium text-foreground">Status</p>
+                        <p className="text-lg font-semibold">
+                            {activeSubscription?.days_remaining > 0 
+                                ? `${activeSubscription.days_remaining} Days Remaining`
+                                : 'Not Active'}
+                        </p>
                     </div>
                     {activeSubscription?.end_date && !isFreePlanRole && (
                         <div className="col-span-1 space-y-1">

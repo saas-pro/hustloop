@@ -40,7 +40,7 @@ export function TestimonialCard({ name, role, content, avatar, rating }: Testimo
                     </div>
                 </div>
                 <div className="flex-1 flex flex-col justify-between">
-                    <p className="text-foreground/90 mb-4 line-clamp-4">"{content}"</p>
+                    <p className="text-foreground/90 mb-4 line-clamp-4">&quot;{content}&quot;</p>
                     <div className="flex items-center">
                         {[1, 2, 3, 4, 5].map((star) => (
                             <Star

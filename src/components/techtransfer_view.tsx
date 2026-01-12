@@ -51,7 +51,15 @@ const TechContactModal = ({ isOpen, onClose, techtransferId, techtransferName }:
     contact_number: "",
     purpose: "",
     company_name: "",
+    who_other: "",
   });
+
+  const handleContactNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-numeric characters
+    if (value.length <= 10) { // Limit to 15 digits
+      setFormData(prev => ({ ...prev, contact_number: value }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,8 +78,8 @@ const TechContactModal = ({ isOpen, onClose, techtransferId, techtransferName }:
         body: JSON.stringify({
           techtransfer_id: techtransferId,
           techtransfer_name: techtransferName,
+          who: who,
           ...formData,
-          who,
         }),
       });
       const data = await res.json();
@@ -90,7 +98,7 @@ const TechContactModal = ({ isOpen, onClose, techtransferId, techtransferName }:
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Contact Us</DialogTitle>
         </DialogHeader>
@@ -98,24 +106,39 @@ const TechContactModal = ({ isOpen, onClose, techtransferId, techtransferName }:
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="req_name">Full Name <span className="text-red-500">*</span></Label>
-              <Input
-                id="req_name"
-                required
-                placeholder="John Doe"
-                value={formData.requester_name}
-                onChange={(e) => setFormData({ ...formData, requester_name: e.target.value })}
-              />
+              <div className='relative'>
+                <Input
+                  id="req_name"
+                  required
+                  maxLength={50}
+                  placeholder="John Doe"
+                  value={formData.requester_name}
+                  onChange={(e) => setFormData({ ...formData, requester_name: e.target.value.slice(0, 50) })}
+                />
+                <span className="text-xs text-muted-foreground absolute top-3 right-2">
+                  {formData.requester_name.length}/50
+                </span>
+              </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="req_email">Email Address <span className="text-red-500">*</span></Label>
-              <Input
-                id="req_email"
-                type="email"
-                required
-                placeholder="john@example.com"
-                value={formData.requester_email}
-                onChange={(e) => setFormData({ ...formData, requester_email: e.target.value })}
-              />
+              <div className="flex justify-between items-center">
+                <Label htmlFor="req_email">Email Address <span className="text-red-500">*</span></Label>
+              </div>
+              <div className='relative'>
+                <Input
+                  id="req_email"
+                  type="email"
+                  required
+                  maxLength={100}
+                  placeholder="john@example.com"
+                  value={formData.requester_email}
+                  onChange={(e) => setFormData({ ...formData, requester_email: e.target.value.slice(0, 100) })}
+                />
+                <span className="text-xs text-muted-foreground absolute top-3 right-2">
+                  {formData.requester_email.length}/100
+                </span>
+              </div>
+
             </div>
           </div>
           <div className="grid gap-2">
@@ -136,37 +159,82 @@ const TechContactModal = ({ isOpen, onClose, techtransferId, techtransferName }:
                 <SelectItem value="Student">Student</SelectItem>
                 <SelectItem value="Researcher">Researcher</SelectItem>
                 <SelectItem value="Company">Company</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
+                <SelectItem value="Other">Other (please specify)</SelectItem>
               </SelectContent>
             </Select>
+            {who === "Other" && (
+              <div className="relative">
+                <Input
+                  id="who_other"
+                  placeholder="Please specify your role"
+                  value={formData.who_other}
+                  onChange={(e) => setFormData({ ...formData, who_other: e.target.value })}
+                  required
+                  className="mt-2"
+                  maxLength={100}
+                />
+                <span className="text-xs text-muted-foreground absolute top-3 right-2">
+                  {formData.who_other.length}/100
+                </span>
+              </div>
+            )}
           </div>
           {who === "Company" && (
             <div className="grid gap-2">
-              <Label htmlFor="company_name">Company Name <span className="text-red-500">*</span></Label>
-              <Input
-                id="company_name"
-                required
-                value={formData.company_name}
-                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-              />
+              <div className="flex justify-between items-center">
+                <Label htmlFor="company_name">Company Name <span className="text-red-500">*</span></Label>
+                <span className="text-xs text-muted-foreground">
+                  {formData.company_name.length}/100
+                </span>
+              </div>
+              <div className='relative'>
+                <Input
+                  id="company_name"
+                  required
+                  maxLength={100}
+                  value={formData.company_name}
+                  onChange={(e) => setFormData({ ...formData, company_name: e.target.value.slice(0, 100) })}
+                />
+                <span className="text-xs text-muted-foreground absolute top-3 right-2">
+                  {formData.company_name.length}/100
+                </span>
+              </div>
             </div>
           )}
           <div className="grid gap-2">
-            <Label htmlFor="contact_number">Contact Number (optional)</Label>
-            <Input
-              id="contact_number"
-              value={formData.contact_number}
-              onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
-            />
+            <div className="flex justify-between items-center">
+              <Label htmlFor="contact_number">Contact Number (optional)</Label>
+            </div>
+            <div className='relative'>
+              <Input
+                id="contact_number"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="1234567890"
+                value={formData.contact_number}
+                onChange={handleContactNumberChange}
+              />
+              <span className="text-xs text-muted-foreground absolute top-3 right-2">
+                {formData.contact_number.length}/10
+              </span>
+            </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="purpose">What is the purpose? <span className="text-red-500">*</span></Label>
-            <Textarea
-              id="purpose"
-              required
-              value={formData.purpose}
-              onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-            />
+            <div className='relative'>
+              <Textarea
+                id="purpose"
+                required
+                maxLength={1000}
+                value={formData.purpose}
+                onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+                className="min-h-[100px] pr-12"
+              />
+              <span className="text-xs text-muted-foreground absolute bottom-1 right-3">
+                {formData.purpose.length}/1000
+              </span>
+            </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading} className='w-full'>

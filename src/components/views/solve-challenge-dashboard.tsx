@@ -512,6 +512,7 @@ export default function SolveChallengeDashboardView({
             });
 
             const result = await response.json();
+
             setSubmissions(result.solutions);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Network Error', description: 'Could Not Get User Solutions. Please try again later.' });
@@ -2306,6 +2307,9 @@ export default function SolveChallengeDashboardView({
                                         <CardDescription>Manage your account and payment information.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-8">
+
+                                        <SubscriptionDetails user={user} founder_role={founder_role} />
+                                        <Separator />
                                         <Form {...settingsForm}>
                                             <form
                                                 onSubmit={settingsForm.handleSubmit(onSettingsSubmit)}
@@ -2314,7 +2318,6 @@ export default function SolveChallengeDashboardView({
                                                 <div>
                                                     <h3 className="text-lg font-medium mb-4">Profile</h3>
                                                     <div className="space-y-4">
-                                                        {/* Name Field */}
                                                         <FormField
                                                             control={settingsForm.control}
                                                             name="name"
@@ -2341,8 +2344,7 @@ export default function SolveChallengeDashboardView({
                                             </form>
                                         </Form>
                                         <EmailUpdateForm currentEmail={settingsForm.watch('email')} />
-                                        <Separator />
-                                        <SubscriptionDetails user={user} founder_role={founder_role} />
+
                                         <Separator />
 
                                         <div>

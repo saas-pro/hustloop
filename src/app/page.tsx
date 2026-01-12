@@ -43,7 +43,7 @@ export default function Home() {
   useEffect(() => {
     const fetchActiveEvent = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000'}/api/events`);
+        const response = await fetch(`${API_BASE_URL}/api/events`);
         if (response.ok) {
           const data = await response.json();
           const active = data.find((ev: any) => ev.visible);
