@@ -96,6 +96,7 @@
     "remark-gfm": "^4.0.1",
     "remove-markdown": "^0.6.2",
     "socket.io-client": "^4.8.1",
+    "styled-components": "^6.3.5",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.179.1",

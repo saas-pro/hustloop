@@ -1009,19 +1009,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
       <section className='w-full mx-auto'>
         <PricingData />
       </section>
-      <section className="relative overflow-hidden bg-background">
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              What Our Users Say
-            </h2>
-            <p className="text-muted-foreground">
-              Join thousands of satisfied users who have transformed their workflow with Hustloop.
-            </p>
-          </div>
-          <TestimonialsMarquee />
-        </div>
-      </section>
+      
 
       <section className="relative py-16 md:py-20 bg-background">
         <div className="container mx-auto px-4 text-center">
@@ -1070,6 +1058,20 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
               <p className="text-muted-foreground">Innovation, collaboration, integrity, and excellence guide everything we do as we help shape the future of entrepreneurship.</p>
             </Card>
           </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              What Our Users Say
+            </h2>
+            <p className="text-muted-foreground">
+              Join thousands of satisfied users who have transformed their workflow with Hustloop.
+            </p>
+          </div>
+          <TestimonialsMarquee />
         </div>
       </section>
 

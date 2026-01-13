@@ -190,112 +190,63 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
 
 
   useEffect(() => {
-    if (isOpen) {
-      const fetchCorporateMsmeData = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-          const token = localStorage.getItem("token")
-          const apiBaseUrl = API_BASE_URL;
-          const response = await fetch(`${apiBaseUrl}/api/get-collaboration?challenge_type=corporate`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          if (!response.ok) {
-            toast({
-              variant: "destructive",
-              title: 'Failed to fetch corporate data.',
-              description: "Internal Server Error"
-            });
-          }
-          const data = await response.json();
-          setCorporateChallenges(
-            data.message.collaborations
-          );
+    if (!isOpen) return;
 
-        } catch (err: any) {
-          toast({
-            variant: "destructive",
-            title: "Failed to Get CorporateMSME",
-            description: err.message || "An unknown error occurred.",
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      const fetchMSMECollaboration = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-          const apiBaseUrl = API_BASE_URL;
-          const token = localStorage.getItem("token")
-          const response = await fetch(`${apiBaseUrl}/api/get-collaboration?challenge_type=msme`, {
+    const fetchAll = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const token = localStorage.getItem("token");
+        const apiBaseUrl = API_BASE_URL;
+
+        const [corporateRes, msmeRes, governmentRes] = await Promise.all([
+          fetch(`${apiBaseUrl}/api/get-collaboration?challenge_type=corporate`, {
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json"
             }
-          });
-          if (!response.ok) {
-            toast({
-              variant: "destructive",
-              title: 'Failed to fetch corporate data.',
-              description: "Internal Server Error"
-            });
-          }
-          const data = await response.json();
-          setMsmeCollaborations(
-            data.message.collaborations
-          );
-        } catch (err: any) {
-          toast({
-            variant: "destructive",
-            title: "Failed to Get MSMEData",
-            description: err.message || "An unknown error occurred.",
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      const fetchGovernmentChallenge = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-          const apiBaseUrl = API_BASE_URL;
-          const token = localStorage.getItem("token")
-          const response = await fetch(`${apiBaseUrl}/api/get-collaboration?challenge_type=government`, {
+          }),
+          fetch(`${apiBaseUrl}/api/get-collaboration?challenge_type=msme`, {
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json"
             }
-          });
-          if (!response.ok) {
-            toast({
-              variant: "destructive",
-              title: 'Failed to fetch Governement MSME data.',
-              description: "Internal Server Error"
-            });
-          }
-          const data = await response.json();
-          setGovernmentchallenges(
-            data.message.collaborations
-          );
-        } catch (err: any) {
-          toast({
-            variant: "destructive",
-            title: "Failed to Get Government Challenge",
-            description: err.message || "An unknown error occurred.",
-          });
-        } finally {
-          setIsLoading(false);
+          }),
+          fetch(`${apiBaseUrl}/api/get-collaboration?challenge_type=government`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json"
+            }
+          })
+        ]);
+
+        if (!corporateRes.ok || !msmeRes.ok || !governmentRes.ok) {
+          throw new Error("Failed to fetch challenges");
         }
-      };
-      fetchCorporateMsmeData();
-      fetchMSMECollaboration();
-      fetchGovernmentChallenge();
-    }
-  }, [isOpen, isLoggedIn, toast]);
+
+        const corporateData = await corporateRes.json();
+        const msmeData = await msmeRes.json();
+        const governmentData = await governmentRes.json();
+
+        setCorporateChallenges(corporateData.message.collaborations || []);
+        setMsmeCollaborations(msmeData.message.collaborations || []);
+        setGovernmentchallenges(governmentData.message.collaborations || []);
+
+      } catch (err: any) {
+        setError(err.message || "Something went wrong");
+        toast({
+          variant: "destructive",
+          title: "Failed to load challenges",
+          description: err.message || "Unknown error"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAll();
+  }, [isOpen, toast]);
 
   const handleViewDetails = (type: 'CorporateChallenges' | 'MSMECollaboration' | 'GovernmentChallenges', item: any) => {
     if (type === 'CorporateChallenges') setSelectedChallenge(item);
@@ -327,9 +278,9 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
       return (
         <Tabs defaultValue="CorporateChallenges" className="flex flex-col flex-grow min-h-0 px-6 pb-6">
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 h-fit">
-            <TabsTrigger value="CorporateChallenges">Corporate Challenges</TabsTrigger>
-            <TabsTrigger value="MSMECollaboration">MSME Collaboration</TabsTrigger>
-            <TabsTrigger value="Governmentchallenges">Government Challenges</TabsTrigger>
+            <TabsTrigger value="CorporateChallenges">Corporate&apos;s</TabsTrigger>
+            <TabsTrigger value="MSMECollaboration">MSME&apos;s</TabsTrigger>
+            <TabsTrigger value="Governmentchallenges">Government&apos;s</TabsTrigger>
           </TabsList>
           <TabsContent value="CorporateChallenges" className="mt-4 flex-1 overflow-y-auto pr-4">
             <LoadingSkeleton />
@@ -358,14 +309,23 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
 
     return (
       <Tabs defaultValue="challenges" className="flex flex-col flex-grow min-h-0 px-6 pb-6">
-        <TabsList className="grid w-full h-fit grid-cols-2 md:grid-cols-3">
-          <TabsTrigger value="CorporateChallenges">Corporate Challenges</TabsTrigger>
-          <TabsTrigger value="MSMECollaboration">MSME Challenges</TabsTrigger>
-          <TabsTrigger value="Governmentchallenges">Government Challenges</TabsTrigger>
+        <TabsList className="grid w-full h-fit grid-cols-3">
+          <TabsTrigger value="CorporateChallenges">Corporate&apos;s</TabsTrigger>
+          <TabsTrigger value="MSMECollaboration">MSME&apos;s</TabsTrigger>
+          <TabsTrigger value="Governmentchallenges">Government&apos;s</TabsTrigger>
         </TabsList>
         <TabsContent value="CorporateChallenges" className="mt-4 flex-1 overflow-x-hidden pr-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
-            {corporateChallenges?.length === 0 ? (
+            {corporateChallenges?.map((challenge, index) =>
+              <CorporateChallengeCard
+                key={index}
+                challenge={challenge}
+                onViewDetails={handleViewDetails}
+              />
+            )}
+          </div>
+          <>
+            {corporateChallenges?.length === 0 && (
               <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                 <h2 className="text-2xl font-bold mb-2 font-headline">
@@ -375,14 +335,8 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
                   Please check back later — new challenges will appear here soon.
                 </p>
               </div>
-            ) : corporateChallenges?.map((challenge, index) =>
-              <CorporateChallengeCard
-                key={index}
-                challenge={challenge}
-                onViewDetails={handleViewDetails}
-              />
             )}
-          </div>
+          </>
         </TabsContent>
         <TabsContent value="MSMECollaboration" className="mt-4 flex-1 overflow-x-hidden pr-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
@@ -439,7 +393,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
             <DialogTitle className="text-3xl font-bold text-center font-headline">Innovation &amp; Growth Opportunities</DialogTitle>
             <DialogDescription className="text-center">
               <span className="text-accent">&quot;Empowering MSMEs for Success&quot;</span>
-              <span className="block text-center mx-auto">
+              <span className="text-center mx-auto hidden md:block">
                 Collaborate on MSME, corporate and government incentive challenges for rewards and growth. Innovators, entrepreneurs, and experts - find your match.
               </span>
             </DialogDescription>

@@ -348,11 +348,7 @@ export default function PricingAccordion() {
                                                         <Badge className="ml-2 bg-green-500/20 text-green-500 border border-green-500/50 rounded-sm py-1 px-2">{plan.offer}</Badge>
                                                     )}
                                                 </div>
-                                                {plan.name === "Premium" && <span className="font-headline text-md text-muted-foreground">Billed as {plan.price} {(plan.originally) && (
-                                                    <span className="text-lg font-headline text-muted-foreground line-through ">{plan.originally}</span>
-                                                )} per year
 
-                                                </span>}
                                                 <CardDescription className="font-sans font-normal">{plan.description}</CardDescription>
                                             </CardHeader>
 
@@ -370,18 +366,16 @@ export default function PricingAccordion() {
                                             <CardFooter className="flex-col items-start mt-4">
                                                 <div className="flex items-baseline gap-3 mb-3">
                                                     <div className="flex flex-col">
-                                                        {plan.name === "Premium" ? (
-                                                            <div className="flex flex-col">
-
-                                                                <span className="text-3xl font-bold mt-1">₹{Math.round(plan.price_in_paise / 100 / 12)} <span className="text-sm font-normal text-muted-foreground">/ month</span></span>
+                                                        {(idx === 1 || idx === 2) && (<div className="flex items-baseline gap-2">
+                                                            <div className="text-4xl font-bold mt-1">
+                                                                ₹{Math.round(plan.price_in_paise / 100 / 12)}
+                                                                <span className="text-sm font-normal text-muted-foreground">/ month</span>
                                                             </div>
-                                                        ) : (
-                                                            <span className="text-4xl font-bold">{plan.price}
-                                                                {plan.originally && (
-                                                                    <span className="text-3xl font-headline ml-2 text-muted-foreground line-through ">{plan.originally}</span>
-                                                                )}
-                                                            </span>
-                                                        )}
+                                                            <div className="text-muted-foreground line-through text-lg font-headline font-bold">
+                                                                {plan.originally}
+                                                            </div>
+                                                        </div>)}
+
                                                         {(idx === 1 || idx === 2) && (
                                                             <span className="text-xs text-muted-foreground">INR + GST Applicable</span>
                                                         )}
@@ -414,6 +408,10 @@ export default function PricingAccordion() {
                                                             : plan.cta
                                                     }
                                                 </Button>
+
+                                                {(idx == 1 || idx == 2) && (<span className="font-headline text-md text-muted-foreground mt-2">
+                                                    Billed as {plan.price} per year
+                                                </span>)}
 
                                                 {/* {plan.note && (
                                                 <p className="text-xs text-muted-foreground mt-3 text-center w-full">{plan.note}</p>

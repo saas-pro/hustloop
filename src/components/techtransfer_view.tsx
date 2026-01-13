@@ -341,20 +341,24 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
           </DialogTitle>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden ">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden relative">
           <div className="flex justify-center mx-4 mt-2">
             <TabsList className="w-fit">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="faq">FAQ</TabsTrigger>
             </TabsList>
-
           </div>
-          <div className="flex justify-end mr-4">
-            <Button onClick={() => setIsContactModalOpen(true)} className="bg-primary hover:bg-primary/90">
+          
+          <div className="absolute bottom-4 right-4 z-10">
+            <Button 
+              onClick={() => setIsContactModalOpen(true)} 
+              className="bg-primary hover:bg-primary/90 shadow-lg"
+            >
               Contact Us
             </Button>
           </div>
-          <TabsContent value="overview" className="flex-grow overflow-y-auto p-4 space-y-4 mt-0">
+          
+          <TabsContent value="overview" className="flex-grow overflow-y-auto p-4 pb-16 space-y-4 mt-0">
 
             {ipDetails && (
               <Card className="mb-0 border-primary/50 bg-primary-foreground/20">

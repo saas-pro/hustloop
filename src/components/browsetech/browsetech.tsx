@@ -79,7 +79,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-6xl w-[90vw] h-[90vh] flex flex-col p-0 overflow-y-auto pb-3 rounded-lg">
+            <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 sm:max-w-6xl w-[90vw] max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-lg">
                 <DialogHeader className="p-6">
                     <DialogTitle className="text-3xl font-bold text-center font-headline">Technology Transfer</DialogTitle>
                     <DialogDescription className="text-center">
@@ -90,7 +90,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                         Browse technology profiles from various organizations seeking collaboration.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-6 px-6">
+                <div className="space-y-6 px-6 overflow-y-auto flex-1">
                     {isLoading && (
                         <div className="space-y-6">
                             {/* Skeleton Search Bar */}

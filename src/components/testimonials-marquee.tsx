@@ -11,9 +11,8 @@ export function TestimonialsMarquee() {
   const firstRow = [...testimonials, ...testimonials].slice(0, Math.ceil(testimonials.length))
 
   return (
-    <div className="relative flex w-full flex-col items-center justify-center overflow-hidden py-12">
-      <Marquee 
-        pauseOnHover 
+    <div className="relative flex w-full flex-col items-center justify-center overflow-hidden py-6">
+      <Marquee  
         className="[--duration:40s] py-4"
         reverse={false} 
       >
