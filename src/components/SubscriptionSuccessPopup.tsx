@@ -20,14 +20,6 @@ export default function SubscriptionSuccessPopup({ isOpen, onClose }: { isOpen: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="absolute inset-0 w-full h-full">
-        <Image
-          src="/icons/pops.gif"
-          alt="Celebration"
-          className="w-full h-full object-cover opacity-90"
-        />
-      </div>
-
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

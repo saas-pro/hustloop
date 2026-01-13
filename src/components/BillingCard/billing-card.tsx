@@ -10,11 +10,15 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { usePlans } from "@/hooks/use-plans";
 import { useToast } from "@/hooks/use-toast";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { API_BASE_URL } from "@/lib/api";
-import SubscriptionSuccessPopup from "../SubscriptionSuccessPopup";
+import { View } from "@/app/types";
 
-export default function PricingAccordion() {
+interface PricingAccordion{
+    setActiveView: (view: View) => void;
+}
+
+export default function PricingAccordion({setActiveView}:PricingAccordion) {
+
     const router = useRouter();
     const { toast } = useToast();
     const { plans, loading: plansLoading, error: plansError } = usePlans();
@@ -161,11 +165,7 @@ export default function PricingAccordion() {
         const token = localStorage.getItem('token');
 
         if (!token) {
-            toast({
-                title: "Login Required",
-                description: "Please login to subscribe to a plan.",
-                variant: "destructive"
-            });
+            setActiveView('login');
             return;
         }
 
@@ -389,7 +389,8 @@ export default function PricingAccordion() {
                                                     disabled={
                                                         !isPlanAllowed(plan.name) ||
                                                         (activeSubscription && activeSubscription.plan_id === plan.id) ||
-                                                        isProcessing === plan.id
+                                                        isProcessing === plan.id || 
+                                                        idx === 0
                                                     }
                                                     className={cn(
                                                         "w-full",

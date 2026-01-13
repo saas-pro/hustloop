@@ -216,7 +216,12 @@ export default function PricingPageClient() {
                 currency: orderData.currency,
                 name: "Hustloop",
                 description: `Subscription: ${plan.name}`,
-                image: "/logo.png",
+                notes: {
+                    "Plan Name": plan?.name || "",
+                    "Plan Features": plan?.features?.join(" | ") || "",
+                    "Billing Cycle": plan?.billing_cycle || "Monthly",
+                },
+                image: "/hustloop_logo.png",
                 order_id: orderData.order_id,
                 handler: async function (response: any) {
                     // 3. Verify Payment on Backend
@@ -448,9 +453,10 @@ export default function PricingPageClient() {
                         </div>
                     )}
                 </ScrollArea>
-                <div className="block w-full mt-6">
-                    <Footer />
-                </div>
+
+            </div>
+            <div className="block w-full mt-6">
+                <Footer />
             </div>
             <SubscriptionSuccessPopup isOpen={showSuccessPopup} onClose={() => setShowSuccessPopup(false)} />
         </div>

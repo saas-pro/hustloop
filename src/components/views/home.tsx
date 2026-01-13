@@ -800,7 +800,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
         } `}
     >
       {/* Hero Section */}
-      <section id="hero-section" className={`min-h-[100vh] sticky top-0 overflow-hidden ${navOpen ? 'relative' : 'sticky top-0'} `}>
+      <section id="hero-section" className={`h-[100vh] md:sticky md:top-0 overflow-hidden ${navOpen ? 'relative' : 'md:sticky md:top-0'} `}>
         <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} scrollContainerRef={scrollContainerRef} />
       </section>
 
@@ -1007,7 +1007,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
       <SolutionCard solutionSteps={solutionSteps} scrollContainer={scrollContainerRef}></SolutionCard>
 
       <section className='w-full mx-auto'>
-        <PricingData />
+        <PricingData setActiveView={setActiveView}/>
       </section>
       
 
@@ -1122,7 +1122,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
           </Card>
         </div>
       </section>
-
 
 
       {/* Call to Action Section */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Home, Linkedin, Loader2, Mail, Send } from "lucide-react";
+import { Home, Instagram, Linkedin, Loader2, Mail, Send } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as z from "zod";
@@ -137,7 +137,7 @@ export default function ContactClient() {
 
               <p className="font-semibold text-sm">Email us</p>
               <a href="mailto:support@hustloop.com" className="text-primary hover:underline">
-                support@hustloop.com
+                support[@]hustloop.com
               </a>
 
               <div className="flex gap-4 mt-4">
@@ -149,6 +149,12 @@ export default function ContactClient() {
                 </a>
                 <a href="mailto:support@hustloop.com" target="_blank">
                   <Mail className="h-5 w-5" />
+                </a>
+                <a
+                  href="https://www.instagram.com/hustloop_official"
+                  target="_blank"
+                >
+                  <Instagram className="h-5 w-5" />
                 </a>
               </div>
             </CardContent>
@@ -273,11 +279,10 @@ export default function ContactClient() {
           </Card>
 
         </section>
-
-        <div className="w-full mt-6">
-          <Footer />
-        </div>
       </main>
+      <div className="w-full mt-6">
+        <Footer />
+      </div>
     </div>
   );
 }

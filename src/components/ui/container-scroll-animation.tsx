@@ -44,7 +44,7 @@ export const ContainerScroll = ({
       ref={containerRef}
     >
       <div
-        className="max-w-5xl w-full relative"
+        className="max-w-[1200px] w-full relative"
         style={{
           perspective: "1000px",
         }}
@@ -88,7 +88,7 @@ export const Card = ({
         scale,
         willChange: "transform"
       }}
-      className="max-w-5xl -mt-12 mx-auto h-[30rem] md:h-[40rem] w-full border-4 border-[#6C6C6C] p-2 md:p-6 bg-[#222222] rounded-[30px] shadow-2xl"
+      className="max-w-[1200px] -mt-12 mx-auto h-[30rem] md:h-[40rem] w-full border-4 border-[#6C6C6C] p-2 md:p-6 bg-[#222222] rounded-[30px] shadow-2xl"
       transition={{ type: "spring", stiffness: 100, damping: 30 }}
     >
       {children}

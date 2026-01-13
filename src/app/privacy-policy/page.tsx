@@ -186,10 +186,10 @@ export default function PrivacyPolicyPage() {
             </ScrollArea>
           </CardContent>
         </Card>
-        <div className="block w-full pt-8">
-          <Footer />
-        </div>
       </main>
+      <div className="block w-full pt-8">
+        <Footer />
+      </div>
     </div>
   );
 }

@@ -591,9 +591,9 @@ export default function IncentiveChallengeClient() {
                         </div>
 
                     </div>
-                    <Footer />
                 </div>
             </main>
+            <Footer />
         </div>
     );
 }
