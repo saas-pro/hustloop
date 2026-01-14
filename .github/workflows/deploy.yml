@@ -47,8 +47,6 @@ jobs:
       - name: Add CNAME for custom domain
         run: |
           echo "hustloop.com" > out/CNAME
-      
-      - uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
