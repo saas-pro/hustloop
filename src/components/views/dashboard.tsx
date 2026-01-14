@@ -23,7 +23,7 @@ import type { LucideProps } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber, Submission } from "@/app/types";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -3144,263 +3144,272 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         <CardDescription>Approve, ban, or delete user accounts.</CardDescription>
 
                                                     </CardHeader>
-                                                    <CardContent>
+                                                    <CardContent className="w-[95vw] lg:w-full">
                                                         {isLoadingUsers ? (
-                                                            <Table>
-                                                                <TableHeader>
-                                                                    <TableRow>
-                                                                        <TableHead>User</TableHead>
-                                                                        <TableHead>Role</TableHead>
-                                                                        <TableHead>Plans</TableHead>
-                                                                        <TableHead>Status</TableHead>
-                                                                        <TableHead>Details</TableHead>
-                                                                        <TableHead>Actions</TableHead>
-                                                                    </TableRow>
-                                                                </TableHeader>
-                                                                <TableBody>
-                                                                    {Array.from({ length: 10 }).map((_, i) => (
-                                                                        <TableRow key={i}>
-                                                                            <TableCell>
-                                                                                <div className="space-y-2">
-                                                                                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                                                                                    <div className="h-3 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                                                                                </div>
-                                                                            </TableCell>
-                                                                            <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
-                                                                            <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
-                                                                            <TableCell><div className="h-4 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
-                                                                            <TableCell><div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
-                                                                            <TableCell>
-                                                                                <div className="flex gap-2">
-                                                                                    <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                                                                                    <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                                                                                </div>
-                                                                            </TableCell>
-                                                                        </TableRow>
-                                                                    ))}
-                                                                </TableBody>
-                                                            </Table>
+                                                            <div>
+                                                                <div>
+                                                                    <Table>
+                                                                        <TableHeader>
+                                                                            <TableRow>
+                                                                                <TableHead>User</TableHead>
+                                                                                <TableHead>Role</TableHead>
+                                                                                <TableHead>Plans</TableHead>
+                                                                                <TableHead>Status</TableHead>
+                                                                                <TableHead>Details</TableHead>
+                                                                                <TableHead>Actions</TableHead>
+                                                                            </TableRow>
+                                                                        </TableHeader>
+                                                                        <TableBody>
+                                                                            {Array.from({ length: 10 }).map((_, i) => (
+                                                                                <TableRow key={i}>
+                                                                                    <TableCell>
+                                                                                        <div className="space-y-2">
+                                                                                            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                                            <div className="h-3 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                                        </div>
+                                                                                    </TableCell>
+                                                                                    <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-4 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell>
+                                                                                        <div className="flex gap-2">
+                                                                                            <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                                            <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                                        </div>
+                                                                                    </TableCell>
+                                                                                </TableRow>
+                                                                            ))}
+                                                                        </TableBody>
+                                                                    </Table>
+                                                                </div>
+                                                            </div>
                                                         ) : (
                                                             <>
-                                                                <Table>
-                                                                    <TableHeader>
-                                                                        <TableRow>
-                                                                            <TableHead>User</TableHead>
-                                                                            <TableHead>Role</TableHead>
-                                                                            <TableHead>Plans</TableHead>
-                                                                            <TableHead>Status</TableHead>
-                                                                            <TableHead>Details</TableHead>
-                                                                            <TableHead>Actions</TableHead>
-                                                                        </TableRow>
-                                                                    </TableHeader>
-                                                                    <TableBody>
-                                                                        {users.map(u => (
-                                                                            <TableRow key={u.uid}>
-                                                                                <TableCell>
-                                                                                    <div>
-                                                                                        <div className="font-medium">{u.name}</div>
-                                                                                        <div className="text-sm text-muted-foreground">{u.email}</div>
-                                                                                    </div>
-                                                                                </TableCell>
-                                                                                <TableCell className="capitalize">{u.role}</TableCell>
-                                                                                <TableCell>
-                                                                                    <div className="flex flex-col gap-2">
-                                                                                        {u.role === 'founder' && u.founder_role === "Solve Organisation's challenge" && (
-                                                                                            <div className="flex items-center space-x-2">
-                                                                                                <Switch
-                                                                                                    id={`premium-${u.uid}`}
-                                                                                                    checked={u.active_plans?.includes('Premium')}
-                                                                                                    onCheckedChange={() => handleTogglePlan(u.uid, 'Premium', u.active_plans?.includes('Premium') || false)}
-                                                                                                    disabled={togglingPlans[`${u.uid}-Premium`]}
-                                                                                                />
-                                                                                                <label htmlFor={`premium-${u.uid}`} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1">
-                                                                                                    Premium
-                                                                                                    {togglingPlans[`${u.uid}-Premium`] && <LucideIcons.Loader2 className="h-3 w-3 animate-spin" />}
-                                                                                                </label>
+                                                                <div>
+                                                                    <div>
+                                                                        <Table>
+                                                                            <TableHeader>
+                                                                                <TableRow>
+                                                                                    <TableHead>User</TableHead>
+                                                                                    <TableHead>Role</TableHead>
+                                                                                    <TableHead>Plans</TableHead>
+                                                                                    <TableHead>Status</TableHead>
+                                                                                    <TableHead>Details</TableHead>
+                                                                                    <TableHead>Actions</TableHead>
+                                                                                </TableRow>
+                                                                            </TableHeader>
+                                                                            <TableBody>
+                                                                                {users.map(u => (
+                                                                                    <TableRow key={u.uid}>
+                                                                                        <TableCell>
+                                                                                            <div>
+                                                                                                <div className="font-medium">{u.name}</div>
+                                                                                                <div className="text-sm text-muted-foreground">{u.email}</div>
                                                                                             </div>
-                                                                                        )}
-                                                                                        {u.role === 'founder' && u.founder_role === "Submit an innovative idea" && (
-                                                                                            <div className="flex items-center space-x-2">
-                                                                                                <Switch
-                                                                                                    id={`standard-${u.uid}`}
-                                                                                                    checked={u.active_plans?.includes('Standard')}
-                                                                                                    onCheckedChange={() => handleTogglePlan(u.uid, 'Standard', u.active_plans?.includes('Standard') || false)}
-                                                                                                    disabled={togglingPlans[`${u.uid}-Standard`]}
-                                                                                                />
-                                                                                                <label htmlFor={`standard-${u.uid}`} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1">
-                                                                                                    Standard
-                                                                                                    {togglingPlans[`${u.uid}-Standard`] && <LucideIcons.Loader2 className="h-3 w-3 animate-spin" />}
-                                                                                                </label>
+                                                                                        </TableCell>
+                                                                                        <TableCell className="capitalize">{u.role}</TableCell>
+                                                                                        <TableCell>
+                                                                                            <div className="flex flex-col gap-2">
+                                                                                                {u.role === 'founder' && u.founder_role === "Solve Organisation's challenge" && (
+                                                                                                    <div className="flex items-center space-x-2">
+                                                                                                        <Switch
+                                                                                                            id={`premium-${u.uid}`}
+                                                                                                            checked={u.active_plans?.includes('Premium')}
+                                                                                                            onCheckedChange={() => handleTogglePlan(u.uid, 'Premium', u.active_plans?.includes('Premium') || false)}
+                                                                                                            disabled={togglingPlans[`${u.uid}-Premium`]}
+                                                                                                        />
+                                                                                                        <label htmlFor={`premium-${u.uid}`} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1">
+                                                                                                            Premium
+                                                                                                            {togglingPlans[`${u.uid}-Premium`] && <LucideIcons.Loader2 className="h-3 w-3 animate-spin" />}
+                                                                                                        </label>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                                {u.role === 'founder' && u.founder_role === "Submit an innovative idea" && (
+                                                                                                    <div className="flex items-center space-x-2">
+                                                                                                        <Switch
+                                                                                                            id={`standard-${u.uid}`}
+                                                                                                            checked={u.active_plans?.includes('Standard')}
+                                                                                                            onCheckedChange={() => handleTogglePlan(u.uid, 'Standard', u.active_plans?.includes('Standard') || false)}
+                                                                                                            disabled={togglingPlans[`${u.uid}-Standard`]}
+                                                                                                        />
+                                                                                                        <label htmlFor={`standard-${u.uid}`} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1">
+                                                                                                            Standard
+                                                                                                            {togglingPlans[`${u.uid}-Standard`] && <LucideIcons.Loader2 className="h-3 w-3 animate-spin" />}
+                                                                                                        </label>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                                {u.role !== 'founder' && (
+                                                                                                    <span className="text-xs text-muted-foreground italic">No founder role</span>
+                                                                                                )}
                                                                                             </div>
-                                                                                        )}
-                                                                                        {u.role !== 'founder' && (
-                                                                                            <span className="text-xs text-muted-foreground italic">No founder role</span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </TableCell>
-                                                                                <TableCell>
-                                                                                    <div>
-                                                                                        {u.status === 'banned' ? (
-                                                                                            <Badge variant="destructive">Banned</Badge>
-                                                                                        ) : u.status === 'active' ? (
-                                                                                            <Badge variant="default">Active</Badge>
-                                                                                        ) : (
-                                                                                            <Badge variant="secondary">Pending</Badge>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </TableCell>
-                                                                                <TableCell>
-                                                                                    <Button
-                                                                                        variant="ghost"
-                                                                                        size="icon"
-                                                                                        className="h-9 w-9"
-                                                                                        onClick={() => {
-                                                                                            setSelectedUserForDetails(u);
-                                                                                            fetchUserDetails(u.uid);
-                                                                                        }}
-                                                                                    >
-                                                                                        <LucideIcons.Info className="h-5 w-5" />
-                                                                                    </Button>
-                                                                                </TableCell>
-                                                                                <TableCell>
-
-                                                                                    <div className="flex flex-wrap items-center gap-2">
-                                                                                        {u.status === 'pending' && (
+                                                                                        </TableCell>
+                                                                                        <TableCell>
+                                                                                            <div>
+                                                                                                {u.status === 'banned' ? (
+                                                                                                    <Badge variant="destructive">Banned</Badge>
+                                                                                                ) : u.status === 'active' ? (
+                                                                                                    <Badge variant="default">Active</Badge>
+                                                                                                ) : (
+                                                                                                    <Badge variant="secondary">Pending</Badge>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </TableCell>
+                                                                                        <TableCell>
                                                                                             <Button
-                                                                                                size="sm"
-                                                                                                onClick={() => { /* Handle approve logic */ }}
-                                                                                                className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground min-w-[90px]"
-                                                                                            >
-                                                                                                <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
-                                                                                                Approve
-                                                                                            </Button>
-                                                                                        )}
-
-                                                                                        <Button
-                                                                                            size="sm"
-                                                                                            variant={u.status === 'banned' ? "outline" : "secondary"}
-                                                                                            onClick={() => setUserToBan(u)}
-                                                                                            className="flex-1 min-w-[90px]"
-                                                                                        >
-                                                                                            <LucideIcons.Ban className="mr-2 h-4 w-4" />
-                                                                                            {u.status === 'banned' ? "Unban" : "Ban"}
-                                                                                        </Button>
-
-                                                                                        <Button
-                                                                                            size="sm"
-                                                                                            variant="destructive"
-                                                                                            onClick={() => setUserToDelete(u)}
-                                                                                            className="flex-1 min-w-[90px]"
-                                                                                        >
-                                                                                            <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
-                                                                                            Delete
-                                                                                        </Button>
-                                                                                    </div>
-                                                                                </TableCell>
-                                                                            </TableRow>
-                                                                        ))}
-                                                                    </TableBody>
-                                                                </Table>
-
-                                                                {/* Optimized Pagination Controls */}
-                                                                {totalPages > 1 && (
-                                                                    <div className="flex justify-center mt-6">
-                                                                        <Pagination>
-                                                                            <PaginationContent>
-                                                                                <PaginationItem>
-                                                                                    <PaginationPrevious
-                                                                                        href="#"
-                                                                                        onClick={(e) => {
-                                                                                            e.preventDefault();
-                                                                                            if (currentPage > 1) handlePageChange(currentPage - 1);
-                                                                                        }}
-                                                                                        className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                                    />
-                                                                                </PaginationItem>
-
-                                                                                {/* Show first page */}
-                                                                                <PaginationItem>
-                                                                                    <PaginationLink
-                                                                                        href="#"
-                                                                                        onClick={(e) => {
-                                                                                            e.preventDefault();
-                                                                                            handlePageChange(1);
-                                                                                        }}
-                                                                                        isActive={currentPage === 1}
-                                                                                        className="cursor-pointer"
-                                                                                    >
-                                                                                        1
-                                                                                    </PaginationLink>
-                                                                                </PaginationItem>
-
-                                                                                {/* Show ellipsis if needed */}
-                                                                                {currentPage > 3 && (
-                                                                                    <PaginationItem>
-                                                                                        <PaginationEllipsis />
-                                                                                    </PaginationItem>
-                                                                                )}
-
-                                                                                {/* Show pages around current page */}
-                                                                                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                                                                    .filter(page => {
-                                                                                        // Show pages within 1 of current page, excluding first and last
-                                                                                        return page > 1 && page < totalPages && Math.abs(page - currentPage) <= 1;
-                                                                                    })
-                                                                                    .map(page => (
-                                                                                        <PaginationItem key={page}>
-                                                                                            <PaginationLink
-                                                                                                href="#"
-                                                                                                onClick={(e) => {
-                                                                                                    e.preventDefault();
-                                                                                                    handlePageChange(page);
+                                                                                                variant="ghost"
+                                                                                                size="icon"
+                                                                                                className="h-9 w-9"
+                                                                                                onClick={() => {
+                                                                                                    setSelectedUserForDetails(u);
+                                                                                                    fetchUserDetails(u.uid);
                                                                                                 }}
-                                                                                                isActive={currentPage === page}
-                                                                                                className="cursor-pointer"
                                                                                             >
-                                                                                                {page}
-                                                                                            </PaginationLink>
-                                                                                        </PaginationItem>
-                                                                                    ))}
+                                                                                                <LucideIcons.Info className="h-5 w-5" />
+                                                                                            </Button>
+                                                                                        </TableCell>
+                                                                                        <TableCell>
 
-                                                                                {/* Show ellipsis if needed */}
-                                                                                {currentPage < totalPages - 2 && (
+                                                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                                                {u.status === 'pending' && (
+                                                                                                    <Button
+                                                                                                        size="sm"
+                                                                                                        onClick={() => { /* Handle approve logic */ }}
+                                                                                                        className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground min-w-[90px]"
+                                                                                                    >
+                                                                                                        <LucideIcons.CheckCircle className="mr-2 h-4 w-4" />
+                                                                                                        Approve
+                                                                                                    </Button>
+                                                                                                )}
+
+                                                                                                <Button
+                                                                                                    size="sm"
+                                                                                                    variant={u.status === 'banned' ? "outline" : "secondary"}
+                                                                                                    onClick={() => setUserToBan(u)}
+                                                                                                    className="flex-1 min-w-[90px]"
+                                                                                                >
+                                                                                                    <LucideIcons.Ban className="mr-2 h-4 w-4" />
+                                                                                                    {u.status === 'banned' ? "Unban" : "Ban"}
+                                                                                                </Button>
+
+                                                                                                <Button
+                                                                                                    size="sm"
+                                                                                                    variant="destructive"
+                                                                                                    onClick={() => setUserToDelete(u)}
+                                                                                                    className="flex-1 min-w-[90px]"
+                                                                                                >
+                                                                                                    <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
+                                                                                                    Delete
+                                                                                                </Button>
+                                                                                            </div>
+                                                                                        </TableCell>
+                                                                                    </TableRow>
+                                                                                ))}
+                                                                            </TableBody>
+                                                                        </Table>
+                                                                    </div>
+
+                                                                    {/* Optimized Pagination Controls */}
+                                                                    {totalPages > 1 && (
+                                                                        <div className="flex justify-center mt-6">
+                                                                            <Pagination>
+                                                                                <PaginationContent>
                                                                                     <PaginationItem>
-                                                                                        <PaginationEllipsis />
+                                                                                        <PaginationPrevious
+                                                                                            href="#"
+                                                                                            onClick={(e) => {
+                                                                                                e.preventDefault();
+                                                                                                if (currentPage > 1) handlePageChange(currentPage - 1);
+                                                                                            }}
+                                                                                            className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                                        />
                                                                                     </PaginationItem>
-                                                                                )}
 
-                                                                                {/* Show last page */}
-                                                                                {totalPages > 1 && (
+                                                                                    {/* Show first page */}
                                                                                     <PaginationItem>
                                                                                         <PaginationLink
                                                                                             href="#"
                                                                                             onClick={(e) => {
                                                                                                 e.preventDefault();
-                                                                                                handlePageChange(totalPages);
+                                                                                                handlePageChange(1);
                                                                                             }}
-                                                                                            isActive={currentPage === totalPages}
+                                                                                            isActive={currentPage === 1}
                                                                                             className="cursor-pointer"
                                                                                         >
-                                                                                            {totalPages}
+                                                                                            1
                                                                                         </PaginationLink>
                                                                                     </PaginationItem>
-                                                                                )}
 
-                                                                                <PaginationItem>
-                                                                                    <PaginationNext
-                                                                                        href="#"
-                                                                                        onClick={(e) => {
-                                                                                            e.preventDefault();
-                                                                                            if (currentPage < totalPages) handlePageChange(currentPage + 1);
-                                                                                        }}
-                                                                                        className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                                    />
-                                                                                </PaginationItem>
-                                                                            </PaginationContent>
-                                                                        </Pagination>
-                                                                    </div>
-                                                                )}
+                                                                                    {/* Show ellipsis if needed */}
+                                                                                    {currentPage > 3 && (
+                                                                                        <PaginationItem>
+                                                                                            <PaginationEllipsis />
+                                                                                        </PaginationItem>
+                                                                                    )}
+
+                                                                                    {/* Show pages around current page */}
+                                                                                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                                                                        .filter(page => {
+                                                                                            // Show pages within 1 of current page, excluding first and last
+                                                                                            return page > 1 && page < totalPages && Math.abs(page - currentPage) <= 1;
+                                                                                        })
+                                                                                        .map(page => (
+                                                                                            <PaginationItem key={page}>
+                                                                                                <PaginationLink
+                                                                                                    href="#"
+                                                                                                    onClick={(e) => {
+                                                                                                        e.preventDefault();
+                                                                                                        handlePageChange(page);
+                                                                                                    }}
+                                                                                                    isActive={currentPage === page}
+                                                                                                    className="cursor-pointer"
+                                                                                                >
+                                                                                                    {page}
+                                                                                                </PaginationLink>
+                                                                                            </PaginationItem>
+                                                                                        ))}
+
+                                                                                    {/* Show ellipsis if needed */}
+                                                                                    {currentPage < totalPages - 2 && (
+                                                                                        <PaginationItem>
+                                                                                            <PaginationEllipsis />
+                                                                                        </PaginationItem>
+                                                                                    )}
+
+                                                                                    {/* Show last page */}
+                                                                                    {totalPages > 1 && (
+                                                                                        <PaginationItem>
+                                                                                            <PaginationLink
+                                                                                                href="#"
+                                                                                                onClick={(e) => {
+                                                                                                    e.preventDefault();
+                                                                                                    handlePageChange(totalPages);
+                                                                                                }}
+                                                                                                isActive={currentPage === totalPages}
+                                                                                                className="cursor-pointer"
+                                                                                            >
+                                                                                                {totalPages}
+                                                                                            </PaginationLink>
+                                                                                        </PaginationItem>
+                                                                                    )}
+
+                                                                                    <PaginationItem>
+                                                                                        <PaginationNext
+                                                                                            href="#"
+                                                                                            onClick={(e) => {
+                                                                                                e.preventDefault();
+                                                                                                if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                                                                                            }}
+                                                                                            className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                                        />
+                                                                                    </PaginationItem>
+                                                                                </PaginationContent>
+                                                                            </Pagination>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </>
+
                                                         )}
                                                     </CardContent>
                                                 </Card>
@@ -3815,7 +3824,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             </TabsContent>
 
                                             <TabsContent value="registration" className="mt-0">
-                                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                                <Card className="bg-card/50 backdrop-blur-sm border-border/50 ">
                                                     <CardHeader>
                                                         <div className="flex justify-between items-center">
                                                             <div className="flex flex-col">
@@ -3873,117 +3882,117 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         </div>
                                                     </CardHeader>
 
-                                                    <CardContent>
-                                                        <div className="overflow-x-auto rounded-lg border border-border/50">
-                                                            <Table>
-                                                                <TableHeader>
-                                                                    <TableRow>
-                                                                        <TableHead>
-                                                                            <input
-                                                                                type="checkbox"
-                                                                                checked={
-                                                                                    selectedIds.length === registrations?.length &&
-                                                                                    registrations.length > 0
-                                                                                }
-                                                                                onChange={selectAll}
-                                                                            />
-                                                                        </TableHead>
-                                                                        {registrationColumns.map((col) => (
-                                                                            <TableHead key={col}>{col}</TableHead>
-                                                                        ))}
-                                                                    </TableRow>
-                                                                </TableHeader>
+                                                    <CardContent className="w-[95vw] lg:w-full">
+                                                            <div>
+                                                                <Table>
+                                                                    <TableHeader>
+                                                                        <TableRow>
+                                                                            <TableHead>
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={
+                                                                                        selectedIds.length === registrations?.length &&
+                                                                                        registrations.length > 0
+                                                                                    }
+                                                                                    onChange={selectAll}
+                                                                                />
+                                                                            </TableHead>
+                                                                            {registrationColumns.map((col) => (
+                                                                                <TableHead key={col}>{col}</TableHead>
+                                                                            ))}
+                                                                        </TableRow>
+                                                                    </TableHeader>
 
-                                                                <TableBody>
-                                                                    {registrations?.length > 0 ? (
-                                                                        registrations.map((reg) => (
-                                                                            <TableRow key={reg.id}>
-                                                                                <TableCell>
-                                                                                    <input
-                                                                                        type="checkbox"
-                                                                                        checked={selectedIds.includes(reg.id)}
-                                                                                        onChange={() => toggleSelect(reg.id)}
-                                                                                    />
-                                                                                </TableCell>
-                                                                                <TableCell>{reg.full_name}</TableCell>
-                                                                                <TableCell>{reg.email_address}</TableCell>
-                                                                                <TableCell>{reg.phone_number}</TableCell>
-                                                                                <TableCell>{reg.who_you_are}</TableCell>
-                                                                                <TableCell>
-                                                                                    {new Date(reg.registered_at).toLocaleString()}
+                                                                    <TableBody>
+                                                                        {registrations?.length > 0 ? (
+                                                                            registrations.map((reg) => (
+                                                                                <TableRow key={reg.id}>
+                                                                                    <TableCell>
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            checked={selectedIds.includes(reg.id)}
+                                                                                            onChange={() => toggleSelect(reg.id)}
+                                                                                        />
+                                                                                    </TableCell>
+                                                                                    <TableCell>{reg.full_name}</TableCell>
+                                                                                    <TableCell>{reg.email_address}</TableCell>
+                                                                                    <TableCell>{reg.phone_number}</TableCell>
+                                                                                    <TableCell>{reg.who_you_are}</TableCell>
+                                                                                    <TableCell>
+                                                                                        {new Date(reg.registered_at).toLocaleString()}
+                                                                                    </TableCell>
+                                                                                </TableRow>
+                                                                            ))
+                                                                        ) : (
+                                                                            <TableRow>
+                                                                                <TableCell colSpan={registrationColumns.length + 1} className="text-center py-12 text-lg text-muted-foreground">
+                                                                                    No registrations found for this page.
                                                                                 </TableCell>
                                                                             </TableRow>
-                                                                        ))
-                                                                    ) : (
-                                                                        <TableRow>
-                                                                            <TableCell colSpan={registrationColumns.length + 1} className="text-center py-12 text-lg text-muted-foreground">
-                                                                                No registrations found for this page.
-                                                                            </TableCell>
-                                                                        </TableRow>
-                                                                    )}
+                                                                        )}
 
-                                                                </TableBody>
-                                                            </Table>
-                                                        </div>
-                                                        {totalPages > 1 && (
-                                                            <div className="flex justify-center mt-6">
-                                                                <Pagination>
-                                                                    <PaginationContent>
-                                                                        <PaginationItem>
-                                                                            <PaginationPrevious
-                                                                                onClick={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    if (currentPage > 1) onPageChange(currentPage - 1);
-                                                                                }}
-                                                                                className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                            />
-                                                                        </PaginationItem>
-
-                                                                        {Array.from({ length: totalPages }, (_, i) => {
-                                                                            const pageNumber = i + 1;
-
-                                                                            if (
-                                                                                pageNumber === 1 ||
-                                                                                pageNumber === totalPages ||
-                                                                                Math.abs(pageNumber - currentPage) <= 1
-                                                                            ) {
-                                                                                return (
-                                                                                    <PaginationItem key={pageNumber}>
-                                                                                        <PaginationLink
-                                                                                            onClick={(e) => {
-                                                                                                e.preventDefault();
-                                                                                                onPageChange(pageNumber);
-                                                                                            }}
-                                                                                            isActive={currentPage === pageNumber}
-                                                                                            className="cursor-pointer"
-                                                                                        >
-                                                                                            {pageNumber}
-                                                                                        </PaginationLink>
-                                                                                    </PaginationItem>
-                                                                                );
-                                                                            } else if (
-                                                                                pageNumber === currentPage - 2 ||
-                                                                                pageNumber === currentPage + 2
-                                                                            ) {
-                                                                                return <span key={pageNumber} className="px-2">...</span>;
-                                                                            }
-
-                                                                            return null;
-                                                                        })}
-
-                                                                        <PaginationItem>
-                                                                            <PaginationNext
-                                                                                onClick={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    if (currentPage < totalPages) onPageChange(currentPage + 1);
-                                                                                }}
-                                                                                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                            />
-                                                                        </PaginationItem>
-                                                                    </PaginationContent>
-                                                                </Pagination>
+                                                                    </TableBody>
+                                                                </Table>
                                                             </div>
-                                                        )}
+                                                            {totalPages > 1 && (
+                                                                <div className="flex justify-center mt-6">
+                                                                    <Pagination>
+                                                                        <PaginationContent>
+                                                                            <PaginationItem>
+                                                                                <PaginationPrevious
+                                                                                    onClick={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        if (currentPage > 1) onPageChange(currentPage - 1);
+                                                                                    }}
+                                                                                    className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                                />
+                                                                            </PaginationItem>
+
+                                                                            {Array.from({ length: totalPages }, (_, i) => {
+                                                                                const pageNumber = i + 1;
+
+                                                                                if (
+                                                                                    pageNumber === 1 ||
+                                                                                    pageNumber === totalPages ||
+                                                                                    Math.abs(pageNumber - currentPage) <= 1
+                                                                                ) {
+                                                                                    return (
+                                                                                        <PaginationItem key={pageNumber}>
+                                                                                            <PaginationLink
+                                                                                                onClick={(e) => {
+                                                                                                    e.preventDefault();
+                                                                                                    onPageChange(pageNumber);
+                                                                                                }}
+                                                                                                isActive={currentPage === pageNumber}
+                                                                                                className="cursor-pointer"
+                                                                                            >
+                                                                                                {pageNumber}
+                                                                                            </PaginationLink>
+                                                                                        </PaginationItem>
+                                                                                    );
+                                                                                } else if (
+                                                                                    pageNumber === currentPage - 2 ||
+                                                                                    pageNumber === currentPage + 2
+                                                                                ) {
+                                                                                    return <span key={pageNumber} className="px-2">...</span>;
+                                                                                }
+
+                                                                                return null;
+                                                                            })}
+
+                                                                            <PaginationItem>
+                                                                                <PaginationNext
+                                                                                    onClick={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        if (currentPage < totalPages) onPageChange(currentPage + 1);
+                                                                                    }}
+                                                                                    className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                                />
+                                                                            </PaginationItem>
+                                                                        </PaginationContent>
+                                                                    </Pagination>
+                                                                </div>
+                                                            )}
                                                     </CardContent>
                                                 </Card>
                                             </TabsContent>
@@ -4195,168 +4204,168 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                             )}
                                                         </div>
                                                     </CardHeader>
-                                                    <CardContent>
-                                                        {/* Search Input */}
-                                                        <div className="mb-4">
-                                                            <div className="relative">
-                                                                <LucideIcons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                                <Input
-                                                                    placeholder="Search by solution title or company name..."
-                                                                    value={pitchSearchQuery}
-                                                                    onChange={(e) => setPitchSearchQuery(e.target.value)}
-                                                                    className="pl-10"
-                                                                />
+                                                    <CardContent className="w-[95vw] lg:w-full">
+                                                            {/* Search Input */}
+                                                            <div className="mb-4">
+                                                                <div className="relative">
+                                                                    <LucideIcons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                                    <Input
+                                                                        placeholder="Search by solution title or company name..."
+                                                                        value={pitchSearchQuery}
+                                                                        onChange={(e) => setPitchSearchQuery(e.target.value)}
+                                                                        className="pl-10"
+                                                                    />
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        <div className="rounded-md border">
-                                                            <Table>
-                                                                <TableHeader>
-                                                                    <TableRow>
-                                                                        <TableHead className="w-[50px]">
-                                                                            <input
-                                                                                type="checkbox"
-                                                                                checked={(() => {
-                                                                                    const filtered = pitchingDetails.filter(p =>
-                                                                                        p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                                        p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                                    );
-                                                                                    return filtered.length > 0 && selectedPitchIds.length === filtered.length;
-                                                                                })()}
-                                                                                onChange={() => {
-                                                                                    const filtered = pitchingDetails.filter(p =>
-                                                                                        p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                                        p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                                    );
-                                                                                    if (selectedPitchIds.length === filtered.length) {
-                                                                                        setSelectedPitchIds([]);
-                                                                                    } else {
-                                                                                        setSelectedPitchIds(filtered.map(p => p.id));
-                                                                                    }
-                                                                                }}
-                                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                                            />
-                                                                        </TableHead>
-                                                                        <TableHead>Founder Name</TableHead>
-                                                                        <TableHead>Solution Title</TableHead>
-                                                                        <TableHead>Company</TableHead>
-                                                                        <TableHead>Requirements</TableHead>
-                                                                        <TableHead>Pitch Date</TableHead>
-                                                                        <TableHead>Pitch Time</TableHead>
-                                                                        <TableHead className="text-right">Actions</TableHead>
-                                                                    </TableRow>
-                                                                </TableHeader>
-                                                                <TableBody>
-                                                                    {isLoadingPitching ? (
-                                                                        Array.from({ length: 5 }).map((_, i) => (
-                                                                            <TableRow key={i}>
-                                                                                <TableCell><div className="h-4 w-4 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                <TableCell><div className="h-4 w-32 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                <TableCell><div className="h-4 w-40 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                <TableCell><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                <TableCell><div className="h-4 w-8 bg-gray-200 rounded animate-pulse ml-auto" /></TableCell>
-                                                                            </TableRow>
-                                                                        ))
-                                                                    ) : (() => {
-                                                                        const filtered = pitchingDetails.filter(p =>
-                                                                            p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                            p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                        );
-                                                                        return filtered.length === 0;
-                                                                    })() ? (
+                                                            <div className="rounded-md border">
+                                                                <Table>
+                                                                    <TableHeader>
                                                                         <TableRow>
-                                                                            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                                                                                No pitching details found.
-                                                                            </TableCell>
+                                                                            <TableHead className="w-[50px]">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={(() => {
+                                                                                        const filtered = pitchingDetails.filter(p =>
+                                                                                            p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                            p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                                        );
+                                                                                        return filtered.length > 0 && selectedPitchIds.length === filtered.length;
+                                                                                    })()}
+                                                                                    onChange={() => {
+                                                                                        const filtered = pitchingDetails.filter(p =>
+                                                                                            p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                            p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                                        );
+                                                                                        if (selectedPitchIds.length === filtered.length) {
+                                                                                            setSelectedPitchIds([]);
+                                                                                        } else {
+                                                                                            setSelectedPitchIds(filtered.map(p => p.id));
+                                                                                        }
+                                                                                    }}
+                                                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                                                />
+                                                                            </TableHead>
+                                                                            <TableHead>Founder Name</TableHead>
+                                                                            <TableHead>Solution Title</TableHead>
+                                                                            <TableHead>Company</TableHead>
+                                                                            <TableHead>Requirements</TableHead>
+                                                                            <TableHead>Pitch Date</TableHead>
+                                                                            <TableHead>Pitch Time</TableHead>
+                                                                            <TableHead className="text-right">Actions</TableHead>
                                                                         </TableRow>
-                                                                    ) : (
-                                                                        pitchingDetails
-                                                                            .filter(p =>
-                                                                                p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                                p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                            )
-                                                                            .map((pitch) => (
-                                                                                <TableRow key={pitch.id}>
-                                                                                    <TableCell>
-                                                                                        <input
-                                                                                            type="checkbox"
-                                                                                            checked={selectedPitchIds.includes(pitch.id)}
-                                                                                            onChange={() => togglePitchSelect(pitch.id)}
-                                                                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                                                        />
-                                                                                    </TableCell>
-                                                                                    <TableCell className="font-medium">{pitch.founder_name}</TableCell>
-                                                                                    <TableCell>{pitch.solution_title}</TableCell>
-                                                                                    <TableCell>{pitch.company_name}</TableCell>
-                                                                                    <TableCell className="max-w-xs">
-                                                                                        <div className="line-clamp-2 text-sm text-muted-foreground">
-                                                                                            {pitch.requirements || 'N/A'}
-                                                                                        </div>
-                                                                                    </TableCell>
-                                                                                    <TableCell>
-                                                                                        {(() => {
-                                                                                            const date = new Date(pitch.pitch_date);
-                                                                                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                                                                            return `${months[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}`;
-                                                                                        })()}
-                                                                                    </TableCell>
-                                                                                    <TableCell>
-                                                                                        {(() => {
-                                                                                            const [hours, minutes] = pitch.pitch_time.split(':');
-                                                                                            const hour = parseInt(hours);
-                                                                                            const ampm = hour >= 12 ? 'PM' : 'AM';
-                                                                                            const displayHour = hour % 12 || 12;
-                                                                                            return `${displayHour}:${minutes} ${ampm}`;
-                                                                                        })()}
-                                                                                    </TableCell>
-                                                                                    <TableCell className="text-right">
-                                                                                        <AlertDialog>
-                                                                                            <AlertDialogTrigger asChild>
-                                                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive/90">
-                                                                                                    <LucideIcons.Trash2 className="h-4 w-4" />
-                                                                                                </Button>
-                                                                                            </AlertDialogTrigger>
-                                                                                            <AlertDialogContent>
-                                                                                                <AlertDialogHeader>
-                                                                                                    <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
-                                                                                                    <AlertDialogDescription>
-                                                                                                        This will permanently delete the pitching details for {pitch.solution_title}.
-                                                                                                    </AlertDialogDescription>
-                                                                                                </AlertDialogHeader>
-                                                                                                <AlertDialogFooter>
-                                                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                                                    <AlertDialogAction
-                                                                                                        onClick={async () => {
-                                                                                                            setIsDeletingPitch(true);
-                                                                                                            const token = localStorage.getItem('token');
-                                                                                                            try {
-                                                                                                                await fetch(`${API_BASE_URL}/api/pitching/delete/${pitch.id}`, {
-                                                                                                                    method: 'DELETE',
-                                                                                                                    headers: { 'Authorization': `Bearer ${token}` }
-                                                                                                                });
-                                                                                                                toast({ title: "Deleted", description: "Pitching detail deleted." });
-                                                                                                                fetchPitchingDetails();
-                                                                                                            } catch (e) {
-                                                                                                                toast({ variant: 'destructive', title: "Error", description: "Failed to delete." });
-                                                                                                            } finally {
-                                                                                                                setIsDeletingPitch(false);
-                                                                                                            }
-                                                                                                        }}
-                                                                                                    >
-                                                                                                        Delete
-                                                                                                    </AlertDialogAction>
-                                                                                                </AlertDialogFooter>
-                                                                                            </AlertDialogContent>
-                                                                                        </AlertDialog>
-                                                                                    </TableCell>
+                                                                    </TableHeader>
+                                                                    <TableBody>
+                                                                        {isLoadingPitching ? (
+                                                                            Array.from({ length: 5 }).map((_, i) => (
+                                                                                <TableRow key={i}>
+                                                                                    <TableCell><div className="h-4 w-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-4 w-32 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-4 w-40 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-4 w-8 bg-gray-200 rounded animate-pulse ml-auto" /></TableCell>
                                                                                 </TableRow>
                                                                             ))
-                                                                    )}
-                                                                </TableBody>
-                                                            </Table>
-                                                        </div>
+                                                                        ) : (() => {
+                                                                            const filtered = pitchingDetails.filter(p =>
+                                                                                p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                            );
+                                                                            return filtered.length === 0;
+                                                                        })() ? (
+                                                                            <TableRow>
+                                                                                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                                                                                    No pitching details found.
+                                                                                </TableCell>
+                                                                            </TableRow>
+                                                                        ) : (
+                                                                            pitchingDetails
+                                                                                .filter(p =>
+                                                                                    p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                    p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                                )
+                                                                                .map((pitch) => (
+                                                                                    <TableRow key={pitch.id}>
+                                                                                        <TableCell>
+                                                                                            <input
+                                                                                                type="checkbox"
+                                                                                                checked={selectedPitchIds.includes(pitch.id)}
+                                                                                                onChange={() => togglePitchSelect(pitch.id)}
+                                                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                                                            />
+                                                                                        </TableCell>
+                                                                                        <TableCell className="font-medium">{pitch.founder_name}</TableCell>
+                                                                                        <TableCell>{pitch.solution_title}</TableCell>
+                                                                                        <TableCell>{pitch.company_name}</TableCell>
+                                                                                        <TableCell className="max-w-xs">
+                                                                                            <div className="line-clamp-2 text-sm text-muted-foreground">
+                                                                                                {pitch.requirements || 'N/A'}
+                                                                                            </div>
+                                                                                        </TableCell>
+                                                                                        <TableCell>
+                                                                                            {(() => {
+                                                                                                const date = new Date(pitch.pitch_date);
+                                                                                                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                                                                                return `${months[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}`;
+                                                                                            })()}
+                                                                                        </TableCell>
+                                                                                        <TableCell>
+                                                                                            {(() => {
+                                                                                                const [hours, minutes] = pitch.pitch_time.split(':');
+                                                                                                const hour = parseInt(hours);
+                                                                                                const ampm = hour >= 12 ? 'PM' : 'AM';
+                                                                                                const displayHour = hour % 12 || 12;
+                                                                                                return `${displayHour}:${minutes} ${ampm}`;
+                                                                                            })()}
+                                                                                        </TableCell>
+                                                                                        <TableCell className="text-right">
+                                                                                            <AlertDialog>
+                                                                                                <AlertDialogTrigger asChild>
+                                                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive/90">
+                                                                                                        <LucideIcons.Trash2 className="h-4 w-4" />
+                                                                                                    </Button>
+                                                                                                </AlertDialogTrigger>
+                                                                                                <AlertDialogContent>
+                                                                                                    <AlertDialogHeader>
+                                                                                                        <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                                                                                                        <AlertDialogDescription>
+                                                                                                            This will permanently delete the pitching details for {pitch.solution_title}.
+                                                                                                        </AlertDialogDescription>
+                                                                                                    </AlertDialogHeader>
+                                                                                                    <AlertDialogFooter>
+                                                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                                                        <AlertDialogAction
+                                                                                                            onClick={async () => {
+                                                                                                                setIsDeletingPitch(true);
+                                                                                                                const token = localStorage.getItem('token');
+                                                                                                                try {
+                                                                                                                    await fetch(`${API_BASE_URL}/api/pitching/delete/${pitch.id}`, {
+                                                                                                                        method: 'DELETE',
+                                                                                                                        headers: { 'Authorization': `Bearer ${token}` }
+                                                                                                                    });
+                                                                                                                    toast({ title: "Deleted", description: "Pitching detail deleted." });
+                                                                                                                    fetchPitchingDetails();
+                                                                                                                } catch (e) {
+                                                                                                                    toast({ variant: 'destructive', title: "Error", description: "Failed to delete." });
+                                                                                                                } finally {
+                                                                                                                    setIsDeletingPitch(false);
+                                                                                                                }
+                                                                                                            }}
+                                                                                                        >
+                                                                                                            Delete
+                                                                                                        </AlertDialogAction>
+                                                                                                    </AlertDialogFooter>
+                                                                                                </AlertDialogContent>
+                                                                                            </AlertDialog>
+                                                                                        </TableCell>
+                                                                                    </TableRow>
+                                                                                ))
+                                                                        )}
+                                                                    </TableBody>
+                                                                </Table>
+                                                            </div>
                                                     </CardContent>
                                                 </Card>
                                             </TabsContent>
@@ -4432,7 +4441,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             </Button>
                                         </div>
 
-                                        <div className="rounded-md border overflow-hidden">
+                                        <div className="rounded-md border w-[95vw] lg:w-full">
                                             <Table>
                                                 <TableHeader className="bg-muted/50">
                                                     <TableRow>
