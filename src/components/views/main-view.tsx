@@ -22,6 +22,7 @@ import BrowseMSME from "./browseMSME";
 import SolveChallengeDashboard from "./solve-challenge-dashboard";
 import ListTechnologyDashboard from "./list-a-tech-dashboard";
 import InnovativeIdeaDashboard from "./innovative-dashboard";
+import PricingPageClient from "@/app/pricing/pricing-client";
 
 
 const ModalSkeleton = () => (

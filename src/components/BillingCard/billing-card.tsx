@@ -194,7 +194,7 @@ export default function PricingAccordion({setActiveView}:PricingAccordion) {
                 currency: orderData.currency,
                 name: "Hustloop",
                 description: `Subscription: ${plan.name}`,
-                image: "/logo.png",
+                image: "/hustloop_logo.png",
                 order_id: orderData.order_id,
                 handler: async function (response: any) {
                     try {

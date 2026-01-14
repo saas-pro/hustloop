@@ -70,6 +70,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { string } from 'zod';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter } from 'next/navigation';
 
 interface CorporateChallengeDetailsProps {
   challenge: CorporateChallenge | null;
@@ -221,7 +222,7 @@ export default function CorporateChallengeDetails({
   const [deleteAnnouncementId, setDeleteAnnouncementId] = useState<string | null>(null);
   const [isFetchingAnnouncements, setIsFetchingAnnouncements] = useState(false);
   const [hasAgreed, setHasAgreed] = useState(false);
-
+  const router = useRouter();
   const handleScrollCapture = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     setScrolled(el.scrollTop > 0);
@@ -407,11 +408,11 @@ export default function CorporateChallengeDetails({
   let tooltipContent = null;
   if (!isLoggedIn) {
     tooltipContent = <p>Please login to view the problem statement&apos;s</p>;
-  } //else if (!hasSubscription) {
-  //   tooltipContent = (
-  //     <p>Subscribe to a plan to view and submit the solution</p>
-  //   );
-  else if (isOtherUsers) {
+  } else if (!hasSubscription) {
+    tooltipContent = (
+      <p>Subscribe to a plan to view and submit the solution</p>
+    );
+  } else if (isOtherUsers) {
     tooltipContent = (
       <p>{"Solution submission is not allowed for your role."}</p>
     )
@@ -471,13 +472,25 @@ export default function CorporateChallengeDetails({
             <div>
 
               <DialogTitle className="text-3xl font-bold font-headline text-left">
-                {challenge.company_name ? <span className='text-black'>{challenge.company_name.replace(/x/gi, '█')}</span> : ''}
+                {challenge.company_name ? (
+                  <span className="text-black blur-sm">{challenge.company_name}</span>
+                ) : ''}
               </DialogTitle>
               <div className="text-left flex flex-col gap-2">
                 <DialogDescription className="line-clamp-3">
                   {challenge.company_description}
                 </DialogDescription>
-                <p className="text-sm text-muted-foreground">A challenge by {challenge.company_name ? challenge.company_name.replace(/x/gi, '█') : ''} {challenge.affiliated_by && <span className="text-muted-foreground font-bold font-headline">(Affiliated By {challenge.affiliated_by})</span>}</p>
+                <p className="text-sm text-muted-foreground">
+                  A challenge by{' '}
+                  {challenge.company_name ? (
+                    <span className="blur-sm">{challenge.company_name}</span>
+                  ) : ''}{' '}
+                  {challenge.affiliated_by && (
+                    <span className="text-muted-foreground font-bold font-headline">
+                      (Affiliated By {challenge.affiliated_by})
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
           </div>
@@ -870,46 +883,59 @@ export default function CorporateChallengeDetails({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        {isChallengeExpiredOrStopped ? (
-                          <div />
-                        ) : isOtherUsers ? (
-                          <div className="flex gap-4 w-full justify-center">
-                            <Button disabled className="bg-gray-400 cursor-not-allowed">
-                              Not Allowed
-                            </Button>
-                          </div>
-                        ) : isAllowedFounder || isLoggedIn ? (
-                          <Button
-                            size="lg"
-                            className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                            onClick={() => {
-                              if (hasAgreed) {
-                                setShowSubmissionForm(true);
-                              } else {
-                                setShowTermsDialog(true);
-                              }
-                              handleApplyClick(challenge.id)
-                            }}
-                            disabled={isDisabled || isSolutionSubmitted}
-                          >
-                            <Rocket className="mr-2 h-5 w-5" />
-                            {isSolutionSubmitted ? "Solution Submitted" : "Solve This Challenge"}
-                          </Button>
-                        ) : (
-                          <div className="flex gap-4 w-full justify-center mt-4">
-                            <Button onClick={() => setActiveView("login")}>Login</Button>
-
+                        <div className="inline-block">
+                          {isChallengeExpiredOrStopped ? (
+                            <div />
+                          ) : isOtherUsers ? (
+                            <div className="flex gap-4 w-full justify-center">
+                              <Button disabled className="bg-gray-400 cursor-not-allowed">
+                                Not Allowed
+                              </Button>
+                            </div>
+                          ) : isAllowedFounder || isLoggedIn ? (
                             <Button
-                              onClick={() => setActiveView("signup")}
+                              size="lg"
                               className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                              onClick={() => {
+                                if (!hasSubscription) {
+                                  toast({
+                                    title: "Subscription Required",
+                                    description: "Please subscribe to a plan to access this challenge",
+                                    variant: "default",
+                                  });
+                                  router.push('/pricing');
+                                  return;
+                                }
+                                if (hasAgreed) {
+                                  setShowSubmissionForm(true);
+                                } else {
+                                  setShowTermsDialog(true);
+                                }
+                                handleApplyClick(challenge.id)
+                              }}
+                              disabled={isDisabled || isSolutionSubmitted}
                             >
-                              Sign Up
+                              <Rocket className="mr-2 h-5 w-5" />
+                              {isSolutionSubmitted ? "Solution Submitted" : "Solve This Challenge"}
                             </Button>
-                          </div>
-                        )}
+                          ) : (
+                            <div className="flex gap-4 w-full justify-center mt-4">
+                              <Button onClick={() => setActiveView("login")}>Login</Button>
+                              <Button
+                                onClick={() => setActiveView("signup")}
+                                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                              >
+                                Sign Up
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </TooltipTrigger>
-
-                      {isDisabled && <TooltipContent>{tooltipContent}</TooltipContent>}
+                      {isDisabled && !isChallengeExpiredOrStopped && (
+                        <TooltipContent side="top" align="center">
+                          {tooltipContent}
+                        </TooltipContent>
+                      )}
                     </Tooltip>
                   </TooltipProvider>
 

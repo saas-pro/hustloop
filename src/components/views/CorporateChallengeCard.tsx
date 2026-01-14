@@ -67,8 +67,8 @@ export const CorporateChallengeCard = ({
                             {challenge.title}
                         </CardTitle>
 
-                        <CardDescription>
-                            {challenge.company_name ? challenge.company_name.replace(/x/gi, '█') : ''}
+                        <CardDescription className="blur-sm">
+                            {challenge.company_name || ''}
                         </CardDescription>
 
                         <Badge variant={isClosed ? "destructive" : "secondary"} className="line-clamp-1 w-[50%] mt-1">
