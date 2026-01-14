@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import CorporateChallengeDetails from "./corporate-challenge-details";
 import MSMECollaborationDetails from "./msme-collaboration-details";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Lock, Terminal } from "lucide-react";
+import { AlertCircle, Lock, Terminal, X } from "lucide-react";
 import type { View } from "@/app/types";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "../ui/skeleton";
@@ -277,7 +277,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
     if (isLoading) {
       return (
         <Tabs defaultValue="CorporateChallenges" className="flex flex-col flex-grow min-h-0 px-6 pb-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 h-fit">
+          <TabsList className="grid w-full grid-cols-3 h-fit">
             <TabsTrigger value="CorporateChallenges">Corporate&apos;s</TabsTrigger>
             <TabsTrigger value="MSMECollaboration">MSME&apos;s</TabsTrigger>
             <TabsTrigger value="Governmentchallenges">Government&apos;s</TabsTrigger>
@@ -387,10 +387,24 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0 rounded-lg">
+      <Dialog open={isOpen}>
+        <DialogContent
+          hideClose={true}
+          className="sm:max-w-5xl h-[90vh] flex flex-col p-0 rounded-lg">
           <DialogHeader className="p-6">
             <DialogTitle className="text-3xl font-bold text-center font-headline">Innovation &amp; Growth Opportunities</DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+              onClick={(e) => {
+                e.stopPropagation();  // Add this line
+                onOpenChange(false);
+              }}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
             <DialogDescription className="text-center">
               <span className="text-accent">&quot;Empowering MSMEs for Success&quot;</span>
               <span className="text-center mx-auto hidden md:block">

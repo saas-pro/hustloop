@@ -460,7 +460,7 @@ export default function CorporateChallengeDetails({
     : JSON.parse(challenge?.attachments || "[]");
   return (
     <Dialog open={!!challenge} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] max-w-[90vw] h-[90vh] flex flex-col p-0 rounded-lg">
+      <DialogContent className="h-[90vh] flex flex-col p-0 rounded-lg">
         <DialogHeader className="p-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-[60px] w-[60px] rounded-lg">

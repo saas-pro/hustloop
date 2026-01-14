@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Lock, Terminal } from "lucide-react";
+import { Star, MapPin, Lock, Terminal, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -211,10 +211,22 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-5xl h-[90vh] w-[90vw] rounded-lg lg:w-full flex flex-col p-0">
+      <Dialog open={isOpen}>
+        <DialogContent hideClose={true} className="sm:max-w-5xl h-[90vh] rounded-lg lg:w-full flex flex-col p-0">
           <DialogHeader className="p-6">
             <DialogTitle className="text-3xl font-bold text-center font-headline">Startup Incubation Hub</DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+              onClick={(e) => {
+                e.stopPropagation();  // Add this line
+                onOpenChange(false);
+              }}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
             <DialogDescription className="text-center">
               <span className="text-accent">&quot;You Dream It. We Help Build It.&quot;</span>
               <br />

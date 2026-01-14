@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import {
   Dialog,
@@ -31,7 +31,17 @@ interface MarketplaceViewProps {
 
 export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, isLoggedIn, hasSubscription }: MarketplaceViewProps) {
   const [internalView, setInternalView] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(isOpen);
 
+  useEffect(() => {
+    setIsDialogOpen(isOpen);
+  }, [isOpen]);
+  const handleOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      onOpenChange(false);
+    }
+  };
   const handleInternalViewClose = (viewName: string) => (open: boolean) => {
     if (!open) {
       setInternalView(null);
@@ -40,7 +50,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-3xl rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center font-headline">Marketplace</DialogTitle>
@@ -89,7 +99,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                     <div className="w-fit overflow-hidden py-1 px-4">
                       <Marquee speed={18} className="w-[80vw]">
                         <span className="text-[30px] sm:text-xs font-bold uppercase tracking-[0.2em] whitespace-nowrap">
-                          INCENTIVE CHALLENGES • 
+                          INCENTIVE CHALLENGES •
                         </span>
                       </Marquee>
                     </div>
@@ -137,7 +147,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                     <div className="w-fit overflow-hidden py-1 px-4">
                       <Marquee speed={18} className="w-[80vw]">
                         <span className="text-[30px] sm:text-xs font-bold uppercase tracking-[0.2em] whitespace-nowrap">
-                          TECHNOLOGY TRANSFER • 
+                          TECHNOLOGY TRANSFER •
                         </span>
                       </Marquee>
                     </div>
@@ -187,7 +197,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                     <div className="w-fit overflow-hidden py-1 px-4">
                       <Marquee speed={18} className="w-[80vw]">
                         <span className="text-[30px] sm:text-xs font-bold uppercase tracking-[0.2em] whitespace-nowrap">
-                          DREAM STARTUP • 
+                          DREAM STARTUP •
                         </span>
                       </Marquee>
                     </div>
@@ -211,16 +221,15 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
         </DialogContent>
       </Dialog >
 
-      {internalView === 'msmes' && (
+      {internalView === "msmes" && (
         <MsmesView
-          isOpen={true}
-          onOpenChange={handleInternalViewClose('msmes')}
+          isOpen={internalView === "msmes"}
+          onOpenChange={handleInternalViewClose("msmes")}
+          setActiveView={setActiveView}
           isLoggedIn={isLoggedIn}
           hasSubscription={hasSubscription}
-          setActiveView={setActiveView}
         />
-      )
-      }
+      )}
 
       {
         internalView === 'browseTech' && (

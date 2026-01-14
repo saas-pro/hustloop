@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, Search, ArrowRight } from "lucide-react";
+import { Loader2, Search, ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,10 +78,22 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
     }, [profiles, searchTerm]);
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 sm:max-w-6xl w-[90vw] max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-lg">
+        <Dialog open={isOpen}>
+            <DialogContent hideClose={true} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-lg">
                 <DialogHeader className="p-6">
                     <DialogTitle className="text-3xl font-bold text-center font-headline">Technology Transfer</DialogTitle>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+                        onClick={(e) => {
+                            e.stopPropagation();  // Add this line
+                            onOpenChange(false);
+                        }}
+                    >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Close</span>
+                    </Button>
                     <DialogDescription className="text-center">
                         <span className="text-accent">
                             {"Hustloop is where innovation meets execution."}
@@ -150,7 +162,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
                                                 title={profile.firstName + " " + profile.lastName}
                                                 containerClassName="w-[20rem]"
                                             >
-                                                <Card className="w-[80vw] md:w-[20rem] h-[18rem] flex flex-col border-border/50 hover:border-accent/50 transition-colors bg-card shadow-xl" onClick={() => {
+                                                <Card className="w-[90vw] md:w-[20rem] h-[18rem] flex flex-col border-border/50 hover:border-accent/50 transition-colors bg-card shadow-xl" onClick={() => {
                                                     setTechId(profile.id);
                                                     onOpenChange(true);
                                                 }}>
