@@ -23,7 +23,53 @@ export const metadata: Metadata = {
     template: '%s | Hustloop',
   },
   description: 'Hustloop is an open innovation and startup collaboration platform that connects founders, corporates, innovators, and students to solve real business challenges and drive technology transfer.',
-  keywords: ['startup', 'innovation', 'team', 'incentive challenge', 'collaboration', 'founders', 'students', 'technology transfer', 'ecosystem'],
+  keywords: [
+    // Core Business
+    'startup collaboration platform',
+    'open innovation platform',
+    'technology transfer platform',
+    'corporate innovation hub',
+    'startup ecosystem',
+
+    // User Types
+    'for startups and founders',
+    'corporate innovation teams',
+    'student innovators',
+    'entrepreneur network',
+    'tech professionals community',
+
+    // Solutions
+    'solve business challenges',
+    'startup-corporate collaboration',
+    'innovation management',
+    'startup scouting platform',
+    'corporate venturing',
+
+    // Benefits
+    'find startup partners',
+    'corporate startup programs',
+    'startup funding opportunities',
+    'technology commercialization',
+    'business innovation solutions',
+
+    // Features
+    'startup matchmaking',
+    'innovation challenges platform',
+    'startup acceleration programs',
+    'corporate startup partnerships',
+    'technology scouting platform',
+
+    // Location (if applicable)
+    'India startup network',
+    'global innovation platform',
+    'emerging market startups',
+    'technology transfer India',
+    'incentive challenges salem',
+    'technology transfer salem',
+    'incentive challenges',
+    'technology transfer'
+  ],
+  
   authors: [{ name: 'Hustloop' }],
   openGraph: {
     type: 'website',

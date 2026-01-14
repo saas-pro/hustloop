@@ -5,21 +5,32 @@ export const metadata: Metadata = {
     title: 'Incentive Challenges - Win Prizes & Build Innovative Solutions | Hustloop',
     description: 'Join Hustloop\'s incentive challenges to solve real-world problems, win cash prizes, gain recognition, and access pilot opportunities. Open to students, innovators, startups, and professionals.',
     keywords: [
-        'incentive challenge',
-        'innovation competition',
-        'prize competition',
-        'startup challenge',
-        'innovation contest',
-        'cash prizes',
-        'pilot opportunities',
-        'innovation platform',
-        'problem solving competition',
-        'tech challenge',
-        'entrepreneurship competition',
-        'innovation rewards',
-        'Hall of Fame',
-        'MSME collaboration',
-        'corporate innovation challenge'
+        // How people search
+        'how to join innovation challenges',
+        'best startup competitions to enter',
+        'prize money for solving problems',
+        'how to win innovation challenges',
+        'where to find tech competitions',
+
+        // Problem-solving searches
+        'solve real problems for money',
+        'tech challenges with cash prizes',
+        'innovation competitions for students',
+        'corporate hackathons near me',
+
+        // Benefits focused
+        'get funding for my startup idea',
+        'win money for my innovation',
+        'pitch to investors competitions',
+        'startup accelerator programs',
+        'grants for social entrepreneurs',
+
+        // Specific to India
+        'startup competitions in India',
+        'innovation challenges for Indian students',
+        'corporate hackathons India',
+        'tech competitions for college students India',
+        'open innovation'
     ],
     authors: [{ name: 'Hustloop' }],
     creator: 'Hustloop',
