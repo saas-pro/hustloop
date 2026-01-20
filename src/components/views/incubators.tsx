@@ -218,7 +218,7 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-2 top-2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+              className="absolute right-2 top-2 disabled:pointer-events-none hover:!bg-current"
               onClick={(e) => {
                 e.stopPropagation();  // Add this line
                 onOpenChange(false);

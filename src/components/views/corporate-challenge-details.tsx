@@ -498,9 +498,9 @@ export default function CorporateChallengeDetails({
 
         <Tabs defaultValue="summary" className="w-full px-6">
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 h-fit">
-            <TabsTrigger value="summary" disabled={challenge.status === "stopped"}>Summary</TabsTrigger>
-            <TabsTrigger value="timeline" disabled={challenge.status === "stopped"}>Timeline</TabsTrigger>
-            <TabsTrigger value="announcement" disabled={challenge.status === "stopped"}>
+            <TabsTrigger value="summary" disabled={challenge.status === "stopped" || challenge.status === "expired"} className={`${(challenge.status !== "active" ? 'font-normal' : '')}`}>Summary</TabsTrigger>
+            <TabsTrigger value="timeline" disabled={challenge.status === "stopped"} className={`${(challenge.status !== "active" ? 'font-normal' : '')}`}>Timeline</TabsTrigger>
+            <TabsTrigger value="announcement">
               <span className="flex items-center gap-2">
                 Announcements
                 {announcements && announcements.length >= 0 && challenge.status !== "stopped" && (
@@ -511,7 +511,7 @@ export default function CorporateChallengeDetails({
               </span>
             </TabsTrigger>
             <TabsTrigger value="hof">Hall of Fame</TabsTrigger>
-            <TabsTrigger value="q/a" disabled={challenge.status === "stopped"}><span className="flex items-center gap-2"> Q/A {challenge.qa_count > 0 && <span className="inline-flex items-center justify-center h-5 w-5 font-semibold rounded-full bg-primary text-primary-foreground">
+            <TabsTrigger value="q/a" disabled={challenge.status === "stopped" || challenge.status === "expired"} className={`${(challenge.status !== "active" ? 'font-normal' : '')}`}><span className="flex items-center gap-2"> Q/A {challenge.qa_count > 0 && <span className="inline-flex items-center justify-center h-5 w-5 font-semibold rounded-full bg-primary text-primary-foreground">
               {challenge.qa_count}
             </span>}</span></TabsTrigger>
             <TabsTrigger value="faq">FAQ</TabsTrigger>

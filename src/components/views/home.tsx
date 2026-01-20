@@ -1007,7 +1007,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
       <SolutionCard solutionSteps={solutionSteps} scrollContainer={scrollContainerRef}></SolutionCard>
 
       <section className='w-full mx-auto'>
-        <PricingData setActiveView={setActiveView}/>
+        <PricingData setActiveView={setActiveView} />
       </section>
       
 

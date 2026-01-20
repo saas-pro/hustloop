@@ -333,7 +333,7 @@ const TechTransfer = ({ techId, onClose }: TechTransferViewProps) => {
     }} >
       <DialogContent
         className={`
-                    flex flex-col border bg-background transition-all duration-500 p-0 w-[90vw] max-w-[90vw] shadow-lg text-base fixed h-[90vh] rounded-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                    flex flex-col border bg-background transition-all duration-500 p-0 md:w-[90vw] md:max-w-[90vw] shadow-lg text-base fixed h-[90vh] rounded-lg top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
                 `} >
         <div className="flex justify-between items-center p-4 pr-14 rounded-t-lg border-b bg-muted/50 dark:bg-muted/20 flex-shrink-0">
           <DialogTitle className="text-xl font-bold">

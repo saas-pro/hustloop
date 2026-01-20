@@ -13,11 +13,11 @@ import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
 import { View } from "@/app/types";
 
-interface PricingAccordion{
+interface PricingAccordion {
     setActiveView: (view: View) => void;
 }
 
-export default function PricingAccordion({setActiveView}:PricingAccordion) {
+export default function PricingAccordion({ setActiveView }: PricingAccordion) {
 
     const router = useRouter();
     const { toast } = useToast();
@@ -215,12 +215,12 @@ export default function PricingAccordion({setActiveView}:PricingAccordion) {
                             const subscriptionRes = await fetch(`${API_BASE_URL}/api/user/subscription`, {
                                 headers: { 'Authorization': `Bearer ${token}` }
                             });
-
-                            if (subscriptionRes.ok) {
-                                const subscriptionData = await subscriptionRes.json();
-                                setActiveSubscription(subscriptionData.subscription);
-                                setShowSuccessPopup(true);
+                            const subscriptionData = await subscriptionRes.json();
+                            setActiveSubscription(subscriptionData.subscription);
+                            if (subscriptionData.subscription?.status === "active") {
+                                localStorage.setItem('hasSubscription', 'true');
                             }
+                            
                             toast({
                                 title: "Payment Successful!",
                                 description: "Your subscription has been activated.",
@@ -389,7 +389,7 @@ export default function PricingAccordion({setActiveView}:PricingAccordion) {
                                                     disabled={
                                                         !isPlanAllowed(plan.name) ||
                                                         (activeSubscription && activeSubscription.plan_id === plan.id) ||
-                                                        isProcessing === plan.id || 
+                                                        isProcessing === plan.id ||
                                                         idx === 0
                                                     }
                                                     className={cn(

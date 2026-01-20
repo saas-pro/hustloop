@@ -53,7 +53,7 @@ export const CorporateChallengeCard = ({
     // }
 
     return (
-        <Card className="bg-card flex flex-col w-full md:w-[18rem] antialiased border-none" onClick={() => onViewDetails("CorporateChallenges", challenge)}>
+        <Card className="bg-card flex flex-col w-full md:w-[14rem] lg:w-[18rem] antialiased border-none" onClick={() => onViewDetails("CorporateChallenges", challenge)}>
             <CardHeader>
                 <div className="flex items-center gap-4">
                     <Avatar className="h-[60px] w-[60px] rounded-lg">

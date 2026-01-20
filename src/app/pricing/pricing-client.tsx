@@ -244,9 +244,10 @@ export default function PricingPageClient() {
                                 headers: { 'Authorization': `Bearer ${token}` }
                             });
 
-                            if (subscriptionRes.ok) {
-                                const subscriptionData = await subscriptionRes.json();
-                                setActiveSubscription(subscriptionData.subscription);
+                            const subscriptionData = await subscriptionRes.json();
+                            setActiveSubscription(subscriptionData.subscription);
+                            if (subscriptionData.subscription?.status === "active") {
+                                localStorage.setItem('hasSubscription', 'true');
                             }
                             toast({
                                 title: "Payment Successful!",
