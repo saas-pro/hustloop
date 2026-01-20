@@ -79,7 +79,7 @@ export default function TechTransferView({ isOpen, onOpenChange }: TechTransferV
 
     return (
         <Dialog open={isOpen}>
-            <DialogContent hideClose={true} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-lg">
+            <DialogContent hideClose={true} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[90vh] w-full max-w-full md:w-[70vw] md:max-w-[970vw] flex flex-col p-0 overflow-hidden rounded-lg">
                 <DialogHeader className="p-6">
                     <DialogTitle className="text-3xl font-bold text-center font-headline">Technology Transfer</DialogTitle>
                     <Button
