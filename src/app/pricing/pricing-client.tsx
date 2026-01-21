@@ -160,21 +160,26 @@ export default function PricingPageClient() {
 
     // Check if a plan is allowed for the user's role
     const isPlanAllowed = (planName: string) => {
-        if (!userProfile?.founder_role) return true;
-
-        if (userProfile.founder_role === "List a technology for licensing") {
-            return planName === "Free";
+        // If no user profile, allow access (will be handled by auth)
+        if (!userProfile) return true;
+        // Organization role - can see all plans but can't buy
+        if (userProfile.role === 'organisation') {
+            return planName === "Enterprise"; // Disable all buy buttons for organizations
         }
-
-        if (userProfile.founder_role === "Solve Organisation's challenge") {
-            return planName === "Premium";
+        // Non-founder roles can't access any plans
+        if (userProfile.role !== 'founder') {
+            return false;
         }
-
-        if (userProfile.founder_role === "Submit an innovative idea") {
-            return planName === "Standard";
-        }
-
-        return true; // No restriction for other roles
+        // Founder role specific access
+        const founderPlanMap: Record<string, string> = {
+            "List a technology for licensing": "Free",
+            "Solve Organisation's challenge": "Premium",
+            "Submit an innovative idea": "Standard"
+        };
+        // If founder role is not in the map, default to allowing access
+        if (!userProfile.founder_role) return true;
+        // Check if the plan matches the allowed plan for this founder role
+        return founderPlanMap[userProfile.founder_role] === planName;
     };
 
     const handlePayment = async (plan: any) => {

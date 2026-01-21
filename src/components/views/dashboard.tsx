@@ -1,10 +1,10 @@
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, useInView } from "motion/react";
 import { io, Socket } from 'socket.io-client';
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { any, z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -22,7 +22,7 @@ import * as LucideIcons from "lucide-react";
 import type { LucideProps } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber, Submission } from "@/app/types";
+import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber, Submission, founderRole } from "@/app/types";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -44,6 +44,7 @@ import SubmissionDetailsModal from "./submission-details-modal";
 import EventModal from "./event-modal";
 import AnimatedList from "@/components/AnimatedList";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip as UserToolTip } from "../ui/tooltip";
 import {
     Sidebar,
     SidebarContent,
@@ -60,6 +61,9 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { SubscriptionDetails } from "../subscription-details/subscription";
+import { TestimonialManager } from "./TestimonialManager";
+import { TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { title } from "process";
 
 const settingsFormSchema = z.object({
     name: z
@@ -539,6 +543,9 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [pitchPerPage, setPitchPerPage] = useState(10);
     const [isDeletingPitch, setIsDeletingPitch] = useState(false);
     const [pitchSearchQuery, setPitchSearchQuery] = useState("");
+    const [isUpdatingRole, setIsUpdatingRole] = useState<boolean>(false);
+    const [isFounderRoleModified, setIsFounderRoleModified] = useState(false);
+    const [selectedFounderRole, setSelectedFounderRole] = useState<string>('');
 
     const searchParams = useSearchParams()
 
@@ -1676,7 +1683,36 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setisipOverview(false)
         }
     }, []);
-    const adminTabs = ["overview", "users", "ip/technologies", "registration", "engagement", "blog", "sessions", "subscribers", "plans", "pitch-details", "events", "settings"];
+    // const adminTabs = ["overview", "users", "ip/technologies", "testimonials", "registration", "engagement", "blog", "sessions", "subscribers", "plans", "pitch-details", "events", "settings"];
+    const adminTabs = [
+        // Group 1
+        "overview",
+        "users",
+        "testimonials",
+        "divider1",  // First divider after first group
+        // Group 2
+
+        "engagement",
+        "ip/technologies",
+        "pitch-details",
+        "divider2",  // Second divider after first group
+
+        // Group 4
+        "subscribers",
+        "plans",
+        "divider3",  // Third divider after second group
+
+        // Group 5
+        "registration",
+        "events",
+
+        "divider4",  // Fourth divider after fifth group
+        "blog",
+        "sessions",
+
+        "divider5",
+        "settings", // Third divider after third group
+    ];
     const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
 
     const [techtransferData, setTechtransferData] = useState<{
@@ -2235,6 +2271,134 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
         }
     };
 
+    const handleFounderRoleChange = (value: string) => {
+        setSelectedFounderRole(value);
+        setIsFounderRoleModified(true);
+    };
+
+    const handleRoleUpdate = async (newRole: string) => {
+        if (!selectedUserForDetails) return;
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast({ variant: 'destructive', title: 'Authentication Error', description: 'Please log in again.' });
+            return;
+        }
+
+        try {
+            setIsUpdatingRole(true);
+
+            // If updating founder role, make sure we have a selected founder role
+            const founderRoleToUpdate = newRole === 'founder' ? selectedFounderRole : null;
+
+            const response = await fetch(`${API_BASE_URL}/api/users/${selectedUserForDetails.uid}/role`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    role: newRole,
+                    founder_role: founderRoleToUpdate
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update user role');
+            }
+
+            // Update the local state
+            const updatedData = {
+                ...userDetailsData,
+                role: newRole,
+                ...(newRole === 'founder' && { founder_role: selectedFounderRole })
+            };
+            setUserDetailsData(updatedData);
+
+            // Also update the users list
+            setUsers(users.map(user =>
+                user.uid === selectedUserForDetails.uid
+                    ? {
+                        ...user,
+                        role: newRole as UserRole,
+                        founder_role: newRole === 'founder' ? (selectedFounderRole as founderRole) : user.founder_role
+                    }
+                    : user
+            ));
+
+            // Reset the modified state
+            setIsFounderRoleModified(false);
+
+            toast({
+                title: "Success",
+                description: `User role updated to ${newRole}${newRole === 'founder' ? ` (${selectedFounderRole})` : ''}`
+            });
+        } catch (error) {
+            console.error('Error updating user role:', error);
+            toast({
+                variant: 'destructive',
+                title: "Error",
+                description: "Failed to update user role"
+            });
+        } finally {
+            setIsUpdatingRole(false);
+        }
+    };
+
+    useEffect(() => {
+        if (userDetailsData?.founder_role) {
+            setSelectedFounderRole(userDetailsData.founder_role);
+        } else {
+            setSelectedFounderRole('');
+        }
+        setIsFounderRoleModified(false);
+    }, [userDetailsData]);
+    const [userToReset, setUserToReset] = useState<string | null>(null);
+    const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+    // Update the handleResetRole function
+    const handleResetRole = (userId: string) => {
+        setUserToReset(userId);
+        setIsResetDialogOpen(true);
+    };
+    const confirmResetRole = async () => {
+        if (!userToReset) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/reset-role/${userToReset}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            if (!response.ok) {
+                throw new Error('Failed to reset role');
+            }
+            setUsers(users.map((user: any) =>
+                user.uid === userToReset
+                    ? { ...user, role: null, founder_role: null }
+                    : user
+            ));
+            toast({
+                title: "Success",
+                description: "User role has been reset successfully",
+                variant: "default",
+            });
+
+        } catch (error) {
+            console.error('Error resetting role:', error);
+            toast({
+                title: "Error",
+                description: "Failed to reset user role",
+                variant: "destructive",
+            });
+        } finally {
+            setIsResetDialogOpen(false);
+            setUserToReset(null);
+        }
+    };
+
     useEffect(() => {
         if (activeSubTab === "restoreips") {
             fetchRestoreIps();
@@ -2286,7 +2450,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     <SidebarGroup>
                                         <SidebarGroupContent>
                                             <SidebarMenu>
-                                                {adminTabs.map((tab) => {
+                                                {adminTabs.map((tab, index) => {
+                                                    if (tab.startsWith('divider')) {
+                                                        return <div key={tab} className="h-px w-full bg-border/50 my-1" />;
+                                                    }
                                                     const iconMap: Record<DashboardTab | string, keyof typeof LucideIcons> = {
                                                         overview: "LayoutDashboard",
                                                         users: "Users",
@@ -2304,13 +2471,14 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         sessions: "GraduationCap",
                                                         subscribers: "Mail",
                                                         events: "Calendar",
+                                                        testimonials: "FileText",
                                                     };
 
                                                     const iconName = iconMap[tab as DashboardTab] || "HelpCircle";
                                                     const Icon = (LucideIcons[iconName] || LucideIcons.HelpCircle) as React.ComponentType<LucideProps>;
 
                                                     return (
-                                                        <SidebarMenuItem key={tab} className="relative right-2 ">
+                                                        <SidebarMenuItem key={tab} className="relative right-2">
                                                             <SidebarMenuButton
                                                                 isActive={activeTab === tab}
                                                                 onClick={() => setActiveTab(tab as DashboardTab)}
@@ -3036,6 +3204,9 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                             </>
                                         )}
                                     </TabsContent>
+                                    <TabsContent value="testimonials" className="space-y-4">
+                                        <TestimonialManager />
+                                    </TabsContent>
                                     <TabsContent value="organisation" className="mt-0">
                                         {hasSubscription || userRole === 'admin' ? (
                                             <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -3155,6 +3326,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                 <TableHead>Role</TableHead>
                                                                                 <TableHead>Plans</TableHead>
                                                                                 <TableHead>Status</TableHead>
+                                                                                <TableHead>Reset</TableHead>
                                                                                 <TableHead>Details</TableHead>
                                                                                 <TableHead>Actions</TableHead>
                                                                             </TableRow>
@@ -3171,6 +3343,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                     <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
                                                                                     <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
                                                                                     <TableCell><div className="h-4 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
+                                                                                    <TableCell><div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
                                                                                     <TableCell><div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
                                                                                     <TableCell>
                                                                                         <div className="flex gap-2">
@@ -3195,6 +3368,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                     <TableHead>Role</TableHead>
                                                                                     <TableHead>Plans</TableHead>
                                                                                     <TableHead>Status</TableHead>
+                                                                                    <TableHead>Reset</TableHead>
                                                                                     <TableHead>Details</TableHead>
                                                                                     <TableHead>Actions</TableHead>
                                                                                 </TableRow>
@@ -3244,6 +3418,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                                 )}
                                                                                             </div>
                                                                                         </TableCell>
+
                                                                                         <TableCell>
                                                                                             <div>
                                                                                                 {u.status === 'banned' ? (
@@ -3254,6 +3429,16 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                                     <Badge variant="secondary">Pending</Badge>
                                                                                                 )}
                                                                                             </div>
+                                                                                        </TableCell>
+                                                                                        <TableCell>
+                                                                                            <Button
+                                                                                                variant="outline"
+                                                                                                size="sm"
+                                                                                                onClick={() => handleResetRole(u.uid)}
+                                                                                                title="Reset Role"
+                                                                                            >
+                                                                                                <LucideIcons.RotateCcw className="h-4 w-4" />
+                                                                                            </Button>
                                                                                         </TableCell>
                                                                                         <TableCell>
                                                                                             <Button
@@ -3286,20 +3471,18 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                                                     size="sm"
                                                                                                     variant={u.status === 'banned' ? "outline" : "secondary"}
                                                                                                     onClick={() => setUserToBan(u)}
-                                                                                                    className="flex-1 min-w-[90px]"
+                                                                                                    className="flex-1 min-w-[70px]"
                                                                                                 >
                                                                                                     <LucideIcons.Ban className="mr-2 h-4 w-4" />
-                                                                                                    {u.status === 'banned' ? "Unban" : "Ban"}
                                                                                                 </Button>
 
                                                                                                 <Button
                                                                                                     size="sm"
                                                                                                     variant="destructive"
                                                                                                     onClick={() => setUserToDelete(u)}
-                                                                                                    className="flex-1 min-w-[90px]"
+                                                                                                    className="flex-1 min-w-[70px]"
                                                                                                 >
                                                                                                     <LucideIcons.Trash2 className="mr-2 h-4 w-4" />
-                                                                                                    Delete
                                                                                                 </Button>
                                                                                             </div>
                                                                                         </TableCell>
@@ -3412,6 +3595,22 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
                                                         )}
                                                     </CardContent>
+                                                    <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Confirm Role Reset</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Are you sure you want to reset this user&rsquo;s role? They will need to select a new role on next login.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={confirmResetRole} className="bg-red-600 hover:bg-red-700">
+                                                                    Reset Role
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </Card>
                                             </TabsContent>
                                             <TabsContent value="ip/technologies" className="mt-0">
@@ -3883,116 +4082,116 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                     </CardHeader>
 
                                                     <CardContent className="w-[95vw] lg:w-full">
-                                                            <div>
-                                                                <Table>
-                                                                    <TableHeader>
-                                                                        <TableRow>
-                                                                            <TableHead>
-                                                                                <input
-                                                                                    type="checkbox"
-                                                                                    checked={
-                                                                                        selectedIds.length === registrations?.length &&
-                                                                                        registrations.length > 0
-                                                                                    }
-                                                                                    onChange={selectAll}
-                                                                                />
-                                                                            </TableHead>
-                                                                            {registrationColumns.map((col) => (
-                                                                                <TableHead key={col}>{col}</TableHead>
-                                                                            ))}
-                                                                        </TableRow>
-                                                                    </TableHeader>
+                                                        <div>
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow>
+                                                                        <TableHead>
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={
+                                                                                    selectedIds.length === registrations?.length &&
+                                                                                    registrations.length > 0
+                                                                                }
+                                                                                onChange={selectAll}
+                                                                            />
+                                                                        </TableHead>
+                                                                        {registrationColumns.map((col) => (
+                                                                            <TableHead key={col}>{col}</TableHead>
+                                                                        ))}
+                                                                    </TableRow>
+                                                                </TableHeader>
 
-                                                                    <TableBody>
-                                                                        {registrations?.length > 0 ? (
-                                                                            registrations.map((reg) => (
-                                                                                <TableRow key={reg.id}>
-                                                                                    <TableCell>
-                                                                                        <input
-                                                                                            type="checkbox"
-                                                                                            checked={selectedIds.includes(reg.id)}
-                                                                                            onChange={() => toggleSelect(reg.id)}
-                                                                                        />
-                                                                                    </TableCell>
-                                                                                    <TableCell>{reg.full_name}</TableCell>
-                                                                                    <TableCell>{reg.email_address}</TableCell>
-                                                                                    <TableCell>{reg.phone_number}</TableCell>
-                                                                                    <TableCell>{reg.who_you_are}</TableCell>
-                                                                                    <TableCell>
-                                                                                        {new Date(reg.registered_at).toLocaleString()}
-                                                                                    </TableCell>
-                                                                                </TableRow>
-                                                                            ))
-                                                                        ) : (
-                                                                            <TableRow>
-                                                                                <TableCell colSpan={registrationColumns.length + 1} className="text-center py-12 text-lg text-muted-foreground">
-                                                                                    No registrations found for this page.
+                                                                <TableBody>
+                                                                    {registrations?.length > 0 ? (
+                                                                        registrations.map((reg) => (
+                                                                            <TableRow key={reg.id}>
+                                                                                <TableCell>
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        checked={selectedIds.includes(reg.id)}
+                                                                                        onChange={() => toggleSelect(reg.id)}
+                                                                                    />
+                                                                                </TableCell>
+                                                                                <TableCell>{reg.full_name}</TableCell>
+                                                                                <TableCell>{reg.email_address}</TableCell>
+                                                                                <TableCell>{reg.phone_number}</TableCell>
+                                                                                <TableCell>{reg.who_you_are}</TableCell>
+                                                                                <TableCell>
+                                                                                    {new Date(reg.registered_at).toLocaleString()}
                                                                                 </TableCell>
                                                                             </TableRow>
-                                                                        )}
+                                                                        ))
+                                                                    ) : (
+                                                                        <TableRow>
+                                                                            <TableCell colSpan={registrationColumns.length + 1} className="text-center py-12 text-lg text-muted-foreground">
+                                                                                No registrations found for this page.
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    )}
 
-                                                                    </TableBody>
-                                                                </Table>
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+                                                        {totalPages > 1 && (
+                                                            <div className="flex justify-center mt-6">
+                                                                <Pagination>
+                                                                    <PaginationContent>
+                                                                        <PaginationItem>
+                                                                            <PaginationPrevious
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (currentPage > 1) onPageChange(currentPage - 1);
+                                                                                }}
+                                                                                className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                            />
+                                                                        </PaginationItem>
+
+                                                                        {Array.from({ length: totalPages }, (_, i) => {
+                                                                            const pageNumber = i + 1;
+
+                                                                            if (
+                                                                                pageNumber === 1 ||
+                                                                                pageNumber === totalPages ||
+                                                                                Math.abs(pageNumber - currentPage) <= 1
+                                                                            ) {
+                                                                                return (
+                                                                                    <PaginationItem key={pageNumber}>
+                                                                                        <PaginationLink
+                                                                                            onClick={(e) => {
+                                                                                                e.preventDefault();
+                                                                                                onPageChange(pageNumber);
+                                                                                            }}
+                                                                                            isActive={currentPage === pageNumber}
+                                                                                            className="cursor-pointer"
+                                                                                        >
+                                                                                            {pageNumber}
+                                                                                        </PaginationLink>
+                                                                                    </PaginationItem>
+                                                                                );
+                                                                            } else if (
+                                                                                pageNumber === currentPage - 2 ||
+                                                                                pageNumber === currentPage + 2
+                                                                            ) {
+                                                                                return <span key={pageNumber} className="px-2">...</span>;
+                                                                            }
+
+                                                                            return null;
+                                                                        })}
+
+                                                                        <PaginationItem>
+                                                                            <PaginationNext
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    if (currentPage < totalPages) onPageChange(currentPage + 1);
+                                                                                }}
+                                                                                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                                            />
+                                                                        </PaginationItem>
+                                                                    </PaginationContent>
+                                                                </Pagination>
                                                             </div>
-                                                            {totalPages > 1 && (
-                                                                <div className="flex justify-center mt-6">
-                                                                    <Pagination>
-                                                                        <PaginationContent>
-                                                                            <PaginationItem>
-                                                                                <PaginationPrevious
-                                                                                    onClick={(e) => {
-                                                                                        e.preventDefault();
-                                                                                        if (currentPage > 1) onPageChange(currentPage - 1);
-                                                                                    }}
-                                                                                    className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                                />
-                                                                            </PaginationItem>
-
-                                                                            {Array.from({ length: totalPages }, (_, i) => {
-                                                                                const pageNumber = i + 1;
-
-                                                                                if (
-                                                                                    pageNumber === 1 ||
-                                                                                    pageNumber === totalPages ||
-                                                                                    Math.abs(pageNumber - currentPage) <= 1
-                                                                                ) {
-                                                                                    return (
-                                                                                        <PaginationItem key={pageNumber}>
-                                                                                            <PaginationLink
-                                                                                                onClick={(e) => {
-                                                                                                    e.preventDefault();
-                                                                                                    onPageChange(pageNumber);
-                                                                                                }}
-                                                                                                isActive={currentPage === pageNumber}
-                                                                                                className="cursor-pointer"
-                                                                                            >
-                                                                                                {pageNumber}
-                                                                                            </PaginationLink>
-                                                                                        </PaginationItem>
-                                                                                    );
-                                                                                } else if (
-                                                                                    pageNumber === currentPage - 2 ||
-                                                                                    pageNumber === currentPage + 2
-                                                                                ) {
-                                                                                    return <span key={pageNumber} className="px-2">...</span>;
-                                                                                }
-
-                                                                                return null;
-                                                                            })}
-
-                                                                            <PaginationItem>
-                                                                                <PaginationNext
-                                                                                    onClick={(e) => {
-                                                                                        e.preventDefault();
-                                                                                        if (currentPage < totalPages) onPageChange(currentPage + 1);
-                                                                                    }}
-                                                                                    className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                                                                />
-                                                                            </PaginationItem>
-                                                                        </PaginationContent>
-                                                                    </Pagination>
-                                                                </div>
-                                                            )}
+                                                        )}
                                                     </CardContent>
                                                 </Card>
                                             </TabsContent>
@@ -4205,167 +4404,167 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         </div>
                                                     </CardHeader>
                                                     <CardContent className="w-[95vw] lg:w-full">
-                                                            {/* Search Input */}
-                                                            <div className="mb-4">
-                                                                <div className="relative">
-                                                                    <LucideIcons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                                    <Input
-                                                                        placeholder="Search by solution title or company name..."
-                                                                        value={pitchSearchQuery}
-                                                                        onChange={(e) => setPitchSearchQuery(e.target.value)}
-                                                                        className="pl-10"
-                                                                    />
-                                                                </div>
+                                                        {/* Search Input */}
+                                                        <div className="mb-4">
+                                                            <div className="relative">
+                                                                <LucideIcons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                                <Input
+                                                                    placeholder="Search by solution title or company name..."
+                                                                    value={pitchSearchQuery}
+                                                                    onChange={(e) => setPitchSearchQuery(e.target.value)}
+                                                                    className="pl-10"
+                                                                />
                                                             </div>
-                                                            <div className="rounded-md border">
-                                                                <Table>
-                                                                    <TableHeader>
+                                                        </div>
+                                                        <div className="rounded-md border">
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow>
+                                                                        <TableHead className="w-[50px]">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={(() => {
+                                                                                    const filtered = pitchingDetails.filter(p =>
+                                                                                        p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                        p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                                    );
+                                                                                    return filtered.length > 0 && selectedPitchIds.length === filtered.length;
+                                                                                })()}
+                                                                                onChange={() => {
+                                                                                    const filtered = pitchingDetails.filter(p =>
+                                                                                        p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                                        p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                                    );
+                                                                                    if (selectedPitchIds.length === filtered.length) {
+                                                                                        setSelectedPitchIds([]);
+                                                                                    } else {
+                                                                                        setSelectedPitchIds(filtered.map(p => p.id));
+                                                                                    }
+                                                                                }}
+                                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                                            />
+                                                                        </TableHead>
+                                                                        <TableHead>Founder Name</TableHead>
+                                                                        <TableHead>Solution Title</TableHead>
+                                                                        <TableHead>Company</TableHead>
+                                                                        <TableHead>Requirements</TableHead>
+                                                                        <TableHead>Pitch Date</TableHead>
+                                                                        <TableHead>Pitch Time</TableHead>
+                                                                        <TableHead className="text-right">Actions</TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {isLoadingPitching ? (
+                                                                        Array.from({ length: 5 }).map((_, i) => (
+                                                                            <TableRow key={i}>
+                                                                                <TableCell><div className="h-4 w-4 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-32 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-40 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></TableCell>
+                                                                                <TableCell><div className="h-4 w-8 bg-gray-200 rounded animate-pulse ml-auto" /></TableCell>
+                                                                            </TableRow>
+                                                                        ))
+                                                                    ) : (() => {
+                                                                        const filtered = pitchingDetails.filter(p =>
+                                                                            p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
+                                                                            p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
+                                                                        );
+                                                                        return filtered.length === 0;
+                                                                    })() ? (
                                                                         <TableRow>
-                                                                            <TableHead className="w-[50px]">
-                                                                                <input
-                                                                                    type="checkbox"
-                                                                                    checked={(() => {
-                                                                                        const filtered = pitchingDetails.filter(p =>
-                                                                                            p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                                            p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                                        );
-                                                                                        return filtered.length > 0 && selectedPitchIds.length === filtered.length;
-                                                                                    })()}
-                                                                                    onChange={() => {
-                                                                                        const filtered = pitchingDetails.filter(p =>
-                                                                                            p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                                            p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                                        );
-                                                                                        if (selectedPitchIds.length === filtered.length) {
-                                                                                            setSelectedPitchIds([]);
-                                                                                        } else {
-                                                                                            setSelectedPitchIds(filtered.map(p => p.id));
-                                                                                        }
-                                                                                    }}
-                                                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                                                />
-                                                                            </TableHead>
-                                                                            <TableHead>Founder Name</TableHead>
-                                                                            <TableHead>Solution Title</TableHead>
-                                                                            <TableHead>Company</TableHead>
-                                                                            <TableHead>Requirements</TableHead>
-                                                                            <TableHead>Pitch Date</TableHead>
-                                                                            <TableHead>Pitch Time</TableHead>
-                                                                            <TableHead className="text-right">Actions</TableHead>
+                                                                            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                                                                                No pitching details found.
+                                                                            </TableCell>
                                                                         </TableRow>
-                                                                    </TableHeader>
-                                                                    <TableBody>
-                                                                        {isLoadingPitching ? (
-                                                                            Array.from({ length: 5 }).map((_, i) => (
-                                                                                <TableRow key={i}>
-                                                                                    <TableCell><div className="h-4 w-4 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                    <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                    <TableCell><div className="h-4 w-32 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                    <TableCell><div className="h-4 w-20 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                    <TableCell><div className="h-4 w-40 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                    <TableCell><div className="h-4 w-24 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                    <TableCell><div className="h-4 w-16 bg-gray-200 rounded animate-pulse" /></TableCell>
-                                                                                    <TableCell><div className="h-4 w-8 bg-gray-200 rounded animate-pulse ml-auto" /></TableCell>
-                                                                                </TableRow>
-                                                                            ))
-                                                                        ) : (() => {
-                                                                            const filtered = pitchingDetails.filter(p =>
+                                                                    ) : (
+                                                                        pitchingDetails
+                                                                            .filter(p =>
                                                                                 p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
                                                                                 p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                            );
-                                                                            return filtered.length === 0;
-                                                                        })() ? (
-                                                                            <TableRow>
-                                                                                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                                                                                    No pitching details found.
-                                                                                </TableCell>
-                                                                            </TableRow>
-                                                                        ) : (
-                                                                            pitchingDetails
-                                                                                .filter(p =>
-                                                                                    p.solution_title.toLowerCase().includes(pitchSearchQuery.toLowerCase()) ||
-                                                                                    p.company_name.toLowerCase().includes(pitchSearchQuery.toLowerCase())
-                                                                                )
-                                                                                .map((pitch) => (
-                                                                                    <TableRow key={pitch.id}>
-                                                                                        <TableCell>
-                                                                                            <input
-                                                                                                type="checkbox"
-                                                                                                checked={selectedPitchIds.includes(pitch.id)}
-                                                                                                onChange={() => togglePitchSelect(pitch.id)}
-                                                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                                                            />
-                                                                                        </TableCell>
-                                                                                        <TableCell className="font-medium">{pitch.founder_name}</TableCell>
-                                                                                        <TableCell>{pitch.solution_title}</TableCell>
-                                                                                        <TableCell>{pitch.company_name}</TableCell>
-                                                                                        <TableCell className="max-w-xs">
-                                                                                            <div className="line-clamp-2 text-sm text-muted-foreground">
-                                                                                                {pitch.requirements || 'N/A'}
-                                                                                            </div>
-                                                                                        </TableCell>
-                                                                                        <TableCell>
-                                                                                            {(() => {
-                                                                                                const date = new Date(pitch.pitch_date);
-                                                                                                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                                                                                return `${months[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}`;
-                                                                                            })()}
-                                                                                        </TableCell>
-                                                                                        <TableCell>
-                                                                                            {(() => {
-                                                                                                const [hours, minutes] = pitch.pitch_time.split(':');
-                                                                                                const hour = parseInt(hours);
-                                                                                                const ampm = hour >= 12 ? 'PM' : 'AM';
-                                                                                                const displayHour = hour % 12 || 12;
-                                                                                                return `${displayHour}:${minutes} ${ampm}`;
-                                                                                            })()}
-                                                                                        </TableCell>
-                                                                                        <TableCell className="text-right">
-                                                                                            <AlertDialog>
-                                                                                                <AlertDialogTrigger asChild>
-                                                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive/90">
-                                                                                                        <LucideIcons.Trash2 className="h-4 w-4" />
-                                                                                                    </Button>
-                                                                                                </AlertDialogTrigger>
-                                                                                                <AlertDialogContent>
-                                                                                                    <AlertDialogHeader>
-                                                                                                        <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
-                                                                                                        <AlertDialogDescription>
-                                                                                                            This will permanently delete the pitching details for {pitch.solution_title}.
-                                                                                                        </AlertDialogDescription>
-                                                                                                    </AlertDialogHeader>
-                                                                                                    <AlertDialogFooter>
-                                                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                                                        <AlertDialogAction
-                                                                                                            onClick={async () => {
-                                                                                                                setIsDeletingPitch(true);
-                                                                                                                const token = localStorage.getItem('token');
-                                                                                                                try {
-                                                                                                                    await fetch(`${API_BASE_URL}/api/pitching/delete/${pitch.id}`, {
-                                                                                                                        method: 'DELETE',
-                                                                                                                        headers: { 'Authorization': `Bearer ${token}` }
-                                                                                                                    });
-                                                                                                                    toast({ title: "Deleted", description: "Pitching detail deleted." });
-                                                                                                                    fetchPitchingDetails();
-                                                                                                                } catch (e) {
-                                                                                                                    toast({ variant: 'destructive', title: "Error", description: "Failed to delete." });
-                                                                                                                } finally {
-                                                                                                                    setIsDeletingPitch(false);
-                                                                                                                }
-                                                                                                            }}
-                                                                                                        >
-                                                                                                            Delete
-                                                                                                        </AlertDialogAction>
-                                                                                                    </AlertDialogFooter>
-                                                                                                </AlertDialogContent>
-                                                                                            </AlertDialog>
-                                                                                        </TableCell>
-                                                                                    </TableRow>
-                                                                                ))
-                                                                        )}
-                                                                    </TableBody>
-                                                                </Table>
-                                                            </div>
+                                                                            )
+                                                                            .map((pitch) => (
+                                                                                <TableRow key={pitch.id}>
+                                                                                    <TableCell>
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            checked={selectedPitchIds.includes(pitch.id)}
+                                                                                            onChange={() => togglePitchSelect(pitch.id)}
+                                                                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                                                        />
+                                                                                    </TableCell>
+                                                                                    <TableCell className="font-medium">{pitch.founder_name}</TableCell>
+                                                                                    <TableCell>{pitch.solution_title}</TableCell>
+                                                                                    <TableCell>{pitch.company_name}</TableCell>
+                                                                                    <TableCell className="max-w-xs">
+                                                                                        <div className="line-clamp-2 text-sm text-muted-foreground">
+                                                                                            {pitch.requirements || 'N/A'}
+                                                                                        </div>
+                                                                                    </TableCell>
+                                                                                    <TableCell>
+                                                                                        {(() => {
+                                                                                            const date = new Date(pitch.pitch_date);
+                                                                                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                                                                            return `${months[date.getMonth()]} ${date.getDate()} ${date.getFullYear()}`;
+                                                                                        })()}
+                                                                                    </TableCell>
+                                                                                    <TableCell>
+                                                                                        {(() => {
+                                                                                            const [hours, minutes] = pitch.pitch_time.split(':');
+                                                                                            const hour = parseInt(hours);
+                                                                                            const ampm = hour >= 12 ? 'PM' : 'AM';
+                                                                                            const displayHour = hour % 12 || 12;
+                                                                                            return `${displayHour}:${minutes} ${ampm}`;
+                                                                                        })()}
+                                                                                    </TableCell>
+                                                                                    <TableCell className="text-right">
+                                                                                        <AlertDialog>
+                                                                                            <AlertDialogTrigger asChild>
+                                                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive/90">
+                                                                                                    <LucideIcons.Trash2 className="h-4 w-4" />
+                                                                                                </Button>
+                                                                                            </AlertDialogTrigger>
+                                                                                            <AlertDialogContent>
+                                                                                                <AlertDialogHeader>
+                                                                                                    <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                                                                                                    <AlertDialogDescription>
+                                                                                                        This will permanently delete the pitching details for {pitch.solution_title}.
+                                                                                                    </AlertDialogDescription>
+                                                                                                </AlertDialogHeader>
+                                                                                                <AlertDialogFooter>
+                                                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                                                    <AlertDialogAction
+                                                                                                        onClick={async () => {
+                                                                                                            setIsDeletingPitch(true);
+                                                                                                            const token = localStorage.getItem('token');
+                                                                                                            try {
+                                                                                                                await fetch(`${API_BASE_URL}/api/pitching/delete/${pitch.id}`, {
+                                                                                                                    method: 'DELETE',
+                                                                                                                    headers: { 'Authorization': `Bearer ${token}` }
+                                                                                                                });
+                                                                                                                toast({ title: "Deleted", description: "Pitching detail deleted." });
+                                                                                                                fetchPitchingDetails();
+                                                                                                            } catch (e) {
+                                                                                                                toast({ variant: 'destructive', title: "Error", description: "Failed to delete." });
+                                                                                                            } finally {
+                                                                                                                setIsDeletingPitch(false);
+                                                                                                            }
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        Delete
+                                                                                                    </AlertDialogAction>
+                                                                                                </AlertDialogFooter>
+                                                                                            </AlertDialogContent>
+                                                                                        </AlertDialog>
+                                                                                    </TableCell>
+                                                                                </TableRow>
+                                                                            ))
+                                                                    )}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
                                                     </CardContent>
                                                 </Card>
                                             </TabsContent>
@@ -4768,6 +4967,83 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                         <SubscriptionDetails user={userDetailsData} founder_role={userDetailsData.founder_role} />
                                     </div>
                                 </div>}
+
+                                {/* <div className="mx-2">
+                                    <p className="text-sm text-muted-foreground">Role</p>
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <Select
+                                                value={userDetailsData.role}
+                                                onValueChange={(value) => {
+                                                    if (value === 'founder' && !selectedFounderRole) {
+                                                        setSelectedFounderRole("Solve Organisation's challenge");
+                                                    }
+                                                    handleRoleUpdate(value);
+                                                }}
+                                                disabled={isUpdatingRole}
+                                            >
+                                                <SelectTrigger className="w-[180px]">
+                                                    <SelectValue placeholder="Select role" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="admin">Admin</SelectItem>
+                                                    <SelectItem value="founder">Founder</SelectItem>
+                                                    <SelectItem value="mentor">Mentor</SelectItem>
+                                                    <SelectItem value="incubator">Incubator</SelectItem>
+                                                    <SelectItem value="organisation">Organization</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            {isUpdatingRole && (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            )}
+                                        </div>
+
+                                        {userDetailsData.role === 'founder' && (
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">Founder Role</p>
+                                                <div className="flex items-start gap-2">
+                                                    <Select
+                                                        value={selectedFounderRole}
+                                                        onValueChange={handleFounderRoleChange}
+                                                        disabled={isUpdatingRole}
+                                                    >
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue placeholder="Select founder role" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="Solve Organisation's challenge">
+                                                                <div className="flex items-center gap-2">
+                                                                    {"Solve Organisation's challenge"}
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="List a technology for licensing">
+                                                                <div className="flex items-center gap-2">
+                                                                    List a technology for licensing
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="Submit an innovative idea">
+                                                                <div className="flex items-center gap-2">
+                                                                    Submit an innovative idea
+                                                                </div>
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <Button
+                                                        onClick={() => handleRoleUpdate('founder')}
+                                                        disabled={!isFounderRoleModified || isUpdatingRole}
+                                                        size="sm"
+                                                        className="whitespace-nowrap"
+                                                    >
+                                                        {isUpdatingRole ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                                        ) : null}
+                                                        Update
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div> */}
 
                                 <Separator />
 

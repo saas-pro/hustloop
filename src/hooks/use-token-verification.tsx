@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import type { UserRole, View } from '@/app/types';
-import { signOut } from 'firebase/auth';
 
 type AuthProvider = 'local' | 'google';
 
@@ -31,7 +30,7 @@ interface UseTokenVerificationProps {
     setActiveView: (value: View) => void;
 }
 
-export const useTokenVerification = ({
+export function useTokenVerification({
     setLoggedIn,
     setUserRole,
     setUser,
@@ -39,75 +38,82 @@ export const useTokenVerification = ({
     setAppliedPrograms,
     setAuthProvider,
     setActiveView
-}: UseTokenVerificationProps) => {
+}: UseTokenVerificationProps) {
     const { toast } = useToast();
     const router = useRouter();
-
-    useEffect(() => {
-        const checkToken = async () => {
-            const token = localStorage.getItem('token');
-
-            if (!token) {
+    const logout = useCallback((title: string, description: string) => {
+        toast({ title, description, variant: "destructive" });
+        setLoggedIn(false);
+        setUserRole(null);
+        setUser(null);
+        setHasSubscription(false);
+        setAppliedPrograms({});
+        setAuthProvider(null);
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('user');
+        localStorage.removeItem('hasSubscription');
+        localStorage.removeItem('appliedPrograms');
+        localStorage.removeItem('token');
+        localStorage.removeItem('authProvider');
+        localStorage.removeItem('founder_role');
+        window.dispatchEvent(new Event('storage'));
+        setActiveView('home');
+        router.push('/');
+    }, [
+        router,
+        setActiveView,
+        setLoggedIn,
+        setUserRole,
+        setUser,
+        setHasSubscription,
+        setAppliedPrograms,
+        setAuthProvider,
+        toast
+    ]);
+    const checkToken = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        try {
+            const [profileRes, tokenRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/user/profile`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }),
+                fetch(`${API_BASE_URL}/api/check-token`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+            ]);
+            if (!profileRes.ok) {
+                logout("Session expired", "Please log in again.");
                 return;
             }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/check-token`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                const data: TokenStatus = await response.json();
-
-                if (!response.ok) {
-                    if (data.expired) {
-                        toast({
-                            title: "Session expired",
-                            description: "Your session has expired. Please log in again.",
-                            variant: "destructive",
-                        });
-                    } else {
-                        toast({
-                            title: "Invalid token",
-                            description: "Your authentication token is invalid. Please log in again.",
-                            variant: "destructive",
-                        });
-                    }
-
-                    setLoggedIn(false);
-                    setUserRole(null);
-                    setUser(null);
-                    setHasSubscription(false);
-                    setAppliedPrograms({});
-                    setAuthProvider(null);
-                    localStorage.removeItem('isLoggedIn');
-                    localStorage.removeItem('userRole');
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('hasSubscription');
-                    localStorage.removeItem('appliedPrograms');
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('authProvider');
-                    localStorage.removeItem('founder_role');
-
-                    // Dispatch event to notify app of state change
-                    window.dispatchEvent(new Event('storage'));
-
-                    setActiveView('home');
-                    router.push('/');
-                }
-            } catch (error) {
-                console.error('Token check failed:', error);
-                toast({
-                    title: "Network error",
-                    description: "Unable to verify token. Please try again later.",
-                    variant: "destructive",
-                });
+            const userData = await profileRes.json();
+            if (userData.user.role === null) {
+                logout("Role is not set", "Please log in again to set your role.");
+                return;
             }
-        };
-
+            const tokenData: TokenStatus = await tokenRes.json();
+            if (!tokenRes.ok) {
+                logout(
+                    tokenData.expired ? "Session expired" : "Invalid token",
+                    "Please log in again."
+                );
+            }
+        } catch {
+            toast({
+                title: "Network error",
+                description: "Unable to verify token. Please try again later.",
+                variant: "destructive",
+            });
+        }
+    }, [logout, toast]);
+    useEffect(() => {
         checkToken();
-    }, [toast, router, setLoggedIn, setUserRole, setUser, setHasSubscription, setAppliedPrograms, setAuthProvider, setActiveView]);
-};
+    }, [checkToken]);
+}
