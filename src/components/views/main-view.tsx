@@ -553,6 +553,7 @@ export default function MainView() {
             onLogout={handleLogout}
             navOpen={navOpen}
             scrollContainerRef={scrollContainerRef}
+            setHasSubscription={setHasSubscription}
           />
         </section>
       </main>

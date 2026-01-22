@@ -396,7 +396,7 @@ export default function MsmesView({ isOpen, onOpenChange, isLoggedIn, hasSubscri
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-2 top-2 disabled:pointer-events-none hover:!bg-current"
+              className="absolute right-2 top-2 disabled:pointer-events-none hover:!bg-transparent"
               onClick={(e) => {
                 e.stopPropagation();  // Add this line
                 onOpenChange(false);

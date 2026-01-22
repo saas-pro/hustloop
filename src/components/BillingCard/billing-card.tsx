@@ -15,9 +15,10 @@ import { View } from "@/app/types";
 
 interface PricingAccordion {
     setActiveView: (view: View) => void;
+    setHasSubscription: (hasSubscription: boolean) => void;
 }
 
-export default function PricingAccordion({ setActiveView }: PricingAccordion) {
+export default function PricingAccordion({ setActiveView, setHasSubscription }: PricingAccordion) {
 
     const router = useRouter();
     const { toast } = useToast();
@@ -144,21 +145,32 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
     }, [userProfile, plans, activeSubscription]);
 
     const isPlanAllowed = (planName: string) => {
-        if (!userProfile?.founder_role) return true;
-
-        if (userProfile.founder_role === "List a technology for licensing") {
-            return planName === "Free";
+        // If no user profile, allow access (will be handled by auth)
+        if (!userProfile?.role) return true;
+        // Incubator and mentor roles can only see the "Enterprise" plan
+        if (['incubator', 'mentor'].includes(userProfile.role)) {
+            return false;
         }
-
-        if (userProfile.founder_role === "Solve Organisation's challenge") {
-            return planName === "Premium";
+        // Organization role - can see all plans but can't buy
+        if (userProfile.role === 'organisation') {
+            return planName === "Enterprise"; // Disable all buy buttons for organizations
         }
-
-        if (userProfile.founder_role === "Submit an innovative idea") {
-            return planName === "Standard";
+        // Founder role specific access
+        if (userProfile.role === 'founder') {
+            if (!userProfile.founder_role) return true;
+            const founderPlanMap: Record<string, string> = {
+                "List a technology for licensing": "Free",
+                "Solve Organisation's challenge": "Premium",
+                "Submit an innovative idea": "Standard"
+            };
+            return founderPlanMap[userProfile.founder_role] === planName;
         }
-
+        // Default to allowing access for other roles (like admin)
         return true;
+    };
+    // Add a helper function to check if the plan is for founders only
+    const isFounderOnlyPlan = (planName: string) => {
+        return !['Enterprise'].includes(planName);
     };
 
     const handlePayment = async (plan: any) => {
@@ -219,17 +231,32 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
                             setActiveSubscription(subscriptionData.subscription);
                             if (subscriptionData.subscription?.status === "active") {
                                 localStorage.setItem('hasSubscription', 'true');
+                                setHasSubscription(true);
                             }
-                            
                             toast({
                                 title: "Payment Successful!",
                                 description: "Your subscription has been activated.",
                             });
                         } else {
-                            const verifyData = await verifyRes.json();
+                            let errorMessage = "Payment verification failed";
+                            try {
+                                const errorData = await verifyRes.json();
+                                if (errorData.error?.description) {
+                                    errorMessage = errorData.error.description;
+                                } else if (errorData.message) {
+                                    errorMessage = errorData.message;
+                                }
+
+                                if (errorData.error?.reason === 'payment_risk_check_failed') {
+                                    errorMessage = "Payment was declined by the payment processor due to security reasons. Please try a different payment method or contact support.";
+                                }
+                            } catch (e) {
+                                console.error('Error parsing error response:', e);
+                            }
+                            
                             toast({
-                                title: "Verification Failed",
-                                description: verifyData.message || "Something went wrong.",
+                                title: "Payment Failed",
+                                description: errorMessage,
                                 variant: "destructive"
                             });
                         }
@@ -319,17 +346,24 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
                                         <Card
                                             key={plan.name}
                                             className={cn(
-                                                "relative flex flex-col",
+                                                "relative flex flex-col transition-all duration-200",
                                                 plan.primary ? "border-primary border-2" : "border-border/50",
                                                 activeSubscription && activeSubscription.plan_id === plan.id ? "border-2 border-green-500" : "",
-                                                !isPlanAllowed(plan.name) ? "opacity-60" : ""
+                                                userProfile?.role && ['incubator', 'mentor'].includes(userProfile.role)
+                                                    ? "opacity-70 blur-[1px] transition-all duration-300"
+                                                    : !isPlanAllowed(plan.name)
+                                                        ? "opacity-60"
+                                                        : ""
                                             )}
                                         >
+                                            {/* Current Plan Badge */}
                                             {activeSubscription && activeSubscription.plan_id === plan.id && (
                                                 <Badge className="absolute top-[-12px] left-4 bg-green-500 text-white hover:bg-green-600">
                                                     Current Plan
                                                 </Badge>
                                             )}
+                                            {/* Role Restriction Badge */}
+
                                             {!isPlanAllowed(plan.name) && (
                                                 <Badge className="absolute top-[-12px] left-4 bg-red-500 text-white hover:bg-red-600">
                                                     Not Available for Your Role
@@ -389,25 +423,26 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
                                                     disabled={
                                                         !isPlanAllowed(plan.name) ||
                                                         (activeSubscription && activeSubscription.plan_id === plan.id) ||
-                                                        isProcessing === plan.id ||
-                                                        idx === 0
+                                                        isProcessing === plan.id
                                                     }
                                                     className={cn(
                                                         "w-full",
                                                         plan.primary
                                                             ? "bg-accent text-accent-foreground hover:bg-accent/90"
-                                                            : "bg-primary text-primary-foreground hover:bg-primary/90"
+                                                            : "bg-primary text-primary-foreground hover:bg-primary/90",
+                                                        !isPlanAllowed(plan.name) ? "opacity-60 cursor-not-allowed" : ""
                                                     )}
                                                 >
                                                     {isProcessing === plan.id ? (
                                                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                                     ) : null}
-                                                    {!isPlanAllowed(plan.name)
-                                                        ? "Not Available"
-                                                        : activeSubscription && activeSubscription.plan_id === plan.id
-                                                            ? "Current Plan"
-                                                            : plan.cta
-                                                    }
+                                                    {activeSubscription && activeSubscription.plan_id === plan.id
+                                                        ? "Current Plan"
+                                                        : !isPlanAllowed(plan.name)
+                                                            ? (userProfile?.role === 'incubator' || userProfile?.role === 'mentor')
+                                                                ? "For Founders Only"
+                                                                : "Not Available"
+                                                            : plan.cta}
                                                 </Button>
 
                                                 {(idx == 1 || idx == 2) && (<span className="font-headline text-md text-muted-foreground mt-2">
@@ -417,9 +452,23 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
                                                 {/* {plan.note && (
                                                 <p className="text-xs text-muted-foreground mt-3 text-center w-full">{plan.note}</p>
                                             )} */}
+
                                             </CardFooter>
                                         </Card>
+
                                     ))}
+                                    {userProfile?.role && ['incubator', 'mentor'].includes(userProfile.role) && (
+                                        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                                            <div className="bg-white/90 dark:bg-black/90 backdrop-blur-sm rounded-lg p-6 flex justify-center flex-col items-center shadow-2xl border border-red-200 dark:border-red-900/50 max-w-md mx-auto">
+                                                <Badge variant="destructive" className="text-base px-3 py-1.5 mb-3">
+                                                    For Founders Only
+                                                </Badge>
+                                                <p className="text-sm text-center text-muted-foreground">
+                                                    These plans are exclusively available for founder accounts. Please contact support to upgrade your account.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </AccordionContent>

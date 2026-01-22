@@ -82,6 +82,7 @@ interface HomeViewProps {
   userRole: string | null;
   navOpen?: boolean;
   scrollContainerRef: React.RefObject<HTMLDivElement>;
+  setHasSubscription: (value: boolean) => void;
 }
 interface DynamicHeroSection {
   setActiveView: (view: View) => void;
@@ -601,7 +602,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
 
 
 
-export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout, setActiveTab, userRole }: HomeViewProps) {
+export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout, setActiveTab, userRole,setHasSubscription }: HomeViewProps) {
   const { toast } = useToast();
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -1007,9 +1008,9 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
       <SolutionCard solutionSteps={solutionSteps} scrollContainer={scrollContainerRef}></SolutionCard>
 
       <section className='w-full mx-auto'>
-        <PricingData setActiveView={setActiveView} />
+        <PricingData setActiveView={setActiveView} setHasSubscription={setHasSubscription} />
       </section>
-      
+
 
       <section className="relative py-16 md:py-20 bg-background">
         <div className="container mx-auto px-4 text-center">

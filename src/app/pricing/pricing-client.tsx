@@ -276,8 +276,8 @@ export default function PricingPageClient() {
                     }
                 },
                 prefill: {
-                    name: "",
-                    email: "",
+                    name: orderData.name,
+                    email: orderData.email,
                 },
                 theme: {
                     color: "#3B82F6",
