@@ -607,7 +607,7 @@ export function TestimonialManager() {
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => {
-                                                    const link = `${window.location.origin}/submit-testimonial?token=${request.token}`;
+                                                    const link = `https://hustloop.com/submit-testimonial?token=${request.token}`;
                                                     copyToClipboard(link);
                                                 }}
                                             >
