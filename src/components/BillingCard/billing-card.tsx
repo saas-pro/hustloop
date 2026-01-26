@@ -253,7 +253,7 @@ export default function PricingAccordion({ setActiveView, setHasSubscription }: 
                             } catch (e) {
                                 console.error('Error parsing error response:', e);
                             }
-                            
+
                             toast({
                                 title: "Payment Failed",
                                 description: errorMessage,
@@ -405,14 +405,10 @@ export default function PricingAccordion({ setActiveView, setHasSubscription }: 
                                                                 ₹{Math.round(plan.price_in_paise / 100 / 12)}
                                                                 <span className="text-sm font-normal text-muted-foreground">/ month</span>
                                                             </div>
-                                                            <div className="text-muted-foreground line-through text-lg font-headline font-bold">
-                                                                {plan.originally}
-                                                            </div>
+
                                                         </div>)}
 
-                                                        {(idx === 1 || idx === 2) && (
-                                                            <span className="text-xs text-muted-foreground">INR + GST Applicable</span>
-                                                        )}
+
 
                                                     </div>
 
@@ -444,10 +440,18 @@ export default function PricingAccordion({ setActiveView, setHasSubscription }: 
                                                                 : "Not Available"
                                                             : plan.cta}
                                                 </Button>
-
-                                                {(idx == 1 || idx == 2) && (<span className="font-headline text-md text-muted-foreground mt-2">
-                                                    Billed as {plan.price} per year
-                                                </span>)}
+                                                <div className="flex flex-col">
+                                                    {(idx == 1 || idx == 2) && (
+                                                        <span className="font-headline text-md text-muted-foreground mt-2">
+                                                            Billed as {plan.price} per year <span className="text-muted-foreground line-through text-lg font-headline font-bold">
+                                                                {plan.originally}
+                                                            </span>
+                                                        </span>
+                                                    )}
+                                                    {(idx === 1 || idx === 2) && (
+                                                        <span className="text-xs text-muted-foreground">Incl GST</span>
+                                                    )}
+                                                </div>
 
                                                 {/* {plan.note && (
                                                 <p className="text-xs text-muted-foreground mt-3 text-center w-full">{plan.note}</p>

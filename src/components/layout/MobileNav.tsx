@@ -155,11 +155,28 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
         }
     };
     return (
-        <div>
+        <div className="flex items-center gap-3 cursor-pointer">
+            <div
+                className="flex lg:hidden justify-left items-center z-[1000] gap-2 absolute top-5 left-4"
+                onClick={handleLogoClick}
+            >
+                <Image
+                    src="/logo.png"
+                    alt="Hustloop logo"
+                    width={120}
+                    height={120}
+                    className="w-auto min-w-[120px] max-w-[200px] h-12 md:h-16 object-contain cursor-pointer"
+                />
+
+                <div className="flex items-center gap-2">
+                    <Separator orientation="vertical" className="h-8 bg-border w-0.5" />
+                    <p className="text-sm leading-tight text-muted-foreground xl:text-white">
+                        Smart hustle. <br /> Infinite growth..
+                    </p>
+                </div>
+            </div>
             <div className="fixed flex top-6 right-4 z-50 pointer-events-auto text-current">
-
                 {!isStaticPage ? (
-
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon">

@@ -89,7 +89,7 @@ export function SubscriptionDetails({ user, founder_role }: SubscriptionDetailsP
                     </div>
                     <div className="space-y-1">
                         <p className="text-sm font-medium text-foreground">Remaining Days</p>
-                        <p className="text-lg font-semibold">{activeSubscription?.days_remaining} Days</p>
+                        <p className="text-lg font-semibold">{activeSubscription?.days_remaining === undefined ? "N/A" : `${activeSubscription?.days_remaining} Days`}</p>
                     </div>
                     {activeSubscription?.end_date && !isFreePlanRole && (
                         <div className="col-span-1 space-y-1">

@@ -216,7 +216,7 @@ const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
   };
   return (
     <div
-      className="flex justify-left items-center z-[1000] gap-2 absolute top-5 left-4"
+      className="hidden lg:flex justify-left items-center z-[1000] gap-2 absolute top-5 left-4"
       onClick={handleLogoClick}
     >
       <Image
@@ -224,7 +224,7 @@ const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
         alt="Hustloop logo"
         width={120}
         height={120}
-        className=" w-auto min-w-[120px] max-w-[200px] h-12 md:h-16 object-contain cursor-pointer"
+        className="w-auto min-w-[120px] max-w-[200px] h-12 md:h-16 object-contain cursor-pointer"
       />
       {!inSheet && (
         <div className="flex items-center gap-2">
