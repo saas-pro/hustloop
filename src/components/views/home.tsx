@@ -807,8 +807,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
 
       <div
         id="hero-sentinel"
-        className="h-[100vh] pointer-events-none"
-        style={{ marginTop: '-100vh' }}
+        className="min-h-1"
       />
 
       {/* Start Your Journey Section with native scroll-based zoom */}

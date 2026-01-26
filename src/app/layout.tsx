@@ -14,6 +14,7 @@ import MicrosoftClarity from "./metrics/MicrosoftClarity"
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export const metadata: Metadata = {
