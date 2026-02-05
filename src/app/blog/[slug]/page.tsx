@@ -7,6 +7,22 @@ import BlogDetailClient from "./blog-detail-client";
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Generate static params for all blog posts at build time
+export async function generateStaticParams() {
+    try {
+        const response = await getBlogBySlug('').catch(() => null);
+        // Fetch all published blogs for static generation
+        const { getPublicBlogs } = await import('@/lib/api');
+        const blogsResponse = await getPublicBlogs(1, 100);
+        return blogsResponse.blogs.map((blog) => ({
+            slug: blog.slug,
+        }));
+    } catch (error) {
+        console.error('Failed to generate static params:', error);
+        return [];
+    }
+}
+
 interface BlogPageProps {
     params: Promise<{
         slug: string;
