@@ -3,14 +3,13 @@ import { notFound } from "next/navigation";
 import { getBlogBySlug } from "@/lib/api";
 import BlogDetailClient from "./blog-detail-client";
 
-// Force dynamic rendering for this page
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Allow dynamic params for blog posts not generated at build time
+export const dynamicParams = true;
+export const revalidate = 60; // Revalidate every 60 seconds
 
 // Generate static params for all blog posts at build time
 export async function generateStaticParams() {
     try {
-        const response = await getBlogBySlug('').catch(() => null);
         // Fetch all published blogs for static generation
         const { getPublicBlogs } = await import('@/lib/api');
         const blogsResponse = await getPublicBlogs(1, 100);
