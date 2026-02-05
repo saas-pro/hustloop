@@ -415,7 +415,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
   return (
     <section
       ref={heroRef}
-      className={`hidden-scroll h-screen relative bg-background w-full`}
+      className={`hidden-scroll h-[100dvh] relative bg-background w-full`}
       id="hero"
     >
       <motion.div
@@ -461,7 +461,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
 
 
       {/* Commented out video - using Google Gemini Effect instead */}
-      <div className='hidden xl:block'>
+      <div className='hidden xl:block w-full'>
         <motion.video
           autoPlay
           loop
@@ -602,7 +602,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
 
 
 
-export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout, setActiveTab, userRole,setHasSubscription }: HomeViewProps) {
+export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout, setActiveTab, userRole, setHasSubscription }: HomeViewProps) {
   const { toast } = useToast();
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -793,6 +793,24 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
   }, []);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Prevent scrolling when nav is open
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    if (navOpen) {
+      scrollContainer.style.overflowY = 'hidden';
+    } else {
+      scrollContainer.style.overflowY = 'auto';
+    }
+
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.style.overflowY = 'auto';
+      }
+    };
+  }, [navOpen]);
 
   return (
     <div

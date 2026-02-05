@@ -440,8 +440,18 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                                             >
                                                 {item.label}
                                             </Button>
+                                        ) : item.id === "blog" ? (
+                                            <Link
+                                                href="/blog"
+                                                className={className}
+                                                onClick={() => {
+                                                    document.body.classList.remove('nav-open');
+                                                    setNavOpen(false);
+                                                }}
+                                            >
+                                                {item.label}
+                                            </Link>
                                         ) : (
-
                                             <button
                                                 onClick={() => setActiveView(item.id)}
                                                 className={className}

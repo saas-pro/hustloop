@@ -81,7 +81,7 @@ export default function Footer() {
       </div>
       <div className="flex-1 w-full flex items-start justify-center overflow-hidden h-[80px] md:h-[100px] lg:h-[200px]">
         <div className="w-full relative h-[120px] md:h-[200px] lg:h-[400px] flex items-start justify-center">
-          <TextHoverEffect text="HUSTLOOP" duration={10}/>
+          <TextHoverEffect text="HUSTLOOP" duration={10} />
         </div>
       </div>
     </footer>

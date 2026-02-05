@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/s
 import { Separator } from '@radix-ui/react-separator';
 import Image from 'next/image';
 import Link from "next/link";
+import CardNav, { CardNavItem } from '@/components/CardNav';
 
 interface MobileNavProps {
     activeView: View;
@@ -31,7 +32,6 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
     { id: "msmes", label: "MSMEs" },
     { id: "education", label: "Education" },
     { id: "early-bird", label: "Early Bird" },
-    { id: "blog", label: "Blog" },
     { id: "marketplace", label: "Marketplace" },
 ];
 
@@ -99,7 +99,7 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
         return (
 
             <div
-                className="flex flex-col items-center gap-3 cursor-pointer"
+                className="flex flex-row items-center gap-2 cursor-pointer"
                 onClick={handleLogoClick}
             >
                 <Image
@@ -110,8 +110,8 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                     className="h-12 w-auto min-w-[120px] max-w-[200px] object-contain"
                 />
                 {!inSheet && (
-                    <div>
-                        <Separator orientation="vertical" className="h-6 bg-border" />
+                    <div className="flex items-center gap-2">
+                        <Separator orientation="vertical" className="h-6 bg-border w-px" />
                         <p className="text-xs text-muted-foreground">
                             Smart hustle. <br /> Infinite growth..
                         </p>
@@ -154,163 +154,124 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
             }
         }
     };
+
+    // Configure CardNav items - each nav item gets its own entry
+    const cardNavItems: CardNavItem[] = [
+        {
+            label: "Main Navigation",
+            bgColor: "#ffffff",
+            textColor: "#000000",
+            links: navItems
+                .filter((item) => !item.loggedIn || isLoggedIn)
+                .map((item) => ({
+                    label: item.label,
+                    href: item.id === "early-bird" ? "#newsletter-section" : `#${item.id}`,
+                    ariaLabel: `Navigate to ${item.label}`,
+                    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+                        e.preventDefault();
+                        if (item.id === "early-bird") {
+                            handleScrollToSection(e, 'newsletter-section');
+                        } else {
+                            setActiveView(item.id);
+                        }
+                    }
+                }))
+        },
+        {
+            label: "Additional",
+            bgColor: "#ffffff",
+            textColor: "#000000",
+            links: [
+                {
+                    label: "Pricing",
+                    href: "/pricing",
+                    ariaLabel: "View pricing"
+                },
+                {
+                    label: "Blog",
+                    href: "/blog",
+                    ariaLabel: "View blog"
+                },
+                {
+                    label: "Contact Us",
+                    href: "#contact-section",
+                    ariaLabel: "Contact us",
+                    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+                        e.preventDefault();
+                        handleScrollToSection(e, "contact-section");
+                    }
+                }
+            ]
+        },
+        {
+            label: "Account",
+            bgColor: "#ffffff",
+            textColor: "#000000",
+            links: isLoggedIn
+                ? [
+                    {
+                        label: "Profile",
+                        href: "#profile",
+                        ariaLabel: "View profile",
+                        icon: <UserCircle className="h-5 w-5" />,
+                        iconOnly: true,
+                        onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+                            e.preventDefault();
+                            setActiveView("dashboard");
+                        }
+                    },
+                    {
+                        label: "Logout",
+                        href: "#logout",
+                        ariaLabel: "Logout",
+                        icon: <LogOut className="h-5 w-5" />,
+                        iconOnly: true,
+                        onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+                            e.preventDefault();
+                            onLogout();
+                        }
+                    }
+                ]
+                : [
+                    {
+                        label: "Login",
+                        href: "#login",
+                        ariaLabel: "Login to your account",
+                        styleVariant: 'primary' as const, // Primary button with full rounded corners
+                        onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+                            e.preventDefault();
+                            handleAuthClick('login');
+                        }
+                    },
+                    {
+                        label: "Sign Up",
+                        href: "#signup",
+                        ariaLabel: "Create an account",
+                        styleVariant: 'secondary' as const, // Secondary button with muted foreground
+                        onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+                            e.preventDefault();
+                            handleAuthClick('signup');
+                        }
+                    }
+                ]
+        }
+    ];
+
     return (
-        <div className="flex items-center gap-3 cursor-pointer">
-            <div
-                className="flex lg:hidden justify-left items-center z-[1000] gap-2 absolute top-5 left-4"
-                onClick={handleLogoClick}
-            >
-                <Image
-                    src="/logo.png"
-                    alt="Hustloop logo"
-                    width={120}
-                    height={120}
-                    className="w-auto min-w-[120px] max-w-[200px] h-12 md:h-16 object-contain cursor-pointer"
-                />
-
-                <div className="flex items-center gap-2">
-                    <Separator orientation="vertical" className="h-8 bg-border w-0.5" />
-                    <p className="text-sm leading-tight text-muted-foreground xl:text-white">
-                        Smart hustle. <br /> Infinite growth..
-                    </p>
-                </div>
-            </div>
-            <div className="fixed flex top-6 right-4 z-50 pointer-events-auto text-current">
-                {!isStaticPage ? (
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <Menu className={`h-6 w-6 text-current`} />
-                                <span className="sr-only">Open menu</span>
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="right" className="w-[300px] sm:w-[400px]" showCloseButton={false}>
-                            <div className="flex items-center justify-between mb-8">
-                                <SheetClose asChild>
-                                    <BrandLogo inSheet={true} />
-                                </SheetClose>
-                                <SheetClose asChild>
-                                    <div className='flex gap-2'>
-                                        <div>
-                                            <ThemeToggleDropdown heroVisible={heroVisible} activeView={"home"} setActiveView={function (view: View): void {
-                                                throw new Error("Function not implemented.");
-                                            }} isLoggedIn={false} onLogout={function (): void {
-                                                throw new Error("Function not implemented.");
-                                            }} isLoading={false} />
-                                        </div>
-                                        <Button variant="ghost" size="icon" className="h-10 w-10">
-                                            <X className="h-6 w-6" />
-                                            <span className="sr-only">Close</span>
-                                        </Button>
-                                    </div>
-                                </SheetClose>
-                            </div>
-
-                            <nav className="flex flex-col space-y-2">
-                                {navItems
-                                    .filter((item) => !item.loggedIn || isLoggedIn)
-                                    .map((item) => {
-                                        const isActive = activeView === item.id;
-
-                                        const className = cn(
-                                            "justify-start text-lg",
-                                            isActive ? "text-primary" : "text-muted-foreground"
-                                        );
-
-                                        if (item.id === "early-bird") {
-                                            return (
-                                                <SheetClose key={item.id} asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        onClick={(e) => handleScrollToSection(e, 'newsletter-section')}
-                                                        className={`w-full text-left ${className}`}
-                                                    >
-                                                        {item.label}
-                                                    </Button>
-                                                </SheetClose>
-                                            );
-                                        }
-                                        return (
-                                            <SheetClose key={item.id} asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    onClick={() => setActiveView(item.id)}
-                                                    className={className}
-                                                >
-                                                    {item.label}
-                                                </Button>
-                                            </SheetClose>
-                                        );
-                                    })}
-
-                                <Separator className="ms-3 w-[42%] h-0.5 bg-border"></Separator>
-
-                                <SheetClose asChild >
-                                    <Button
-                                        asChild
-                                        variant="ghost"
-                                        className="justify-start text-lg text-muted-foreground hover:text-primary transition-colors"
-                                    >
-                                        <Link href="/pricing">
-                                            Pricing
-                                        </Link>
-                                    </Button>
-                                </SheetClose>
-
-
-                                <SheetClose asChild >
-                                    <Button
-                                        asChild
-                                        variant="ghost"
-                                        className="justify-start  text-lg text-muted-foreground hover:text-primary transition-colors"
-                                    >
-                                        <a
-                                            onClick={(e) => {
-                                                handleScrollToSection(e, "contact-section");
-                                            }}
-                                        >
-                                            Contact Us
-                                        </a>
-                                    </Button>
-
-                                </SheetClose>
-                            </nav>
-
-                            <div className="absolute bottom-6 left-6 right-6">
-                                {isLoading ? (
-                                    <div className="flex justify-center">
-                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                    </div>
-                                ) : isLoggedIn ? (
-                                    <div className="flex items-center justify-between">
-                                        <SheetClose asChild>
-                                            <Button variant="ghost" size="icon" onClick={() => setActiveView('dashboard')}>
-                                                <UserCircle className="h-8 w-8" />
-                                                <span className="sr-only">Dashboard</span>
-                                            </Button>
-                                        </SheetClose>
-                                        <SheetClose asChild>
-                                            <Button variant="outline" onClick={onLogout}>
-                                                <LogOut className="mr-2 h-5 w-5" /> Logout
-                                            </Button>
-                                        </SheetClose>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col gap-2">
-                                        <SheetClose asChild>
-                                            <Button className="w-full" onClick={() => handleAuthClick('login')}>Login</Button>
-                                        </SheetClose>
-                                        <SheetClose asChild>
-                                            <Button variant="secondary" className="w-full" onClick={() => handleAuthClick('signup')}>Sign Up</Button>
-                                        </SheetClose>
-                                    </div>
-                                )}
-                            </div>
-                        </SheetContent>
-                    </Sheet>
-                ) : null}
-            </div>
-        </div>
+        <CardNav
+            brandLogo={<BrandLogo />}
+            items={cardNavItems}
+            className="lg:hidden"
+            ease="power3.out"
+            themeToggle={<ThemeToggleDropdown
+                activeView={activeView}
+                setActiveView={setActiveView}
+                isLoggedIn={isLoggedIn}
+                onLogout={onLogout}
+                isLoading={isLoading}
+                heroVisible={heroVisible}
+            />}
+        />
     )
 }
 

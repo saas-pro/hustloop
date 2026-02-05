@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     'incentive challenges',
     'technology transfer'
   ],
-  
+
   authors: [{ name: 'Hustloop' }],
   openGraph: {
     type: 'website',

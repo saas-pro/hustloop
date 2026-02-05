@@ -80,16 +80,30 @@ export type NewsletterSubscriber = {
   subscribed_at: string;
 };
 
-export type BlogPost = {
+export interface BlogPost {
   id: number;
   title: string;
-  image: string;
-  hint: string;
-  excerpt: string;
+  slug: string;
+  excerpt?: string;
   content: string;
+  image: string;
+  hint?: string;
+  featured_image_url?: string;
+  youtube_embed_url?: string;
+  meta_title?: string;
+  meta_description?: string;
+  tags?: string[];
+  status: 'draft' | 'published';
+  author_id: string;
+  author?: {
+    uid: string;
+    name: string;
+    email: string;
+  };
   created_at: string;
-};
-
+  updated_at: string;
+  deleted_at?: string;
+}
 export type EducationSession = {
   language: string;
   date: string;

@@ -51,7 +51,7 @@ const SolutionCard = ({ solutionSteps, scrollContainer }: SolutionCardsProps) =>
   return (
     <section className="relative py-16 md:py-20 bg-background" ref={containerRef}>
       <h3
-        className="text-4xl font-bold text-current sticky top-8 text-center"
+        className="text-4xl font-bold text-current sticky top-24 mt-10 text-center"
       >
         Choose your{' '}
         <span className="relative inline-block">
@@ -75,9 +75,7 @@ const SolutionCard = ({ solutionSteps, scrollContainer }: SolutionCardsProps) =>
         </span>{' '}
         to success
       </h3>
-      <div className="mx-auto my-10 max-w-7xl">
-
-
+      <div className="mx-auto my-16 max-w-7xl">
         {/* Wrapper for scrollable cards */}
         <div className="flex flex-col">
           {Object.entries(solutionSteps).map(([key, solution], index) => {

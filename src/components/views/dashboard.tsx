@@ -64,6 +64,8 @@ import { SubscriptionDetails } from "../subscription-details/subscription";
 import { TestimonialManager } from "./TestimonialManager";
 import { TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { title } from "process";
+import BlogDashboard from "./blog-dashboard";
+
 
 const settingsFormSchema = z.object({
     name: z
@@ -4569,32 +4571,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                 </Card>
                                             </TabsContent>
                                             <TabsContent value="blog" className="mt-0 space-y-6">
-                                                <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">
-                                                    <TabsList className="grid w-full grid-cols-2">
-                                                        <TabsTrigger value="blogCreate" onClick={cancelEdit}>{editingPost ? 'Edit Post' : 'Create New'}</TabsTrigger>
-                                                        <TabsTrigger value="blogView">View All</TabsTrigger>
-                                                    </TabsList>
-                                                    <TabsContent value="blogCreate" className="mt-4">
-                                                        <Card><CardHeader><CardTitle>{editingPost ? 'Edit Blog Post' : 'Create New Blog Post'}</CardTitle></CardHeader><CardContent><Form {...blogForm}><form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-4"><FormField control={blogForm.control} name="title" render={({ field }) => (<FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="excerpt" render={({ field }) => (<FormItem><FormLabel>Excerpt</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="content" render={({ field }) => (<FormItem><FormLabel>Content</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="image" render={({ field }) => (<FormItem><FormLabel>Image URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><FormField control={blogForm.control} name="hint" render={({ field }) => (<FormItem><FormLabel>Image Hint</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} /><div className="flex gap-2"><Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">{editingPost ? 'Update Post' : 'Publish Post'}</Button>{editingPost && <Button variant="ghost" onClick={cancelEdit}>Cancel</Button>}</div></form></Form></CardContent></Card>
-                                                    </TabsContent>
-                                                    <TabsContent value="blogView" className="mt-4">
-                                                        <Card><CardHeader><CardTitle>Existing Blog Posts</CardTitle></CardHeader><CardContent className="space-y-4">
-                                                            {blogPosts.map((post) => (
-                                                                <div key={post.id} className="flex items-center justify-between p-2 border rounded-md">
-                                                                    <div className="flex items-center gap-4">
-                                                                        <Image src={post.image} alt={post.title} width={60} height={40} className="rounded-md object-cover" data-ai-hint={post.hint} />
-                                                                        <p className="font-medium">{post.title}</p>
-                                                                    </div>
-                                                                    <div className="flex gap-2">
-                                                                        <Button variant="outline" size="sm" onClick={() => handleEditPost(post)}><LucideIcons.Edit className="mr-2 h-4 w-4" />Edit</Button>
-                                                                        <Button variant="ghost" size="icon" onClick={() => setItemToDelete({ type: 'blog', id: post.id })}><LucideIcons.Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                            {blogPosts.length === 0 && <p className="text-center text-muted-foreground py-4">No blog posts found.</p>}
-                                                        </CardContent></Card>
-                                                    </TabsContent>
-                                                </Tabs>
+                                                <BlogDashboard token={localStorage.getItem('token') || ''} />
                                             </TabsContent>
                                             <TabsContent value="sessions" className="mt-0 space-y-6">
                                                 <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">

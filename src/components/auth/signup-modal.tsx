@@ -138,7 +138,7 @@ export default function SignupModal({ isOpen, setIsOpen, onLoginSuccess, setActi
         try {
             const result = await signInWithPopup(auth, authProvider);
             const idToken = await result.user.getIdToken();
-            const response = await fetch(`${API_BASE_URL}/api/login`, {
+            const response = await fetch(`${API_BASE_URL}/api/register`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${idToken}` },
             });
