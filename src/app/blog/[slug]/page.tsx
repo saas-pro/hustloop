@@ -3,10 +3,7 @@ import { notFound } from "next/navigation";
 import { getBlogBySlug } from "@/lib/api";
 import BlogDetailClient from "./blog-detail-client";
 
-// Allow dynamic params for blog posts not generated at build time
 export const dynamicParams = true;
-export const revalidate = 60; // Revalidate every 60 seconds
-
 
 interface BlogPageProps {
     params: Promise<{
@@ -18,10 +15,23 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
     try {
         const { slug } = await params;
         const response = await getBlogBySlug(slug);
+
+        if (!response?.blog) {
+            return {
+                title: "Blog Not Found | Hustloop",
+                description: "The requested blog post could not be found.",
+            };
+        }
+
         const blog = response.blog;
 
         const title = blog.meta_title || blog.title;
-        const description = blog.meta_description || blog.excerpt || blog.content.replace(/<[^>]*>/g, "").substring(0, 160);
+        const description =
+            blog.meta_description ||
+            blog.excerpt ||
+            blog.content?.replace(/<[^>]*>/g, "").substring(0, 160) ||
+            "Read this article on Hustloop.";
+
         const imageUrl = blog.featured_image_url || "/default-blog-image.jpg";
 
         return {
@@ -51,7 +61,7 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
             },
             keywords: blog.tags?.join(", "),
         };
-    } catch (error) {
+    } catch {
         return {
             title: "Blog Not Found | Hustloop",
             description: "The requested blog post could not be found.",
@@ -62,12 +72,14 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
 export default async function BlogDetailPage({ params }: BlogPageProps) {
     try {
         const { slug } = await params;
-        console.log('[BlogDetailPage] Fetching blog with slug:', slug);
         const response = await getBlogBySlug(slug);
-        console.log('[BlogDetailPage] Successfully fetched blog');
+
+        if (!response?.blog) {
+            notFound();
+        }
+
         return <BlogDetailClient blog={response.blog} />;
-    } catch (error) {
-        console.error('[BlogDetailPage] Error fetching blog:', error);
+    } catch {
         notFound();
     }
 }
