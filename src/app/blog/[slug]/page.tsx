@@ -62,9 +62,12 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
 export default async function BlogDetailPage({ params }: BlogPageProps) {
     try {
         const { slug } = await params;
+        console.log('[BlogDetailPage] Fetching blog with slug:', slug);
         const response = await getBlogBySlug(slug);
+        console.log('[BlogDetailPage] Successfully fetched blog');
         return <BlogDetailClient blog={response.blog} />;
     } catch (error) {
+        console.error('[BlogDetailPage] Error fetching blog:', error);
         notFound();
     }
 }

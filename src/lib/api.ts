@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://api.hustloop.com';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.hustloop.com';
 
 export interface BlogPost {
     id: number;
@@ -69,14 +69,33 @@ export async function getPublicBlogs(
  * Get a single published blog by slug
  */
 export async function getBlogBySlug(slug: string): Promise<BlogResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/blogs/${slug}`);
-    if (!response.ok) {
-        if (response.status === 404) {
-            throw new Error('Blog not found');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/blogs/${slug}`, {
+            signal: controller.signal,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('Blog not found');
+            }
+            throw new Error(`Failed to fetch blog: ${response.status} ${response.statusText}`);
         }
-        throw new Error('Failed to fetch blog');
+        return response.json();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+            throw new Error('Request timeout - API took too long to respond');
+        }
+        throw error;
     }
-    return response.json();
 }
 
 // --- ADMIN BLOG APIs (Authentication Required) ---
