@@ -3,11 +3,9 @@ import { notFound } from "next/navigation";
 import { getBlogBySlug } from "@/lib/api";
 import BlogDetailClient from "./blog-detail-client";
 
-// Force Node.js runtime for dynamic rendering on Vercel
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+// Allow dynamic params for blog posts not generated at build time
 export const dynamicParams = true;
-export const revalidate = 0; // Disable caching for now to test
+export const revalidate = 60; // Revalidate every 60 seconds
 
 
 interface BlogPageProps {
