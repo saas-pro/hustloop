@@ -4,6 +4,7 @@ import { getBlogBySlug } from "@/lib/api";
 import BlogDetailClient from "./blog-detail-client";
 
 export const dynamicParams = true;
+export const dynamic = "force-dynamic";
 
 interface BlogPageProps {
     params: Promise<{
