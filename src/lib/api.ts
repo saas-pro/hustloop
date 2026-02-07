@@ -68,9 +68,19 @@ export async function getPublicBlogs(
 
     const response = await fetch(`${API_BASE_URL}/api/blogs?${params}`, {
         headers: {
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Sec-Ch-Ua': '"Not A(Alpha;68", "Chromium";121, "Google Chrome";121',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Accept': 'application/json',
-            'Referer': 'https://hustloop.com/blog',
+            'Referer': 'https://hustloop.com/',
+            'Origin': 'https://hustloop.com'
         },
         cache: 'no-store'
     });
@@ -98,10 +108,20 @@ export async function getBlogBySlug(slug: string): Promise<BlogResponse> {
         const response = await fetch(`${API_BASE_URL}/api/blogs/${slug}`, {
             signal: controller.signal,
             headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Cache-Control': 'no-cache',
                 'Content-Type': 'application/json',
+                'Pragma': 'no-cache',
+                'Sec-Ch-Ua': '"Not A(Alpha;68", "Chromium";121, "Google Chrome";121',
+                'Sec-Ch-Ua-Mobile': '?0',
+                'Sec-Ch-Ua-Platform': '"Windows"',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-site',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-                'Accept': 'application/json',
-                'Referer': 'https://hustloop.com/blog',
+                'Referer': 'https://hustloop.com/',
+                'Origin': 'https://hustloop.com'
             },
             cache: 'no-store'
         });
