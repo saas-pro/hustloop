@@ -66,8 +66,22 @@ export async function getPublicBlogs(
     if (search) params.append('search', search);
     if (tags) params.append('tags', tags);
 
-    const response = await fetch(`${API_BASE_URL}/api/blogs?${params}`);
+    const response = await fetch(`${API_BASE_URL}/api/blogs?${params}`, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+            'Referer': 'https://hustloop.com/blog',
+        },
+        cache: 'no-store'
+    });
     if (!response.ok) {
+        if (typeof window === 'undefined') {
+            console.error(`[API Error] getPublicBlogs failed:`, {
+                status: response.status,
+                statusText: response.statusText,
+                url: `${API_BASE_URL}/api/blogs?${params}`
+            });
+        }
         throw new Error('Failed to fetch blogs');
     }
     return response.json();
@@ -85,6 +99,9 @@ export async function getBlogBySlug(slug: string): Promise<BlogResponse> {
             signal: controller.signal,
             headers: {
                 'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Accept': 'application/json',
+                'Referer': 'https://hustloop.com/blog',
             },
             cache: 'no-store'
         });
