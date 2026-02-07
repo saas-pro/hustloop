@@ -66,8 +66,13 @@ export async function getPublicBlogs(
     if (search) params.append('search', search);
     if (tags) params.append('tags', tags);
 
-    const response = await fetch(`${API_BASE_URL}/api/blogs?${params}`, {
-        headers: {
+    const isServer = typeof window === 'undefined';
+    const headers: Record<string, string> = {
+        'Accept': 'application/json',
+    };
+
+    if (isServer) {
+        Object.assign(headers, {
             'Accept': 'application/json, text/plain, */*',
             'Accept-Language': 'en-US,en;q=0.9',
             'Cache-Control': 'no-cache',
@@ -81,7 +86,11 @@ export async function getPublicBlogs(
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             'Referer': 'https://hustloop.com/',
             'Origin': 'https://hustloop.com'
-        },
+        });
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/blogs?${params}`, {
+        headers,
         cache: 'no-store'
     });
     if (!response.ok) {
@@ -105,13 +114,17 @@ export async function getBlogBySlug(slug: string): Promise<BlogResponse> {
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/blogs/${slug}`, {
-            signal: controller.signal,
-            headers: {
+        const isServer = typeof window === 'undefined';
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        };
+
+        if (isServer) {
+            Object.assign(headers, {
                 'Accept': 'application/json, text/plain, */*',
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Cache-Control': 'no-cache',
-                'Content-Type': 'application/json',
                 'Pragma': 'no-cache',
                 'Sec-Ch-Ua': '"Not A(Alpha;68", "Chromium";121, "Google Chrome";121',
                 'Sec-Ch-Ua-Mobile': '?0',
@@ -122,7 +135,12 @@ export async function getBlogBySlug(slug: string): Promise<BlogResponse> {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
                 'Referer': 'https://hustloop.com/',
                 'Origin': 'https://hustloop.com'
-            },
+            });
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/blogs/${slug}`, {
+            signal: controller.signal,
+            headers,
             cache: 'no-store'
         });
 
