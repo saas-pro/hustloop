@@ -1,4 +1,12 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.hustloop.com';
+const getApiBaseUrl = () => {
+    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (envUrl && envUrl !== 'undefined' && envUrl !== 'null' && envUrl !== '') {
+        return envUrl;
+    }
+    return 'https://api.hustloop.com';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export interface BlogPost {
     id: number;
@@ -78,19 +86,33 @@ export async function getBlogBySlug(slug: string): Promise<BlogResponse> {
             headers: {
                 'Content-Type': 'application/json',
             },
+            cache: 'no-store'
         });
 
         clearTimeout(timeoutId);
 
         if (!response.ok) {
+            console.error(`[API Error] getBlogBySlug(${slug}) failed:`, {
+                status: response.status,
+                statusText: response.statusText,
+                url: `${API_BASE_URL}/api/blogs/${slug}`
+            });
             if (response.status === 404) {
                 throw new Error('Blog not found');
             }
             throw new Error(`Failed to fetch blog: ${response.status} ${response.statusText}`);
         }
-        return response.json();
+
+        const data = await response.json();
+        if (typeof window === 'undefined') {
+            console.log(`[API Success] getBlogBySlug(${slug}) retrieved blog:`, data?.blog ? 'Found' : 'Not Found');
+        }
+        return data;
     } catch (error) {
         clearTimeout(timeoutId);
+        if (typeof window === 'undefined') {
+            console.error(`[API Exception] getBlogBySlug(${slug}):`, error instanceof Error ? error.message : error);
+        }
         if (error instanceof Error && error.name === 'AbortError') {
             throw new Error('Request timeout - API took too long to respond');
         }

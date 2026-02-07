@@ -18,6 +18,9 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
         const response = await getBlogBySlug(slug);
 
         if (!response?.blog) {
+            if (typeof window === 'undefined') {
+                console.warn(`[Metadata] No blog found for slug: ${slug}`);
+            }
             return {
                 title: "Blog Not Found | Hustloop",
                 description: "The requested blog post could not be found.",
@@ -25,7 +28,7 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
         }
 
         const blog = response.blog;
-
+        // ... (title/description logic remains unchanged)
         const title = blog.meta_title || blog.title;
         const description =
             blog.meta_description ||
@@ -62,7 +65,10 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
             },
             keywords: blog.tags?.join(", "),
         };
-    } catch {
+    } catch (error) {
+        if (typeof window === 'undefined') {
+            console.error(`[Metadata Error] Failed for slug:`, error);
+        }
         return {
             title: "Blog Not Found | Hustloop",
             description: "The requested blog post could not be found.",
@@ -71,16 +77,29 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
 }
 
 export default async function BlogDetailPage({ params }: BlogPageProps) {
+    let currentSlug = '';
     try {
         const { slug } = await params;
+        currentSlug = slug;
+
+        if (typeof window === 'undefined') {
+            console.log(`[BlogPage] Fetching blog for slug: ${slug}`);
+        }
+
         const response = await getBlogBySlug(slug);
 
         if (!response?.blog) {
+            if (typeof window === 'undefined') {
+                console.warn(`[BlogPage] Blog response empty for slug: ${slug}`);
+            }
             notFound();
         }
 
         return <BlogDetailClient blog={response.blog} />;
-    } catch {
+    } catch (error) {
+        if (typeof window === 'undefined') {
+            console.error(`[BlogPage Error] Failed for slug: ${currentSlug}`, error);
+        }
         notFound();
     }
 }
