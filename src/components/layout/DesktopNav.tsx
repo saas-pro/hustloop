@@ -1,4 +1,3 @@
-
 "use client";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -12,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useRouter, usePathname } from "next/navigation";
 import gsap from 'gsap';
 import Link from 'next/link';
+import { useAuth } from '@/providers/AuthContext';
 
 interface DesktopNavProps {
     activeView: View;
@@ -22,7 +22,8 @@ interface DesktopNavProps {
     isStaticPage?: boolean;
     navOpen?: boolean;
     setNavOpen: (value: boolean) => void;
-    heroVisible?: boolean
+    heroVisible?: boolean;
+    userRole?: string; // Keep prop for backwards compatibility but prefer hook
 }
 
 const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
@@ -74,12 +75,15 @@ export function ThemeToggleDropdown() {
     )
 }
 
-const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false }: DesktopNavProps) => {
+const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false, userRole: userRoleProp }: DesktopNavProps) => {
     const router = useRouter();
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
     const [isScrolling, setIsScrolling] = React.useState(false);
 
+    // Get userRole from AuthContext for real-time updates
+    const { userRole: userRoleFromAuth } = useAuth();
+    const userRole = userRoleFromAuth || userRoleProp; // Use auth context, fallback to prop
     const preloadRecaptcha = () => {
         const scriptId = 'recaptcha-preload-link';
         if (!document.getElementById(scriptId)) {
@@ -248,7 +252,13 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
 
                                         <div className="inline-flex rounded-xl border border-solid backdrop-blur-md bg-white/10">
                                             <button
-                                                onClick={() => setActiveView('dashboard')}
+                                                onClick={() => {
+                                                    if (userRole === 'blogger') {
+                                                        router.push('/blogger');
+                                                    } else {
+                                                        setActiveView('dashboard');
+                                                    }
+                                                }}
                                                 className="w-14 h-14 flex items-center justify-center"
                                                 style={{ color: (heroVisible && !navOpen) ? "white" : "CurrentColor", transition: "none" }}
                                             >
@@ -423,7 +433,12 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                 >
                     <ul className="flex w-full justify-between items-center list-none">
                         {navItems
-                            .filter((item) => !item.loggedIn || isLoggedIn)
+                            .filter((item) => {
+                                if (userRole === 'blogger') {
+                                    return item.id === 'blog' || item.id === 'dashboard';
+                                }
+                                return !item.loggedIn || isLoggedIn;
+                            })
                             .map((item, index) => {
                                 const isActive = activeView === item.id;
                                 const className = cn(
@@ -442,14 +457,14 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                                             </Button>
                                         ) : item.id === "blog" ? (
                                             <Link
-                                                href="/blog"
+                                                href={userRole === 'blogger' ? "/blogger" : "/blog"}
                                                 className={className}
                                                 onClick={() => {
                                                     document.body.classList.remove('nav-open');
                                                     setNavOpen(false);
                                                 }}
                                             >
-                                                {item.label}
+                                                {userRole === 'blogger' ? "Workspace" : item.label}
                                             </Link>
                                         ) : (
                                             <button

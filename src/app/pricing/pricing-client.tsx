@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { usePlans } from "@/hooks/use-plans";
@@ -251,9 +252,7 @@ export default function PricingPageClient() {
 
                             const subscriptionData = await subscriptionRes.json();
                             setActiveSubscription(subscriptionData.subscription);
-                            if (subscriptionData.subscription?.status === "active") {
-                                localStorage.setItem('hasSubscription', 'true');
-                            }
+                            // Subscription status will be fetched from backend via AuthContext on next page load
                             toast({
                                 title: "Payment Successful!",
                                 description: "Your subscription has been activated.",
@@ -323,6 +322,7 @@ export default function PricingPageClient() {
 
     return (
         <div className="flex flex-col">
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
             <div className="absolute top-4 left-4 z-50 flex items-center gap-4">
                 <div onClick={() => router.push('/')} className="cursor-pointer">
                     <Image src="/logo.png" alt="Hustloop Logo" width={120} height={120} />
@@ -407,7 +407,7 @@ export default function PricingPageClient() {
                                                     <div className="text-4xl font-bold mt-1">
                                                         ₹{Math.round(plan.price_in_paise / 100 / 12)}
                                                         <span className="text-sm font-normal text-muted-foreground">/ month</span>
-                                                    </div>  
+                                                    </div>
                                                 </div>)}
                                             </div>
                                         </div>

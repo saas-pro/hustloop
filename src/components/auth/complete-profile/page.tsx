@@ -7,19 +7,19 @@ import * as z from "zod";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from "@/components/ui/form";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +31,7 @@ import { API_BASE_URL } from "@/lib/api";
 import { UserRole } from "@/app/types";
 
 const profileSchema = z.object({
-  role: z.string({ required_error: "Please select a role." }),
+    role: z.string({ required_error: "Please select a role." }),
 });
 
 type ProfileSchema = z.infer<typeof profileSchema>;
@@ -52,18 +52,16 @@ function CompleteProfileForm() {
     const onLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, name: string, email: string, authProvider: AuthProvider }) => {
         const { role, token: loginToken, hasSubscription, name, email, authProvider } = data;
         const userData = { name, email };
-        
+
         localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userRole', role!);
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('hasSubscription', String(hasSubscription));
         localStorage.setItem('token', loginToken);
         localStorage.setItem('authProvider', authProvider);
 
         // Dispatch a custom event to notify other parts of the app that auth state has changed.
         window.dispatchEvent(new Event('storage'));
 
-        toast({ title: "Profile Complete!", description: `Welcome to SynergyHub, ${name}!` });
+        toast({ title: "Profile Complete!", description: `Welcome to Hustloop, ${name}!` });
         router.push('/');
     };
 
@@ -104,9 +102,9 @@ function CompleteProfileForm() {
             });
         }
     };
-    
+
     if (!token) {
-         return (
+        return (
             <div className="flex items-center justify-center min-h-screen bg-background">
                 <Card className="w-full max-w-md mx-auto">
                     <CardHeader>

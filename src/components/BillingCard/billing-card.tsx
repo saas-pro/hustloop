@@ -12,13 +12,15 @@ import { usePlans } from "@/hooks/use-plans";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
 import { View } from "@/app/types";
+import { useAuth } from "@/providers/AuthContext";
+import Script from "next/script";
 
 interface PricingAccordion {
     setActiveView: (view: View) => void;
-    setHasSubscription: (hasSubscription: boolean) => void;
 }
 
-export default function PricingAccordion({ setActiveView, setHasSubscription }: PricingAccordion) {
+export default function PricingAccordion({ setActiveView }: PricingAccordion) {
+    const { user, userRole, founderRole, hasSubscription, setAuthData } = useAuth();
 
     const router = useRouter();
     const { toast } = useToast();
@@ -229,10 +231,18 @@ export default function PricingAccordion({ setActiveView, setHasSubscription }: 
                             });
                             const subscriptionData = await subscriptionRes.json();
                             setActiveSubscription(subscriptionData.subscription);
-                            if (subscriptionData.subscription?.status === "active") {
-                                localStorage.setItem('hasSubscription', 'true');
-                                setHasSubscription(true);
+
+                            // Update AuthContext with new subscription status
+                            if (subscriptionData.subscription?.status === "active" && user) {
+                                setAuthData({
+                                    user,
+                                    userRole,
+                                    founderRole,
+                                    isLoggedIn: true,
+                                    hasSubscription: true,
+                                });
                             }
+
                             toast({
                                 title: "Payment Successful!",
                                 description: "Your subscription has been activated.",
@@ -314,6 +324,7 @@ export default function PricingAccordion({ setActiveView, setHasSubscription }: 
     };
     return (
         <div className="flex flex-col items-center relative py-16 md:py-20 bg-background">
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
             <div className="text-center mb-8 w-[95vw]">
                 <h2 className="text-3xl font-bold font-headline">Our Pricing</h2>
                 <p className="text-muted-foreground max-w-xl mx-auto mt-2">

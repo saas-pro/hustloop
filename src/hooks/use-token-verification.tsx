@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/providers/AuthContext';
 import type { UserRole, View } from '@/app/types';
 
 type AuthProvider = 'local' | 'google';
@@ -20,57 +21,19 @@ interface TokenStatus {
     error?: string;
 }
 
-interface UseTokenVerificationProps {
-    setLoggedIn: (value: boolean) => void;
-    setUserRole: (value: UserRole | null) => void;
-    setUser: (value: User | null) => void;
-    setHasSubscription: (value: boolean) => void;
-    setAppliedPrograms: (value: Record<string, string>) => void;
-    setAuthProvider: (value: AuthProvider | null) => void;
-    setActiveView: (value: View) => void;
-}
-
 export function useTokenVerification({
-    setLoggedIn,
-    setUserRole,
-    setUser,
-    setHasSubscription,
-    setAppliedPrograms,
-    setAuthProvider,
     setActiveView
-}: UseTokenVerificationProps) {
+}: { setActiveView: (value: View) => void }) {
+    const { setAuthData, logout: authLogout } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
     const logout = useCallback((title: string, description: string) => {
         toast({ title, description, variant: "destructive" });
-        setLoggedIn(false);
-        setUserRole(null);
-        setUser(null);
-        setHasSubscription(false);
-        setAppliedPrograms({});
-        setAuthProvider(null);
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('user');
-        localStorage.removeItem('hasSubscription');
-        localStorage.removeItem('appliedPrograms');
-        localStorage.removeItem('token');
-        localStorage.removeItem('authProvider');
-        localStorage.removeItem('founder_role');
+        authLogout();
         window.dispatchEvent(new Event('storage'));
         setActiveView('home');
         router.push('/');
-    }, [
-        router,
-        setActiveView,
-        setLoggedIn,
-        setUserRole,
-        setUser,
-        setHasSubscription,
-        setAppliedPrograms,
-        setAuthProvider,
-        toast
-    ]);
+    }, [router, setActiveView, authLogout, toast]);
     const checkToken = useCallback(async () => {
         const token = localStorage.getItem('token');
         if (!token) return;
@@ -98,6 +61,20 @@ export function useTokenVerification({
                 logout("Role is not set", "Please log in again to set your role.");
                 return;
             }
+
+            // Hydrate Context
+            setAuthData({
+                user: {
+                    name: userData.user.name,
+                    email: userData.user.email,
+                    userId: userData.user.uid || userData.user.userId,
+                    founderRole: userData.user.founder_role
+                },
+                userRole: userData.user.role,
+                founderRole: userData.user.founder_role,
+                isLoggedIn: true,
+                hasSubscription: !!userData.user.has_subscription,
+            });
             const tokenData: TokenStatus = await tokenRes.json();
             if (!tokenRes.ok) {
                 logout(
@@ -112,7 +89,7 @@ export function useTokenVerification({
                 variant: "destructive",
             });
         }
-    }, [logout, toast]);
+    }, [logout, toast, setAuthData]);
     useEffect(() => {
         checkToken();
     }, [checkToken]);

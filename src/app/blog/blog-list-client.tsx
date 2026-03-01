@@ -6,12 +6,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Calendar, User, ArrowRight, Sun, Moon, Palette, Check, Home } from "lucide-react";
+import { Search, Calendar, User, ArrowRight, Sun, Moon, Palette, Check, Home, Eye, FileText, XCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import BrandLogo from "@/components/blog/brand-logo";
 import { useTheme } from "next-themes";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/providers/AuthContext";
+import { useRouter } from "next/navigation";
+
+/**
+ * Calculates read time following Medium's algorithm:
+ * - 265 words per minute for text
+ * - Image viewing time: 12s for image #1, decreasing by 1s each image down to 3s minimum
+ */
+function calculateReadTime(content: string, imageCount: number = 0): number {
+    // Strip HTML tags
+    const text = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const wordCount = text ? text.split(' ').filter(Boolean).length : 0;
+
+    // Text reading time in seconds
+    const textSeconds = (wordCount / 265) * 60;
+
+    // Image viewing time in seconds (Medium formula)
+    let imageSeconds = 0;
+    for (let i = 0; i < imageCount; i++) {
+        // First image: 12s, each subsequent drops by 1s, minimum 3s
+        imageSeconds += Math.max(12 - i, 3);
+    }
+
+    const totalSeconds = textSeconds + imageSeconds;
+    return Math.max(1, Math.ceil(totalSeconds / 60));
+}
 
 function ThemeToggleDropdown() {
     const { theme, setTheme } = useTheme();
@@ -47,12 +73,21 @@ function ThemeToggleDropdown() {
 }
 
 export default function BlogListClient() {
+    const { userRole, isLoading: isAuthLoading } = useAuth();
+    const router = useRouter();
     const [blogs, setBlogs] = useState<BlogPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+
+    // Redirect blogger to workspace
+    useEffect(() => {
+        if (!isAuthLoading && userRole === 'blogger') {
+            router.push('/blogger');
+        }
+    }, [userRole, isAuthLoading, router]);
 
     // Debounce search
     useEffect(() => {
@@ -64,12 +99,15 @@ export default function BlogListClient() {
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
-    // Fetch blogs
+    // Fetch blogs — admin gets all blogs (via token), public gets published only
     useEffect(() => {
         const fetchBlogs = async () => {
             try {
                 setLoading(true);
-                const response = await getPublicBlogs(page, 9, debouncedSearch);
+                const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                // Pass token if admin so backend returns all statuses
+                const adminToken = userRole === 'admin' && token ? token : undefined;
+                const response = await getPublicBlogs(page, 9, debouncedSearch, undefined, adminToken);
                 setBlogs(response.blogs);
                 setTotalPages(response.pages);
             } catch (error) {
@@ -80,7 +118,7 @@ export default function BlogListClient() {
         };
 
         fetchBlogs();
-    }, [page, debouncedSearch]);
+    }, [page, debouncedSearch, userRole]);
 
     return (
         <>
@@ -142,7 +180,7 @@ export default function BlogListClient() {
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {blogs.map((blog) => (
-                                    <BlogCard key={blog.id} blog={blog} />
+                                    <BlogCard key={blog.id} blog={blog} isAdmin={userRole === 'admin'} />
                                 ))}
                             </div>
 
@@ -176,10 +214,30 @@ export default function BlogListClient() {
     );
 }
 
-function BlogCard({ blog }: { blog: BlogPost }) {
+function BlogCard({ blog, isAdmin }: { blog: BlogPost; isAdmin?: boolean }) {
+    const isPublished = blog.status === 'published';
+    // Admin can see unpublished blogs via the gateway (with ?login=1)
+    const href = isPublished ? `/blog/${blog.slug}` : `/blog/${blog.slug}?login=1`;
+
+    const statusBadge = !isPublished && isAdmin ? (
+        <Badge
+            variant={blog.status === 'rejected' ? 'destructive' : 'outline'}
+            className={`text-xs absolute top-2 right-2 z-10 ${blog.status === 'pending_review'
+                ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
+                : ''
+                }`}
+        >
+            {blog.status === 'pending_review' && <><Eye className="h-3 w-3 mr-1" />Pending</>}
+            {blog.status === 'draft' && <><FileText className="h-3 w-3 mr-1" />Draft</>}
+            {blog.status === 'rejected' && <><XCircle className="h-3 w-3 mr-1" />Rejected</>}
+        </Badge>
+    ) : null;
+
     return (
-        <Link href={`/blog/${blog.slug}`}>
-            <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
+        <Link href={href}>
+            <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer group relative ${!isPublished && isAdmin ? 'border-dashed opacity-80 hover:opacity-100' : ''
+                }`}>
+                {statusBadge}
                 {blog.featured_image_url && (
                     <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
                         <Image
@@ -198,7 +256,7 @@ function BlogCard({ blog }: { blog: BlogPost }) {
                             </Badge>
                         )}
                     </div>
-                    <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors">
+                    <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors leading-tight">
                         {blog.title}
                     </CardTitle>
                     <CardDescription className="line-clamp-3">
@@ -207,10 +265,10 @@ function BlogCard({ blog }: { blog: BlogPost }) {
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
+                        {blog.author?.name && <div className="flex items-center gap-1">
                             <User className="h-4 w-4" />
-                            <span>{blog.author?.name || "Anonymous"}</span>
-                        </div>
+                            <span className="font-medium">{blog.author?.name}</span>
+                        </div>}
                         <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             <span>{new Date(blog.created_at).toLocaleDateString("en-US", {
@@ -220,14 +278,22 @@ function BlogCard({ blog }: { blog: BlogPost }) {
                             })}</span>
                         </div>
                     </div>
+                    <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>{calculateReadTime(
+                            blog.content,
+                            blog.featured_image_url ? 1 : 0
+                        )} min read</span>
+                    </div>
                     <div className="flex items-center gap-2 mt-4 text-primary font-medium">
-                        Read more <ArrowRight className="h-4 w-4" />
+                        {isPublished ? 'Read more' : isAdmin ? 'Preview (Admin)' : 'Read more'} <ArrowRight className="h-4 w-4" />
                     </div>
                 </CardContent>
             </Card>
         </Link>
     );
 }
+
 
 function BlogCardSkeleton() {
     return (

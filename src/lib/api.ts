@@ -16,10 +16,18 @@ export interface BlogPost {
     content: string;
     featured_image_url?: string;
     youtube_embed_url?: string;
+    // Blog-level social / website links
+    website_url?: string;
+    instagram_url?: string;
+    linkedin_url?: string;
+    x_url?: string;
+    youtube_url?: string;
     meta_title?: string;
     meta_description?: string;
     tags?: string[];
-    status: 'draft' | 'published';
+    status: 'draft' | 'pending_review' | 'published' | 'rejected';
+    delete_request_status?: 'pending' | 'approved' | 'rejected';
+    rejection_reason?: string;
     author_id: string;
     author?: {
         uid: string;
@@ -56,7 +64,8 @@ export async function getPublicBlogs(
     page: number = 1,
     perPage: number = 10,
     search?: string,
-    tags?: string
+    tags?: string,
+    token?: string
 ): Promise<BlogListResponse> {
     const params = new URLSearchParams({
         page: page.toString(),
@@ -70,6 +79,10 @@ export async function getPublicBlogs(
     const headers: Record<string, string> = {
         'Accept': 'application/json',
     };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
 
     if (isServer) {
         Object.assign(headers, {
@@ -94,22 +107,18 @@ export async function getPublicBlogs(
         cache: 'no-store'
     });
     if (!response.ok) {
-        if (typeof window === 'undefined') {
-            console.error(`[API Error] getPublicBlogs failed:`, {
-                status: response.status,
-                statusText: response.statusText,
-                url: `${API_BASE_URL}/api/blogs?${params}`
-            });
-        }
         throw new Error('Failed to fetch blogs');
     }
     return response.json();
 }
 
+
 /**
- * Get a single published blog by slug
+ * Get a single blog by slug.
+ * - No token (or non-admin token): returns published blogs only.
+ * - Admin token: returns blog of any status (draft, pending, rejected, published).
  */
-export async function getBlogBySlug(slug: string): Promise<BlogResponse> {
+export async function getBlogBySlug(slug: string, token?: string): Promise<BlogResponse> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
@@ -119,6 +128,10 @@ export async function getBlogBySlug(slug: string): Promise<BlogResponse> {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
         };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
 
         if (isServer) {
             Object.assign(headers, {
@@ -144,35 +157,199 @@ export async function getBlogBySlug(slug: string): Promise<BlogResponse> {
             cache: 'no-store'
         });
 
-        clearTimeout(timeoutId);
-
         if (!response.ok) {
-            console.error(`[API Error] getBlogBySlug(${slug}) failed:`, {
-                status: response.status,
-                statusText: response.statusText,
-                url: `${API_BASE_URL}/api/blogs/${slug}`
-            });
             if (response.status === 404) {
                 throw new Error('Blog not found');
             }
             throw new Error(`Failed to fetch blog: ${response.status} ${response.statusText}`);
         }
 
-        const data = await response.json();
-        if (typeof window === 'undefined') {
-            console.log(`[API Success] getBlogBySlug(${slug}) retrieved blog:`, data?.blog ? 'Found' : 'Not Found');
-        }
-        return data;
+        return await response.json();
     } catch (error) {
-        clearTimeout(timeoutId);
-        if (typeof window === 'undefined') {
-            console.error(`[API Exception] getBlogBySlug(${slug}):`, error instanceof Error ? error.message : error);
-        }
         if (error instanceof Error && error.name === 'AbortError') {
             throw new Error('Request timeout - API took too long to respond');
         }
         throw error;
+    } finally {
+        clearTimeout(timeoutId);
     }
+}
+
+/**
+ * Upload an inline image for use inside blog content (TipTap editor)
+ */
+export async function uploadBlogContentImage(file: File, token: string): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/blogs/upload-image`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload image');
+    }
+
+    const data = await response.json();
+    return { url: data.url };
+}
+
+// --- BLOGGER APIs (Authentication + Blogger Role Required) ---
+
+/**
+ * Get all blogs for the current blogger
+ */
+export async function getMyBlogs(
+    token: string,
+    page: number = 1,
+    perPage: number = 10,
+    status?: string
+): Promise<BlogListResponse> {
+    const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+    });
+    if (status) params.append('status', status);
+
+    const response = await fetch(`${API_BASE_URL}/api/blogs/me?${params}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch your blogs');
+    }
+    return response.json();
+}
+
+/**
+ * Get a single blog by ID (owner only)
+ */
+export async function getMyBlog(blogId: number, token: string): Promise<BlogResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch blog');
+    }
+    return response.json();
+}
+
+/**
+ * Create a new blog post as a blogger
+ */
+export async function bloggerCreateBlog(data: CreateBlogData, token: string): Promise<BlogResponse> {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            formData.append(key, value instanceof File ? value : String(value));
+        }
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api/blogs`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create blog');
+    }
+    return response.json();
+}
+
+/**
+ * Update a blog post as a blogger
+ */
+export async function bloggerUpdateBlog(blogId: number, data: UpdateBlogData, token: string): Promise<BlogResponse> {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            formData.append(key, value instanceof File ? value : String(value));
+        }
+    });
+
+    const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update blog');
+    }
+    return response.json();
+}
+
+/**
+ * Delete a blog post as a blogger
+ */
+export async function bloggerDeleteBlog(blogId: number, token: string): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete blog');
+    }
+    return response.json();
+}
+
+/**
+ * Request blog deletion as a blogger
+ */
+export async function requestDeleteBlog(blogId: number, token: string): Promise<BlogResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}/request-delete`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to request delete blog');
+    }
+    return response.json();
+}
+
+/**
+ * Submit a blog for review
+ */
+export async function submitForReview(blogId: number, token: string): Promise<BlogResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}/submit`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to submit blog for review');
+    }
+    return response.json();
 }
 
 // --- ADMIN BLOG APIs (Authentication Required) ---
@@ -182,7 +359,13 @@ export interface CreateBlogData {
     excerpt?: string;
     content: string;
     featured_image_url?: string;
+    featured_image?: File;
     youtube_embed_url?: string;
+    website_url?: string;
+    instagram_url?: string;
+    linkedin_url?: string;
+    x_url?: string;
+    youtube_url?: string;
     meta_title?: string;
     meta_description?: string;
     tags?: string;
@@ -197,13 +380,19 @@ export async function createBlog(
     data: CreateBlogData,
     token: string
 ): Promise<BlogResponse> {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            formData.append(key, value instanceof File ? value : String(value));
+        }
+    });
+
     const response = await fetch(`${API_BASE_URL}/api/admin/blogs`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
+        body: formData,
     });
 
     if (!response.ok) {
@@ -221,13 +410,19 @@ export async function updateBlog(
     data: UpdateBlogData,
     token: string
 ): Promise<BlogResponse> {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            formData.append(key, value instanceof File ? value : String(value));
+        }
+    });
+
     const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}`, {
         method: 'PUT',
         headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
+        body: formData,
     });
 
     if (!response.ok) {
@@ -275,6 +470,72 @@ export async function publishBlog(
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to publish blog');
+    }
+    return response.json();
+}
+
+/**
+ * Reject a blog post (admin only)
+ */
+export async function rejectBlog(
+    blogId: number,
+    reason: string,
+    token: string
+): Promise<BlogResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}/reject`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to reject blog');
+    }
+    return response.json();
+}
+
+/**
+ * Approve a blog deletion request (admin only)
+ */
+export async function approveDeleteRequest(
+    blogId: number,
+    token: string
+): Promise<BlogResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}/delete-requests/approve`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to approve delete request');
+    }
+    return response.json();
+}
+
+/**
+ * Reject a blog deletion request (admin only)
+ */
+export async function rejectDeleteRequest(
+    blogId: number,
+    token: string
+): Promise<BlogResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}/delete-requests/reject`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to reject delete request');
     }
     return response.json();
 }
@@ -347,6 +608,72 @@ export async function getAdminBlog(
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to fetch blog');
+    }
+    return response.json();
+}
+
+// --- NEXT BLOG & BLOGGER PROFILE APIs ---
+
+export interface BloggerProfileData {
+    website_url?: string;
+    linkedin_url?: string;
+    x_url?: string;
+    instagram_url?: string;
+    bio?: string;
+    title?: string;
+}
+
+/**
+ * Get the next published blog after the given slug
+ */
+export async function getNextBlogs(slug: string): Promise<{ blogs: BlogPost[] } | null> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/blogs/${slug}/next`, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store',
+        });
+        if (response.status === 404) return null;
+        if (!response.ok) return null;
+        return response.json();
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Update the current blogger's profile (social links, bio, title)
+ */
+export async function updateBloggerProfile(
+    data: BloggerProfileData,
+    token: string
+): Promise<{ success: boolean; message: string; user: Record<string, unknown> }> {
+    const response = await fetch(`${API_BASE_URL}/api/blogger/profile`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update profile');
+    }
+    return response.json();
+}
+
+/**
+ * Get the current blogger's profile
+ */
+export async function getBloggerProfile(
+    token: string
+): Promise<{ success: boolean; user: Record<string, unknown> }> {
+    const response = await fetch(`${API_BASE_URL}/api/blogger/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch profile');
     }
     return response.json();
 }

@@ -5,14 +5,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import React from 'react'
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Palette, Check, Loader2, UserCircle, LogOut, Menu, X } from 'lucide-react';
+import { Sun, Moon, Palette, Check, Loader2, UserCircle, LogOut } from 'lucide-react';
 import { View } from '@/app/types';
 import { cn } from '@/lib/utils';
 import { useRouter, usePathname } from "next/navigation";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Separator } from '@radix-ui/react-separator';
 import Image from 'next/image';
-import Link from "next/link";
 import CardNav, { CardNavItem } from '@/components/CardNav';
 
 interface MobileNavProps {
@@ -22,8 +20,10 @@ interface MobileNavProps {
     onLogout: () => void;
     isLoading: boolean;
     isStaticPage?: boolean;
-    heroVisible?: boolean
-
+    heroVisible?: boolean;
+    userRole?: string;
+    navOpen?: boolean;
+    setNavOpen?: (value: boolean) => void;
 }
 
 const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
@@ -34,9 +34,6 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
     { id: "early-bird", label: "Early Bird" },
     { id: "marketplace", label: "Marketplace" },
 ];
-
-
-
 
 export function ThemeToggleDropdown({ heroVisible }: MobileNavProps) {
     const { theme, setTheme } = useTheme();
@@ -70,7 +67,7 @@ export function ThemeToggleDropdown({ heroVisible }: MobileNavProps) {
         </DropdownMenu>)
 }
 
-const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false, heroVisible }: MobileNavProps) => {
+const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, isStaticPage = false, heroVisible, userRole, navOpen, setNavOpen }: MobileNavProps) => {
     const router = useRouter();
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
@@ -86,6 +83,38 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
             document.head.appendChild(link);
         }
     };
+
+    const handleAuthClick = (view: 'login' | 'signup') => {
+        preloadRecaptcha();
+        setActiveView(view);
+    };
+
+    const handleLogoClick = () => {
+        if (pathname === '/terms-of-service' || pathname === '/privacy-policy') {
+            setIsNavigating(true);
+            router.push('/');
+        } else {
+            setActiveView("home");
+        }
+    };
+
+    const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement, MouseEvent>, sectionId: string) => {
+        if (pathname !== '/') {
+            router.push('/');
+            setTimeout(() => {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 500);
+        } else {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    };
+
     const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
         if (isNavigating) {
             return (
@@ -97,7 +126,6 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
         }
 
         return (
-
             <div
                 className="flex flex-row items-center gap-2 cursor-pointer"
                 onClick={handleLogoClick}
@@ -121,56 +149,28 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
         );
     };
 
-    const handleAuthClick = (view: 'login' | 'signup') => {
-        preloadRecaptcha();
-        setActiveView(view);
-    };
-
-    const handleLogoClick = () => {
-        if (pathname === '/terms-of-service' || pathname === '/privacy-policy') {
-            setIsNavigating(true);
-            router.push('/');
-        } else {
-            setActiveView("home");
-        }
-    };
-
-    const handleScrollToSection = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement, MouseEvent>, sectionId: string) => {
-
-        if (pathname !== '/') {
-            router.push('/');
-            setTimeout(() => {
-                const section = document.getElementById(sectionId);
-                if (section) {
-                    section.scrollIntoView({ behavior: 'smooth' });
-
-                }
-            }, 500); // Wait for page to potentially load
-        } else {
-            const section = document.getElementById(sectionId);
-            if (section) {
-                section.scrollIntoView({ behavior: 'smooth' });
-
-            }
-        }
-    };
-
-    // Configure CardNav items - each nav item gets its own entry
     const cardNavItems: CardNavItem[] = [
         {
             label: "Main Navigation",
             bgColor: "#ffffff",
             textColor: "#000000",
             links: navItems
-                .filter((item) => !item.loggedIn || isLoggedIn)
+                .filter((item) => {
+                    if (userRole === 'blogger') {
+                        return item.id === 'blog';
+                    }
+                    return !item.loggedIn || isLoggedIn;
+                })
                 .map((item) => ({
-                    label: item.label,
-                    href: item.id === "early-bird" ? "#newsletter-section" : `#${item.id}`,
+                    label: userRole === 'blogger' && item.id === 'blog' ? "Workspace" : item.label,
+                    href: item.id === 'blog' && userRole === 'blogger' ? "/blogger" : (item.id === "early-bird" ? "#newsletter-section" : `#${item.id}`),
                     ariaLabel: `Navigate to ${item.label}`,
                     onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
                         e.preventDefault();
                         if (item.id === "early-bird") {
                             handleScrollToSection(e, 'newsletter-section');
+                        } else if (item.id === 'blog' && userRole === 'blogger') {
+                            router.push('/blogger');
                         } else {
                             setActiveView(item.id);
                         }
@@ -201,7 +201,12 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                         handleScrollToSection(e, "contact-section");
                     }
                 }
-            ]
+            ].filter(link => {
+                if (userRole === 'blogger') {
+                    return false;
+                }
+                return true;
+            })
         },
         {
             label: "Account",
@@ -217,7 +222,11 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                         iconOnly: true,
                         onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
                             e.preventDefault();
-                            setActiveView("dashboard");
+                            if (userRole === 'blogger') {
+                                router.push('/blogger');
+                            } else {
+                                setActiveView("dashboard");
+                            }
                         }
                     },
                     {
@@ -237,7 +246,7 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                         label: "Login",
                         href: "#login",
                         ariaLabel: "Login to your account",
-                        styleVariant: 'primary' as const, // Primary button with full rounded corners
+                        styleVariant: 'primary' as const,
                         onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
                             e.preventDefault();
                             handleAuthClick('login');
@@ -247,7 +256,7 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                         label: "Sign Up",
                         href: "#signup",
                         ariaLabel: "Create an account",
-                        styleVariant: 'secondary' as const, // Secondary button with muted foreground
+                        styleVariant: 'secondary' as const,
                         onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
                             e.preventDefault();
                             handleAuthClick('signup');
@@ -261,8 +270,7 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
         <CardNav
             brandLogo={<BrandLogo />}
             items={cardNavItems}
-            className="lg:hidden"
-            ease="power3.out"
+            className="xl:hidden"
             themeToggle={<ThemeToggleDropdown
                 activeView={activeView}
                 setActiveView={setActiveView}
@@ -270,9 +278,10 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                 onLogout={onLogout}
                 isLoading={isLoading}
                 heroVisible={heroVisible}
+                userRole={userRole}
             />}
         />
     )
 }
 
-export default MobileNav
+export default MobileNav;

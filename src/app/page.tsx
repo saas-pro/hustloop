@@ -31,12 +31,6 @@ export default function Home() {
   const [activeEvent, setActiveEvent] = useState<any>(null);
 
   useTokenVerification({
-    setLoggedIn,
-    setUserRole,
-    setUser,
-    setHasSubscription,
-    setAppliedPrograms,
-    setAuthProvider,
     setActiveView
   });
 
@@ -59,17 +53,37 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    let fallbackTimer: NodeJS.Timeout;
+    let fadeTimer: NodeJS.Timeout;
+
+    const stopLoading = () => {
       setIsAnimating(true);
-      setTimeout(() => {
+      fadeTimer = setTimeout(() => {
         setShowLoader(false);
         if (activeEvent) {
           setEventModalOpen(true);
         }
       }, 250);
-    }, 3500);
+    };
 
-    return () => clearTimeout(timer);
+    const handleLoaderComplete = () => {
+      clearTimeout(fallbackTimer);
+      stopLoading();
+    };
+
+    window.addEventListener('page-loader-complete', handleLoaderComplete);
+
+    // Fallback: If video takes longer than 8 seconds, just show the site
+    fallbackTimer = setTimeout(() => {
+      window.removeEventListener('page-loader-complete', handleLoaderComplete);
+      stopLoading();
+    }, 4000);
+
+    return () => {
+      window.removeEventListener('page-loader-complete', handleLoaderComplete);
+      clearTimeout(fallbackTimer);
+      if (fadeTimer) clearTimeout(fadeTimer);
+    };
   }, [activeEvent]);
 
   return (

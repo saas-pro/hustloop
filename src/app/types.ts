@@ -7,7 +7,7 @@ export type TechTransferTab = "overview" | "submission" | "engagements" | "setti
 export type InnovativeIdeaTab = "overview" | "incubators" | "mentors" | "submission" | "settings"
 export type IncubatorDashboardTab = "overview" | "submissions" | "profile" | "settings";
 export type MsmeDashboardTab = "overview" | "submissions" | "profile" | "engagement" | "settings";
-export type UserRole = "admin" | "mentor" | "incubator" | "organisation" | "founder";
+export type UserRole = "admin" | "mentor" | "incubator" | "organisation" | "founder" | "blogger";
 export type founderRole = "Solve Organisation's challenge" | "List a technology for licensing" | "Submit an innovative idea"
 export type UserStatus = "active" | "banned" | "pending";
 

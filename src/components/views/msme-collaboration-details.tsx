@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import Image from 'next/image';
+import { useAuth } from '@/providers/AuthContext';
 
 interface MSMECollaborationDetailsProps {
   collaboration: MSMEChallenge | null;
@@ -33,11 +34,13 @@ export default function MSMECollaborationDetails({
   collaboration,
   onOpenChange,
   isLoggedIn,
-  hasSubscription,
+  hasSubscription: hasSubscriptionProp, // Keep prop for compatibility but don't use it
 }: MSMECollaborationDetailsProps) {
+  const { userRole, hasSubscription } = useAuth(); // Get real-time subscription status
+
   if (!collaboration) return null;
-  const isOtherUsers = ["msme", "incubator", "mentor"].some(role =>
-    localStorage.getItem('userRole')?.includes(role)
+  const isOtherUsers = ["organisation", "incubator", "mentor"].some(role =>
+    userRole?.includes(role)
   );
   const isDisabled = !isLoggedIn || !hasSubscription || isOtherUsers;
   let tooltipContent = null;

@@ -72,13 +72,9 @@ function CompleteProfileForm() {
         const userData = { name, email };
 
         localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userRole', role!);
-
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('hasSubscription', String(hasSubscription));
         localStorage.setItem('token', loginToken);
         localStorage.setItem('authProvider', authProvider);
-        localStorage.setItem('founder_role', founder_role);
         toast({ title: "Profile Complete!", description: `Welcome to Hustloop, ${name}!` });
         setTimeout(() => {
             window.location.href = '/';

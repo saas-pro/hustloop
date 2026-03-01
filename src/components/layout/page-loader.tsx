@@ -5,21 +5,43 @@ import Counter from '@/components/Counter';
 
 const PageLoader = () => {
   const [progress, setProgress] = useState(0);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
+  useEffect(() => {
+    const handleVideoLoaded = () => setVideoLoaded(true);
+    window.addEventListener('app-video-loaded', handleVideoLoaded);
+    return () => window.removeEventListener('app-video-loaded', handleVideoLoaded);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 100) {
+        if (videoLoaded) {
           clearInterval(interval);
           return 100;
         }
-        const nextValue = prev + 50;
-        return Math.min(nextValue, 100);
+
+        if (prev >= 99) {
+          return 99;
+        }
+
+        // Random increment for a more organic feel, max 99 until video loads
+        const increment = prev < 80 ? Math.floor(Math.random() * 15) + 5 : Math.floor(Math.random() * 3) + 1;
+        return Math.min(prev + increment, 99);
       });
-    }, 1050);
+    }, 150);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [videoLoaded]);
+
+  useEffect(() => {
+    if (progress >= 100) {
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new Event('page-loader-complete'));
+      }, 400); // Allow time for the user to see 100
+      return () => clearTimeout(timer);
+    }
+  }, [progress]);
 
   const roundedProgress = Math.round(progress);
   const getPlaces = () => {

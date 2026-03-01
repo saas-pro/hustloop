@@ -1,6 +1,6 @@
 
 "use client";
-import { Instagram, Linkedin, Mail } from "lucide-react";
+import { Instagram, Linkedin, Mail, Youtube } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import NewsletterForm from "./newsletter-form";
 import Image from 'next/image';
@@ -43,7 +43,7 @@ export default function Footer() {
           {/* Left: Copyright and Legal */}
           <div className="flex-1 flex justify-center md:justify-start">
             <div className="text-center md:text-left text-muted-foreground">
-              <p>&copy; {new Date().getFullYear()} hustloop. All rights reserved.</p>
+              <p>&copy; {new Date().getFullYear()} hustloop inc. All rights reserved.</p>
               <div className="flex gap-4 justify-center md:justify-start mt-1">
                 <a href="/terms-of-service" className="text-xs hover:text-primary transition-colors">Terms of Service</a>
                 <a href="/privacy-policy" className="text-xs hover:text-primary transition-colors">Privacy Policy</a>
@@ -74,6 +74,9 @@ export default function Footer() {
                 rel="noopener noreferrer"
               >
                 <Instagram className="h-6 w-6" />
+              </a>
+              <a href="https://www.youtube.com/@hustloop_talks" target="_blank" aria-label="YouTube" className="text-muted-foreground hover:text-primary transition-colors">
+                <Youtube className="h-6 w-6" />
               </a>
             </div>
           </div>

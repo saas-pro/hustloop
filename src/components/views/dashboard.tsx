@@ -2444,7 +2444,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     <SidebarProvider defaultOpen={isSidebarMinimized}>
                         <Tabs value={activeTab} className="flex flex-grow min-h-0">
                             {/* Vertical Collapsible Sidebar */}
-                            <Sidebar collapsible="icon" className="border-r border-border bg-muted/30">
+                            <Sidebar collapsible="icon" className="border-r border-border">
                                 <SidebarHeader className="h-14 flex items-start relative right-0 justify-start border-b border-border/50">
                                     <SidebarTrigger className="h-8 w-8 text-muted-foreground hover:text-accent-foreground" />
                                 </SidebarHeader>
@@ -2483,7 +2483,10 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                         <SidebarMenuItem key={tab} className="relative right-2">
                                                             <SidebarMenuButton
                                                                 isActive={activeTab === tab}
-                                                                onClick={() => setActiveTab(tab as DashboardTab)}
+                                                                onClick={() => {
+                                                                    if (tab === 'blog') { window.open('/blogger', '_blank'); return; }
+                                                                    setActiveTab(tab as DashboardTab);
+                                                                }}
                                                                 tooltip={tab}
                                                                 className="capitalize"
                                                             >

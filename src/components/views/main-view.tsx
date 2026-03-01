@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Loader2 } from "lucide-react";
-import { signOut, onAuthStateChanged } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import SubmitIPDashboard from "./submit-your-ip";
 import { CommentSection } from "../comment-section";
@@ -23,6 +23,7 @@ import SolveChallengeDashboard from "./solve-challenge-dashboard";
 import ListTechnologyDashboard from "./list-a-tech-dashboard";
 import InnovativeIdeaDashboard from "./innovative-dashboard";
 import PricingPageClient from "@/app/pricing/pricing-client";
+import { useAuth } from "@/providers/AuthContext";
 
 
 const ModalSkeleton = () => (
@@ -67,7 +68,7 @@ interface TokenStatus {
   error?: string;
 }
 
-const LOCAL_STORAGE_VERSION = '1.2';
+const LOCAL_STORAGE_VERSION = '1.3';
 
 function safeParse<T>(value: string | null, fallback: T, key?: string, validate: (obj: any) => boolean = () => true): T {
   try {
@@ -94,13 +95,20 @@ function isValidAppliedPrograms(obj: any): obj is Record<string, string> {
 }
 
 export default function MainView() {
+  const {
+    user,
+    userRole,
+    founderRole,
+    isLoggedIn,
+    hasSubscription,
+    isLoading: isAuthLoading,
+    setAuthData,
+    logout: authLogout
+  } = useAuth();
+
   const [activeView, setActiveView] = useState<View>("home");
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
-  const [isLoggedIn, setLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [authProvider, setAuthProvider] = useState<AuthProvider | null>(null);
-  const [hasSubscription, setHasSubscription] = useState(false);
   const [hasUsedFreeSession, setHasUsedFreeSession] = useState(false);
   const [appliedPrograms, setAppliedPrograms] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -111,7 +119,14 @@ export default function MainView() {
   const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
   const [isCommentSectionMaximized, setIsCommentSectionMaximized] = useState(false);
   const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
-  const [founderRole, setFounderRole] = useState<founderRole | null>(null);
+
+  // Dummy setters for compatibility with children that might expect them
+  // though we should ideally refactor children to use useAuth() too.
+  const setUser = (val: any) => { };
+  // Deprecated: hasSubscription is managed by AuthContext, no local updates needed
+  const setHasSubscription = (val: any) => {
+    console.warn('setHasSubscription is deprecated. Subscription status is managed by AuthContext.');
+  };
 
 
 
@@ -119,41 +134,26 @@ export default function MainView() {
     if (typeof window === 'undefined') return;
 
     if (localStorage.getItem('localStorageVersion') !== LOCAL_STORAGE_VERSION) {
-      localStorage.removeItem('user');
-      localStorage.removeItem('appliedPrograms');
-      localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('hasSubscription');
-      localStorage.removeItem('authProvider');
-      localStorage.removeItem('token');
+      localStorage.clear();
       localStorage.setItem('localStorageVersion', LOCAL_STORAGE_VERSION);
+      setIsLoading(false);
+      return;
     }
 
     const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
-    const savedUserRole = localStorage.getItem('userRole') as UserRole | null;
     const savedUser = localStorage.getItem('user');
-    const savedSubscription = localStorage.getItem('hasSubscription');
     const savedAppliedPrograms = localStorage.getItem('appliedPrograms');
     const savedAuthProvider = localStorage.getItem('authProvider') as AuthProvider | null;
-    const savedFounderRole = localStorage.getItem('founder_role') as founderRole | null;
     const parsedUser = safeParse<User | null>(savedUser, null, 'user', isValidUser);
     const parsedAppliedPrograms = safeParse<Record<string, string>>(savedAppliedPrograms, {}, 'appliedPrograms', isValidAppliedPrograms);
 
-    const validRoles: UserRole[] = ['admin', 'mentor', 'organisation', 'incubator', 'founder'];
-    if (savedIsLoggedIn === 'true' && validRoles.includes(savedUserRole as UserRole) && parsedUser) {
-      setLoggedIn(true);
-      setUserRole(savedUserRole);
-      setUser(parsedUser);
-      setFounderRole(savedFounderRole)
-      setHasSubscription(savedSubscription === 'true');
-      setHasUsedFreeSession(false);
+    // Note: userRole is no longer loaded from localStorage for security, 
+    // it will be hydrated by useTokenVerification.
+
+    if (savedIsLoggedIn === 'true' && parsedUser) {
+      // Note: setAuthData will be called by AuthProvider soon to fill in the role.
       setAppliedPrograms(parsedAppliedPrograms);
       if (savedAuthProvider) setAuthProvider(savedAuthProvider);
-    } else {
-      // Clear state if inconsistent
-      setLoggedIn(false);
-      setUserRole(null);
-      setUser(null);
     }
 
     setIsLoading(false);
@@ -260,8 +260,9 @@ export default function MainView() {
   useEffect(() => {
     if (!id) return;
     setActiveDashboardView("ip/technologies");
-    const userRole = localStorage.getItem('userRole');
-    if (!userRole) {
+
+    // Check role from context
+    if (!isAuthLoading && !userRole) {
       toast({
         title: "Login Required",
         description: "Please login to visit",
@@ -270,7 +271,7 @@ export default function MainView() {
       return;
     }
 
-    if (userRole !== "admin") {
+    if (userRole && userRole !== "admin") {
       setShowUnauthorized(true);
     }
 
@@ -284,7 +285,7 @@ export default function MainView() {
     }, 600);
 
     return () => clearTimeout(timeout);
-  }, [id, toast]);
+  }, [id, toast, isAuthLoading, userRole]);
 
 
   const handleModalOpenChange = (view: View) => (isOpen: boolean) => {
@@ -295,51 +296,45 @@ export default function MainView() {
     }
   };
 
-  const handleLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, founder_role: string, name: string, email: string, authProvider: AuthProvider }) => {
+  const handleLoginSuccess = (data: { role: UserRole, token: string, hasSubscription: boolean, founder_role: string, name: string, email: string, userId?: string, uid?: string, authProvider: AuthProvider }) => {
     const { role, token, hasSubscription, name, email, authProvider, founder_role } = data;
-    const userData = { name, email };
+    const userId = data.userId || data.uid || '';
+    const userData = { name, email, userId };
 
     localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userRole', role || '');
     localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('hasSubscription', String(hasSubscription));
-    localStorage.setItem('founder_role', founder_role);
     localStorage.setItem('token', token);
     localStorage.setItem('authProvider', authProvider);
+
+    setAuthData({
+      user: userData,
+      userRole: role,
+      founderRole: founder_role as founderRole,
+      isLoggedIn: true,
+      hasSubscription: hasSubscription
+    });
 
     // Dispatch event to notify app of state change
     window.dispatchEvent(new Event('storage'));
 
     if (!role) {
       router.push(`/complete-profile?token=${token}`);
-      // Close any open modals
       setActiveView('home');
+    } else if (role === 'blogger') {
+      router.push('/blogger');
     } else {
       setActiveView('dashboard');
     }
   };
 
 
-
   const handleLogout = async () => {
     if (!auth) return;
     try {
       await signOut(auth);
-      setLoggedIn(false);
-      setUserRole(null);
-      setUser(null);
-      setHasSubscription(false);
-      setAppliedPrograms({});
+      authLogout();
       setAuthProvider(null);
-      localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('user');
-      localStorage.removeItem('hasSubscription');
-      localStorage.removeItem('appliedPrograms');
-      localStorage.removeItem('token');
-      localStorage.removeItem('authProvider');
-      localStorage.removeItem('founder_role');
-      localStorage.removeItem("rzp_device_id");
+      setAppliedPrograms({});
 
       // Dispatch event to notify app of state change
       window.dispatchEvent(new Event('storage'));
@@ -352,6 +347,17 @@ export default function MainView() {
       toast({ variant: "destructive", title: "Logout Failed", description: "Could not log out. Please try again." });
     }
   };
+
+  // Blogger Redirect Logic
+  useEffect(() => {
+    if (!isAuthLoading && userRole === "blogger") {
+      const pathname = window.location.pathname;
+      if (pathname === "/") {
+        setActiveView("dashboard");
+        router.push("/blogger");
+      }
+    }
+  }, [userRole, isAuthLoading, activeView, router]);
 
   const [isHeroVisible, setIsHeroVisible] = useState(true);
 
@@ -385,8 +391,8 @@ export default function MainView() {
 
   const handleGetStartedOnPricing = () => {
     if (isLoggedIn) {
-      setHasSubscription(true);
-      localStorage.setItem('hasSubscription', 'true');
+      // Note: This is a placeholder for demo purposes
+      // In production, subscription is managed via backend API
       toast({
         title: "Payment Integrated Soon!",
         description: "You will be notified before your plan ends.",
@@ -412,6 +418,11 @@ export default function MainView() {
   };
 
   const renderDashboard = () => {
+    // Don't render dashboard if still loading auth state
+    if (isAuthLoading) {
+      return null;
+    }
+
     if (activeView !== 'dashboard' || !userRole || !authProvider || !isLoggedIn || !user) {
       return null;
     }
@@ -545,16 +556,24 @@ export default function MainView() {
         id="main-view"
       >
         <section className={`min-h-screen`} ref={scrollContainerRef}>
-          <HomeView
-            setActiveView={setActiveView}
-            setActiveTab={setActiveTab}
-            isLoggedIn={isLoggedIn}
-            userRole={userRole}
-            onLogout={handleLogout}
-            navOpen={navOpen}
-            scrollContainerRef={scrollContainerRef}
-            setHasSubscription={setHasSubscription}
-          />
+          {userRole === 'blogger' ? (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="flex flex-col items-center gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-lg text-muted-foreground font-medium">Redirecting to workspace...</p>
+              </div>
+            </div>
+          ) : (
+            <HomeView
+              setActiveView={setActiveView}
+              setActiveTab={setActiveTab}
+              isLoggedIn={isLoggedIn}
+              userRole={userRole}
+              onLogout={handleLogout}
+              navOpen={navOpen}
+              scrollContainerRef={scrollContainerRef}
+            />
+          )}
         </section>
       </main>
 

@@ -2,7 +2,7 @@
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Briefcase, PlayCircle, Globe, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins, Puzzle, Microscope, FileSearch, Layers, Network, Sprout, Instagram } from "lucide-react";
+import { Lightbulb, Briefcase, PlayCircle, Globe, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins, Puzzle, Microscope, FileSearch, Layers, Network, Sprout, Instagram, Youtube } from "lucide-react";
 import { ReactTyped } from "react-typed";
 import { useState, useEffect, useCallback } from "react";
 import SolutionCard from '../SolutionCard';
@@ -20,6 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/providers/AuthContext';
 import { API_BASE_URL } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import UnderlineEffect from "@/components/ui/underline-effect";
@@ -82,7 +83,6 @@ interface HomeViewProps {
   userRole: string | null;
   navOpen?: boolean;
   scrollContainerRef: React.RefObject<HTMLDivElement>;
-  setHasSubscription: (value: boolean) => void;
 }
 interface DynamicHeroSection {
   setActiveView: (view: View) => void;
@@ -216,7 +216,7 @@ const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
   };
   return (
     <div
-      className="hidden lg:flex justify-left items-center z-[1000] gap-2 absolute top-5 left-4"
+      className="hidden xl:flex justify-left items-center z-[1000] gap-2 absolute top-5 left-4"
       onClick={handleLogoClick}
     >
       <Image
@@ -434,7 +434,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
           animationType="rotate"
           timeScale={0.5}
           bloom={0.6}
-          suspendWhenOffscreen
+          suspendWhenOffscreen={false}
           height={3.5}
           baseWidth={5.5}
           scale={4}
@@ -468,10 +468,12 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
           muted
           preload="auto"
           playsInline
+          onCanPlayThrough={() => {
+            window.dispatchEvent(new Event('app-video-loaded'))
+          }}
           className="hidden absolute top-0 left-0 w-full h-full object-cover z-0 xl:block"
           style={{
-            opacity: navOpen ? 0 : videoOpacityTransform,
-            display: videoDisplayTransform,
+            opacity: navOpen ? 1 : videoOpacityTransform,
           }}
         >
           <source src="/video/HeaderVideo.mp4" type="video/mp4" />
@@ -602,8 +604,9 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
 
 
 
-export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout, setActiveTab, userRole, setHasSubscription }: HomeViewProps) {
+export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout, setActiveTab, userRole }: HomeViewProps) {
   const { toast } = useToast();
+  const { founderRole } = useAuth();
   const contactForm = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: { fullName: "", email: "", phone: "", message: "" },
@@ -616,13 +619,12 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
   const [isFounderRole, setIsFounderRole] = useState(false);
 
   useEffect(() => {
-    const founderRole = localStorage.getItem("founder_role")
     if (founderRole === "List a technology for licensing") {
       setIsFounderRole(true)
     } else {
       setIsFounderRole(false)
     }
-  }, [isFounderRole, isLoggedIn, onLogout])
+  }, [isFounderRole, isLoggedIn, onLogout, founderRole])
 
   async function onContactSubmit(data: ContactFormValues) {
     try {
@@ -815,12 +817,13 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
   return (
     <div
       ref={scrollContainerRef}
+      id='for-nav'
       className={`relative pointer-events-auto h-screen w-full bg-background text-foreground overflow-x-hidden overflow-y-auto ${navOpen ? "overflow-hidden" : ""
         } `}
     >
       {/* Hero Section */}
-      <section id="hero-section" className={`h-[100vh] md:sticky md:top-0 overflow-hidden ${navOpen ? 'relative' : 'md:sticky md:top-0'} `}>
-        <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} scrollContainerRef={scrollContainerRef} />
+      <section id="hero-section" className={`h-[100vh] md:sticky md:top-0 overflow-hidden ${navOpen ? 'md:relative' : 'md:sticky md:top-0'} `}>
+        <DynamicHeroSection setActiveView={setActiveView} isLoggedIn={isLoggedIn} navOpen={navOpen} scrollContainerRef={scrollContainerRef} />
       </section>
 
       <div
@@ -1025,7 +1028,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
       <SolutionCard solutionSteps={solutionSteps} scrollContainer={scrollContainerRef}></SolutionCard>
 
       <section className='w-full mx-auto'>
-        <PricingData setActiveView={setActiveView} setHasSubscription={setHasSubscription} />
+        <PricingData setActiveView={setActiveView} />
       </section>
 
 
@@ -1212,6 +1215,15 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
                     rel="noopener noreferrer"
                   >
                     <Instagram className="h-5 w-5" />
+                  </a>
+                  <a
+                    href="https://www.youtube.com/@hustloop_talks"
+                    aria-label="YouTube"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Youtube className="h-5 w-5" />
                   </a>
                 </div>
               </CardContent>

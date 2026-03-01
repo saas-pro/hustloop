@@ -8,6 +8,8 @@ import Script from 'next/script';
 import { ThemeProvider } from '@/components/theme-provider';
 import GoogleAnalytics from "./metrics/GoogleAnalytics"
 import MicrosoftClarity from "./metrics/MicrosoftClarity"
+import ZohoChatbot from "@/components/layout/zoho-chatbot";
+import { AuthProvider } from '@/providers/AuthContext';
 
 
 
@@ -108,6 +110,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://hustloop.com',
   },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -118,13 +121,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="bg-background font-sans">
-        <ThemeProvider>
-          <div className="flex-grow ">
-            {/* <TwinklingStars /> */}
-            {children}
-          </div>
-          <Toaster />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <div className="flex-grow ">
+              {/* <TwinklingStars /> */}
+              {children}
+            </div>
+            <Toaster />
+          </ThemeProvider>
+        </AuthProvider>
         <Script id="org-schema" type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -146,36 +151,7 @@ export default function RootLayout({
         </Script>
         <GoogleAnalytics />
         <MicrosoftClarity />
-        <Script id="zoho-salesiq-script" strategy="lazyOnload">
-          {`
-            window.$zoho = window.$zoho || {};
-            window.$zoho.salesiq = window.$zoho.salesiq || {
-              widgetcode: "siq770fac757336897d739f9273d8f8f7b3aec5f63c512be52582e5f9e3440d863b",
-              values: {},
-              ready: function () {
-                var salesiqDoc = document.getElementById("zsiq_float");
-                if (salesiqDoc) {
-                    document.addEventListener('router:end', (event) => {
-                        if (window.$zoho && window.$zoho.salesiq && window.$zoho.salesiq.page) {
-                            window.$zoho.salesiq.page.popup.close('all');
-                            window.$zoho.salesiq.page.popup.show();
-                        }
-                    });
-                }
-              }
-            };
-            
-            var d = document;
-            var s = d.createElement("script");
-            s.type = "text/javascript";
-            s.id = "zsiqscript";
-            s.defer = true;
-            s.src = "https://salesiq.zohopublic.in/widget";
-            var t = d.getElementsByTagName("script")[0];
-            t.parentNode.insertBefore(s, t);
-          `}
-        </Script>
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+        <ZohoChatbot />
       </body>
     </html >
   );

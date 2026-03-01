@@ -17,7 +17,6 @@ export function useSolutionStatusUpdates(solutionId: string, onStatusUpdate: (da
 
         const handleStatusUpdate = (data: any) => {
             if (data.solutionId === solutionId) {
-                console.log('Solution status updated:', data);
                 onStatusUpdate(data);
             }
         };
@@ -40,7 +39,6 @@ export function useChallengeStatusUpdates(challengeId: string, onStatusUpdate: (
 
         const handleStatusUpdate = (data: any) => {
             if (data.challengeId === challengeId) {
-                console.log('Challenge solution updated:', data);
                 onStatusUpdate(data);
             }
         };

@@ -26,6 +26,7 @@ interface HeaderProps {
     navOpen: boolean;
     setNavOpen: (value: boolean) => void;
     heroVisible: boolean;
+    userRole?: string;
 }
 
 const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
@@ -72,7 +73,7 @@ export function ThemeToggleDropdown() {
         </DropdownMenu>)
 }
 
-export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, heroVisible, isStaticPage = false, navOpen, setNavOpen }: HeaderProps) {
+export default function Header({ activeView, setActiveView, isLoggedIn, onLogout, isLoading, heroVisible, isStaticPage = false, navOpen, setNavOpen, userRole }: HeaderProps) {
     const router = useRouter();
     const pathname = usePathname();
     const [isNavigating, setIsNavigating] = React.useState(false);
@@ -169,6 +170,7 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     navOpen={navOpen}
                     setNavOpen={setNavOpen}
                     heroVisible={heroVisible}
+                    userRole={userRole}
                 />
             </nav>
 
@@ -180,6 +182,9 @@ export default function Header({ activeView, setActiveView, isLoggedIn, onLogout
                     onLogout={onLogout}
                     isLoading={isLoading}
                     heroVisible={heroVisible}
+                    userRole={userRole}
+                    navOpen={navOpen}
+                    setNavOpen={setNavOpen}
                 />
             </nav>
         </div>
