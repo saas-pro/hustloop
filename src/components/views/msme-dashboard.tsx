@@ -489,7 +489,6 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
 
         // Listen for status updates
         socket.on('solution_status_updated', (data: any) => {
-            console.log('Real-time solution update:', data);
 
             setSubmissions(prevSubmissions =>
                 prevSubmissions.map(sub =>

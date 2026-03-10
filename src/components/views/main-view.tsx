@@ -133,13 +133,6 @@ export default function MainView() {
   const loadStateFromStorage = useCallback(() => {
     if (typeof window === 'undefined') return;
 
-    if (localStorage.getItem('localStorageVersion') !== LOCAL_STORAGE_VERSION) {
-      localStorage.clear();
-      localStorage.setItem('localStorageVersion', LOCAL_STORAGE_VERSION);
-      setIsLoading(false);
-      return;
-    }
-
     const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
     const savedUser = localStorage.getItem('user');
     const savedAppliedPrograms = localStorage.getItem('appliedPrograms');
@@ -538,7 +531,7 @@ export default function MainView() {
   if (showUnauthorized) return <Unauthorized />;
   return (
 
-    <div className="overflow-hidden relative flex flex-col min-h-screen bg-background text-foreground moz-container">
+    <div className="relative flex flex-col overflow-clip min-h-screen bg-background text-foreground moz-container">
       <Header
         activeView={activeView}
         setActiveView={setActiveView}
@@ -551,7 +544,7 @@ export default function MainView() {
       />
 
       <main
-        className={`relative overflow-y-auto z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
+        className={`relative z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
           }`}
         id="main-view"
       >
@@ -571,7 +564,6 @@ export default function MainView() {
               userRole={userRole}
               onLogout={handleLogout}
               navOpen={navOpen}
-              scrollContainerRef={scrollContainerRef}
             />
           )}
         </section>

@@ -7,6 +7,18 @@ const PageLoader = () => {
   const [progress, setProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
+  const LOCAL_STORAGE_VERSION = '1.3';
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentVersion = localStorage.getItem('localStorageVersion');
+      if (currentVersion !== LOCAL_STORAGE_VERSION) {
+        localStorage.clear();
+        localStorage.setItem('localStorageVersion', LOCAL_STORAGE_VERSION);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const handleVideoLoaded = () => setVideoLoaded(true);
     window.addEventListener('app-video-loaded', handleVideoLoaded);

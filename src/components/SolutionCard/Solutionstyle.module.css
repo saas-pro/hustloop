@@ -3,8 +3,7 @@
   align-items: center;
   justify-content: center;
   position: sticky;
-  top: 160px;/* distance from top when sticky - increased to avoid hiding behind heading */
-
+  top:8dvh;
 }
 
 .card {

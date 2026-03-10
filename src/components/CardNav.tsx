@@ -52,6 +52,33 @@ const CardNav: React.FC<CardNavProps> = ({
 }) => {
   const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleScroll = () => {
+        const currentScrollY = window.scrollY;
+
+        if (currentScrollY <= 50) {
+          setIsVisible(true);
+        } else if (currentScrollY > lastScrollY) {
+          // Scrolling down
+          if (!isExpanded) {
+            setIsVisible(false);
+          }
+        } else {
+          // Scrolling up
+          setIsVisible(true);
+        }
+
+        setLastScrollY(currentScrollY);
+      };
+
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, [lastScrollY, isExpanded]);
 
   const toggleMenu = () => {
     if (!isExpanded) {
@@ -85,7 +112,7 @@ const CardNav: React.FC<CardNavProps> = ({
 
   return (
     <div
-      className={`card-nav-container absolute left-1/2 -translate-x-1/2 w-[92dvw] max-w-[800px] z-[99] top-[1.2em] md:top-[2em] pointer-events-auto ${className}`}
+      className={`card-nav-container fixed left-1/2 w-[92dvw] max-w-[800px] z-[99] top-[1.2em] md:top-[2em] pointer-events-auto transition-transform duration-300 ${isVisible ? '-translate-x-1/2 translate-y-0' : '-translate-x-1/2 -translate-y-[150%]'} ${className}`}
     >
       <nav
         className={`card-nav block p-0 rounded-xl shadow-md relative overflow-hidden bg-card/60 backdrop-blur-2xl border border-border transition-[max-height] duration-500 ease-in-out ${isExpanded ? 'max-h-[calc(100vh-40px)] open' : 'max-h-[60px]'}`}

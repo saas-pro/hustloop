@@ -28,14 +28,13 @@ import { useRef } from "react";
 import HighlightEffect from "@/components/ui/highlight-effect";
 import BannerImage from "../ui/BannerImage";
 import HanddrawnUnderline from "@/components/ui/handdrawn-underline";
-import Lenis from '@studio-freight/lenis'
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import PricingData from '../BillingCard/billing-card';
 import { DashboardTab } from '@/app/types';
 import * as THREE from 'three';
 import { GoogleGeminiEffect } from "@/components/ui/google-gemini-effect";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion, useScroll, useTransform, useSpring } from "motion/react";
 import Prism from '../Prism';
 import { ContainerScroll } from '../ui/container-scroll-animation';
 import { TestimonialsMarquee } from "@/components/testimonials-marquee"
@@ -82,13 +81,13 @@ interface HomeViewProps {
   onLogout: () => void;
   userRole: string | null;
   navOpen?: boolean;
-  scrollContainerRef: React.RefObject<HTMLDivElement>;
+  scrollContainerRef?: React.RefObject<HTMLDivElement>;
 }
 interface DynamicHeroSection {
   setActiveView: (view: View) => void;
   isLoggedIn: boolean;
   navOpen?: boolean;
-  scrollContainerRef: React.RefObject<HTMLDivElement>;
+  scrollContainerRef?: React.RefObject<HTMLDivElement>;
 }
 
 
@@ -246,7 +245,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
   const vantaEffect = useRef<any>(null);
   const heroRef = useRef<HTMLDivElement>(null);
 
-  // Track scroll progress from the scroll container
+  // Track scroll progress from the container
   const { scrollYProgress } = useScroll({ container: scrollContainerRef });
 
   const pathLengthFirst = useTransform(scrollYProgress, [0, 0.4], [0.2, 1.2]);
@@ -415,7 +414,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
   return (
     <section
       ref={heroRef}
-      className={`hidden-scroll h-[100dvh] relative bg-background w-full`}
+      className={`hidden-scroll h-[100vh] md:h-[100vh] relative bg-background w-full`}
       id="hero"
     >
       <motion.div
@@ -582,7 +581,7 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
         </div>
       </section>
 
-      <div className="absolute bottom-6 w-full flex justify-center z-20 mb-6 md:mb-0">
+      <div className="absolute bottom-16 md:bottom-10 w-full flex justify-center z-20 mb-6 md:mb-0">
         <div
           className="flex flex-col items-center text-black xl:text-white"
         >
@@ -604,7 +603,15 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
 
 
 
-export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout, setActiveTab, userRole }: HomeViewProps) {
+export default function HomeView({
+  setActiveTab,
+  setActiveView,
+  isLoggedIn,
+  onLogout,
+  userRole,
+  navOpen,
+  scrollContainerRef
+}: HomeViewProps) {
   const { toast } = useToast();
   const { founderRole } = useAuth();
   const contactForm = useForm<ContactFormValues>({
@@ -709,56 +716,11 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
   const [isPausedRow2, setPausedRow2] = useState(false);
   const [isPausedRow3, setPausedRow3] = useState(false);
 
-  // Scroll-based zoom for "Start your Journey" (native scroll listener)
+  // Removed complex scroll-linked scaling to fix scroll lag
   const journeyRef = useRef<HTMLDivElement | null>(null);
   const journeyPanelRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    const panel = journeyPanelRef.current;
-    if (!panel) return;
 
-    let rafId: number | null = null;
-
-    const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-    const updateScale = () => {
-      const section = journeyRef.current;
-      if (!section) return;
-      const rect = section.getBoundingClientRect();
-      const viewportH = window.innerHeight || document.documentElement.clientHeight;
-
-      // Professional-feel window: start growing earlier, finish near the top
-      const start = viewportH * 1.1; // fully below viewport
-      const end = viewportH * 0.15;  // near the top
-      const t = (start - rect.top) / (start - end);
-      const progress = clamp(t, 0, 1);
-
-      const scale = 0.75 + (1.0 - 0.75) * progress; // 0.75 → 1.0
-      // panel.style.transform = `scale(${ scale })`;
-      // panel.style.transformOrigin = 'top center';
-      // Keep text fully readable at all times
-      panel.style.opacity = '1';
-
-      // Subtle shadow while growing
-      panel.style.boxShadow = 'none';
-    };
-
-    const onScrollOrResize = () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(updateScale);
-    };
-
-    // Initialize and bind
-    updateScale();
-    window.addEventListener('scroll', onScrollOrResize, { passive: true });
-    window.addEventListener('resize', onScrollOrResize);
-
-    return () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      window.removeEventListener('scroll', onScrollOrResize);
-      window.removeEventListener('resize', onScrollOrResize);
-    };
-  }, []);
 
   useEffect(() => {
     const section = journeyRef.current;
@@ -794,32 +756,23 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
     return () => observer.disconnect();
   }, []);
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
   // Prevent scrolling when nav is open
   useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
-
     if (navOpen) {
-      scrollContainer.style.overflowY = 'hidden';
+      document.body.style.overflow = 'hidden';
     } else {
-      scrollContainer.style.overflowY = 'auto';
+      document.body.style.overflow = '';
     }
 
     return () => {
-      if (scrollContainer) {
-        scrollContainer.style.overflowY = 'auto';
-      }
+      document.body.style.overflow = '';
     };
   }, [navOpen]);
 
   return (
     <div
-      ref={scrollContainerRef}
       id='for-nav'
-      className={`relative pointer-events-auto h-screen w-full bg-background text-foreground overflow-x-hidden overflow-y-auto ${navOpen ? "overflow-hidden" : ""
-        } `}
+      className={`relative pointer-events-auto w-full bg-background text-foreground [overflow-x:clip] ${navOpen ? "overflow-hidden" : ""}`}
     >
       {/* Hero Section */}
       <section id="hero-section" className={`h-[100vh] md:sticky md:top-0 overflow-hidden ${navOpen ? 'md:relative' : 'md:sticky md:top-0'} `}>
@@ -1024,8 +977,7 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
         </div>
       </section>
 
-
-      <SolutionCard solutionSteps={solutionSteps} scrollContainer={scrollContainerRef}></SolutionCard>
+      <SolutionCard solutionSteps={solutionSteps}></SolutionCard>
 
       <section className='w-full mx-auto'>
         <PricingData setActiveView={setActiveView} />
@@ -1115,7 +1067,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
 
               <div className="relative md:mt-28 mt-16 md:mb-12 mb-0">
                 <ContainerScroll
-                  scrollContainer={scrollContainerRef}
                   titleComponent={<></>}
                 >
                   <div className="relative w-full h-full">
@@ -1358,6 +1309,6 @@ export default function HomeView({ setActiveView, isLoggedIn, navOpen, onLogout,
         </div>
       </section>
       <Footer />
-    </div>
+    </div >
   );
 }
