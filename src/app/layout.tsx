@@ -109,8 +109,7 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: 'https://hustloop.com',
-  },
-  manifest: '/manifest.json',
+  }
 };
 
 export default function RootLayout({

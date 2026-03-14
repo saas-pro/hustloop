@@ -139,7 +139,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
         if (!token) return;
         try {
             await unpublishBlog(id, token);
-            toast({ title: "Unpublished", description: "Blog moved back to draft." });
+            toast({ title: "Unpublished", description: "Blog moved back to pending review." });
             fetchBlogs();
         } catch (error) {
             toast({ title: "Error", description: "Failed to unpublish.", variant: "destructive" });
@@ -263,7 +263,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredBlogs.map((blog) => (
-                        <Card key={blog.id} className="group relative flex flex-col border border-muted hover:border-primary/50 transition-all duration-300">
+                        <Card key={blog.id} onClick={() => onEdit(blog)} className="group relative flex flex-col border border-muted hover:border-primary/50 transition-all duration-300 cursor-pointer">
                             <CardHeader className="pb-2">
                                 <div className="flex justify-between items-start mb-2 gap-2 flex-wrap">
                                     {getStatusBadge(blog.status)}
@@ -295,7 +295,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
                                         {/* Preview / View Live */}
                                         <Button
                                             variant="ghost" size="icon"
-                                            onClick={() => handlePreviewClick(blog)}
+                                            onClick={(e) => { e.stopPropagation(); handlePreviewClick(blog); }}
                                             className="h-8 w-8 text-muted-foreground hover:text-primary"
                                             title={blog.status === 'published' ? "View Live Post" : "Preview"}
                                         >
@@ -305,7 +305,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
                                         {/* Edit */}
                                         <Button
                                             variant="ghost" size="icon"
-                                            onClick={() => onEdit(blog)}
+                                            onClick={(e) => { e.stopPropagation(); onEdit(blog); }}
                                             className="h-8 w-8 text-muted-foreground hover:text-primary"
                                             title="Edit"
                                         >
@@ -316,7 +316,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
                                         {isAdmin && (blog.status === 'pending_review' || blog.status === 'draft') && (
                                             <Button
                                                 variant="ghost" size="icon"
-                                                onClick={() => handlePublish(blog.id)}
+                                                onClick={(e) => { e.stopPropagation(); handlePublish(blog.id); }}
                                                 className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
                                                 title="Publish"
                                             >
@@ -328,7 +328,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
                                         {isAdmin && blog.status === 'published' && (
                                             <Button
                                                 variant="ghost" size="icon"
-                                                onClick={() => handleUnpublish(blog.id)}
+                                                onClick={(e) => { e.stopPropagation(); handleUnpublish(blog.id); }}
                                                 className="h-8 w-8 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
                                                 title="Unpublish"
                                             >
@@ -340,7 +340,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
                                         {isAdmin && blog.status === 'pending_review' && (
                                             <Button
                                                 variant="ghost" size="icon"
-                                                onClick={() => { setRejectingBlog(blog); setRejectionReason(""); }}
+                                                onClick={(e) => { e.stopPropagation(); setRejectingBlog(blog); setRejectionReason(""); }}
                                                 className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30"
                                                 title="Reject"
                                             >
@@ -352,7 +352,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
                                         {!isAdmin && (blog.status === 'draft' || blog.status === 'rejected') && (
                                             <Button
                                                 variant="ghost" size="icon"
-                                                onClick={() => handleSubmit(blog.id)}
+                                                onClick={(e) => { e.stopPropagation(); handleSubmit(blog.id); }}
                                                 className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30"
                                                 title="Submit for Review"
                                             >
@@ -364,7 +364,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
                                         {(isAdmin || blog.status === 'draft' || blog.status === 'rejected') && (
                                             <Button
                                                 variant="ghost" size="icon"
-                                                onClick={() => setDeletingId(blog.id)}
+                                                onClick={(e) => { e.stopPropagation(); setDeletingId(blog.id); }}
                                                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                                 title="Delete"
                                             >

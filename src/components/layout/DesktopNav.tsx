@@ -307,6 +307,9 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                             ref={btnRef}
                             aria-label="Menu"
                             onClick={() => {
+                                if (!navOpen) {
+                                    document.documentElement.style.setProperty('--scroll-top', `${window.scrollY}px`);
+                                }
                                 document.body.classList.toggle("nav-open");
                                 setNavOpen(!navOpen);
                             }}
@@ -386,8 +389,8 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
             <nav
                 id="static-menu-nav"
                 className={cn(
-                    "flex justify-center absolute top-[10rem] lg:top-[7.85rem] left-1/2 -translate-x-1/2 transition-all duration-300 ease-in-out",
-                    navOpen ? "opacity-100 translate-y-0 visible" : "opacity-0 translate-y-5 invisible"
+                    "flex justify-center fixed top-[10rem] lg:top-[7.85rem] left-1/2 -translate-x-1/2 transition-all duration-300 ease-in-out",
+                    navOpen ? "opacity-100 translate-y-0 visible pointer-events-auto" : "opacity-0 translate-y-5 invisible pointer-events-none"
                 )}
                 aria-label="Secondary Navigation"
             >
@@ -426,7 +429,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
                 <nav
                     id="menu-navs"
                     className={cn(
-                        "z-50 flex justify-center absolute top-[3.75rem] lg:top-[4rem] left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 transition-all duration-300 ease-in-out",
+                        "z-50 flex justify-center fixed top-[3.75rem] lg:top-[4rem] left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 transition-all duration-300 ease-in-out",
                         navOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-5 pointer-events-none"
                     )}
                     aria-label="Main Navigation"

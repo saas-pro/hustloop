@@ -294,10 +294,6 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                         )}
                     </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleSave} disabled={saving || submitting}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {saving ? "Saving..." : "Save"}
-                </Button>
             </div>
 
             {isRejected && initialData?.rejection_reason && (
@@ -385,7 +381,7 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
 
                         {/* Excerpt */}
                         <div className="space-y-2">
-                            <FieldLabel label="Short Excerpt" current={excerpt.length} max={LIMITS.excerpt} />
+                            <FieldLabel label="Short Description" current={excerpt.length} max={LIMITS.excerpt} />
                             <Textarea placeholder="A brief summary..." value={excerpt} maxLength={LIMITS.excerpt} onChange={(e) => setExcerpt(e.target.value)} className="bg-background h-24" />
                         </div>
 
@@ -417,24 +413,6 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                                 <Textarea placeholder="SEO Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} maxLength={LIMITS.metaDescription} className="bg-background resize-none h-20" />
                             </div>
                         </div>
-
-                        {/* Submit button */}
-                        {(isDraft || isRejected) && (
-                            <div className="pt-4 border-t border-border/50">
-                                <Button
-                                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
-                                    size="lg"
-                                    onClick={handleSubmitForReview}
-                                    disabled={submitting || saving}
-                                >
-                                    <Send className="h-4 w-4 mr-2" />
-                                    {submitting ? "Submitting..." : "Submit for Review"}
-                                </Button>
-                                <p className="text-xs text-center text-muted-foreground mt-3">
-                                    Admins will review before it goes live.
-                                </p>
-                            </div>
-                        )}
                     </Card>
 
                     {/* Social / Author Links card */}
@@ -451,9 +429,43 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                         <SocialInput icon={Instagram} label="Instagram" placeholder="https://instagram.com/..." value={instagramUrl} onChange={setInstagramUrl} />
                         <SocialInput icon={Youtube} label="YouTube Channel" placeholder="https://youtube.com/@..." value={youtubeUrl} onChange={setYoutubeUrl} />
 
-                        <p className="text-xs text-muted-foreground pt-1">
-                            These links are saved automatically when you click <strong>Save</strong>.
-                        </p>
+                        <div className="pt-2 border-t border-border/50 flex flex-col gap-3">
+                            {(isDraft || isRejected) ? (
+                                <>
+                                    <Button
+                                        className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground shadow-sm mb-2"
+                                        size="lg"
+                                        onClick={handleSave}
+                                        disabled={submitting || saving}
+                                    >
+                                        <Save className="h-4 w-4 mr-2" />
+                                        {saving ? "Saving..." : "Save Draft"}
+                                    </Button>
+                                    <Button
+                                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
+                                        size="lg"
+                                        onClick={handleSubmitForReview}
+                                        disabled={submitting || saving}
+                                    >
+                                        <Send className="h-4 w-4 mr-2" />
+                                        {submitting ? "Submitting..." : "Submit for Review"}
+                                    </Button>
+                                    <p className="text-xs text-center text-muted-foreground">
+                                        Admins will review before it goes live.
+                                    </p>
+                                </>
+                            ) : (
+                                <Button
+                                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md"
+                                    size="lg"
+                                    onClick={handleSave}
+                                    disabled={submitting || saving}
+                                >
+                                    <Save className="h-4 w-4 mr-2" />
+                                    {saving ? "Saving..." : "Save Changes"}
+                                </Button>
+                            )}
+                        </div>
                     </Card>
                 </div>
             </div>

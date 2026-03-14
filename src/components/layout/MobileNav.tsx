@@ -212,6 +212,7 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
             label: "Account",
             bgColor: "#ffffff",
             textColor: "#000000",
+            isHorizontal: !isLoggedIn,
             links: isLoggedIn
                 ? [
                     {

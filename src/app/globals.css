@@ -23,14 +23,13 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-  scroll-behavior: smooth !important;
-}
+
 
 /* Hides scrollbars for Firefox */
 html,
 body {
   scrollbar-width: none;
+  scroll-behavior: smooth !important;
 }
 
 /* Hides scrollbars for Chrome, Safari, and Edge */
@@ -637,10 +636,18 @@ body {
 }
 
 /* Keep a subtle base rounding to prevent square flash when toggling nav */
+#main-view-wrapper {
+  transition: filter 750ms cubic-bezier(0.65, 0, 0.076, 1);
+  filter: drop-shadow(0 0px 0px rgba(0, 0, 0, 0));
+}
+
 #main-view,
 .view-card-3,
-#main-view1 {
-  transition: border-radius 300ms ease, transform 750ms cubic-bezier(0.65, 0, 0.076, 1);
+#main-view1,
+#main-view2 {
+  transition: clip-path 0ms cubic-bezier(0.65, 0, 0.076, 1) 750ms, transform 750ms cubic-bezier(0.65, 0, 0.076, 1);
+  transform-origin: 50% calc(var(--scroll-top, 0px) + 50vh);
+  clip-path: inset(0 0 0 0 round 0px);
 }
 
 #main-view div[data-overlayscrollbars-viewport] {
@@ -652,31 +659,37 @@ body {
 }
 
 @media (min-width: 1280px) {
+  .nav-open #main-view-wrapper {
+    filter: drop-shadow(0 20px 60px rgba(0, 0, 0, 0.18));
+  }
+
   .nav-open #main-view,
   .nav-open .view-card-3 {
-    transform: scale(0.9) translate(0, 30%);
-    border-radius: 24px;
+    transition: clip-path 0ms cubic-bezier(0.65, 0, 0.076, 1) 0ms, transform 750ms cubic-bezier(0.65, 0, 0.076, 1);
+    transform: scale(0.9) translate(0, 20vh);
+    clip-path: inset(var(--scroll-top, 0px) 0 calc(100% - var(--scroll-top, 0px) - 100vh) 0 round 24px);
     overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
   }
 
   .nav-open #main-view2,
   .nav-open .view-card-3 {
-    transform: scale(0.9) translate(0, 25%);
-    border-radius: 24px;
+    transition: clip-path 0ms cubic-bezier(0.65, 0, 0.076, 1) 0ms, transform 750ms cubic-bezier(0.65, 0, 0.076, 1);
+    transform: scale(0.9) translate(0, 10vh);
+    clip-path: inset(var(--scroll-top, 0px) 0 calc(100% - var(--scroll-top, 0px) - 100vh) 0 round 24px);
     overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    filter: drop-shadow(0 20px 60px rgba(0, 0, 0, 0.18));
   }
 
   .nav-open #main-view1,
   .nav-open .view-card-3 {
-    transform: scale(0.9) translate(0, 30%);
-    border-radius: 24px;
+    transition: clip-path 0ms cubic-bezier(0.65, 0, 0.076, 1) 0ms, transform 750ms cubic-bezier(0.65, 0, 0.076, 1);
+    transform: scale(0.9) translate(0, 20vh);
+    clip-path: inset(var(--scroll-top, 0px) 0 calc(100% - var(--scroll-top, 0px) - 100vh) 0 round 24px);
     overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    filter: drop-shadow(0 20px 60px rgba(0, 0, 0, 0.18));
   }
 
   /* Ensure rounded corners across the whole page when nav is open */

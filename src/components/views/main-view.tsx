@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from 'next/dynamic';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Header from "@/components/layout/header";
 import HomeView from "@/components/views/home";
 import type { View, UserRole, DashboardTab, founderRole } from "@/app/types";
@@ -115,6 +115,7 @@ export default function MainView() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { auth } = useFirebaseAuth();
   const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
   const [isCommentSectionMaximized, setIsCommentSectionMaximized] = useState(false);
@@ -314,7 +315,10 @@ export default function MainView() {
       router.push(`/complete-profile?token=${token}`);
       setActiveView('home');
     } else if (role === 'blogger') {
-      router.push('/blogger');
+      const pathname = window.location.pathname;
+      if (pathname !== '/blog' && !pathname.startsWith('/blog/')) {
+        router.push('/blogger');
+      }
     } else {
       setActiveView('dashboard');
     }
@@ -344,13 +348,19 @@ export default function MainView() {
   // Blogger Redirect Logic
   useEffect(() => {
     if (!isAuthLoading && userRole === "blogger") {
-      const pathname = window.location.pathname;
-      if (pathname === "/") {
-        setActiveView("dashboard");
+
+      const allowRoutes =
+        pathname === "/blog" ||
+        pathname.startsWith("/blog/") ||
+        pathname === "/blogger";
+
+      if (!allowRoutes) {
         router.push("/blogger");
       }
+
     }
-  }, [userRole, isAuthLoading, activeView, router]);
+  }, [userRole, isAuthLoading, pathname, router]);
+
 
   const [isHeroVisible, setIsHeroVisible] = useState(true);
 
@@ -543,31 +553,34 @@ export default function MainView() {
         heroVisible={isHeroVisible}
       />
 
-      <main
-        className={`relative z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
-          }`}
-        id="main-view"
-      >
-        <section className={`min-h-screen`} ref={scrollContainerRef}>
-          {userRole === 'blogger' ? (
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-lg text-muted-foreground font-medium">Redirecting to workspace...</p>
+      <div id="main-view-wrapper">
+        <main
+          className={`relative z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
+            }`}
+          id="main-view"
+        >
+          <section className={`min-h-screen`} ref={scrollContainerRef}>
+            {userRole === 'blogger' &&
+              !(pathname === "/blog" || pathname.startsWith("/blog/") || pathname === "/blogger") ? (
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-lg text-muted-foreground font-medium">Redirecting to workspace...</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            <HomeView
-              setActiveView={setActiveView}
-              setActiveTab={setActiveTab}
-              isLoggedIn={isLoggedIn}
-              userRole={userRole}
-              onLogout={handleLogout}
-              navOpen={navOpen}
-            />
-          )}
-        </section>
-      </main>
+            ) : (
+              <HomeView
+                setActiveView={setActiveView}
+                setActiveTab={setActiveTab}
+                isLoggedIn={isLoggedIn}
+                userRole={userRole}
+                onLogout={handleLogout}
+                navOpen={navOpen}
+              />
+            )}
+          </section>
+        </main>
+      </div>
 
       {
         showUnauthorized && <Unauthorized />

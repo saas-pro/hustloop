@@ -19,6 +19,7 @@ export type CardNavItem = {
   bgColor: string;
   textColor: string;
   links: CardNavLink[];
+  isHorizontal?: boolean;
 };
 
 export interface CardNavProps {
@@ -165,10 +166,10 @@ const CardNav: React.FC<CardNavProps> = ({
                       : lnk.icon
                         ? 'flex items-center justify-between px-4 py-2'
                         : 'block px-4 py-2'
-                      } ${lnk.styleVariant === 'primary'
+                        } ${lnk.styleVariant === 'primary'
                         ? 'bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-full text-center'
                         : lnk.styleVariant === 'secondary'
-                          ? 'bg-secondary text-secondary-foreground mt-2 hover:bg-secondary/80 font-medium rounded-full text-center'
+                          ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium rounded-full text-center'
                           : lnk.isHighlighted
                             ? 'bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-md'
                             : 'text-muted-foreground hover:text-primary hover:bg-accent/50 rounded-md'
@@ -205,7 +206,7 @@ const CardNav: React.FC<CardNavProps> = ({
               return (
                 <div
                   key={`${item.label}-${idx}`}
-                  className={`nav-section ${allIconOnly ? 'flex flex-row items-center justify-between gap-2' : ''}`}
+                  className={`nav-section ${allIconOnly ? 'flex flex-row items-center justify-between gap-2' : item.isHorizontal ? 'grid grid-cols-2 gap-2 mt-2' : 'flex flex-col gap-[2px]'}`}
                 >
                   {sectionLinks}
                 </div>

@@ -83,11 +83,11 @@ export default function BlogListClient() {
     const [debouncedSearch, setDebouncedSearch] = useState("");
 
     // Redirect blogger to workspace
-    useEffect(() => {
-        if (!isAuthLoading && userRole === 'blogger') {
-            router.push('/blogger');
-        }
-    }, [userRole, isAuthLoading, router]);
+    // useEffect(() => {
+    //     if (!isAuthLoading && userRole === 'blogger') {
+    //         router.push('/blogger');
+    //     }
+    // }, [userRole, isAuthLoading, router]);
 
     // Debounce search
     useEffect(() => {

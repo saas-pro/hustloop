@@ -14,31 +14,21 @@ export default function ZohoChatbot() {
     }, []);
 
     useEffect(() => {
-        // Also try to use Zoho's explicit API
-        // Sometimes the API is floatwindow.visible('hide') or widget.hide()
-        if (isBlog) {
-            try {
-                if (typeof window !== "undefined" && (window as any).$zoho?.salesiq?.widget) {
-                    (window as any).$zoho.salesiq.widget.hide();
+        try {
+            if (typeof window !== "undefined" && (window as any).$zoho?.salesiq) {
+                const zoho = (window as any).$zoho.salesiq;
+
+                if (isBlog) {
+                    zoho.floatwindow.visible("hide");
+                    zoho.chatwindow.close?.();
+                    zoho.widget.hide?.();
+                } else {
+                    zoho.widget.show?.();
+                    zoho.floatwindow.visible("show");
+                    zoho.chatwindow.close?.();
                 }
-            } catch (e) { }
-            try {
-                if (typeof window !== "undefined" && (window as any).$zoho?.salesiq?.floatwindow) {
-                    (window as any).$zoho.salesiq.floatwindow.visible("hide");
-                }
-            } catch (e) { }
-        } else {
-            try {
-                if (typeof window !== "undefined" && (window as any).$zoho?.salesiq?.widget) {
-                    (window as any).$zoho.salesiq.widget.show();
-                }
-            } catch (e) { }
-            try {
-                if (typeof window !== "undefined" && (window as any).$zoho?.salesiq?.floatwindow) {
-                    (window as any).$zoho.salesiq.floatwindow.visible("show");
-                }
-            } catch (e) { }
-        }
+            }
+        } catch (e) { }
     }, [isBlog, pathname]);
 
     if (!mounted) return null;
@@ -72,8 +62,7 @@ export default function ZohoChatbot() {
                     if (salesiqDoc) {
                         document.addEventListener('router:end', (event) => {
                             if (window.$zoho && window.$zoho.salesiq && window.$zoho.salesiq.page) {
-                                window.$zoho.salesiq.page.popup.close('all');
-                                window.$zoho.salesiq.page.popup.show();
+                                window.$zoho.salesiq.page.popup.close();
                             }
                         });
                     }
