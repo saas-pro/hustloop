@@ -41,6 +41,8 @@ import { CommentSection } from "../comment-section";
 import { DeleteConfirmationDialog } from '../ui/DeleteConfirmationDialog';
 import { useSearchParams } from "next/navigation";
 import SubmissionDetailsModal from "./submission-details-modal";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import AdminIncubatorsView from "./admin-incubators-view";
 import EventModal from "./event-modal";
 import AnimatedList from "@/components/AnimatedList";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -113,6 +115,7 @@ interface DashboardViewProps {
     onOpenChange: (isOpen: boolean) => void;
     user: User;
     userRole: UserRole;
+    founderRole?: founderRole | null;
     authProvider: AuthProvider;
     hasSubscription: boolean;
     setActiveView: (view: View) => void;
@@ -453,7 +456,7 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
     </Card>
 );
 
-export default function DashboardView({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: DashboardViewProps) {
+export default function DashboardView({ isOpen, setUser, founderRole, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: DashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
     const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
@@ -1676,7 +1679,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
     const [isipOverview, setisipOverview] = useState(false)
 
     useEffect(() => {
-        const founder_role = localStorage.getItem("founder_role");
+        const founder_role = founderRole;
         if (founder_role === "List a technology for licensing") {
             setIsTechTransfer(true);
             setisipOverview(true)
@@ -1684,12 +1687,13 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
             setIsTechTransfer(false)
             setisipOverview(false)
         }
-    }, []);
+    }, [founderRole]);
     // const adminTabs = ["overview", "users", "ip/technologies", "testimonials", "registration", "engagement", "blog", "sessions", "subscribers", "plans", "pitch-details", "events", "settings"];
     const adminTabs = [
         // Group 1
         "overview",
         "users",
+        "incubators",
         "testimonials",
         "divider1",  // First divider after first group
         // Group 2
@@ -2082,7 +2086,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
 
     useEffect(() => {
         if (activateTab === 'ip/technologies') {
-            const role = localStorage.getItem("userRole")
+            const role = userRole
             if (role === "admin") {
                 fetchIps()
                     .then((ips: any) => {
@@ -2124,7 +2128,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                     .catch((err) => toast({ title: "error", description: "Failed to fetch Ips", variant: "destructive" }));
             }
         }
-    }, [activateTab, id, fetchIps, toast, setGroupedIps]);
+    }, [activateTab, id, fetchIps, toast, setGroupedIps, userRole]);
 
     const [hasDraft, setHasDraft] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -2488,7 +2492,11 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                                                     setActiveTab(tab as DashboardTab);
                                                                 }}
                                                                 tooltip={tab}
-                                                                className="capitalize"
+                                                                className={`capitalize transition-all ${
+                                                                    activeTab === tab 
+                                                                    ? "bg-primary text-primary-foreground shadow-sm group-data-[state=collapsed]:rounded-l-2xl group-data-[state=collapsed]:rounded-r-none group-data-[state=collapsed]:ml-1" 
+                                                                    : ""
+                                                                }`}
                                                             >
                                                                 <Icon className="h-5 w-5" />
                                                                 <span>{tab}</span>
@@ -2535,6 +2543,9 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                 <div className={cn("flex-grow overflow-y-auto pb-6 w-full", isMobile ? "px-4 pt-4" : "px-6")} >
                                     <TabsContent value="plans" className="mt-0 outline-none">
                                         <PlansManagementView />
+                                    </TabsContent>
+                                    <TabsContent value="incubators" className="mt-0 outline-none">
+                                        <AdminIncubatorsView />
                                     </TabsContent>
                                     <TabsContent value="overview" className="mt-0 space-y-6">
                                         {userRole === 'admin' && (
@@ -3231,7 +3242,7 @@ export default function DashboardView({ isOpen, setUser, onOpenChange, user, use
                                     </TabsContent>
                                     <TabsContent value="incubators" className="mt-0">
                                         {hasSubscription || userRole === 'admin' ? (
-                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <Card className="bg-card/50 backdrop-blur-sm border-border/50 mt-4">
                                                 <CardHeader>
                                                     <CardTitle>Incubator Applications</CardTitle>
                                                     <CardDescription>Status of your applications to incubators.</CardDescription>

@@ -20,7 +20,7 @@ import * as LucideIcons from "lucide-react";
 import type { LucideProps } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber } from "@/app/types";
+import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber, founderRole } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -144,6 +144,7 @@ interface ListTechnologyDashboardViewProps {
     setUser: React.Dispatch<React.SetStateAction<User | null>>;
     activateTab: string;
     id?: string;
+    founderRole: founderRole;
 }
 
 interface TechTransferIP {
@@ -247,7 +248,7 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
     </Card>
 );
 
-export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: ListTechnologyDashboardViewProps) {
+export default function ListTechnologyDashboard({ isOpen, setUser, founderRole, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: ListTechnologyDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
     const [adminContentTab, setAdminContentTab] = useState('blog');
@@ -1128,7 +1129,7 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
     const [isipOverview, setisipOverview] = useState(false)
     const [founder_role, set_founder_role] = useState<string | null>("");
     useEffect(() => {
-        const founder_role = localStorage.getItem("founder_role");
+        const founder_role = founderRole;
         set_founder_role(founder_role);
         if (founder_role === "List a technology for licensing") {
             setIsTechTransfer(true);
@@ -1137,7 +1138,7 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
             setIsTechTransfer(false)
             setisipOverview(false)
         }
-    }, []);
+    }, [founderRole]);
     const TechTransferTabs = ["overview", "submission", "engagements", "settings"];
     const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
 
@@ -1454,7 +1455,7 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
 
     useEffect(() => {
         if (activateTab === 'ip/technologies') {
-            const role = localStorage.getItem("userRole")
+            const role = userRole
             if (role === "admin") {
                 fetchIps()
                     .then((ips: any) => {
@@ -1496,7 +1497,7 @@ export default function ListTechnologyDashboard({ isOpen, setUser, onOpenChange,
                     .catch((err) => toast({ title: "error", description: "Failed to fetch Ips", variant: "destructive" }));
             }
         }
-    }, [activateTab, id, fetchIps, toast, setGroupedIps]);
+    }, [activateTab, id, fetchIps, toast, setGroupedIps, userRole]);
 
     const [hasDraft, setHasDraft] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);

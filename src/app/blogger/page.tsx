@@ -2,7 +2,7 @@ import BloggerClient from "./blogger-client";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Blogger Workspace | Hustloop",
+    title: "Blogger Workspace",
     description: "Manage your blog posts on Hustloop.",
 };
 

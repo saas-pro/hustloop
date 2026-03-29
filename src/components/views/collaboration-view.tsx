@@ -37,6 +37,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from '@/providers/AuthContext';
 
 export interface SectorData {
     id: number | string
@@ -113,7 +114,7 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
         type: "general",
     });
     const [announcementAttachments, setAnnouncementAttachments] = useState<File[]>([]);
-
+    const { userRole } = useAuth();
     const [activeTab, setActiveTab] = useState("overview");
 
     const editForm = useForm<EditCollaborationFormValues>({
@@ -1004,7 +1005,7 @@ const CollaborationView = ({ collaborationId, onClose, initialEditMode = false }
                                                                     </Badge>
                                                                 )}
 
-                                                                {(localStorage.getItem("userRole") === "msme" && announcement.createdBy !== "Admin") && (
+                                                                {(userRole === "organisation" && announcement.createdBy !== "Admin") && (
                                                                     <AlertDialog>
                                                                         <DropdownMenu>
                                                                             <DropdownMenuTrigger asChild>

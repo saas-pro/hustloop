@@ -24,6 +24,7 @@ import ListTechnologyDashboard from "./list-a-tech-dashboard";
 import InnovativeIdeaDashboard from "./innovative-dashboard";
 import PricingPageClient from "@/app/pricing/pricing-client";
 import { useAuth } from "@/providers/AuthContext";
+import { Button } from "../ui/button";
 
 
 const ModalSkeleton = () => (
@@ -471,6 +472,7 @@ export default function MainView() {
             user={user}
             userRole={userRole}
             authProvider={authProvider}
+            founderRole={founderRole}
             hasSubscription={hasSubscription}
             setActiveView={setActiveView}
             setUser={setUser}
@@ -479,6 +481,9 @@ export default function MainView() {
           />
         );
       case 'founder':
+        if (!founderRole) {
+          return null;
+        }
         switch (founderRole) {
           case "Solve Organisation's challenge":
             return (
@@ -486,6 +491,7 @@ export default function MainView() {
                 isOpen={true}
                 onOpenChange={() => setActiveView('home')}
                 user={user}
+                founderRole={founderRole}
                 authProvider={authProvider}
                 userRole={userRole}
                 hasSubscription={hasSubscription}
@@ -502,6 +508,7 @@ export default function MainView() {
                 isOpen={true}
                 onOpenChange={() => setActiveView('home')}
                 user={user}
+                founderRole={founderRole}
                 authProvider={authProvider}
                 userRole={userRole}
                 hasSubscription={hasSubscription}
@@ -518,6 +525,7 @@ export default function MainView() {
                 isOpen={true}
                 onOpenChange={() => setActiveView('home')}
                 user={user}
+                founderRole={founderRole}
                 authProvider={authProvider}
                 userRole={userRole}
                 hasSubscription={hasSubscription}
@@ -540,172 +548,185 @@ export default function MainView() {
 
   if (showUnauthorized) return <Unauthorized />;
   return (
-
-    <div className="relative flex flex-col overflow-clip min-h-screen bg-background text-foreground moz-container">
-      <Header
-        activeView={activeView}
-        setActiveView={setActiveView}
-        isLoggedIn={isLoggedIn}
-        onLogout={handleLogout}
-        isLoading={isLoading}
-        navOpen={navOpen}
-        setNavOpen={(value: boolean) => { setNavOpen(value); }}
-        heroVisible={isHeroVisible}
-      />
-
-      <div id="main-view-wrapper">
-        <main
-          className={`relative z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
-            }`}
-          id="main-view"
-        >
-          <section className={`min-h-screen`} ref={scrollContainerRef}>
-            {userRole === 'blogger' &&
-              !(pathname === "/blog" || pathname.startsWith("/blog/") || pathname === "/blogger") ? (
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-lg text-muted-foreground font-medium">Redirecting to workspace...</p>
-                </div>
-              </div>
-            ) : (
-              <HomeView
-                setActiveView={setActiveView}
-                setActiveTab={setActiveTab}
-                isLoggedIn={isLoggedIn}
-                userRole={userRole}
-                onLogout={handleLogout}
-                navOpen={navOpen}
-              />
-            )}
-          </section>
-        </main>
-      </div>
-
-      {
-        showUnauthorized && <Unauthorized />
-      }
-
-
-      {activeView === 'blog' && <BlogView isOpen={true} onOpenChange={handleModalOpenChange('blog')} />}
-
-      {activeView === 'mentors' && <MentorsView
-        isOpen={true}
-        onOpenChange={handleModalOpenChange('mentors')}
-        isLoggedIn={isLoggedIn}
-        hasSubscription={hasSubscription}
-        hasUsedFreeSession={hasUsedFreeSession}
-        onBookingSuccess={handleBookingSuccess}
-        setActiveView={setActiveView}
-      />}
-
-      {activeView === 'incubators' && <IncubatorsView
-        isOpen={true}
-        onOpenChange={handleModalOpenChange('incubators')}
-        isLoggedIn={isLoggedIn}
-        hasSubscription={hasSubscription}
-        setActiveView={setActiveView}
-      />}
-
-      {
-        activeView === 'submitIP' && <SubmitIPDashboard
-          isOpen={true}
-          onOpenChange={() => setActiveView('home')}
-          user={user!}
-          userRole={userRole!}
-          authProvider={authProvider!}
-          hasSubscription={hasSubscription}
+    <>
+      <div className="relative flex flex-col overflow-clip min-h-screen bg-background text-foreground moz-container">
+        <Header
+          activeView={activeView}
           setActiveView={setActiveView}
-          setUser={setUser}
+          isLoggedIn={isLoggedIn}
+          onLogout={handleLogout}
+          isLoading={isLoading}
+          navOpen={navOpen}
+          setNavOpen={(value: boolean) => { setNavOpen(value); }}
+          heroVisible={isHeroVisible}
         />
-      }
 
-      {activeView === 'pricing' && <PricingView
-        isOpen={true}
-        onOpenChange={handleModalOpenChange('pricing')}
-        onGetStartedClick={handleGetStartedOnPricing}
-      />}
-      {
-        activeView === 'browseMSME' && <BrowseMSME isOpen={true} onOpenChange={handleModalOpenChange('browseMSME')} />
-      }
-      {activeView === 'msmes' && <MsmesView
-        isOpen={true}
-        onOpenChange={handleModalOpenChange('msmes')}
-        isLoggedIn={isLoggedIn}
-        hasSubscription={hasSubscription}
-        setActiveView={setActiveView}
-      />}
+        <div id="main-view-wrapper">
+          <main
+            className={`relative z-40 min-h-screen w-screen flex-grow m-auto pointer-events-auto ${navOpen && "border rounded-lg"
+              }`}
+            id="main-view"
+          >
+            <section className={`min-h-screen`} ref={scrollContainerRef}>
+              {userRole === 'blogger' &&
+                !(pathname === "/blog" || pathname.startsWith("/blog/") || pathname === "/blogger") ? (
+                <div className="min-h-screen flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-lg text-muted-foreground font-medium">Redirecting to workspace...</p>
+                  </div>
+                </div>
+              ) : (
+                <HomeView
+                  setActiveView={setActiveView}
+                  setActiveTab={setActiveTab}
+                  isLoggedIn={isLoggedIn}
+                  userRole={userRole}
+                  onLogout={handleLogout}
+                  navOpen={navOpen}
+                />
 
-      {activeView === 'joinasanMSME' && (
-        <JoinAsAnMsme
+              )}
+            </section>
+          </main>
+        </div>
+
+        {
+          showUnauthorized && <Unauthorized />
+        }
+
+
+        {activeView === 'blog' && <BlogView isOpen={true} onOpenChange={handleModalOpenChange('blog')} />}
+
+        {activeView === 'mentors' && <MentorsView
           isOpen={true}
-          onOpenChange={handleModalOpenChange('joinasanMSME')}
+          onOpenChange={handleModalOpenChange('mentors')}
+          isLoggedIn={isLoggedIn}
+          hasSubscription={hasSubscription}
+          hasUsedFreeSession={hasUsedFreeSession}
+          onBookingSuccess={handleBookingSuccess}
+          setActiveView={setActiveView}
+        />}
+
+        {activeView === 'incubators' && <IncubatorsView
+          isOpen={true}
+          onOpenChange={handleModalOpenChange('incubators')}
           isLoggedIn={isLoggedIn}
           hasSubscription={hasSubscription}
           setActiveView={setActiveView}
-          authProvider={authProvider!}
-          user={user!}
-        />
-      )}
-      {activeView === 'browseTech' && (
-        <TechTransferView
+        />}
+
+        {
+          activeView === 'submitIP' && <SubmitIPDashboard
+            isOpen={true}
+            onOpenChange={() => setActiveView('home')}
+            user={user!}
+            userRole={userRole!}
+            authProvider={authProvider!}
+            hasSubscription={hasSubscription}
+            setActiveView={setActiveView}
+            setUser={setUser}
+          />
+        }
+
+        {activeView === 'pricing' && <PricingView
           isOpen={true}
-          onOpenChange={handleModalOpenChange('browseTech')}
+          onOpenChange={handleModalOpenChange('pricing')}
+          onGetStartedClick={handleGetStartedOnPricing}
+        />}
+        {
+          activeView === 'browseMSME' && <BrowseMSME isOpen={true} onOpenChange={handleModalOpenChange('browseMSME')} />
+        }
+        {activeView === 'msmes' && <MsmesView
+          isOpen={true}
+          onOpenChange={handleModalOpenChange('msmes')}
+          isLoggedIn={isLoggedIn}
+          hasSubscription={hasSubscription}
           setActiveView={setActiveView}
-        />
+        />}
+
+        {activeView === 'joinasanMSME' && (
+          <JoinAsAnMsme
+            isOpen={true}
+            onOpenChange={handleModalOpenChange('joinasanMSME')}
+            isLoggedIn={isLoggedIn}
+            hasSubscription={hasSubscription}
+            setActiveView={setActiveView}
+            authProvider={authProvider!}
+            user={user!}
+          />
+        )}
+        {activeView === 'browseTech' && (
+          <TechTransferView
+            isOpen={true}
+            onOpenChange={handleModalOpenChange('browseTech')}
+            setActiveView={setActiveView}
+          />
+        )}
+
+        {activeView === 'education' && <EducationView
+          isOpen={true}
+          onOpenChange={handleModalOpenChange('education')}
+          onApplicationSuccess={handleEducationApplicationSuccess}
+          isLoggedIn={isLoggedIn}
+          setActiveView={setActiveView}
+          appliedPrograms={appliedPrograms}
+        />}
+
+        {activeView === 'marketplace' && <MarketplaceView
+          isOpen={true}
+          onOpenChange={handleModalOpenChange('marketplace')}
+          setActiveView={setActiveView}
+          isLoggedIn={isLoggedIn}
+          hasSubscription={hasSubscription}
+        />}
+
+        {renderDashboard()}
+
+        {activeView === 'login' && <LoginModal
+          isOpen={true}
+          setIsOpen={handleModalOpenChange('login')}
+          onLoginSuccess={handleLoginSuccess}
+          setActiveView={setActiveView} // so you can switch to signup inside signup modal
+          activeView={activeView}
+        />}
+
+        {activeView === 'signup' && <SignupModal
+          isOpen={true}
+          setIsOpen={handleModalOpenChange('signup')}
+          onLoginSuccess={handleLoginSuccess}
+          setActiveView={setActiveView} // so you can switch to login inside login modal
+          activeView={activeView}
+        />}
+
+        {activeView === 'contact' && <ContactView
+          isOpen={true}
+          onOpenChange={handleModalOpenChange('contact')}
+        />}
+
+        {commentingSubmissionId !== null && (
+          <CommentSection
+            submissionId={commentingSubmissionId}
+            onClose={() => {
+              setCommentingSubmissionId(null);
+              setIsCommentSectionMaximized(false);
+            }}
+            onMaximizeToggle={setIsCommentSectionMaximized}
+          />
+        )}
+
+      </div>
+      {userRole === 'admin' && (
+        <Button
+          onClick={() => window.open('/blogger', '_blank')}
+          className="fixed bottom-2 right-2 rounded-full w-[63px] h-[63px] shadow-lg flex items-center justify-center bg-accent hover:bg-accent/90 z-10 p-0"
+          title="Blogger Dashboard"
+        >
+          <svg className="w-6 h-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </Button>
       )}
-
-      {activeView === 'education' && <EducationView
-        isOpen={true}
-        onOpenChange={handleModalOpenChange('education')}
-        onApplicationSuccess={handleEducationApplicationSuccess}
-        isLoggedIn={isLoggedIn}
-        setActiveView={setActiveView}
-        appliedPrograms={appliedPrograms}
-      />}
-
-      {activeView === 'marketplace' && <MarketplaceView
-        isOpen={true}
-        onOpenChange={handleModalOpenChange('marketplace')}
-        setActiveView={setActiveView}
-        isLoggedIn={isLoggedIn}
-        hasSubscription={hasSubscription}
-      />}
-
-      {renderDashboard()}
-
-      {activeView === 'login' && <LoginModal
-        isOpen={true}
-        setIsOpen={handleModalOpenChange('login')}
-        onLoginSuccess={handleLoginSuccess}
-        setActiveView={setActiveView} // so you can switch to signup inside signup modal
-        activeView={activeView}
-      />}
-
-      {activeView === 'signup' && <SignupModal
-        isOpen={true}
-        setIsOpen={handleModalOpenChange('signup')}
-        onLoginSuccess={handleLoginSuccess}
-        setActiveView={setActiveView} // so you can switch to login inside login modal
-        activeView={activeView}
-      />}
-
-      {activeView === 'contact' && <ContactView
-        isOpen={true}
-        onOpenChange={handleModalOpenChange('contact')}
-      />}
-
-      {commentingSubmissionId !== null && (
-        <CommentSection
-          submissionId={commentingSubmissionId}
-          onClose={() => {
-            setCommentingSubmissionId(null);
-            setIsCommentSectionMaximized(false);
-          }}
-          onMaximizeToggle={setIsCommentSectionMaximized}
-        />
-      )}
-
-    </div>
+    </>
   );
 }

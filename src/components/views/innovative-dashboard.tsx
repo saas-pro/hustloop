@@ -20,7 +20,7 @@ import * as LucideIcons from "lucide-react";
 import type { LucideProps } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber } from "@/app/types";
+import type { View, DashboardTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber, founderRole } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -140,6 +140,7 @@ interface InnovativeIdeaDashboardViewProps {
     setUser: React.Dispatch<React.SetStateAction<User | null>>;
     activateTab: string;
     id?: string;
+    founderRole: founderRole;
 }
 
 interface TechTransferIP {
@@ -241,7 +242,7 @@ const LockedContent = ({ setActiveView, title }: { setActiveView: (view: View) =
     </Card>
 );
 
-export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: InnovativeIdeaDashboardViewProps) {
+export default function InnovativeIdeaDashboard({ isOpen, setUser, founderRole, onOpenChange, user, userRole, authProvider, hasSubscription, setActiveView, activateTab, id }: InnovativeIdeaDashboardViewProps) {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
     const [adminContentTab, setAdminContentTab] = useState('blog');
@@ -1124,7 +1125,7 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
     const [isipOverview, setisipOverview] = useState(false)
 
     useEffect(() => {
-        const founder_role = localStorage.getItem("founder_role");
+        const founder_role = founderRole;
         if (founder_role === "List a technology for licensing") {
             setIsTechTransfer(true);
             setisipOverview(true)
@@ -1132,7 +1133,7 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
             setIsTechTransfer(false)
             setisipOverview(false)
         }
-    }, []);
+    }, [founderRole]);
     const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "connex", "engagement", "settings"];
     const founderTabs = ["overview", "organisation", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
@@ -1446,7 +1447,7 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
 
     useEffect(() => {
         if (activateTab === 'ip/technologies') {
-            const role = localStorage.getItem("userRole")
+            const role = userRole
             if (role === "admin") {
                 fetchIps()
                     .then((ips: any) => {
@@ -1488,7 +1489,7 @@ export default function InnovativeIdeaDashboard({ isOpen, setUser, onOpenChange,
                     .catch((err) => toast({ title: "error", description: "Failed to fetch Ips", variant: "destructive" }));
             }
         }
-    }, [activateTab, id, fetchIps, toast, setGroupedIps]);
+    }, [activateTab, id, fetchIps, toast, setGroupedIps, userRole]);
 
     const [hasDraft, setHasDraft] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);

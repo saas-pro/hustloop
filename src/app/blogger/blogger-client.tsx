@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { type BlogPost } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Palette, Check, Home, LogOut, BookOpen } from "lucide-react";
+import { Sun, Moon, Palette, Check, Home, LogOut, BookOpen, ShieldCheck, FileText, XCircle, Eye, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import BrandLogo from "@/components/blog/brand-logo";
 import { useTheme } from "next-themes";
@@ -13,6 +13,7 @@ import BloggerDashboard from "@/components/blog/BloggerDashboard";
 import BloggerEditor from "@/components/blog/BloggerEditor";
 import BlogPreviewModal from "@/components/blog/BlogPreviewModal";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 
 function ThemeToggleDropdown() {
     const { theme, setTheme } = useTheme();
@@ -54,17 +55,26 @@ export default function BloggerClient() {
     const [previewBlog, setPreviewBlog] = useState<BlogPost | undefined>(undefined);
     const router = useRouter();
 
-    // Protect the route
-    useEffect(() => {
-        if (!isAuthLoading && userRole !== null) {
-            if (userRole !== 'blogger' && userRole !== 'admin') {
-                router.push('/blog');
-            }
-        }
-    }, [userRole, isAuthLoading, router]);
-
     if (isAuthLoading) {
         return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    }
+
+    if (userRole !== 'blogger' && userRole !== 'admin') {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4 text-center">
+                <div className="relative flex items-center justify-center mb-4">
+                    <svg viewBox="0 0 24 24" className="w-32 h-32 text-destructive stroke-current fill-destructive/10" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                    </svg>
+                    <span className="absolute text-destructive font-bold text-3xl font-headline mt-3">401</span>
+                </div>
+                <h2 className="text-3xl font-bold text-foreground font-headline">Unauthorized Access</h2>
+
+                <Link href="/">
+                    <Button className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground">Return to Home</Button>
+                </Link>
+            </div>
+        );
     }
 
     return (

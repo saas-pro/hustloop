@@ -25,6 +25,7 @@ import PasswordChangeForm from './password-change-form';
 import Script from "next/script";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { format, addDays } from "date-fns";
+import { useAuth } from "@/providers/AuthContext";
 
 
 
@@ -146,10 +147,11 @@ export default function JoinAsAnMsme({ isOpen, onOpenChange, user, authProvider,
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
     const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [isMsmerole, setisMsmeRole] = useState(false)
-    const isMsmeRole = localStorage.getItem("userRole");
+    const { userRole } = useAuth();
+    const isMsmeRole = userRole;
 
     useEffect(() => {
-        if (isMsmeRole === "msme") {
+        if (isMsmeRole === "organisation") {
             setisMsmeRole(true)
         }
     }, [isMsmeRole])

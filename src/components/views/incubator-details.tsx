@@ -275,6 +275,7 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
       size="lg"
       className="bg-accent hover:bg-accent/90 text-accent-foreground"
       disabled={isDisabled}
+      onClick={() => toast({ title: "Coming Soon", description: "This feature will be implemented soon." })}
     >
       Apply Now
     </Button>
@@ -290,8 +291,8 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-grow mt-4">
-          <div className="space-y-12 px-4">
+        <ScrollArea className="flex-grow">
+          <div className="space-y-12 px-4 py-10">
             <div className="flex flex-col md:flex-row justify-between gap-6">
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2 text-primary">
@@ -321,35 +322,35 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 items-start">
+              <div className="flex flex-wrap gap-3 items-start">
                 {incubator.socialLinks?.website && (
-                  <Button variant="outline" size="icon" className="h-9 w-9 border-border/50 hover:border-accent/50 group" asChild>
-                    <a href={incubator.socialLinks.website} target="_blank" rel="noreferrer"><Globe className="h-4 w-4 group-hover:text-accent transition-colors" /></a>
+                  <Button variant="outline" size="icon" className="h-10 w-10 border-primary/20 bg-primary/5 hover:bg-primary/20 hover:border-primary/50 text-primary transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_-3px_rgba(var(--primary-rgb),0.5)] group rounded-xl" asChild>
+                    <a href={incubator.socialLinks.website} target="_blank" rel="noreferrer"><Globe className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" /></a>
                   </Button>
                 )}
                 {incubator.socialLinks?.linkedin && (
-                  <Button variant="outline" size="icon" className="h-9 w-9 border-border/50 hover:border-accent/50 group" asChild>
-                    <a href={incubator.socialLinks.linkedin} target="_blank" rel="noreferrer"><Linkedin className="h-4 w-4 group-hover:text-accent transition-colors" /></a>
+                  <Button variant="outline" size="icon" className="h-10 w-10 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/20 hover:border-blue-500/50 text-blue-500 transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)] group rounded-xl" asChild>
+                    <a href={incubator.socialLinks.linkedin} target="_blank" rel="noreferrer"><Linkedin className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" /></a>
                   </Button>
                 )}
                 {incubator.socialLinks?.twitter && (
-                  <Button variant="outline" size="icon" className="h-9 w-9 border-border/50 hover:border-accent/50 group" asChild>
-                    <a href={incubator.socialLinks.twitter} target="_blank" rel="noreferrer"><Twitter className="h-4 w-4 group-hover:text-accent transition-colors" /></a>
+                  <Button variant="outline" size="icon" className="h-10 w-10 border-sky-400/20 bg-sky-400/5 hover:bg-sky-400/20 hover:border-sky-400/50 text-sky-400 transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_-3px_rgba(56,189,248,0.5)] group rounded-xl" asChild>
+                    <a href={incubator.socialLinks.twitter} target="_blank" rel="noreferrer"><Twitter className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" /></a>
                   </Button>
                 )}
                 {incubator.socialLinks?.facebook && (
-                  <Button variant="outline" size="icon" className="h-9 w-9 border-border/50 hover:border-accent/50 group" asChild>
-                    <a href={incubator.socialLinks.facebook} target="_blank" rel="noreferrer"><Facebook className="h-4 w-4 group-hover:text-accent transition-colors" /></a>
+                  <Button variant="outline" size="icon" className="h-10 w-10 border-blue-600/20 bg-blue-600/5 hover:bg-blue-600/20 hover:border-blue-600/50 text-blue-600 transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_-3px_rgba(37,99,235,0.5)] group rounded-xl" asChild>
+                    <a href={incubator.socialLinks.facebook} target="_blank" rel="noreferrer"><Facebook className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" /></a>
                   </Button>
                 )}
                 {incubator.socialLinks?.instagram && (
-                  <Button variant="outline" size="icon" className="h-9 w-9 border-border/50 hover:border-accent/50 group" asChild>
-                    <a href={incubator.socialLinks.instagram} target="_blank" rel="noreferrer"><Instagram className="h-4 w-4 group-hover:text-accent transition-colors" /></a>
+                  <Button variant="outline" size="icon" className="h-10 w-10 border-pink-500/20 bg-pink-500/5 hover:bg-pink-500/20 hover:border-pink-500/50 text-pink-500 transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_-3px_rgba(236,72,153,0.5)] group rounded-xl" asChild>
+                    <a href={incubator.socialLinks.instagram} target="_blank" rel="noreferrer"><Instagram className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" /></a>
                   </Button>
                 )}
                 {incubator.socialLinks?.youtube && (
-                  <Button variant="outline" size="icon" className="h-9 w-9 border-border/50 hover:border-accent/50 group" asChild>
-                    <a href={incubator.socialLinks.youtube} target="_blank" rel="noreferrer"><Youtube className="h-4 w-4 group-hover:text-accent transition-colors" /></a>
+                  <Button variant="outline" size="icon" className="h-10 w-10 border-red-500/20 bg-red-500/5 hover:bg-red-500/20 hover:border-red-500/50 text-red-500 transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_-3px_rgba(239,68,68,0.5)] group rounded-xl" asChild>
+                    <a href={incubator.socialLinks.youtube} target="_blank" rel="noreferrer"><Youtube className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" /></a>
                   </Button>
                 )}
               </div>
@@ -533,26 +534,30 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
             <Separator />
 
             {/* Ratings & Reviews Section */}
-            <div className="pb-12">
-              <h3 className="text-2xl font-bold mb-6 font-headline flex items-center gap-2">
-                <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
-                Ratings & Reviews ({reviews.length})
+            <div className="pb-12 mt-10">
+              <h3 className="text-3xl font-black mb-8 font-headline flex items-center gap-3">
+                <div className="flex items-center justify-center h-10 w-10 rounded-full bg-yellow-500/10 border border-yellow-500/20">
+                  <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 drop-shadow-md" />
+                </div>
+                <span>Ratings & Reviews <span className="text-muted-foreground/60 text-xl font-medium">({reviews.length})</span></span>
               </h3>
 
               {/* Add New Review */}
               {isLoggedIn ? (
-                <Card className="mb-8 border-border">
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-medium">Your Rating:</span>
-                      <div className="flex gap-1">
+                <Card className="mb-10 bg-gradient-to-br from-card to-card/50 border-primary/20 shadow-lg shadow-primary/5 overflow-hidden">
+
+                  <CardContent className="pt-6 space-y-5">
+                    <div className="flex items-center gap-5">
+                      <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Your Rating</span>
+                      <div className="flex gap-1.5 bg-background/50 p-2 rounded-xl border border-border/50">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
                             key={star}
                             onClick={() => setNewRating(star)}
-                            className="focus:outline-none transition-transform hover:scale-110"
+                            className="focus:outline-none transition-all hover:scale-125 disabled:cursor-not-allowed group"
+                            disabled={isSubmitting}
                           >
-                            <Star className={`h-6 w-6 ${star <= newRating ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`} />
+                            <Star className={`h-6 w-6 transition-colors duration-300 ${star <= newRating ? 'text-yellow-500 fill-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.6)]' : 'text-muted-foreground/30 group-hover:text-yellow-500/50'}`} />
                           </button>
                         ))}
                       </div>
@@ -561,57 +566,72 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
                       placeholder="Share your experience with this incubator..."
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      className="bg-background/50"
+                      className="bg-background/80 min-h-[100px] border-primary/10 focus-visible:border-primary/50 text-sm font-medium resize-none shadow-inner"
+                      disabled={isSubmitting}
                     />
-                    <Button
-                      onClick={handleSubmitReview}
-                      disabled={isSubmitting || !newComment.trim()}
-                      className="bg-accent text-white"
-                    >
-                      {isSubmitting ? "Submitting..." : "Post Review"}
-                    </Button>
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={handleSubmitReview}
+                        disabled={isSubmitting || !newComment.trim() || newRating === 0}
+                        className="bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all w-full sm:w-auto px-8"
+                      >
+                        {isSubmitting ? "Submitting..." : "Post Review"}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ) : (
-                <div className="p-4 bg-muted/30 border border-dashed rounded-lg text-center mb-8">
-                  <p className="text-sm text-muted-foreground">Please log in to share your review.</p>
+                <div className="p-8 bg-gradient-to-br from-muted/30 to-muted/10 border border-dashed border-primary/30 rounded-xl text-center mb-10 flex flex-col items-center justify-center">
+                  <MessageSquare className="h-10 w-10 text-primary/40 mb-3" />
+                  <p className="text-muted-foreground font-medium">Please log in to share your review.</p>
                 </div>
               )}
 
               {/* Review List */}
               <div className="space-y-6">
                 {isLoadingReviews ? (
-                  <div className="text-center py-8 text-muted-foreground">Loading reviews...</div>
+                  <div className="text-center py-12 text-muted-foreground font-medium flex flex-col items-center gap-3">
+                    <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                    Loading amazing experiences...
+                  </div>
                 ) : reviews.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">No reviews yet. Be the first to review!</div>
+                  <div className="text-center py-12 text-muted-foreground font-medium bg-muted/20 rounded-xl border border-border/50">
+                    <Star className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                    No reviews yet. Be the first to review!
+                  </div>
                 ) : (
                   reviews.map((review) => (
                     <div key={review.id} className="space-y-4">
-                      <Card className="relative bg-card/30 border-border/50">
-                        <CardContent className="pt-6">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <p className="font-semibold text-current">{review.userName}</p>
-                              <div className="flex gap-0.5 mt-1">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star key={i} className={`h-3 w-3 ${i < (review.rating || 0) ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`} />
-                                ))}
+                      <Card className="relative bg-card/40 backdrop-blur-md border border-border/50 hover:border-primary/30 transition-colors duration-300 shadow-sm group">
+                        <CardContent className="pt-6 pb-6">
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/30 shrink-0">
+                                <span className="font-bold text-primary font-headline text-lg">{review.userName?.[0]?.toUpperCase()}</span>
+                              </div>
+                              <div>
+                                <p className="font-bold text-foreground text-sm tracking-tight">{review.userName}</p>
+                                <div className="flex gap-0.5 mt-0.5">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star key={i} className={`h-3 w-3 ${i < (review.rating || 0) ? 'text-yellow-500 fill-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.4)]' : 'text-muted-foreground/30'}`} />
+                                  ))}
+                                </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest bg-muted/50 px-2 py-1 rounded-md">
                                 {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).replace(',', '')}
                               </span>
                               {review.user_id === currentUserId && (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-full">
                                       <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
+                                  <DropdownMenuContent align="end" className="border-border/50 backdrop-blur-md">
                                     <DropdownMenuItem
-                                      className="text-destructive focus:text-destructive cursor-pointer"
+                                      className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
                                       onClick={() => handleDeleteReview(review.id)}
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
@@ -622,25 +642,29 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
                               )}
                             </div>
                           </div>
-                          <p className="text-sm text-foreground/90 leading-relaxed">{review.comment}</p>
+                          <p className="text-sm text-foreground/90 leading-relaxed pl-1">{review.comment}</p>
 
                           {/* Reply Logic - Restricted to owner */}
                           {isLoggedIn && incubator.is_owner && (
-                            <div className="mt-4 pt-4 border-t border-border/20">
-                              <div className="flex gap-2">
+                            <div className="mt-5 pt-4 border-t border-border/30">
+                              <div className="flex gap-2 items-center bg-muted/20 p-2 rounded-lg border border-border/40 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+                                <CornerDownRight className="h-4 w-4 text-muted-foreground ml-2 shrink-0" />
                                 <Input
                                   placeholder="Reply to this review..."
-                                  className="h-8 text-xs bg-background/50"
+                                  className="h-9 text-xs bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-2"
                                   value={replyText[review.id] || ''}
                                   onChange={(e) => setReplyText(prev => ({ ...prev, [review.id]: e.target.value }))}
+                                  disabled={isSubmittingReply[review.id]}
                                 />
                                 <LoadingButton
                                   size="sm"
                                   variant="secondary"
-                                  className="h-8 px-3 text-xs"
+                                  className="h-8 px-4 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
                                   onClick={() => handleSubmitReply(review.id)}
                                   isLoading={isSubmittingReply[review.id]}
+                                  disabled={!replyText[review.id]?.trim()}
                                 >
+                                  {isSubmittingReply[review.id] ? '' : <Send className="h-3 w-3 mr-1 mt-[1px]" />}
                                   Reply
                                 </LoadingButton>
                               </div>
@@ -651,28 +675,32 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
 
                       {/* Threaded Replies */}
                       {review.replies?.length > 0 && (
-                        <div className="ml-8 space-y-4 border-l-2 border-accent/10 pl-6">
+                        <div className="ml-10 space-y-4 border-l-2 border-primary/20 pl-6 py-2 relative">
+                          <div className="absolute top-0 left-[-2px] h-full w-[2px] bg-gradient-to-b from-primary/40 to-transparent"></div>
                           {review.replies.map((reply) => (
-                            <div key={reply.id} className="flex gap-3">
-                              <CornerDownRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between mb-1">
+                            <div key={reply.id} className="flex gap-4 relative group">
+                              <div className="absolute top-3 -left-6 w-4 h-[2px] bg-primary/20"></div>
+                              <div className="flex-1 bg-card/60 backdrop-blur-sm border border-border/40 p-4 rounded-xl shadow-sm hover:border-primary/20 transition-colors">
+                                <div className="flex items-center justify-between mb-2">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-xs font-semibold text-current">{incubator.name}</span>
-                                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                                      <Building className="h-3 w-3 text-primary" />
+                                    </div>
+                                    <span className="text-xs font-bold text-primary">{incubator.name}</span>
+                                    <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-widest bg-muted/50 px-1.5 py-0.5 rounded ml-2">
                                       {new Date(reply.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).replace(',', '')}
                                     </span>
                                   </div>
                                   {reply.user_id === currentUserId && (
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                           <MoreHorizontal className="h-3 w-3" />
                                         </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
                                         <DropdownMenuItem
-                                          className="text-destructive focus:text-destructive cursor-pointer"
+                                          className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
                                           onClick={() => handleDeleteReview(reply.id, 'reply')}
                                         >
                                           <Trash2 className="h-3 w-3 mr-2" />
@@ -682,8 +710,7 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
                                     </DropdownMenu>
                                   )}
                                 </div>
-                                <p className="text-xs text-muted-foreground">{reply.comment}</p>
-
+                                <p className="text-sm text-foreground/80 leading-relaxed">{reply.comment}</p>
                               </div>
                             </div>
                           ))}

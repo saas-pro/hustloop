@@ -8,19 +8,19 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-    title: "Blog | Hustloop",
+    title: "Blog",
     description: "Read the latest insights, tips, and stories from the Hustloop community",
     alternates: {
         canonical: "https://hustloop.com/blog",
     },
     openGraph: {
-        title: "Blog | Hustloop",
+        title: "Blog",
         description: "Read the latest insights, tips, and stories from the Hustloop community",
         type: "website",
     },
     twitter: {
         card: "summary_large_image",
-        title: "Blog | Hustloop",
+        title: "Blog",
         description: "Read the latest insights, tips, and stories from the Hustloop community",
     },
 };

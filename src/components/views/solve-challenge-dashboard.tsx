@@ -20,7 +20,7 @@ import * as LucideIcons from "lucide-react";
 import type { LucideProps } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { View, SolveChallengeTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber, Submission } from "@/app/types";
+import type { View, SolveChallengeTab, UserRole, AppUser, BlogPost, EducationProgram, NewsletterSubscriber, Submission, founderRole } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -142,6 +142,7 @@ interface SolveChallengeDashboardViewProps {
     onOpenChange: (isOpen: boolean) => void;
     user: User;
     userRole: UserRole;
+    founderRole: founderRole;
     authProvider: AuthProvider;
     hasSubscription: boolean;
     setActiveView: (view: View) => void;
@@ -311,7 +312,8 @@ export default function SolveChallengeDashboardView({
     setActiveView,
     setUser,
     activateTab,
-    id
+    id,
+    founderRole
 }: SolveChallengeDashboardViewProps) {
     const router = useRouter();
     const [subscriptionReminder, setSubscriptionReminder] = useState<{
@@ -328,7 +330,6 @@ export default function SolveChallengeDashboardView({
     const [isLoadingPayment, setIsLoadingPayment] = useState(false);
     const [allPaymentMethods, setAllPaymentMethods] = useState<any[]>([]);
     const [commentingSubmissionId, setCommentingSubmissionId] = useState<string | null>(null);
-
 
 
     // Admin state
@@ -1310,14 +1311,14 @@ export default function SolveChallengeDashboardView({
     const [founder_role, setFounderRole] = useState<string | null>(null);
 
     useEffect(() => {
-        const founder_role = localStorage.getItem("founder_role");
+        const founder_role = founderRole;
         if (founder_role === "Solve Organisation's challenge") {
             setFounderRole(founder_role)
         } else {
             setIsTechTransfer(false)
             setisipOverview(false)
         }
-    }, []);
+    }, [founderRole]);
     const solveChallenge = ["overview", "submission", "team", "settings"];
     const pendingApprovalCount = users.filter(u => u.status === 'pending').length;
 
@@ -1711,7 +1712,7 @@ export default function SolveChallengeDashboardView({
 
     useEffect(() => {
         if (activateTab === 'ip/technologies') {
-            const role = localStorage.getItem("userRole")
+            const role = userRole
             if (role === "admin") {
                 fetchIps()
                     .then((ips: any) => {
@@ -1753,7 +1754,7 @@ export default function SolveChallengeDashboardView({
                     .catch((err) => toast({ title: "error", description: "Failed to fetch Ips", variant: "destructive" }));
             }
         }
-    }, [activateTab, id, fetchIps, toast, setGroupedIps]);
+    }, [activateTab, id, fetchIps, toast, setGroupedIps, userRole]);
 
     const [hasDraft, setHasDraft] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);

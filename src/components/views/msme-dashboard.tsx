@@ -73,6 +73,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { io, Socket } from 'socket.io-client';
+import { useAuth } from "@/providers/AuthContext";
 
 
 
@@ -355,7 +356,8 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
     const [isCollabEditMode, setIsCollabEditMode] = useState(false);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [isMsmerole, setisMsmeRole] = useState(false)
-    const isMsmeRole = localStorage.getItem("userRole");
+    const { userRole } = useAuth();
+    const isMsmeRole = userRole;
     const [isAdmin, setIsAdmin] = useState(false);
     const [statusUpdates, setStatusUpdates] = useState<Record<string, SolutionStatus>>({});
     const [isUpdating, setIsUpdating] = useState<Record<string, boolean>>({});
@@ -455,15 +457,14 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
     }, [getUsersCollaboration])
 
     useEffect(() => {
-        if (isMsmeRole === "msme") {
+        if (isMsmeRole === "organisation") {
             setisMsmeRole(true)
         }
     }, [isMsmeRole])
 
     useEffect(() => {
-        const userRole = localStorage.getItem("userRole");
         setIsAdmin(userRole === "admin");
-    }, []);
+    }, [userRole]);
 
     useEffect(() => {
         if (isMsmeRole) {

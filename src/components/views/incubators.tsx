@@ -248,68 +248,78 @@ export default function IncubatorsView({ isOpen, onOpenChange, isLoggedIn, hasSu
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {incubators.map((incubator, index) => {
                   return (
-                    <Card key={index} className="flex flex-col bg-card/40 backdrop-blur-md border-border/50 hover:border-accent/40 transition-all duration-300 group shadow-lg hover:shadow-accent/10 h-full overflow-hidden">
-                      <CardHeader className="p-0 relative h-32 bg-gradient-to-br from-accent/10 to-transparent flex items-center justify-center">
-                        <div className="absolute top-4 right-4 z-10">
-                          <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm border-accent/20 text-accent">
+                    <Card key={index} className="cursor-pointer flex flex-col relative overflow-hidden bg-gradient-to-br from-card to-card/60 backdrop-blur-xl border-border/40 hover:border-primary/50 transition-all duration-500 group shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(var(--primary-rgb),0.1)] h-full">
+                      {/* Suble background dynamic glow */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-0 pointer-events-none" />
+
+                      <CardHeader className="p-0 relative h-28 bg-gradient-to-b from-primary/10 via-card to-card flex items-center justify-center border-b border-white/5 z-10 overflow-hidden">
+                        {/* Decorative background circle */}
+                        <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/20 rounded-full blur-[40px] group-hover:bg-primary/30 transition-all duration-700" />
+                        <div className="absolute -bottom-8 -left-8 w-20 h-20 bg-accent/20 rounded-full blur-[30px] group-hover:bg-accent/30 transition-all duration-700" />
+
+                        <div className="absolute top-3 right-3 z-10">
+                          <Badge variant="secondary" className="bg-background/80 backdrop-blur-md border border-primary/20 text-primary shadow-sm uppercase tracking-widest text-[8px] font-bold py-0.5 px-2 group-hover:border-primary/40 transition-colors">
                             {incubator.type[0] || 'Incubator'}
                           </Badge>
                         </div>
-                        <div className="relative w-20 h-20 transition-all duration-500 group-hover:scale-110">
+                        <div className="relative w-16 h-16 transition-all duration-700 ease-out group-hover:scale-110 group-hover:-translate-y-1 drop-shadow-xl z-10">
                           {incubator.image ? (
                             <Image
                               src={'/icons/corporate-incu.png'}
                               alt={incubator.name}
                               fill
-                              className="object-contain"
+                              className="object-contain filter saturate-150 drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-accent/5 rounded-xl border border-accent/10">
-                              <span className="text-xl font-bold text-accent">{incubator.name.charAt(0)}</span>
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl border border-primary/20 shadow-inner group-hover:border-primary/40 transition-all">
+                              <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-br from-primary to-accent drop-shadow-sm">{incubator.name.charAt(0)}</span>
                             </div>
                           )}
                         </div>
                       </CardHeader>
 
-                      <CardContent className="flex-grow p-5 space-y-4">
+                      <CardContent className="flex-grow p-4 space-y-3.5 z-10">
                         <div className="space-y-1">
-                          <CardTitle className="text-xl font-bold font-headline transition-colors uppercase tracking-tight">{incubator.name}</CardTitle>
-                          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-widest leading-none">
-                            <MapPin className="h-3 w-3 text-blue-500" />
-                            <span>{incubator.location}</span>
+                          <CardTitle className="text-lg font-black font-headline transition-colors uppercase tracking-tight group-hover:text-primary drop-shadow-sm line-clamp-1">{incubator.name}</CardTitle>
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mt-1">
+                            <MapPin className="h-3 w-3 text-primary/80" />
+                            <span className="line-clamp-1">{incubator.location}</span>
                           </div>
                         </div>
 
-                        <CardDescription className="text-sm line-clamp-2 text-muted-foreground leading-relaxed">
+                        <CardDescription className="text-xs line-clamp-2 text-muted-foreground/90 font-medium leading-relaxed">
                           {incubator.description}
                         </CardDescription>
 
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
                           {incubator.focus.map(area => (
-                            <Badge key={area} variant="outline" className="text-[10px] py-0 border-blue-500/20 bg-blue-500/5 text-blue-300">
+                            <Badge key={area} variant="outline" className="text-[9px] py-0.5 px-2 rounded-md border-primary/20 bg-primary/5 text-primary/90 font-bold uppercase tracking-wider group-hover:bg-primary/10 hover:border-primary/40 transition-colors">
                               {area}
                             </Badge>
                           ))}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/30">
-                          <div className="text-left">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Supported</p>
-                            <p className="text-lg font-bold font-headline">{incubator.metrics.startupsSupported}</p>
+                        <div className="grid grid-cols-2 gap-2.5 mt-2 pt-3 border-t border-border/40">
+                          <div className="text-left bg-muted/40 rounded-lg p-2.5 border border-border/40 group-hover:border-primary/20 transition-colors duration-300">
+                            <p className="text-[8px] text-muted-foreground/80 font-black uppercase tracking-widest mb-1">Supported</p>
+                            <p className="text-base font-black font-headline text-foreground tracking-tight">{incubator.metrics.startupsSupported}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Funded (%)</p>
-                            <p className="text-lg font-bold font-headline text-blue-500">{incubator.metrics.fundedStartupsPercent}</p>
+                          <div className="text-left bg-muted/40 rounded-lg p-2.5 border border-border/40 group-hover:border-primary/20 transition-colors duration-300">
+                            <p className="text-[8px] text-muted-foreground/80 font-black uppercase tracking-widest mb-1">Funded (%)</p>
+                            <p className="text-base font-black font-headline bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent tracking-tight">{incubator.metrics.fundedStartupsPercent}</p>
                           </div>
                         </div>
                       </CardContent>
 
-                      <CardFooter className="p-5 pt-0">
+                      <CardFooter className="p-4 pt-0 z-10">
                         <Button
-                          className="w-full bg-accent hover:bg-accent/90 text-white font-semibold transition-all group-hover:shadow-[0_0_20px_-5px_rgba(var(--accent-rgb),0.4)]"
+                          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs tracking-widest uppercase transition-all duration-500 shadow-[0_4px_12px_-4px_rgba(var(--primary-rgb),0.4)] hover:shadow-[0_12px_20px_-4px_rgba(var(--primary-rgb),0.6)] group-hover:-translate-y-0.5 h-10 rounded-lg border-none relative overflow-hidden"
                           onClick={() => handleViewDetails(incubator)}
                         >
-                          Explore Program ({incubator.rating || 0} ★ | {incubator.reviews || 0} Reviews)
+                          <span className="relative z-10 flex items-center justify-center gap-1.5">
+                            Explore <span className="opacity-50 font-normal">|</span> {incubator.rating || 0} ★ <span className="opacity-50 font-normal">|</span> {incubator.reviews || 0}
+                          </span>
+                          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
                         </Button>
                       </CardFooter>
                     </Card>

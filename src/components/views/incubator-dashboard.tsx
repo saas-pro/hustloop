@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { VanityUrlInput } from "@/components/ui/vanity-url-input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -637,13 +638,15 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                         </CardContent>
                                     </Card>
                                 </TabsContent>
-                                <TabsContent value="submissions" className="mt-0 space-y-8">
+                                <TabsContent value="submissions" className="mt-5 space-y-8">
                                     <section>
-                                        <div className="flex justify-between items-center mb-4">
+                                        <div className="flex justify-between items-center mb-5">
                                             <h3 className="text-xl font-bold font-headline">My Incubator Profiles</h3>
-                                            <Button size="sm" onClick={() => { setEditingIncubatorId(null); profileForm.reset(emptyProfile); setActiveTab("profile"); }}>
-                                                <PlusCircle className="mr-2 h-4 w-4" /> Add New Profile
-                                            </Button>
+                                            {myIncubators.length === 0 && (
+                                                <Button size="sm" onClick={() => { setEditingIncubatorId(null); profileForm.reset(emptyProfile); setActiveTab("profile"); }}>
+                                                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Profile
+                                                </Button>
+                                            )}
                                         </div>
 
                                         {isFetchingMyIncubators ? (
@@ -747,132 +750,170 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                 <TabsContent value="profile" className="mt-0">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                         <CardHeader>
-                                            <CardTitle>Create/Edit Incubator Profile</CardTitle>
+                                            <CardTitle>{editingIncubatorId ? "Edit Incubator Profile" : "Create Incubator Profile"}</CardTitle>
                                             <CardDescription>This information will be publicly visible. Fill it out to attract founders.</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <Form {...profileForm}>
-                                                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8">
-                                                    <FormField control={profileForm.control} name="name" render={({ field }) => (
-                                                        <FormItem><FormLabel>Incubator Name</FormLabel><FormControl><Input placeholder="e.g., Nexus Hub" {...field} /></FormControl><FormMessage /></FormItem>
-                                                    )} />
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <FormField control={profileForm.control} name="type" render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Type</FormLabel>
-                                                                <FormControl>
-                                                                    <div className="flex gap-4">
-                                                                        {["Incubator", "Accelerator"].map((t) => (
-                                                                            <label key={t} className="flex items-center gap-2 cursor-pointer">
-                                                                                <input
-                                                                                    type="checkbox"
-                                                                                    className="rounded border-gray-300 text-primary focus:ring-primary"
-                                                                                    checked={Array.isArray(field.value) && field.value.includes(t)}
-                                                                                    onChange={(e) => {
-                                                                                        const currentValues = Array.isArray(field.value) ? field.value : [];
-                                                                                        const newValue = e.target.checked
-                                                                                            ? [...currentValues, t]
-                                                                                            : currentValues.filter((v: string) => v !== t);
-                                                                                        field.onChange(newValue);
-                                                                                    }}
-                                                                                />
-                                                                                <span className="text-sm">{t}</span>
-                                                                            </label>
-                                                                        ))}
+                                            {myIncubators.length > 0 && !editingIncubatorId ? (
+                                                <div className="text-center py-12 h-[45vh] flex justify-center items-center flex-col">
+                                                    <p className="text-muted-foreground mb-6">You have already created an incubator profile. You can only maintain one profile.</p>
+                                                    <Button onClick={() => handleEditIncubator(myIncubators[0])}>
+                                                        Edit Existing Profile
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <Form {...profileForm}>
+                                                    <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8">
+                                                        <FormField control={profileForm.control} name="name" render={({ field }) => (
+                                                            <FormItem><FormLabel>Incubator Name</FormLabel><FormControl><Input placeholder="e.g., Nexus Hub" {...field} /></FormControl><FormMessage /></FormItem>
+                                                        )} />
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <FormField control={profileForm.control} name="type" render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Type</FormLabel>
+                                                                    <FormControl>
+                                                                        <div className="flex gap-4">
+                                                                            {["Incubator", "Accelerator"].map((t) => (
+                                                                                <label key={t} className="flex items-center gap-2 cursor-pointer">
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                                                                                        checked={Array.isArray(field.value) && field.value.includes(t)}
+                                                                                        onChange={(e) => {
+                                                                                            const currentValues = Array.isArray(field.value) ? field.value : [];
+                                                                                            const newValue = e.target.checked
+                                                                                                ? [...currentValues, t]
+                                                                                                : currentValues.filter((v: string) => v !== t);
+                                                                                            field.onChange(newValue);
+                                                                                        }}
+                                                                                    />
+                                                                                    <span className="text-sm">{t}</span>
+                                                                                </label>
+                                                                            ))}
+                                                                        </div>
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )} />
+                                                            <FormField control={profileForm.control} name="location" render={({ field }) => (
+                                                                <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Bangalore, India" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                        </div>
+
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <FormField control={profileForm.control} name="contactEmail" render={({ field }) => (
+                                                                <FormItem><FormLabel>Contact Email</FormLabel><FormControl><Input placeholder="outreach@incubator.com" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                            <FormField control={profileForm.control} name="contactPhone" render={({ field }) => (
+                                                                <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input placeholder="+91 9123456789" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                        </div>
+
+                                                        <FormField control={profileForm.control} name="description" render={({ field }) => (
+                                                            <FormItem><FormLabel>Public Description</FormLabel><FormControl><Textarea rows={4} placeholder="Describe your incubator's mission and mandate." {...field} /></FormControl><FormMessage /></FormItem>
+                                                        )} />
+
+                                                        <div>
+                                                            <h3 className="text-lg font-medium mb-3">Focus Areas</h3>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                                                                {focusFields.map((field, index) => (
+                                                                    <div key={field.id} className="flex items-center gap-2">
+                                                                        <FormField control={profileForm.control} name={`focus.${index}.value`} render={({ field }) => (
+                                                                            <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., SaaS" {...field} /></FormControl><FormMessage /></FormItem>
+                                                                        )} />
+                                                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeFocus(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                                                     </div>
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )} />
-                                                        <FormField control={profileForm.control} name="location" render={({ field }) => (
-                                                            <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Bangalore, India" {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => appendFocus({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Focus Area</Button>
+                                                        </div>
 
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <FormField control={profileForm.control} name="contactEmail" render={({ field }) => (
-                                                            <FormItem><FormLabel>Contact Email</FormLabel><FormControl><Input placeholder="outreach@incubator.com" {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                        <FormField control={profileForm.control} name="contactPhone" render={({ field }) => (
-                                                            <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input placeholder="+91 9123456789" {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                    </div>
+                                                        <Separator />
+                                                        <h3 className="text-lg font-medium">Metrics</h3>
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                            <FormField control={profileForm.control} name="metrics.startupsSupported" render={({ field }) => (
+                                                                <FormItem><FormLabel className="text-xs">Startups Supported</FormLabel><FormControl><Input placeholder="e.g., 201" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                            <FormField control={profileForm.control} name="metrics.fundedStartupsPercent" render={({ field }) => (
+                                                                <FormItem><FormLabel className="text-xs">Funded Startups (%)</FormLabel><FormControl><Input placeholder="e.g., 40%" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                            <FormField control={profileForm.control} name="metrics.startupsOutsideLocationPercent" render={({ field }) => (
+                                                                <FormItem><FormLabel className="text-xs">Startups Outside (%)</FormLabel><FormControl><Input placeholder="e.g., 41%" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                            <FormField control={profileForm.control} name="metrics.totalFundingRaised" render={({ field }) => (
+                                                                <FormItem><FormLabel className="text-xs">Total Funding Raised</FormLabel><FormControl><Input placeholder="e.g., ₹4,854M" {...field} /></FormControl><FormMessage /></FormItem>
+                                                            )} />
+                                                        </div>
 
-                                                    <FormField control={profileForm.control} name="description" render={({ field }) => (
-                                                        <FormItem><FormLabel>Public Description</FormLabel><FormControl><Textarea rows={4} placeholder="Describe your incubator's mission and mandate." {...field} /></FormControl><FormMessage /></FormItem>
-                                                    )} />
+                                                        <Separator />
+                                                        <h3 className="text-lg font-medium">Public Links</h3>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <FormField control={profileForm.control} name="socialLinks.website" render={({ field }) => {
+                                                                const baseUrl = "https://";
+                                                                const val = field.value || "";
+                                                                const displayValue = val.startsWith(baseUrl) ? val.slice(baseUrl.length) : (val.startsWith("http://") ? val.slice(7) : val);
+                                                                return (
+                                                                    <FormItem><FormLabel>Website URL</FormLabel><FormControl><VanityUrlInput baseUrl={baseUrl} placeholder="yourwebsite.com" value={displayValue} onChange={(v) => field.onChange(v ? baseUrl + v : "")} /></FormControl><FormMessage /></FormItem>
+                                                                );
+                                                            }} />
+                                                            <FormField control={profileForm.control} name="socialLinks.linkedin" render={({ field }) => {
+                                                                const baseUrl = "https://linkedin.com/in/";
+                                                                const val = field.value || "";
+                                                                const displayValue = val.startsWith(baseUrl) ? val.slice(baseUrl.length) : val;
+                                                                return (
+                                                                    <FormItem><FormLabel>LinkedIn URL</FormLabel><FormControl><VanityUrlInput baseUrl={baseUrl} placeholder="username" value={displayValue} onChange={(v) => field.onChange(v ? baseUrl + v : "")} /></FormControl><FormMessage /></FormItem>
+                                                                );
+                                                            }} />
+                                                            <FormField control={profileForm.control} name="socialLinks.twitter" render={({ field }) => {
+                                                                const baseUrl = "https://x.com/";
+                                                                const val = field.value || "";
+                                                                const displayValue = val.startsWith(baseUrl) ? val.slice(baseUrl.length) : val;
+                                                                return (
+                                                                    <FormItem><FormLabel>Twitter/X URL</FormLabel><FormControl><VanityUrlInput baseUrl={baseUrl} placeholder="username" value={displayValue} onChange={(v) => field.onChange(v ? baseUrl + v : "")} /></FormControl><FormMessage /></FormItem>
+                                                                );
+                                                            }} />
+                                                            <FormField control={profileForm.control} name="socialLinks.facebook" render={({ field }) => {
+                                                                const baseUrl = "https://facebook.com/";
+                                                                const val = field.value || "";
+                                                                const displayValue = val.startsWith(baseUrl) ? val.slice(baseUrl.length) : val;
+                                                                return (
+                                                                    <FormItem><FormLabel>Facebook URL</FormLabel><FormControl><VanityUrlInput baseUrl={baseUrl} placeholder="username" value={displayValue} onChange={(v) => field.onChange(v ? baseUrl + v : "")} /></FormControl><FormMessage /></FormItem>
+                                                                );
+                                                            }} />
+                                                            <FormField control={profileForm.control} name="socialLinks.instagram" render={({ field }) => {
+                                                                const baseUrl = "https://instagram.com/";
+                                                                const val = field.value || "";
+                                                                const displayValue = val.startsWith(baseUrl) ? val.slice(baseUrl.length) : val;
+                                                                return (
+                                                                    <FormItem><FormLabel>Instagram URL</FormLabel><FormControl><VanityUrlInput baseUrl={baseUrl} placeholder="username" value={displayValue} onChange={(v) => field.onChange(v ? baseUrl + v : "")} /></FormControl><FormMessage /></FormItem>
+                                                                );
+                                                            }} />
+                                                            <FormField control={profileForm.control} name="socialLinks.youtube" render={({ field }) => {
+                                                                const baseUrl = "https://youtube.com/@";
+                                                                const val = field.value || "";
+                                                                const displayValue = val.startsWith(baseUrl) ? val.slice(baseUrl.length) : val;
+                                                                return (
+                                                                    <FormItem><FormLabel>YouTube URL</FormLabel><FormControl><VanityUrlInput baseUrl={baseUrl} placeholder="channel" value={displayValue} onChange={(v) => field.onChange(v ? baseUrl + v : "")} /></FormControl><FormMessage /></FormItem>
+                                                                );
+                                                            }} />
+                                                        </div>
 
-                                                    <div>
-                                                        <h3 className="text-lg font-medium mb-3">Focus Areas</h3>
+                                                        <Separator />
+                                                        <h3 className="text-lg font-medium mb-3">Recognised and Funded by</h3>
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                                                            {focusFields.map((field, index) => (
+                                                            {partnerFields.map((field, index) => (
                                                                 <div key={field.id} className="flex items-center gap-2">
-                                                                    <FormField control={profileForm.control} name={`focus.${index}.value`} render={({ field }) => (
-                                                                        <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., SaaS" {...field} /></FormControl><FormMessage /></FormItem>
+                                                                    <FormField control={profileForm.control} name={`partners.${index}.value`} render={({ field }) => (
+                                                                        <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., MeitY" {...field} /></FormControl><FormMessage /></FormItem>
                                                                     )} />
-                                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeFocus(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removePartner(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => appendFocus({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Focus Area</Button>
-                                                    </div>
-
-                                                    <Separator />
-                                                    <h3 className="text-lg font-medium">Metrics</h3>
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                        <FormField control={profileForm.control} name="metrics.startupsSupported" render={({ field }) => (
-                                                            <FormItem><FormLabel className="text-xs">Startups Supported</FormLabel><FormControl><Input placeholder="e.g., 201" {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                        <FormField control={profileForm.control} name="metrics.fundedStartupsPercent" render={({ field }) => (
-                                                            <FormItem><FormLabel className="text-xs">Funded Startups (%)</FormLabel><FormControl><Input placeholder="e.g., 40%" {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                        <FormField control={profileForm.control} name="metrics.startupsOutsideLocationPercent" render={({ field }) => (
-                                                            <FormItem><FormLabel className="text-xs">Startups Outside (%)</FormLabel><FormControl><Input placeholder="e.g., 41%" {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                        <FormField control={profileForm.control} name="metrics.totalFundingRaised" render={({ field }) => (
-                                                            <FormItem><FormLabel className="text-xs">Total Funding Raised</FormLabel><FormControl><Input placeholder="e.g., ₹4,854M" {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                    </div>
-
-                                                    <Separator />
-                                                    <h3 className="text-lg font-medium">Public Links</h3>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        <FormField control={profileForm.control} name="socialLinks.website" render={({ field }) => (
-                                                            <FormItem><FormLabel>Website URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                        <FormField control={profileForm.control} name="socialLinks.linkedin" render={({ field }) => (
-                                                            <FormItem><FormLabel>LinkedIn URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                        <FormField control={profileForm.control} name="socialLinks.twitter" render={({ field }) => (
-                                                            <FormItem><FormLabel>Twitter/X URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                        <FormField control={profileForm.control} name="socialLinks.facebook" render={({ field }) => (
-                                                            <FormItem><FormLabel>Facebook URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                        <FormField control={profileForm.control} name="socialLinks.instagram" render={({ field }) => (
-                                                            <FormItem><FormLabel>Instagram URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                        <FormField control={profileForm.control} name="socialLinks.youtube" render={({ field }) => (
-                                                            <FormItem><FormLabel>YouTube URL</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )} />
-                                                    </div>
-
-                                                    <Separator />
-                                                    <h3 className="text-lg font-medium mb-3">Recognised and Funded by</h3>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                                                        {partnerFields.map((field, index) => (
-                                                            <div key={field.id} className="flex items-center gap-2">
-                                                                <FormField control={profileForm.control} name={`partners.${index}.value`} render={({ field }) => (
-                                                                    <FormItem className="flex-grow"><FormControl><Input placeholder="e.g., MeitY" {...field} /></FormControl><FormMessage /></FormItem>
-                                                                )} />
-                                                                <Button type="button" variant="ghost" size="icon" onClick={() => removePartner(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => appendPartner({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Agency</Button>
+                                                        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => appendPartner({ value: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Agency</Button>
 
 
-                                                    {/* Unnecessary fields commented out per user request
+                                                        {/* Unnecessary fields commented out per user request
                                                     <Separator />
                                                     <h3 className="text-lg font-medium">Program Details</h3>
                                                     <FormField control={profileForm.control} name="details.overview" render={({ field }) => (
@@ -942,12 +983,13 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                     <Button type="button" variant="outline" size="sm" onClick={() => appendTimeline({ event: '', period: '' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Timeline Event</Button>
                                                     */}
 
-                                                    <Button type="submit" className="w-full mt-4" disabled={profileForm.formState.isSubmitting}>
-                                                        {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                        Save Public Profile
-                                                    </Button>
-                                                </form>
-                                            </Form>
+                                                        <Button type="submit" className="w-full mt-4" disabled={profileForm.formState.isSubmitting}>
+                                                            {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                            {editingIncubatorId ? "Update Public Profile" : "Save Public Profile"}
+                                                        </Button>
+                                                    </form>
+                                                </Form>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </TabsContent>

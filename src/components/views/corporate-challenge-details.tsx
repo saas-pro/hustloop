@@ -71,6 +71,7 @@ import { toast } from '@/hooks/use-toast';
 import { string } from 'zod';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/providers/AuthContext';
 
 interface CorporateChallengeDetailsProps {
   challenge: CorporateChallenge | null;
@@ -227,7 +228,10 @@ export default function CorporateChallengeDetails({
     const el = e.currentTarget;
     setScrolled(el.scrollTop > 0);
   };
-
+  const {
+    userRole: user_role,
+    founderRole: founder_role,
+  } = useAuth();
   useEffect(() => {
     if (!challenge) return;
 
@@ -391,18 +395,16 @@ export default function CorporateChallengeDetails({
   const termsRef = useRef<HTMLDivElement>(null);
 
   if (!challenge) return null;
-  const userRole = localStorage.getItem("userRole") || "";
-  const founderRole = localStorage.getItem("founder_role") || "";
+  const role = user_role || "";
+
+  const isFounder = role === "founder";
 
   const isAllowedFounder =
-    userRole.includes("founder") &&
-    founderRole === "Solve Organisation's challenge";
+    isFounder && founder_role === "Solve Organisation's challenge";
 
   const isOtherUsers =
-    userRole.includes("incubator") ||
-    userRole.includes("mentor") ||
-    userRole.includes("organisation") ||
-    (userRole.includes("founder") && !isAllowedFounder);
+    ["incubator", "mentor", "organisation"].includes(role) ||
+    (isFounder && !isAllowedFounder);
 
   const isDisabled = !isLoggedIn || isOtherUsers;
   let tooltipContent = null;
@@ -1021,7 +1023,7 @@ export default function CorporateChallengeDetails({
                       Updates and important information for this challenge.
                     </p>
                   </div>
-                  {localStorage.getItem("userRole") === "admin" && (
+                  {user_role === "admin" && (
                     <Button
                       size="sm"
                       className="w-full md:w-auto mt-3 md:mt-0"
@@ -1107,7 +1109,7 @@ export default function CorporateChallengeDetails({
                                   )}
                                 </div>
 
-                                {localStorage.getItem("userRole") === "admin" && (
+                                {user_role === "admin" && (
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">

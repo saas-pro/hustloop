@@ -34,6 +34,7 @@ import Image from "next/image";
 import { Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { useAuth } from "@/providers/AuthContext";
 
 
 const settingsFormSchema = z.object({
@@ -540,15 +541,14 @@ export default function SubmitIPDashboard({ isOpen, setUser, onOpenChange, user,
 
 
     const [isTechTransfer, setIsTechTransfer] = useState(false)
-
+    const { founderRole } = useAuth();
     useEffect(() => {
-        const founder_role = localStorage.getItem("founder_role");
-        if (founder_role === "List a technology for licensing") {
+        if (founderRole === "List a technology for licensing") {
             setIsTechTransfer(true);
         } else {
             setIsTechTransfer(false)
         }
-    }, []);
+    }, [founderRole]);
     const adminTabs = ["overview", "users", "subscribers", "ip/technologies", "blog", "sessions", "settings"];
     const founderTabs = ["overview", "organisation", "incubators", "mentors", "submission", "settings"];
     const availableTabs = userRole === 'admin' ? adminTabs : founderTabs;
