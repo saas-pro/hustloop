@@ -1236,10 +1236,16 @@ export default function HomeView({
                                 value={field.value || ''}
                               />
                             </FormControl>
-                            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${(field.value?.length ?? 0) > 10 ? "text-red-500" : "text-muted-foreground"}`}>
+                            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${(field.value?.length ?? 0) > 0 && (field.value?.length ?? 0) < 10
+                                ? "text-amber-500"
+                                : "text-muted-foreground"
+                              }`}>
                               {(field.value?.length ?? 0)}/10
                             </span>
                           </div>
+                          {(field.value?.length ?? 0) > 0 && (field.value?.length ?? 0) < 10 && (
+                            <p className="text-xs text-amber-500 mt-1">Phone number must be 10 digits.</p>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}

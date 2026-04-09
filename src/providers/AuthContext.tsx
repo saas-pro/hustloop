@@ -57,6 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('token');
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('hasSubscription');
+        localStorage.removeItem('appliedPrograms');
+        localStorage.removeItem('authProvider');
+        localStorage.removeItem('founder_role');
+        window.dispatchEvent(new Event('storage'));
         setIsLoading(false);
     }, []);
 

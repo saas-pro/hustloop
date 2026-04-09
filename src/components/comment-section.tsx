@@ -224,7 +224,16 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
             });
         });
 
+        // Update the status badge in real-time when admin changes the IP approval status
+        socket.on('ip_status_updated', (data: { id: string; approvalStatus: string }) => {
+            if (String(data.id) === String(submissionId)) {
+                setIpDetails(prev => prev ? { ...prev, approvalStatus: data.approvalStatus } : prev);
+            }
+        });
+
         return () => {
+            socket.off('new_comment_added');
+            socket.off('ip_status_updated');
             socket.disconnect();
         };
     }, [submissionId]);
@@ -672,7 +681,7 @@ export function CommentSection({ submissionId, onClose }: CommentSectionProps) {
                                 <div className='p-2'>
                                     <MarkdownViewer content={ipDetails.describetheTech} />
                                 </div>
-                                <p className="mt-1 text-muted-foreground">Submitted By: <span className="font-semibold">{ipDetails.name}</span> from <span className="italic">{ipDetails.organization}</span></p>
+                                <p className="mt-1 text-muted-foreground">Submitted By: <span className="font-headline">{ipDetails.name}</span> from <span className="italic">{ipDetails.organization}</span></p>
                                 {Array.isArray(ipDetails.supportingFile) ? (
                                     <div className="flex flex-col gap-2">
                                         {ipDetails.supportingFile.map((url, index) => (

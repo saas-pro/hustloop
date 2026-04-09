@@ -1899,7 +1899,7 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                                                                         <DialogDescription>
                                                                             Are you sure you want to submit your profile?
                                                                             <br />
-                                                                            <span className="text-red-500">Please type <strong>{"confirm"}</strong> below to proceed.</span>
+                                                                            <span className="text-red-500">Please type <strong className="font-headline">{"confirm"}</strong> below to proceed.</span>
                                                                         </DialogDescription>
                                                                     </DialogHeader>
 

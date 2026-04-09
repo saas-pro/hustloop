@@ -192,7 +192,7 @@ export default function AdminIncubatorsView() {
                                         <FormItem>
                                             <FormLabel className="text-primary font-bold">Notification Email Address *</FormLabel>
                                             <FormControl><Input placeholder="Email to notify..." type="email" {...field} className="border-primary/50" /></FormControl>
-                                            <p className="text-xs text-muted-foreground">This email will receive the "Profile Created" notification.</p>
+                                            <p className="text-xs text-muted-foreground">This email will receive the &quot;Profile Created&quot; notification.</p>
                                             <FormMessage />
                                         </FormItem>
                                     )} />

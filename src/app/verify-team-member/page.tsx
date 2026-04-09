@@ -8,33 +8,41 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { API_BASE_URL } from "@/lib/api"
+import { useAuth } from "@/providers/AuthContext"
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth"
+import { AuthProvider, signOut } from "firebase/auth"
 
 function VerifyContent() {
     const searchParams = useSearchParams()
     const token = searchParams.get("token")
     const router = useRouter()
     const { toast } = useToast()
-
+    const { logout: authLogout, setAuthData, isLoggedIn } = useAuth()
+    const { auth } = useFirebaseAuth()
+    const [authProvider, setAuthProvider] = useState<AuthProvider | null>(null);
     const [status, setStatus] = useState<"loading" | "invalid" | "expired" | "error" | "success" | "already_invited">("loading")
     const [expiredData, setExpiredData] = useState<{ email: string; solution_id: string } | null>(null)
     const [isResending, setIsResending] = useState(false)
 
     useEffect(() => {
-        const existingToken = localStorage.getItem("token");
-        if (existingToken) {
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('user');
-            localStorage.removeItem('hasSubscription');
-            localStorage.removeItem('appliedPrograms');
-            localStorage.removeItem('token');
-            localStorage.removeItem('authProvider');
-            localStorage.removeItem('founder_role');
-
-            window.dispatchEvent(new Event('storage'));
+        const handleLogout = async () => {
+            if (auth) {
+                try {
+                    await signOut(auth);
+                } catch (error) {
+                    console.error("Logout failed:", error);
+                }
+            }
+            authLogout();
             toast({
                 title: "Please login again",
             });
+        };
+
+        const existingToken = localStorage.getItem("token");
+        if (existingToken && isLoggedIn) {
+            setAuthData({ isLoggedIn: false, user: null, userRole: null, founderRole: null, hasSubscription: false })
+            handleLogout();
         }
 
         if (!token) {
@@ -120,7 +128,7 @@ function VerifyContent() {
         };
 
         verify()
-    }, [token, router, toast])
+    }, [token, router, toast, authLogout, auth, isLoggedIn, setAuthData])
 
     const handleResend = async () => {
         if (!expiredData) return

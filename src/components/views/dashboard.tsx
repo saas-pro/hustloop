@@ -1945,6 +1945,36 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
             }
         }, [techTransferIps, statusUpdates]);
 
+        // Real-time socket listener for IP status updates
+        useEffect(() => {
+            if (techTransferIps.length === 0) return;
+
+            const socket: Socket = io(`${API_BASE_URL}`, {
+                path: '/socket.io',
+                transports: ['websocket', 'polling']
+            });
+
+            techTransferIps.forEach(ip => {
+                socket.emit('join', `ip_${ip.id}`);
+            });
+
+            socket.on('ip_status_updated', (data: { id: string; approvalStatus: string; ipTitle: string }) => {
+                setTechTransferIps(prev =>
+                    prev.map(ip =>
+                        ip.id === data.id
+                            ? { ...ip, approvalStatus: data.approvalStatus as TechTransferIP['approvalStatus'] }
+                            : ip
+                    )
+                );
+            });
+
+            return () => {
+                techTransferIps.forEach(ip => socket.emit('leave', `ip_${ip.id}`));
+                socket.off('ip_status_updated');
+                socket.disconnect();
+            };
+        }, [techTransferIps.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
         const handleActionClick = (ipId: string, newStatus: "approved" | "rejected" | "needInfo") => {
             setStatusUpdates((prev) => ({
                 ...prev,
@@ -2452,7 +2482,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                 <SidebarHeader className="h-14 flex items-start relative right-0 justify-start border-b border-border/50">
                                     <SidebarTrigger className="h-8 w-8 text-muted-foreground hover:text-accent-foreground" />
                                 </SidebarHeader>
-                                <SidebarContent className="p-2">
+                                <SidebarContent className="p-2 overflow-y-auto group-data-[state=expanded]:overflow-y-auto group-data-[state=collapsed]:overflow-hidden scrollbar-hide">
                                     <SidebarGroup>
                                         <SidebarGroupContent>
                                             <SidebarMenu>
@@ -2492,11 +2522,10 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                                     setActiveTab(tab as DashboardTab);
                                                                 }}
                                                                 tooltip={tab}
-                                                                className={`capitalize transition-all ${
-                                                                    activeTab === tab 
-                                                                    ? "bg-primary text-primary-foreground shadow-sm group-data-[state=collapsed]:rounded-l-2xl group-data-[state=collapsed]:rounded-r-none group-data-[state=collapsed]:ml-1" 
+                                                                className={`capitalize transition-all ${activeTab === tab
+                                                                    ? "bg-primary text-primary-foreground shadow-sm group-data-[state=collapsed]:rounded-l-2xl group-data-[state=collapsed]:rounded-r-none group-data-[state=collapsed]:ml-1"
                                                                     : ""
-                                                                }`}
+                                                                    }`}
                                                             >
                                                                 <Icon className="h-5 w-5" />
                                                                 <span>{tab}</span>
@@ -2540,7 +2569,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                     <SidebarTrigger className="h-9 w-9" />
                                     <span className="ml-4 font-bold capitalize">{activeTab}</span>
                                 </div>
-                                <div className={cn("flex-grow overflow-y-auto pb-6 w-full", isMobile ? "px-4 pt-4" : "px-6")} >
+                                <div className={cn("flex-grow overflow-y-auto scrollbar-hide pb-6 w-full", isMobile ? "px-4 pt-4" : "px-6")} >
                                     <TabsContent value="plans" className="mt-0 outline-none">
                                         <PlansManagementView />
                                     </TabsContent>
@@ -3664,12 +3693,12 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                             <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                                                 <CardHeader>
                                                                     <CardTitle>Ip/Technologies</CardTitle>
-                                                                    <CardDescription>Approve, Reject, or delete IP&apos;s.</CardDescription>
+                                                                    <CardDescription className="font-thin">Approve, Reject, or delete IP&apos;s.</CardDescription>
                                                                 </CardHeader>
                                                                 <CardContent>
                                                                     <Accordion type="single" collapsible className="w-full" value={expandedAccordion}
                                                                         onValueChange={setExpandedAccordion}>
-                                                                        {Object.keys(groupedIps).map((organizationName) => (
+                                                                        {Object.keys(groupedIps).slice().reverse().map((organizationName) => (
                                                                             <AccordionItem value={`org-${organizationName}`} key={organizationName} className="border-b">
                                                                                 <AccordionTrigger className="flex items-center justify-between gap-4 p-4 hover:no-underline data-[state=open]:bg-muted/50 rounded-md transition-colors">
                                                                                     <p className="font-medium truncate">
@@ -3681,12 +3710,12 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                                                 </AccordionTrigger>
                                                                                 <AccordionContent className="p-4">
                                                                                     <div className="space-y-4">
-                                                                                        {groupedIps[organizationName].map((ip) => (
+                                                                                        {groupedIps[organizationName].slice().reverse().map((ip) => (
                                                                                             <div
                                                                                                 key={ip.id}
                                                                                                 id={ip.id}
                                                                                                 onClick={(e) => setCommentingSubmissionId(ip.id)}
-                                                                                                className={`border rounded-md p-4 space-y-2 transition-all cursor-pointer hover:bg-accent/20 hover:text-accent-foreground focus:outline-none focus:ring-2 
+                                                                                                className={`border font-headline rounded-md p-4 space-y-2 transition-all cursor-pointer hover:bg-accent/20 hover:text-accent-foreground focus:outline-none focus:ring-2 
                                                                         ${highlightedId === ip.id ? "highlight" : ""}
                                                                         focus:ring-ring`}
                                                                                                 tabIndex={0}
@@ -3745,11 +3774,11 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                                                                 </div>
                                                                                                 <div className="text-sm text-muted-foreground space-y-1" >
                                                                                                     <p>
-                                                                                                        <strong>Inventor:</strong> {ip.firstName} {ip.lastName}
+                                                                                                        <strong className="font-headline">Inventor:</strong> {ip.firstName} {ip.lastName}
                                                                                                     </p>
                                                                                                     <div className="max-h-24 overflow-y-auto pr-2">
                                                                                                         <p className="line-clamp-3">
-                                                                                                            <strong>Summary: </strong>
+                                                                                                            <strong className="font-headline">Summary: </strong>
                                                                                                             {ip.summary}
                                                                                                         </p>
                                                                                                     </div>

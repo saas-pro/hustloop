@@ -625,7 +625,8 @@ export default function CorporateChallengeDetails({
                 {attachments?.length > 0 && (
                   <div>
                     <h2 className="text-lg font-semibold mb-2">Attachments</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 ${({ 1: 'lg:grid-cols-1', 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4', 5: 'lg:grid-cols-5' } as Record<number, string>)[Math.min(attachments.length, 5)] ?? 'lg:grid-cols-5'
+                      }`}>
                       {attachments.map((fileUrl: string, index: number) => {
                         const fileName = fileUrl.split("/").pop();
                         return (

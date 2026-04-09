@@ -40,6 +40,7 @@ import MarkdownEditor from "../ui/markdown";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from "remark-gfm";
 import { useSearchParams } from "next/navigation";
+import io from 'socket.io-client';
 import { ContributionGraph } from "../ui/contribution-graph";
 import { EmailUpdateForm } from "../ui/EmailUpdateForm";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
@@ -1279,6 +1280,40 @@ export default function ListTechnologyDashboard({ isOpen, setUser, founderRole, 
         }
     }, [activeTab, toast]);
 
+    // Real-time socket listener: updates mySubmissions status when admin changes it
+    useEffect(() => {
+        if (mySubmissions.length === 0) return;
+
+        const socket = io(API_BASE_URL, {
+            path: '/socket.io',
+            transports: ['websocket', 'polling']
+        });
+
+        mySubmissions.forEach(ip => {
+            socket.emit('join', `ip_${ip.id}`);
+        });
+
+        socket.on('ip_status_updated', (data: { id: string; approvalStatus: string; ipTitle: string }) => {
+            setMySubmissions(prev =>
+                prev.map(ip =>
+                    ip.id === data.id
+                        ? { ...ip, approvalStatus: data.approvalStatus }
+                        : ip
+                )
+            );
+            toast({
+                title: '🔔 Status Update',
+                description: `Your IP "${data.ipTitle}" status changed to: ${data.approvalStatus}`,
+            });
+        });
+
+        return () => {
+            mySubmissions.forEach(ip => socket.emit('leave', `ip_${ip.id}`));
+            socket.off('ip_status_updated');
+            socket.disconnect();
+        };
+    }, [mySubmissions.length, toast]); // eslint-disable-line react-hooks/exhaustive-deps
+
     const useGroupedIps = (techTransferIps: TechTransferIP[]) => {
         const [groupedIps, setGroupedIps] = useState<Record<string, TechTransferIP[]>>({});
         const [statusUpdates, setStatusUpdates] = useState<Record<string, "approved" | "rejected" | "needInfo">>({});
@@ -1901,7 +1936,7 @@ export default function ListTechnologyDashboard({ isOpen, setUser, founderRole, 
                                                 <p>You have no active submissions.</p>
                                             ) : (
                                                 <div className="space-y-4">
-                                                    {mySubmissions.map((submission) => (
+                                                    {mySubmissions.slice().reverse().map((submission) => (
                                                         <div
                                                             key={submission.id}
                                                             onClick={(e) => { e.stopPropagation(); setCommentingSubmissionId(submission.id) }}
