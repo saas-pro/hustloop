@@ -410,7 +410,7 @@ export default function CorporateChallengeDetails({
   let tooltipContent = null;
   if (!isLoggedIn) {
     tooltipContent = <p>Please login to view the problem statement&apos;s</p>;
-  } else if (!hasSubscription) {
+  } else if (!hasSubscription && isAllowedFounder) {
     tooltipContent = (
       <p>Subscribe to a plan to view and submit the solution</p>
     );

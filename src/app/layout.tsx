@@ -119,7 +119,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-background font-sans">
+      <body className="bg-background font-sans" suppressHydrationWarning>
         <AuthProvider>
           <ThemeProvider>
             <div className="flex-grow ">

@@ -2474,9 +2474,9 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                         </DialogDescription>
                     </DialogHeader>
                 )}
-                <div className="flex-grow flex min-h-0 overflow-hidden">
+                <div className="flex-grow flex min-h-0 overflow-hidden min-w-0">
                     <SidebarProvider defaultOpen={isSidebarMinimized}>
-                        <Tabs value={activeTab} className="flex flex-grow min-h-0">
+                        <Tabs value={activeTab} className="flex flex-grow min-h-0 min-w-0">
                             {/* Vertical Collapsible Sidebar */}
                             <Sidebar collapsible="icon" className="border-r border-border">
                                 <SidebarHeader className="h-14 flex items-start relative right-0 justify-start border-b border-border/50">
@@ -2563,13 +2563,13 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                             </Sidebar>
 
                             {/* Main Content Area */}
-                            <SidebarInset className="flex-grow flex flex-col min-h-0 bg-background/50">
+                            <SidebarInset className="flex-grow flex flex-col min-w-0 min-h-0 bg-background/50">
                                 {/* Mobile Header with Trigger */}
                                 <div className="md:hidden flex items-center h-14 border-b border-border bg-muted/30 px-4 py-12 rounded-lg">
                                     <SidebarTrigger className="h-9 w-9" />
                                     <span className="ml-4 font-bold capitalize">{activeTab}</span>
                                 </div>
-                                <div className={cn("flex-grow overflow-y-auto scrollbar-hide pb-6 w-full", isMobile ? "px-4 pt-4" : "px-6")} >
+                                <div className={cn("flex-grow overflow-y-auto scrollbar-hide pb-6 w-full min-w-0", isMobile ? "px-4 pt-4" : "px-6")} >
                                     <TabsContent value="plans" className="mt-0 outline-none">
                                         <PlansManagementView />
                                     </TabsContent>
@@ -3168,11 +3168,15 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                                         <ResponsiveContainer width="100%" height={280}>
                                                                             <PieChart>
                                                                                 <Pie
-                                                                                    data={[
-                                                                                        { name: 'Used', value: dashboardStats.stats.tokens_used },
-                                                                                        { name: 'Unused', value: dashboardStats.stats.tokens_unused },
-                                                                                        { name: 'Submitted', value: dashboardStats.stats.unique_submissions },
-                                                                                    ].filter(d => d.value > 0)}
+                                                                                    data={
+                                                                                        (dashboardStats.stats.tokens_used > 0 || dashboardStats.stats.tokens_unused > 0 || dashboardStats.stats.unique_submissions > 0)
+                                                                                            ? [
+                                                                                                { name: 'Used', value: dashboardStats.stats.tokens_used },
+                                                                                                { name: 'Unused', value: dashboardStats.stats.tokens_unused },
+                                                                                                { name: 'Submitted', value: dashboardStats.stats.unique_submissions },
+                                                                                            ].filter(d => d.value > 0)
+                                                                                            : [{ name: 'No Data', value: 1 }]
+                                                                                    }
                                                                                     dataKey="value"
                                                                                     nameKey="name"
                                                                                     cx="50%"
@@ -3194,14 +3198,23 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                                                     animationDuration={400}
                                                                                     animationEasing="ease-in-out"
                                                                                 >
-                                                                                    <Cell fill="#10b981" />
-                                                                                    <Cell fill="#6366f1" />
-                                                                                    <Cell fill="#f97316" />
+                                                                                    {(dashboardStats.stats.tokens_used > 0 || dashboardStats.stats.tokens_unused > 0 || dashboardStats.stats.unique_submissions > 0)
+                                                                                        ? [
+                                                                                            dashboardStats.stats.tokens_used > 0 && <Cell key="used" fill="#10b981" />,
+                                                                                            dashboardStats.stats.tokens_unused > 0 && <Cell key="unused" fill="#6366f1" />,
+                                                                                            dashboardStats.stats.unique_submissions > 0 && <Cell key="submitted" fill="#f97316" />
+                                                                                        ].filter(Boolean)
+                                                                                        : <Cell key="no-data" fill="#e5e7eb" />
+                                                                                    }
                                                                                 </Pie>
                                                                                 <Tooltip
                                                                                     contentStyle={{
                                                                                         borderRadius: 12,
                                                                                     }}
+                                                                                    formatter={(value, name) => [
+                                                                                        name === 'No Data' ? 0 : value,
+                                                                                        name
+                                                                                    ]}
                                                                                 />
                                                                             </PieChart>
                                                                         </ResponsiveContainer>
@@ -3353,18 +3366,18 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
 
                                     {userRole === "admin" && (
                                         <>
-                                            <TabsContent value="users" className="mt-0">
-                                                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                            <TabsContent value="users" className="mt-0 min-w-0 w-full max-w-full">
+                                                <Card className="bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden min-w-0">
                                                     <CardHeader>
                                                         <CardTitle>User Management</CardTitle>
                                                         <CardDescription>Approve, ban, or delete user accounts.</CardDescription>
 
                                                     </CardHeader>
-                                                    <CardContent className="w-[95vw] lg:w-full">
+                                                    <CardContent className="p-0 sm:p-6 w-full max-w-full">
                                                         {isLoadingUsers ? (
-                                                            <div>
-                                                                <div>
-                                                                    <Table>
+                                                            <div className="w-full">
+                                                                <div className="overflow-x-auto overflow-y-hidden pb-2">
+                                                                    <Table className="w-full min-w-[800px]">
                                                                         <TableHeader>
                                                                             <TableRow>
                                                                                 <TableHead>User</TableHead>
@@ -3380,9 +3393,9 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                                             {Array.from({ length: 10 }).map((_, i) => (
                                                                                 <TableRow key={i}>
                                                                                     <TableCell>
-                                                                                        <div className="space-y-2">
-                                                                                            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                                                                                            <div className="h-3 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                                        <div className="space-y-2 break-all whitespace-normal">
+                                                                                            <div className="h-4 w-32 max-w-[80%] bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                                                                                            <div className="h-3 w-48 max-w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                                                                                         </div>
                                                                                     </TableCell>
                                                                                     <TableCell><div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /></TableCell>
@@ -3404,9 +3417,9 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                             </div>
                                                         ) : (
                                                             <>
-                                                                <div>
-                                                                    <div>
-                                                                        <Table>
+                                                                <div className="w-full">
+                                                                    <div className="overflow-x-auto overflow-y-hidden pb-2">
+                                                                        <Table className="w-full min-w-[800px]">
                                                                             <TableHeader>
                                                                                 <TableRow>
                                                                                     <TableHead>User</TableHead>
@@ -3423,8 +3436,8 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                                                     <TableRow key={u.uid}>
                                                                                         <TableCell>
                                                                                             <div>
-                                                                                                <div className="font-medium">{u.name}</div>
-                                                                                                <div className="text-sm text-muted-foreground">{u.email}</div>
+                                                                                                <div className="font-medium break-all whitespace-normal">{u.name}</div>
+                                                                                                <div className="text-sm text-muted-foreground break-all whitespace-normal">{u.email}</div>
                                                                                             </div>
                                                                                         </TableCell>
                                                                                         <TableCell className="capitalize">{u.role}</TableCell>
@@ -3539,7 +3552,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
 
                                                                     {/* Optimized Pagination Controls */}
                                                                     {totalPages > 1 && (
-                                                                        <div className="flex justify-center mt-6">
+                                                                        <div className="flex justify-center my-6">
                                                                             <Pagination>
                                                                                 <PaginationContent>
                                                                                     <PaginationItem>
