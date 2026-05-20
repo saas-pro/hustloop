@@ -42,6 +42,29 @@ const LIMITS = {
     metaDescription: 160,
 };
 
+const formatYoutubeEmbedUrl = (url: string) => {
+    try {
+        let videoId = '';
+        if (url.includes('youtube.com/watch')) {
+            const urlObj = new URL(url);
+            videoId = urlObj.searchParams.get('v') || '';
+        } else if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1]?.split('?')[0] || '';
+        } else if (url.includes('youtube.com/shorts/')) {
+            videoId = url.split('youtube.com/shorts/')[1]?.split('?')[0] || '';
+        } else if (url.includes('youtube.com/embed/')) {
+            return url;
+        }
+
+        if (videoId) {
+            return `https://www.youtube.com/embed/${videoId}`;
+        }
+    } catch (e) {
+        // Ignore parsing errors
+    }
+    return url;
+};
+
 function CharCounter({ current, max }: { current: number; max: number }) {
     const near = current >= max * 0.85;
     const over = current >= max;
@@ -166,13 +189,33 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
     useEffect(() => {
         if (validated) validateFields();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [title, youtubeEmbedUrl, validated]);
+    }, [title, youtubeEmbedUrl, tags, validated]);
 
     const validateFields = () => {
         const errs: Record<string, string> = {};
         if (!title.trim()) errs.title = "Title is required.";
-        if (!youtubeEmbedUrl.trim()) errs.youtubeEmbedUrl = "YouTube Embed URL is required.";
+
+        if (!youtubeEmbedUrl.trim()) {
+            errs.youtubeEmbedUrl = "YouTube Embed URL is required.";
+        } else if (!youtubeEmbedUrl.includes('youtube.com/embed/')) {
+            errs.youtubeEmbedUrl = "Must be a valid YouTube embed URL.";
+        }
+
         if (editor && editor.getText().trim() === "") errs.content = "Content is required.";
+
+        if (tags) {
+            if (tags.length > LIMITS.tags) {
+                errs.tags = `Tags cannot exceed ${LIMITS.tags} characters.`;
+            } else {
+                const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
+                if (tagList.length > 10) {
+                    errs.tags = "Maximum 10 tags allowed.";
+                } else if (tagList.some(t => t.length > 30)) {
+                    errs.tags = "Each tag must be 30 characters or less.";
+                }
+            }
+        }
+
         setErrors(errs);
         return errs;
     };
@@ -228,6 +271,10 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
         }
         if (errs.youtubeEmbedUrl) {
             toast({ title: "YouTube Link Required", description: "Please enter a YouTube Embed URL.", variant: "destructive" });
+            return null;
+        }
+        if (errs.tags) {
+            toast({ title: "Tags Validation Failed", description: errs.tags, variant: "destructive" });
             return null;
         }
         if (!token) return null;
@@ -346,9 +393,7 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                     <Card className="p-5 space-y-5 bg-muted/20 border-border/50 shadow-sm">
                         {/* Featured Image */}
                         <div className="space-y-2">
-                            <span className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                <ImageIcon className="h-4 w-4" /> Featured Image
-                            </span>
+                            <FieldLabel label="Featured Image" required current={featuredImagePreview ? 1 : 0} max={1} />
                             {featuredImagePreview ? (
                                 <div className="relative rounded-lg overflow-hidden border border-border group aspect-video">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -374,14 +419,14 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
 
                         {/* Tags */}
                         <div className="space-y-2">
-                            <FieldLabel label="Tags" current={tags.length} max={LIMITS.tags} />
-                            <Input placeholder="tech, innovation, ai" value={tags} maxLength={LIMITS.tags} onChange={(e) => setTags(e.target.value)} className="bg-background" />
-                            <p className="text-xs text-muted-foreground">Comma-separated</p>
+                            <FieldLabel label="Tags" required current={tags ? tags.split(',').filter(t => t.trim()).length : 0} max={10} />
+                            <Textarea placeholder="tech, innovation, ai" value={tags} maxLength={LIMITS.tags} onChange={(e) => setTags(e.target.value)} className={`bg-background min-h-[80px] ${errors.tags ? "border-destructive" : ""}`} />
+                            {errors.tags ? <InlineError message={errors.tags} /> : <p className="text-xs text-muted-foreground">Comma-separated</p>}
                         </div>
 
                         {/* Excerpt */}
                         <div className="space-y-2">
-                            <FieldLabel label="Short Description" current={excerpt.length} max={LIMITS.excerpt} />
+                            <FieldLabel label="Short Description" current={excerpt.length} max={LIMITS.excerpt} required />
                             <Textarea placeholder="A brief summary..." value={excerpt} maxLength={LIMITS.excerpt} onChange={(e) => setExcerpt(e.target.value)} className="bg-background h-24" />
                         </div>
 
@@ -392,7 +437,7 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                                 placeholder="https://www.youtube.com/embed/..."
                                 value={youtubeEmbedUrl}
                                 maxLength={LIMITS.youtubeEmbedUrl}
-                                onChange={(e) => setYoutubeEmbedUrl(e.target.value)}
+                                onChange={(e) => setYoutubeEmbedUrl(formatYoutubeEmbedUrl(e.target.value))}
                                 className={`bg-background ${errors.youtubeEmbedUrl ? "border-destructive" : ""}`}
                             />
                             {errors.youtubeEmbedUrl
@@ -405,11 +450,11 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                         <div className="border-t border-border/50 pt-4 space-y-4">
                             <h3 className="text-sm font-semibold">SEO Metadata</h3>
                             <div className="space-y-2">
-                                <SmallLabel label="Meta Title" current={metaTitle.length} max={LIMITS.metaTitle} />
+                                <SmallLabel label="Meta Title" current={metaTitle.length} max={LIMITS.metaTitle} required />
                                 <Input placeholder="SEO Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} maxLength={LIMITS.metaTitle} className="bg-background" />
                             </div>
                             <div className="space-y-2">
-                                <SmallLabel label="Meta Description" current={metaDescription.length} max={LIMITS.metaDescription} />
+                                <SmallLabel label="Meta Description" current={metaDescription.length} max={LIMITS.metaDescription} required />
                                 <Textarea placeholder="SEO Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} maxLength={LIMITS.metaDescription} className="bg-background resize-none h-20" />
                             </div>
                         </div>
@@ -478,17 +523,21 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
           pointer-events: none;
           height: 0;
         }
-        .editor-wrapper .ProseMirror { outline: none !important; color: hsl(var(--foreground)); line-height: 1.6; font-size: 1.125rem; }
+        .editor-wrapper .ProseMirror { outline: none !important; color: hsl(var(--foreground)); font-size: 1.125rem; }
         .editor-wrapper .ProseMirror h1 { font-size: 2.25rem; font-weight: 800; margin: 2rem 0 1rem; }
         .editor-wrapper .ProseMirror h2 { font-size: 1.875rem; font-weight: 700; margin: 1.5rem 0 .75rem; }
         .editor-wrapper .ProseMirror h3 { font-size: 1.5rem; font-weight: 600; margin: 1.25rem 0 .5rem; }
-        .editor-wrapper .ProseMirror ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; }
-        .editor-wrapper .ProseMirror ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+        .editor-wrapper .ProseMirror ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.25rem;margin-top:1.25rem }
+        .editor-wrapper .ProseMirror ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem;margin-top:1.25rem    }
         .editor-wrapper .ProseMirror li { margin-bottom: .5rem; }
         .editor-wrapper img { border-radius: .75rem; margin: 2rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .editor-wrapper blockquote { border-left: 4px solid hsl(var(--primary)); background: hsl(var(--muted)/.5); padding: 1.5rem; margin: 1.5rem 0; font-style: italic; border-radius: 0 .5rem .5rem 0; }
         .editor-wrapper pre { background: #0f172a; color: #e2e8f0; padding: 1.5rem; border-radius: .75rem; margin: 1.5rem 0; overflow-x: auto; }
         .editor-wrapper code { background: hsl(var(--muted)); padding: .2rem .4rem; border-radius: .25rem; font-size: .875rem; }
+        .editor-wrapper .ProseMirror b, 
+        .editor-wrapper .ProseMirror strong {
+          font-family: 'Quicksand', sans-serif;
+        }
         .editor-wrapper pre code { background: transparent; padding: 0; }
       `}</style>
         </div>
