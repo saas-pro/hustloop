@@ -67,6 +67,7 @@ import { TestimonialManager } from "./TestimonialManager";
 import { TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { title } from "process";
 import BlogDashboard from "./blog-dashboard";
+import { FounderIdeasView } from "./founder-ideas-view";
 
 
 const settingsFormSchema = z.object({
@@ -1694,6 +1695,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
         "overview",
         "users",
         "incubators",
+        "idea",
         "testimonials",
         "divider1",  // First divider after first group
         // Group 2
@@ -1945,20 +1947,16 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
             }
         }, [techTransferIps, statusUpdates]);
 
+        const socketRef = useRef<Socket | null>(null);
+
         // Real-time socket listener for IP status updates
         useEffect(() => {
-            if (techTransferIps.length === 0) return;
-
-            const socket: Socket = io(`${API_BASE_URL}`, {
+            socketRef.current = io(`${API_BASE_URL}`, {
                 path: '/socket.io',
                 transports: ['websocket', 'polling']
             });
 
-            techTransferIps.forEach(ip => {
-                socket.emit('join', `ip_${ip.id}`);
-            });
-
-            socket.on('ip_status_updated', (data: { id: string; approvalStatus: string; ipTitle: string }) => {
+            socketRef.current.on('ip_status_updated', (data: { id: string; approvalStatus: string; ipTitle: string }) => {
                 setTechTransferIps(prev =>
                     prev.map(ip =>
                         ip.id === data.id
@@ -1966,14 +1964,13 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                             : ip
                     )
                 );
+                toast({ title: "IP Status Updated", description: `${data.ipTitle} is now ${data.approvalStatus}` });
             });
 
             return () => {
-                techTransferIps.forEach(ip => socket.emit('leave', `ip_${ip.id}`));
-                socket.off('ip_status_updated');
-                socket.disconnect();
+                socketRef.current?.disconnect();
             };
-        }, [techTransferIps.length]); // eslint-disable-line react-hooks/exhaustive-deps
+        }, []); 
 
         const handleActionClick = (ipId: string, newStatus: "approved" | "rejected" | "needInfo") => {
             setStatusUpdates((prev) => ({
@@ -1990,27 +1987,16 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
             setIsUpdating((prev) => ({ ...prev, [ipId]: true }));
 
             try {
-                const token = localStorage.getItem('token')
-
-                const response = await fetch(`${API_BASE_URL}/api/techtransfer/${ipId}/status`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ status: newStatus }),
-                });
-
-                if (!response.ok) {
-
-                    toast({ title: "error", description: "Failed to get TechTransferIps" });
+                if (socketRef.current) {
+                    socketRef.current.emit('update_ip_status', {
+                        ipId: ipId,
+                        status: newStatus,
+                        actorId: user?.userId || 'unknown'
+                    });
+                } else {
+                    toast({ title: "Error", description: "Not connected to server", variant: "destructive" });
                 }
-                if (response.ok) {
 
-                    setTechTransferIps(prev => prev.map(ip => ip.id === ipId ? { ...ip, approvalStatus: newStatus } : ip));
-                    toast({ title: "Success", description: "IP status updated successfully." });
-
-                }
                 setStatusUpdates((prev) => {
                     const newUpdates = { ...prev };
                     delete newUpdates[ipId];
@@ -2498,6 +2484,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                         engagement: "Handshake",
                                                         plans: "Crown",
                                                         "pitch-details": "Presentation",
+                                                        idea: "Brain",
                                                         settings: "Settings",
                                                         msmes: "Briefcase",
                                                         incubators: "Lightbulb",
@@ -4625,6 +4612,10 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                         </div>
                                                     </CardContent>
                                                 </Card>
+                                            </TabsContent>
+                                            <TabsContent value="idea" className="mt-0 space-y-6">
+                                                <h1>Ideas</h1>
+                                                <FounderIdeasView />
                                             </TabsContent>
                                             <TabsContent value="blog" className="mt-0 space-y-6">
                                                 <BlogDashboard token={localStorage.getItem('token') || ''} />
