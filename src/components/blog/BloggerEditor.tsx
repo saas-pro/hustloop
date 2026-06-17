@@ -26,6 +26,7 @@ import {
     bloggerCreateBlog, bloggerUpdateBlog, submitForReview,
     type BlogPost, type CreateBlogData
 } from "@/lib/api";
+import ShinyText from "@/components/ShinyText";
 
 interface BloggerEditorProps {
     initialData?: BlogPost;
@@ -37,6 +38,7 @@ const LIMITS = {
     title: 200,
     tags: 300,
     excerpt: 500,
+    tagline: 255,
     youtubeEmbedUrl: 500,
     metaTitle: 60,
     metaDescription: 160,
@@ -129,6 +131,9 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
     // ── Content fields ──────────────────────────────────────────────────────
     const [title, setTitle] = useState(initialData?.title || "");
     const [excerpt, setExcerpt] = useState(initialData?.excerpt || "");
+    const [tagline, setTagline] = useState(initialData?.tagline || "");
+    const [taglineColor, setTaglineColor] = useState(initialData?.tagline_color || "#b5b5b5");
+    const [taglineShineColor, setTaglineShineColor] = useState(initialData?.tagline_shine_color || "#ffffff");
     const [tags, setTags] = useState(initialData?.tags?.join(", ") || "");
     const [metaTitle, setMetaTitle] = useState(initialData?.meta_title || "");
     const [metaDescription, setMetaDescription] = useState(initialData?.meta_description || "");
@@ -238,6 +243,9 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
         const data: CreateBlogData = {
             title,
             excerpt,
+            tagline,
+            tagline_color: taglineColor,
+            tagline_shine_color: taglineShineColor,
             content: editor!.getHTML(),
             tags,
             meta_title: metaTitle,
@@ -426,8 +434,31 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
 
                         {/* Excerpt */}
                         <div className="space-y-2">
-                            <FieldLabel label="Short Description" current={excerpt.length} max={LIMITS.excerpt} required />
+                            <FieldLabel label="Short Description" current={excerpt.length} max={LIMITS.excerpt} />
                             <Textarea placeholder="A brief summary..." value={excerpt} maxLength={LIMITS.excerpt} onChange={(e) => setExcerpt(e.target.value)} className="bg-background h-24" />
+                        </div>
+
+                        {/* Tagline */}
+                        <div className="space-y-4">
+                            <FieldLabel label="Tagline (ShinyText)" current={tagline.length} max={LIMITS.tagline} />
+                            <Textarea placeholder="A catchy statement..." value={tagline} maxLength={LIMITS.tagline} onChange={(e) => setTagline(e.target.value)} className="bg-background h-20" />
+
+                            <div className="flex gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase">Base Color</label>
+                                    <input type="color" value={taglineColor} onChange={(e) => setTaglineColor(e.target.value)} className="w-16 h-10 p-1 block bg-background border rounded-md cursor-pointer" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold text-muted-foreground uppercase">Shine Color</label>
+                                    <input type="color" value={taglineShineColor} onChange={(e) => setTaglineShineColor(e.target.value)} className="w-16 h-10 p-1 block bg-background border rounded-md cursor-pointer" />
+                                </div>
+                            </div>
+
+                            {tagline && (
+                                <div className="p-4 rounded-lg  flex items-center justify-center min-h-[80px]">
+                                    <ShinyText text={tagline} disabled={false} speed={2} className="text-xl font-bold" color={taglineColor} shineColor={taglineShineColor} />
+                                </div>
+                            )}
                         </div>
 
                         {/* YouTube Embed URL */}

@@ -85,6 +85,9 @@ export interface BlogPost {
   title: string;
   slug: string;
   excerpt?: string;
+  tagline?: string;
+  tagline_color?: string;
+  tagline_shine_color?: string;
   content: string;
   image: string;
   hint?: string;

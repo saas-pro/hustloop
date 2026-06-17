@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
         };
     } catch {
         return {
-            title: "Blog Post | Hustloop",
+            title: "Blog Post",
             description: "Read this article on Hustloop.",
         };
     }

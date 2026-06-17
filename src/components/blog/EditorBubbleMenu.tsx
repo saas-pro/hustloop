@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Editor } from "@tiptap/react";
 import {
-    Bold, Italic, List, ListOrdered, Quote, Code, Heading1, Heading2,
-    Undo, Redo, Link as LinkIcon, Image as ImageIcon, Highlighter,
+    Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2,
+    Undo, Redo, Link as LinkIcon, Image as ImageIcon,
     AlignLeft, AlignCenter, AlignRight, ListTodo,
 } from "lucide-react";
 
@@ -205,10 +205,6 @@ export default function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}>
                 <Quote size={14} />
             </Btn>
-            <Btn title="Code Block" active={editor.isActive("codeBlock")}
-                onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
-                <Code size={14} />
-            </Btn>
 
             <Sep />
 
@@ -217,10 +213,6 @@ export default function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
             </Btn>
             <Btn title="Insert Image" onClick={addImage}>
                 <ImageIcon size={14} />
-            </Btn>
-            <Btn title="Highlight" active={editor.isActive("highlight")}
-                onClick={() => editor.chain().focus().toggleHighlight().run()}>
-                <Highlighter size={14} />
             </Btn>
 
             <Sep />

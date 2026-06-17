@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useToast } from "@/hooks/use-toast";
+import ShinyText from "@/components/ShinyText";
 import BrandLogo from "@/components/blog/brand-logo";
 import { useTheme } from "next-themes";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -24,6 +24,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/providers/AuthContext";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 function ThemeToggleDropdown() {
     const { theme, setTheme } = useTheme();
@@ -518,6 +519,20 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
 
                                     {blog.excerpt && (
                                         <p className="text-xl text-muted-foreground mb-6">{blog.excerpt}</p>
+                                    )}
+
+                                    {blog.tagline && (
+                                        <div className="mb-10 mt-6 py-8 flex items-center justify-center">
+                                            <div className="text-center">
+                                                <ShinyText
+                                                    text={blog.tagline}
+                                                    color={blog.tagline_color || "#b5b5b5"}
+                                                    shineColor={blog.tagline_shine_color || "#ffffff"}
+                                                    speed={2}
+                                                    className="text-2xl md:text-3xl font-semibold tracking-wide"
+                                                />
+                                            </div>
+                                        </div>
                                     )}
 
                                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">

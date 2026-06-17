@@ -13,6 +13,9 @@ export interface BlogPost {
     title: string;
     slug: string;
     excerpt?: string;
+    tagline?: string;
+    tagline_color?: string;
+    tagline_shine_color?: string;
     content: string;
     featured_image_url?: string;
     youtube_embed_url?: string;
@@ -357,6 +360,9 @@ export async function submitForReview(blogId: number, token: string): Promise<Bl
 export interface CreateBlogData {
     title: string;
     excerpt?: string;
+    tagline?: string;
+    tagline_color?: string;
+    tagline_shine_color?: string;
     content: string;
     featured_image_url?: string;
     featured_image?: File;
