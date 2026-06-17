@@ -597,7 +597,6 @@ export default function MainView() {
 
 
         {activeView === 'blog' && <BlogView isOpen={true} onOpenChange={handleModalOpenChange('blog')} />}
-
         {activeView === 'mentors' && <MentorsView
           isOpen={true}
           onOpenChange={handleModalOpenChange('mentors')}
@@ -608,13 +607,13 @@ export default function MainView() {
           setActiveView={setActiveView}
         />}
 
-        {activeView === 'incubators' && <IncubatorsView
+        {/* {activeView === 'incubators' && <IncubatorsView
           isOpen={true}
           onOpenChange={handleModalOpenChange('incubators')}
           isLoggedIn={isLoggedIn}
           hasSubscription={hasSubscription}
           setActiveView={setActiveView}
-        />}
+        />} */}
 
         {
           activeView === 'submitIP' && <SubmitIPDashboard

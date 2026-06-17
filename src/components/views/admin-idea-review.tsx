@@ -53,7 +53,6 @@ export function AdminIdeaReview() {
 
   useEffect(() => {
     fetchIdeas();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const downloadPdf = async (id: string, name: string) => {

@@ -130,6 +130,7 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
   const [itemToDelete, setItemToDelete] = useState<{ id: string, type: 'review' | 'reply' } | null>(null);
   const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
   const { founderRole } = useAuth()
+  const founderRoles = founderRole
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -287,14 +288,30 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
   //   tooltipContent = <p>Subscribe to a plan to apply for an incubation</p>;
   // }
 
+  const isInnovativeIdeaFounder = founderRole === "Submit an innovative idea";
   const applyButton = (
-    <Button
-      size="lg"
-      className="bg-accent hover:bg-accent/90 text-accent-foreground"
-      onClick={handleApplyClick}
-    >
-      {!hasSubscription ? "Subscribe to Apply" : "Apply Now"}
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className={!isInnovativeIdeaFounder ? "cursor-not-allowed inline-block" : ""}>
+            <Button
+              size="lg"
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+              onClick={handleApplyClick}
+              disabled={!isInnovativeIdeaFounder}
+              style={!isInnovativeIdeaFounder ? { pointerEvents: "none" } : undefined}
+            >
+              {!hasSubscription && isInnovativeIdeaFounder ? "Subscribe to Apply" : "Apply Now"}
+            </Button>
+          </span>
+        </TooltipTrigger>
+        {!isInnovativeIdeaFounder && (
+          <TooltipContent>
+            <p>Login as a 'Submit an innovative idea' role to submit idea</p>
+          </TooltipContent>
+        )}
+      </Tooltip>
+    </TooltipProvider>
   );
 
   return (
@@ -330,11 +347,11 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
                         <span>{incubator.contactPhone}</span>
                       </div>
                     )}
-                    {incubator.location && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-accent" />
-                        <span>{incubator.location}</span>
-                      </div>
+                    {(incubator.city || incubator.state) && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <MapPin className="h-4 w-4" />
+                            <span>{incubator.city}{incubator.city && incubator.state ? ", " : ""}{incubator.state}</span>
+                        </div>
                     )}
                   </div>
                 </div>
@@ -538,7 +555,7 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
               <Separator />
 
               {/* Ratings & Reviews Section */}
-              <div className="pb-12 mt-10">
+              {founderRole && <div className="pb-12 mt-10">
                 <h3 className="text-3xl font-black mb-8 font-headline flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-full bg-yellow-500/10 border border-yellow-500/20">
                     <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 drop-shadow-md" />
@@ -724,7 +741,7 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
                     ))
                   )}
                 </div>
-              </div>
+              </div>}
             </div>
           </ScrollArea>
         </DialogContent>

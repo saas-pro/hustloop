@@ -187,7 +187,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
                         e.preventDefault();
                         e.stopPropagation();
                         localStorage.setItem("fromMarketplace", "true");
-                        setInternalView("incubators");
+                        window.location.href = "/incubators";
                       }}
                       className='w-fit'>
                       Find an Incubator <ArrowRight className="ml-2 h-4 w-4" />
@@ -241,7 +241,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
         )
       }
 
-      {
+      {/* {
         internalView === 'incubators' && (
           <IncubatorsView
             isOpen={true}
@@ -251,7 +251,7 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
             setActiveView={setActiveView}
           />
         )
-      }
+      } */}
     </>
   );
 }

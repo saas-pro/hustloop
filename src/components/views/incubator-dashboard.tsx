@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { BarChart as RechartsBarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, PlusCircle, Trash2, Loader2, MoreHorizontal, Edit, RefreshCcw } from "lucide-react";
+import { LayoutDashboard, FileText, User, Settings, CheckCircle, Clock, Copy, XCircle, PlusCircle, Trash2, Loader2, MoreHorizontal, Edit, RefreshCcw, UploadCloud } from "lucide-react";
 import type { IncubatorDashboardTab, Submission, Comment } from "@/app/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import { X, Download, Star } from "lucide-react";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FaGlobe, FaLinkedin, FaTwitter, FaInstagram, FaYoutube } from 'react-icons/fa';
+import { State, City } from 'country-state-city';
 
 
 
@@ -48,7 +49,8 @@ type AuthProvider = 'local' | 'google';
 
 const profileFormSchema = z.object({
     name: z.string().min(1, "Incubator name is required"),
-    location: z.string().min(1, "Location is required"),
+    state: z.string().min(1, "State is required"),
+    city: z.string().min(1, "City is required"),
     type: z.array(z.string()).min(1, "At least one type is required"),
     contactEmail: z.string().email("Invalid email address"),
     contactPhone: z.string().optional(),
@@ -62,6 +64,7 @@ const profileFormSchema = z.object({
         instagram: z.string().url().optional().or(z.literal("")),
         youtube: z.string().url().optional().or(z.literal("")),
     }),
+    image: z.string().min(1, "Incubator logo is required"),
     metrics: z.object({
         startupsSupported: z.string().min(1, "Required"),
         fundedStartupsPercent: z.string().min(1, "Required"),
@@ -71,8 +74,9 @@ const profileFormSchema = z.object({
     partners: z.array(z.object({ value: z.string().min(1, "Partner name cannot be empty") })).min(1, "At least one partner is required"),
     startups: z.array(z.object({
         name: z.string().min(1, "Startup name is required"),
-        city: z.string().optional(),
-        founded_year: z.coerce.string().optional(),
+        state: z.string().min(1, "State is required"),
+        city: z.string().min(1, "City is required"),
+        founded_year: z.coerce.string().min(1, "Founded year is required"),
         sector: z.array(z.string()).min(1, "At least one sector is required"),
         is_funded: z.boolean().default(false),
         funding_raised: z.coerce.string().optional()
@@ -130,11 +134,13 @@ interface IncubatorDashboardViewProps {
 
 const emptyProfile: ProfileFormValues = {
     name: "",
-    location: "",
+    state: "",
+    city: "",
     type: ["Incubator"],
     contactEmail: "",
     contactPhone: "",
     description: "",
+    image: "",
     focus: [],
     socialLinks: {
         website: "",
@@ -182,6 +188,9 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
     const [isFetchingMyIncubators, setIsFetchingMyIncubators] = useState(false);
     const [selectedMyIncubator, setSelectedMyIncubator] = useState<any>(null);
     const [sectorsList, setSectorsList] = useState<string[]>([]);
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [isDraggingLogo, setIsDraggingLogo] = useState(false);
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/api/sectors`)
@@ -226,7 +235,19 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
     });
 
     const watchedStartupsStr = JSON.stringify(profileForm.watch("startups") || []);
-    const watchedLocation = profileForm.watch("location") || "";
+    const watchedState = profileForm.watch("state") || "";
+    const watchedCity = profileForm.watch("city") || "";
+
+    const indianStates = useMemo(() => State.getStatesOfCountry('IN'), []);
+
+    const selectedStateIso = useMemo(() => {
+        const s = indianStates.find(state => state.name === watchedState);
+        return s ? s.isoCode : "";
+    }, [watchedState, indianStates]);
+
+    const availableCities = useMemo(() => {
+        return selectedStateIso ? City.getCitiesOfState('IN', selectedStateIso) : [];
+    }, [selectedStateIso]);
 
     const metricsData = useMemo(() => {
         const startups = JSON.parse(watchedStartupsStr);
@@ -245,8 +266,8 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
         const outside = startups.filter((s: any) => {
             if (!s.city) return false;
             const sCity = s.city.toLowerCase().trim();
-            const incLoc = watchedLocation.toLowerCase().trim();
-            return sCity !== "" && incLoc !== "" && !incLoc.includes(sCity) && !sCity.includes(incLoc);
+            const incCity = watchedCity.toLowerCase().trim();
+            return sCity !== "" && incCity !== "" && !incCity.includes(sCity) && !sCity.includes(incCity);
         }).length;
 
         const totalFunding = startups.reduce((acc: number, s: any) => {
@@ -271,7 +292,7 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
             startupsOutsideLocationPercent: total > 0 ? `${Math.round((outside / total) * 100)}%` : "0%",
             totalFundingRaised: `₹${formatFunding(totalFunding)}`,
         };
-    }, [watchedStartupsStr, watchedLocation]);
+    }, [watchedStartupsStr, watchedCity, watchedState]);
 
     const handleDownloadPDF = () => {
         if (!selectedMyIncubator) return;
@@ -523,10 +544,9 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
 
         setIsFetchingMyIncubators(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/incubators`, {
-                method: 'GET',
+            const response = await fetch(`${API_BASE_URL}/api/incubators/me`, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    "Authorization": `Bearer ${token}`,
                 },
             });
 
@@ -703,11 +723,21 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
             partners: data.partners.map((item) => item.value),
             type: (data.type || []).filter(t => t.length > 1), // Clean up corrupted one-character tags
             startups: data.startups || [],
-            image: 'https://placehold.co/600x400.png',
             hint: 'office building',
             rating: editingIncubatorId ? undefined : 0, // Don't reset rating on update
             reviews: editingIncubatorId ? undefined : 0,
         };
+
+        if (!logoFile && !data.image) {
+            toast({ variant: "destructive", title: "Error", description: "Incubator logo is required." });
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('data', JSON.stringify(profileData));
+        if (logoFile) {
+            formData.append('image', logoFile);
+        }
 
         try {
             const url = editingIncubatorId
@@ -717,10 +747,9 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
             const response = await fetch(url, {
                 method: editingIncubatorId ? 'PUT' : 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(profileData)
+                body: formData
             });
 
             if (response.ok) {
@@ -753,17 +782,21 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
         setEditingIncubatorId(inc.id);
         profileForm.reset({
             name: inc.name,
-            location: inc.location,
+            state: inc.state || "",
+            city: inc.city || "",
             type: Array.isArray(inc.type) ? inc.type : (typeof inc.type === 'string' ? [inc.type] : ["Incubator"]),
             contactEmail: inc.contactEmail,
             contactPhone: inc.contactPhone,
             description: inc.description,
+            image: inc.image || "",
             focus: (inc.focus || []).map((f: string) => ({ value: f })),
             socialLinks: inc.socialLinks || emptyProfile.socialLinks,
             metrics: inc.metrics || emptyProfile.metrics,
             partners: (inc.partners || []).map((p: string) => ({ value: p })),
             startups: inc.startups || [],
         });
+        setLogoPreview(inc.image || null);
+        setLogoFile(null);
         setActiveTab("profile");
     };
 
@@ -1042,6 +1075,69 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                         <FormField control={profileForm.control} name="name" render={({ field }) => (
                                                             <FormItem><FormLabel>Incubator Name <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="e.g., Nexus Hub" {...field} /></FormControl><FormMessage /></FormItem>
                                                         )} />
+                                                        <FormField control={profileForm.control} name="image" render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Incubator Logo <span className="text-destructive">*</span></FormLabel>
+                                                                <div className="flex flex-col gap-4 mt-2">
+                                                                    {logoPreview && (
+                                                                        <div className="relative w-32 h-32 rounded-md overflow-hidden border border-border shrink-0 self-center md:self-start">
+                                                                            <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover" />
+                                                                        </div>
+                                                                    )}
+                                                                    <div 
+                                                                        className={`flex-1 border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors cursor-pointer text-center ${isDraggingLogo ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+                                                                        onDragOver={(e) => {
+                                                                            e.preventDefault();
+                                                                            setIsDraggingLogo(true);
+                                                                        }}
+                                                                        onDragLeave={() => setIsDraggingLogo(false)}
+                                                                        onDrop={(e) => {
+                                                                            e.preventDefault();
+                                                                            setIsDraggingLogo(false);
+                                                                            const file = e.dataTransfer.files?.[0];
+                                                                            if (file) {
+                                                                                if (file.size > 1024 * 1024) {
+                                                                                    toast({ variant: "destructive", title: "File too large", description: "Logo must be 1MB or smaller." });
+                                                                                    return;
+                                                                                }
+                                                                                if (!file.type.startsWith('image/')) {
+                                                                                    toast({ variant: "destructive", title: "Invalid file type", description: "Please upload an image file." });
+                                                                                    return;
+                                                                                }
+                                                                                setLogoFile(file);
+                                                                                setLogoPreview(URL.createObjectURL(file));
+                                                                                field.onChange(file.name);
+                                                                            }
+                                                                        }}
+                                                                        onClick={() => document.getElementById('logo-upload-input')?.click()}
+                                                                    >
+                                                                        <UploadCloud className="h-8 w-8 text-muted-foreground mb-3" />
+                                                                        <p className="text-sm font-medium mb-1">Click or drag & drop to upload</p>
+                                                                        <p className="text-xs text-muted-foreground mb-3">JPG, PNG or WEBP (max. 1MB)</p>
+                                                                        <Input 
+                                                                            id="logo-upload-input"
+                                                                            type="file" 
+                                                                            className="hidden"
+                                                                            accept="image/png, image/jpeg, image/webp" 
+                                                                            onChange={(e) => {
+                                                                                const file = e.target.files?.[0];
+                                                                                if (file) {
+                                                                                    if (file.size > 1024 * 1024) {
+                                                                                        toast({ variant: "destructive", title: "File too large", description: "Logo must be 1MB or smaller." });
+                                                                                        return;
+                                                                                    }
+                                                                                    setLogoFile(file);
+                                                                                    setLogoPreview(URL.createObjectURL(file));
+                                                                                    field.onChange(file.name); // Set string value for Zod
+                                                                                }
+                                                                            }} 
+                                                                        />
+                                                                        <Button type="button" variant="outline" size="sm">Select File</Button>
+                                                                    </div>
+                                                                </div>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )} />
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                             <FormField control={profileForm.control} name="type" render={({ field }) => (
                                                                 <FormItem>
@@ -1070,9 +1166,14 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                                     <FormMessage />
                                                                 </FormItem>
                                                             )} />
-                                                            <FormField control={profileForm.control} name="location" render={({ field }) => (
-                                                                <FormItem><FormLabel>Location <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="e.g., Bangalore, India" {...field} /></FormControl><FormMessage /></FormItem>
-                                                            )} />
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <FormField control={profileForm.control} name="state" render={({ field }) => (
+                                                                    <FormItem><FormLabel>State <span className="text-destructive">*</span></FormLabel><Select onValueChange={(val) => { field.onChange(val); profileForm.setValue("city", ""); }} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="State" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{indianStates.map((s) => <SelectItem key={s.isoCode} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                                                )} />
+                                                                <FormField control={profileForm.control} name="city" render={({ field }) => (
+                                                                    <FormItem><FormLabel>City <span className="text-destructive">*</span></FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!watchedState}><FormControl><SelectTrigger><SelectValue placeholder="City" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{availableCities.map((c) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                                                )} />
+                                                            </div>
                                                         </div>
 
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1121,11 +1222,23 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                                         <FormField control={profileForm.control} name={`startups.${index}.name`} render={({ field }) => (
                                                                             <FormItem><FormLabel>Startup Name <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="e.g., AgriAI" {...field} /></FormControl><FormMessage /></FormItem>
                                                                         )} />
-                                                                        <FormField control={profileForm.control} name={`startups.${index}.city`} render={({ field }) => (
-                                                                            <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="e.g., Coimbatore" {...field} /></FormControl><FormMessage /></FormItem>
-                                                                        )} />
+                                                                        {(() => {
+                                                                            const startupStateName = profileForm.watch(`startups.${index}.state`) || "";
+                                                                            const startupStateIso = indianStates.find(s => s.name === startupStateName)?.isoCode || "";
+                                                                            const startupCities = startupStateIso ? City.getCitiesOfState('IN', startupStateIso) : [];
+                                                                            return (
+                                                                                <>
+                                                                                    <FormField control={profileForm.control} name={`startups.${index}.state`} render={({ field }) => (
+                                                                                        <FormItem><FormLabel>State <span className="text-destructive">*</span></FormLabel><Select onValueChange={(val) => { field.onChange(val); profileForm.setValue(`startups.${index}.city`, ""); }} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="State" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{indianStates.map((s) => <SelectItem key={s.isoCode} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                                                                    )} />
+                                                                                    <FormField control={profileForm.control} name={`startups.${index}.city`} render={({ field }) => (
+                                                                                        <FormItem><FormLabel>City <span className="text-destructive">*</span></FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!startupStateName}><FormControl><SelectTrigger><SelectValue placeholder="City" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{startupCities.map((c) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                                                                    )} />
+                                                                                </>
+                                                                            );
+                                                                        })()}
                                                                         <FormField control={profileForm.control} name={`startups.${index}.founded_year`} render={({ field }) => (
-                                                                            <FormItem><FormLabel>Founded Year</FormLabel><FormControl><Input placeholder="e.g., 2022" {...field} /></FormControl><FormMessage /></FormItem>
+                                                                            <FormItem><FormLabel>Founded Year <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="e.g., 2022" {...field} /></FormControl><FormMessage /></FormItem>
                                                                         )} />
 
                                                                         <FormField control={profileForm.control} name={`startups.${index}.sector`} render={({ field }) => {
@@ -1216,7 +1329,7 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                                 </Card>
                                                             ))}
                                                         </div>
-                                                        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => appendStartup({ name: '', city: '', founded_year: '', sector: [], is_funded: false, funding_raised: '' })}>
+                                                        <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => appendStartup({ name: '', state: '', city: '', founded_year: '', sector: [], is_funded: false, funding_raised: '' })}>
                                                             <PlusCircle className="mr-2 h-4 w-4" /> Add Startup
                                                         </Button>
 
@@ -1593,7 +1706,7 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                 {selectedMyIncubator.name}
                                             </DialogTitle>
                                             <DialogDescription className="mt-1 flex items-center flex-wrap gap-2 text-sm">
-                                                <span>{selectedMyIncubator.location}</span>
+                                                <span>{selectedMyIncubator.state},{selectedMyIncubator.city}</span>
                                                 {(selectedMyIncubator.type || []).length > 0 && (
                                                     <>
                                                         <span>•</span>
