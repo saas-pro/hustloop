@@ -10,6 +10,7 @@ import {
 
 interface EditorBubbleMenuProps {
     editor: Editor | null;
+    onImageUploaded?: (url: string) => void;
 }
 
 function Sep() {
@@ -68,12 +69,15 @@ function Btn({
     );
 }
 
-export default function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
+export default function EditorBubbleMenu({ editor, onImageUploaded }: EditorBubbleMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
     const [visible, setVisible] = useState(false);
     const [pos, setPos] = useState({ top: 0, left: 0 });
     // Tick forces re-render on selection/transaction changes so active states update
     const [, setTick] = useState(0);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         if (!editor) return;
@@ -81,9 +85,26 @@ export default function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
         const update = () => {
             setTick(t => t + 1);
 
-            const { from, to } = editor.state.selection;
-            if (from === to) {
+            const { from, to, empty } = editor.state.selection;
+            const isNodeEmpty = editor.state.selection.$anchor.parent.content.size === 0;
+
+            if (empty && !isNodeEmpty) {
                 setVisible(false);
+                return;
+            }
+
+            const menuEl = menuRef.current;
+            const menuH = menuEl?.offsetHeight ?? 46;
+            const menuW = menuEl?.offsetWidth ?? 600;
+
+            if (empty && isNodeEmpty) {
+                // Use tiptap's view to get coords for the empty cursor
+                const coords = editor.view.coordsAtPos(from);
+                let left = coords.left - (menuW / 2) + 20; // approximate center
+                left = Math.max(8, Math.min(left, window.innerWidth - menuW - 8));
+                const top = coords.top - menuH - 10;
+                setPos({ top, left });
+                setVisible(true);
                 return;
             }
 
@@ -99,10 +120,6 @@ export default function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
                 setVisible(false);
                 return;
             }
-
-            const menuEl = menuRef.current;
-            const menuH = menuEl?.offsetHeight ?? 46;
-            const menuW = menuEl?.offsetWidth ?? 600;
 
             let left = rect.left + rect.width / 2 - menuW / 2;
             left = Math.max(8, Math.min(left, window.innerWidth - menuW - 8));
@@ -122,22 +139,66 @@ export default function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
         };
     }, [editor]);
 
-    if (!editor) return null;
-
     const setLink = () => {
+        if (!editor) return;
         const previousUrl = editor.getAttributes("link").href;
-        const url = window.prompt("Enter URL", previousUrl);
-        if (url === null) return;
-        if (url === "") {
+
+        // Unset link if it already exists
+        if (previousUrl) {
             editor.chain().focus().extendMarkRange("link").unsetLink().run();
             return;
         }
-        editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+
+        const selectedText = editor.state.doc.textBetween(
+            editor.state.selection.from,
+            editor.state.selection.to,
+            " "
+        ).trim();
+
+        if (selectedText === "") return;
+
+        // Set new link
+        const defaultUrl = selectedText.startsWith('http') ? selectedText : `https://${selectedText}`;
+        editor.chain().focus().extendMarkRange("link").setLink({ href: defaultUrl }).run();
     };
 
-    const addImage = () => {
-        const url = window.prompt("Enter image URL");
-        if (url) editor.chain().focus().setImage({ src: url }).run();
+    const triggerImageUpload = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!editor) return;
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append("image", file);
+            const token = localStorage.getItem("token");
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+            const res = await fetch(`${apiUrl}/blogs/upload-image`, {
+                method: "POST",
+                headers: {
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: formData,
+            });
+            const data = await res.json();
+            if (res.ok && data.success && data.url) {
+                editor.chain().focus().setImage({ src: data.url }).run();
+                onImageUploaded?.(data.url);
+            } else {
+                alert(data.message || "Failed to upload image.");
+            }
+        } catch (error) {
+            console.error("Image upload failed", error);
+            alert("Failed to upload image.");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
     };
 
     const menuStyle: React.CSSProperties = {
@@ -161,6 +222,8 @@ export default function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
         userSelect: "none",
         whiteSpace: "nowrap",
     };
+
+    if (!editor) return null;
 
     return (
         <div ref={menuRef} style={menuStyle}>
@@ -194,10 +257,6 @@ export default function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}>
                 <ListOrdered size={14} />
             </Btn>
-            <Btn title="Task List" active={editor.isActive("taskList")}
-                onClick={() => editor.chain().focus().toggleTaskList().run()}>
-                <ListTodo size={14} />
-            </Btn>
 
             <Sep />
 
@@ -211,22 +270,22 @@ export default function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
             <Btn title="Link" active={editor.isActive("link")} onClick={setLink}>
                 <LinkIcon size={14} />
             </Btn>
-            <Btn title="Insert Image" onClick={addImage}>
+            <Btn title={isUploading ? "Uploading..." : "Insert Image"} onClick={triggerImageUpload} disabled={isUploading}>
                 <ImageIcon size={14} />
             </Btn>
 
             <Sep />
 
             <Btn title="Align Left" active={editor.isActive({ textAlign: "left" })}
-                onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+                onClick={() => editor.isActive({ textAlign: "left" }) ? editor.chain().focus().unsetTextAlign().run() : editor.chain().focus().setTextAlign("left").run()}>
                 <AlignLeft size={14} />
             </Btn>
             <Btn title="Align Center" active={editor.isActive({ textAlign: "center" })}
-                onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+                onClick={() => editor.isActive({ textAlign: "center" }) ? editor.chain().focus().unsetTextAlign().run() : editor.chain().focus().setTextAlign("center").run()}>
                 <AlignCenter size={14} />
             </Btn>
             <Btn title="Align Right" active={editor.isActive({ textAlign: "right" })}
-                onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+                onClick={() => editor.isActive({ textAlign: "right" }) ? editor.chain().focus().unsetTextAlign().run() : editor.chain().focus().setTextAlign("right").run()}>
                 <AlignRight size={14} />
             </Btn>
 
@@ -240,6 +299,15 @@ export default function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
                 onClick={() => editor.chain().focus().redo().run()}>
                 <Redo size={14} />
             </Btn>
+
+            {/* Hidden file input for inline image upload */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleImageChange}
+            />
         </div>
     );
 }

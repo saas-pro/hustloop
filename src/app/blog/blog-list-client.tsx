@@ -235,20 +235,21 @@ function BlogCard({ blog, isAdmin }: { blog: BlogPost; isAdmin?: boolean }) {
 
     return (
         <Link href={href}>
-            <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer group relative ${!isPublished && isAdmin ? 'border-dashed opacity-80 hover:opacity-100' : ''
+            <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer group relative overflow-hidden ${!isPublished && isAdmin ? 'border-dashed opacity-80 hover:opacity-100' : ''
                 }`}>
                 {statusBadge}
                 {blog.featured_image_url && (
-                    <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
+                    <div className="absolute inset-0 z-0 pointer-events-none">
                         <Image
                             src={blog.featured_image_url}
                             alt={blog.title}
                             fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="object-cover opacity-85 group-hover:opacity-75 group-hover:scale-105 transition-all duration-500"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-b from-card/60 via-card/80 to-card backdrop-blur-sm"></div>
                     </div>
                 )}
-                <CardHeader>
+                <CardHeader className="relative z-10 pt-8">
                     <div className="flex items-center gap-2 mb-2">
                         {blog.tags && blog.tags.length > 0 && (
                             <Badge variant="secondary" className="text-xs">
@@ -256,39 +257,60 @@ function BlogCard({ blog, isAdmin }: { blog: BlogPost; isAdmin?: boolean }) {
                             </Badge>
                         )}
                     </div>
-                    <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors leading-tight">
+                    <CardTitle className="line-clamp-2 group-hover:text-black transition-colors leading-tight">
                         {blog.title}
                     </CardTitle>
-                    <CardDescription className="line-clamp-3">
-                        {blog.excerpt || blog.content.replace(/<[^>]*>/g, "").substring(0, 150) + "..."}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        {blog.author?.name && <div className="flex items-center gap-1">
-                            <User className="h-4 w-4" />
-                            <span className="font-medium">{blog.author?.name}</span>
-                        </div>}
-                        <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>{new Date(blog.created_at).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric"
-                            })}</span>
+                    <div className="mt-4 flex flex-col gap-4 bg-background/60 backdrop-blur-md p-4 rounded-xl border border-border/40 shadow-sm">
+                        <p className="line-clamp-3 text-sm text-foreground/90 leading-relaxed">
+                            {blog.excerpt || blog.content.replace(/<[^>]*>/g, "").substring(0, 150) + "..."}
+                        </p>
+                        
+                        <div className="flex flex-col gap-3 pt-3 border-t border-border/50">
+                            {/* Author & Date */}
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                {blog.author?.name && (
+                                    <div className="flex items-center gap-1.5 font-medium">
+                                        <User className="h-3.5 w-3.5" />
+                                        <span>{blog.author?.name}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-1.5">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    <span>{new Date(blog.created_at).toLocaleDateString("en-US", {
+                                        year: "numeric",
+                                        month: "short",
+                                        day: "numeric"
+                                    })}</span>
+                                </div>
+                            </div>
+
+                            {/* Read Time & Views */}
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1.5">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    <span>{calculateReadTime(
+                                        blog.content,
+                                        blog.featured_image_url ? 1 : 0
+                                    )} min read</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-background text-primary font-medium shadow-sm border border-primary/20">
+                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="18" y1="20" x2="18" y2="10" />
+                                        <line x1="12" y1="20" x2="12" y2="4" />
+                                        <line x1="6" y1="20" x2="6" y2="14" />
+                                    </svg>
+                                    <span>{blog.views || 0} views</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Read More */}
+                        <div className="flex items-center justify-end gap-1.5 mt-1 text-primary font-semibold text-sm group-hover:text-primary/80 transition-colors">
+                            {isPublished ? 'Read article' : isAdmin ? 'Preview' : 'Read article'} 
+                            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </div>
                     </div>
-                    <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>{calculateReadTime(
-                            blog.content,
-                            blog.featured_image_url ? 1 : 0
-                        )} min read</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-4 text-primary font-medium">
-                        {isPublished ? 'Read more' : isAdmin ? 'Preview (Admin)' : 'Read more'} <ArrowRight className="h-4 w-4" />
-                    </div>
-                </CardContent>
+                </CardHeader>
             </Card>
         </Link>
     );

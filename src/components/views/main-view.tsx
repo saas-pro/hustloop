@@ -44,10 +44,7 @@ const IncubatorsView = dynamic(() => import('@/components/views/incubators'), { 
 const PricingView = dynamic(() => import('@/components/views/pricing'), { loading: () => <ModalSkeleton /> });
 const MsmesView = dynamic(() => import('@/components/views/msmes'), { loading: () => <ModalSkeleton /> });
 const JoinAsAnMsme = dynamic(() => import('@/components/views/join-as-an-msme'), { loading: () => <ModalSkeleton /> });
-const DashboardView = dynamic(() => import('@/components/views/dashboard'), { loading: () => <ModalSkeleton /> });
-const MentorDashboardView = dynamic(() => import('@/components/views/mentor-dashboard'), { loading: () => <ModalSkeleton /> });
-const IncubatorDashboardView = dynamic(() => import('@/components/views/incubator-dashboard'), { loading: () => <ModalSkeleton /> });
-const MsmeDashboardView = dynamic(() => import('@/components/views/msme-dashboard'), { loading: () => <ModalSkeleton /> });
+const DashboardRouter = dynamic(() => import('@/components/views/dashboard-router'), { loading: () => <ModalSkeleton /> });
 const TechTransferView = dynamic(() => import('@/components/browsetech/browsetech'), { loading: () => <ModalSkeleton /> });
 const MarketplaceView = dynamic(() => import('@/components/views/marketplace-view'), { loading: () => <ModalSkeleton /> });
 
@@ -232,6 +229,7 @@ export default function MainView() {
   useEffect(() => {
     const from = searchParams.get('from');
     const action = searchParams.get('action');
+    const viewParam = searchParams.get('view') as View | null;
 
     if (action === 'login' && (from === 'verification_success' || from === 'reset_success')) {
       const title = from === 'verification_success' ? "Verification Successful!" : "Password Reset Successful";
@@ -240,6 +238,8 @@ export default function MainView() {
       toast({ title, description });
       setActiveView('login');
       router.replace('/');
+    } else if (viewParam) {
+      setActiveView(viewParam);
     }
   }, [searchParams, router, toast]);
 
@@ -421,129 +421,24 @@ export default function MainView() {
     });
   };
 
-  const renderDashboard = () => {
-    // Don't render dashboard if still loading auth state
-    if (isAuthLoading) {
-      return null;
-    }
+  const renderDashboardRouter = () => {
+    if (isAuthLoading || activeView !== 'dashboard') return null;
 
-    if (activeView !== 'dashboard' || !userRole || !authProvider || !isLoggedIn || !user) {
-      return null;
-    }
-    switch (userRole) {
-      case 'mentor':
-        return (
-          <MentorDashboardView
-            isOpen={true}
-            onOpenChange={() => setActiveView('home')}
-            setActiveView={setActiveView}
-            user={user}
-            setUser={setUser}
-            authProvider={authProvider}
-          />
-        );
-      case 'organisation':
-        return (
-          <MsmeDashboardView
-            isOpen={true}
-            onOpenChange={() => setActiveView('home')}
-            isLoggedIn={isLoggedIn}
-            setActiveView={setActiveView}
-            user={user}
-            setUser={setUser}
-            authProvider={authProvider}
-          />
-        );
-      case 'incubator':
-        return (
-          <IncubatorDashboardView
-            isOpen={true}
-            onOpenChange={() => setActiveView('home')}
-            user={user}
-            setUser={setUser}
-            authProvider={authProvider}
-          />
-        );
-      case 'admin':
-        return (
-          <DashboardView
-            isOpen={true}
-            onOpenChange={() => setActiveView('home')}
-            user={user}
-            userRole={userRole}
-            authProvider={authProvider}
-            founderRole={founderRole}
-            hasSubscription={hasSubscription}
-            setActiveView={setActiveView}
-            setUser={setUser}
-            activateTab={activeTab}
-            id={id ?? undefined}
-          />
-        );
-      case 'founder':
-        if (!founderRole) {
-          return null;
-        }
-        switch (founderRole) {
-          case "Solve Organisation's challenge":
-            return (
-              <SolveChallengeDashboard
-                isOpen={true}
-                onOpenChange={() => setActiveView('home')}
-                user={user}
-                founderRole={founderRole}
-                authProvider={authProvider}
-                userRole={userRole}
-                hasSubscription={hasSubscription}
-                setActiveView={setActiveView}
-                setUser={setUser}
-                activateTab={activeTab}
-                id={id ?? undefined}
-              />
-            );
-
-          case 'List a technology for licensing':
-            return (
-              <ListTechnologyDashboard
-                isOpen={true}
-                onOpenChange={() => setActiveView('home')}
-                user={user}
-                founderRole={founderRole}
-                authProvider={authProvider}
-                userRole={userRole}
-                hasSubscription={hasSubscription}
-                setActiveView={setActiveView}
-                setUser={setUser}
-                activateTab={activeTab}
-                id={id ?? undefined}
-              />
-            );
-
-          case 'Submit an innovative idea':
-            return (
-              <InnovativeIdeaDashboard
-                isOpen={true}
-                onOpenChange={() => setActiveView('home')}
-                user={user}
-                founderRole={founderRole}
-                authProvider={authProvider}
-                userRole={userRole}
-                hasSubscription={hasSubscription}
-                setActiveView={setActiveView}
-                setUser={setUser}
-                activateTab={activeTab}
-                id={id ?? undefined}
-              />
-            );
-
-          default:
-            return null;
-        }
-
-      default:
-        return null;
-    }
-  }
+    return (
+      <DashboardRouter
+        userRole={userRole}
+        user={user}
+        authProvider={authProvider}
+        founderRole={founderRole}
+        hasSubscription={hasSubscription}
+        isLoggedIn={isLoggedIn}
+        activeTab={activeTab}
+        id={id ?? undefined}
+        setActiveView={setActiveView}
+        setUser={setUser}
+      />
+    );
+  };
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   if (showUnauthorized) return <Unauthorized />;
@@ -680,7 +575,7 @@ export default function MainView() {
           hasSubscription={hasSubscription}
         />}
 
-        {renderDashboard()}
+        {renderDashboardRouter()}
 
         {activeView === 'login' && <LoginModal
           isOpen={true}

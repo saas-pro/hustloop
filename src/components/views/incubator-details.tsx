@@ -307,7 +307,7 @@ export default function IncubatorDetails({ incubator, onOpenChange, isLoggedIn, 
         </TooltipTrigger>
         {!isInnovativeIdeaFounder && (
           <TooltipContent>
-            <p>Login as a 'Submit an innovative idea' role to submit idea</p>
+            <p>Login as a &apos;Submit an innovative idea&apos; role to submit idea</p>
           </TooltipContent>
         )}
       </Tooltip>

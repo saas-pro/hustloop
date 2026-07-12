@@ -9,7 +9,7 @@ import { TextHoverEffect } from "@/components/ui/text-hover-effect";
 
 export default function Footer() {
   const pathname = usePathname();
-  const hideNewsletter = ['/privacy-policy', '/terms-of-service', '/incentive-challenge', '/aignite', '/contact-us', '/pricing', '/pitching-form'].includes(pathname);
+  const hideNewsletter = ['/privacy-policy', '/incubators', '/terms-of-service', '/incentive-challenge', '/aignite', '/contact-us', '/pricing', '/pitching-form'].includes(pathname);
 
   return (
     <footer className="relative bg-background border-t" id="contact-section">

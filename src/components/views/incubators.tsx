@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Lock, Terminal, X } from "lucide-react";
+import { Star, MapPin, Lock, Terminal, X, Bookmark, Download, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -17,8 +16,12 @@ import { ToastAction } from "@/components/ui/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { API_BASE_URL } from "@/lib/api";
-import { set } from "date-fns";
-
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { FaGlobe, FaLinkedin, FaTwitter, FaInstagram, FaYoutube, FaFacebook } from 'react-icons/fa';
+import StartupSubmissionForm from "./startup-submission-form";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/providers/AuthContext";
 
 export type Incubator = {
   id: string;
@@ -48,7 +51,6 @@ export type Incubator = {
     totalFundingRaised: string;
   };
   partners?: string[];
-  // Kept for backward compatibility but made optional
   details?: {
     overview?: string;
     services?: { title: string; description: string }[];
@@ -63,14 +65,17 @@ export type Incubator = {
     }[];
   };
   focus: string[];
+  startups?: any[];
   user_id?: string;
   is_owner?: boolean;
 };
 
 interface IncubatorsViewProps {
   isLoggedIn: boolean;
+  isAuthChecking?: boolean;
   hasSubscription: boolean;
   setActiveView: (view: View) => void;
+  onBack?: () => void;
 }
 
 const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: View) => void, contentType: string }) => (
@@ -89,58 +94,67 @@ const LoginPrompt = ({ setActiveView, contentType }: { setActiveView: (view: Vie
   </div>
 );
 
-
 const LoadingSkeleton = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-    {[...Array(6)].map((_, index) => (
-      <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden">
-        <CardHeader className="p-0">
-          <Skeleton className="w-full h-48" />
-        </CardHeader>
-        <CardContent className="flex-grow p-4 space-y-3">
-          <Skeleton className="h-6 w-3/4" />
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-4 w-1/3" />
+  <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
+    {[...Array(3)].map((_, index) => (
+      <Card key={index} className="flex flex-col bg-card/50 backdrop-blur-sm border-border/50 overflow-hidden w-full">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex gap-4">
+            <Skeleton className="w-24 h-24 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
           </div>
           <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
-          <div className="flex flex-wrap gap-2 pt-2">
-            <Skeleton className="h-5 w-16" />
-            <Skeleton className="h-5 w-20" />
-          </div>
-          <Separator className="my-4 bg-border/50" />
-          <div className="grid grid-cols-3 text-center">
-            <div>
-              <Skeleton className="h-5 w-1/2 mx-auto" />
-              <Skeleton className="h-3 w-3/4 mx-auto mt-1" />
-            </div>
-            <div>
-              <Skeleton className="h-5 w-1/2 mx-auto" />
-              <Skeleton className="h-3 w-3/4 mx-auto mt-1" />
-            </div>
-            <div>
-              <Skeleton className="h-5 w-1/2 mx-auto" />
-              <Skeleton className="h-3 w-3/4 mx-auto mt-1" />
-            </div>
-          </div>
         </CardContent>
-        <CardFooter className="p-4">
-          <Skeleton className="h-10 w-full" />
-        </CardFooter>
       </Card>
     ))}
   </div>
 );
 
-
-export default function IncubatorsView({ isLoggedIn, hasSubscription, setActiveView }: IncubatorsViewProps) {
+export default function IncubatorsView({ isLoggedIn, isAuthChecking = false, hasSubscription, setActiveView, onBack }: IncubatorsViewProps) {
   const [selectedIncubator, setSelectedIncubator] = useState<Incubator | null>(null);
   const { toast } = useToast();
   const [incubators, setIncubators] = useState<Incubator[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [allowAccess, setAllowAccess] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const [isSubmitIdeaOpen, setIsSubmitIdeaOpen] = useState(false);
+  const [selectedIncubatorId, setSelectedIncubatorId] = useState<string | null>(null);
+  const [submittedIncubators, setSubmittedIncubators] = useState<string[]>([]);
+  const [selectedStartupId, setSelectedStartupId] = useState<string | null>(null);
+  const { userRole, founderRole } = useAuth();
+
+  useEffect(() => {
+    if (userRole === 'founder' && founderRole === 'Submit an innovative idea') {
+      const fetchSubmittedIncubators = async () => {
+        if (!isLoggedIn) {
+          setSubmittedIncubators([]);
+          return;
+        }
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/founder-ideas/submitted-incubators`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setSubmittedIncubators(data.submitted_incubator_ids || []);
+          }
+        } catch {
+          // silently ignore – user may not be a founder
+        }
+      };
+      fetchSubmittedIncubators();
+    }
+  }, [isLoggedIn, founderRole, userRole]);
 
   useEffect(() => {
     const fromMarketplace = localStorage.getItem("fromMarketplace");
@@ -163,157 +177,509 @@ export default function IncubatorsView({ isLoggedIn, hasSubscription, setActiveV
           throw new Error('Failed to fetch incubators.');
         }
         const data = await response.json();
-
         setIncubators(data.items);
       } catch (err: any) {
-        // Fallback static data
-        setIncubators([
-          {
-            id: "fallback-1",
-            name: "Fallback Incubator",
-            image: "https://placehold.co/600x400",
-            hint: "fallback",
-            state: "Fallback State",
-            city: "Fallback City",
-            type: ["Incubator"],
-            rating: 5,
-            reviews: 10,
-            description: "This is a fallback incubator shown when the API is unavailable.",
-            metrics: {
-              startupsSupported: "20+",
-              fundedStartupsPercent: "40%",
-              startupsOutsideLocationPercent: "30%",
-              totalFundingRaised: "$5M"
-            },
-            focus: ["Tech", "Innovation"],
-            details: {
-              overview: "Fallback overview.",
-              services: [{ title: "Mentorship", description: "Expert guidance." }],
-              benefits: ["Networking"],
-              eligibility: { focusAreas: "All", requirements: ["None"] },
-              timeline: [{ event: "Application", period: "Year-round" }],
-            },
-          },
-        ]);
-        setError(null); // Hide error, show fallback
+        setIncubators([]);
+        setError("Could not load incubators at this time.");
       } finally {
         setIsLoading(false);
       }
     };
     fetchIncubators();
-  }, []);
+  }, [isLoggedIn]);
 
-  const handleViewDetails = (incubator: Incubator) => {
-    setSelectedIncubator(incubator);
+  const totalPages = Math.ceil(incubators.length / itemsPerPage);
+  const paginatedIncubators = incubators.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // const handleDownloadPDF = (incubator: Incubator) => {
+  //   const doc = new jsPDF();
+  //   const logoUrl = '/logo.png';
+  //   const img = new window.Image();
+  //   img.src = logoUrl;
+  //   img.onload = () => {
+  //     doc.addImage(img, 'PNG', 14, 10, 30, 10);
+  //     generatePDFContent(doc, incubator);
+  //   };
+  //   img.onerror = () => {
+  //     generatePDFContent(doc, incubator);
+  //   };
+  // };
+
+  const generatePDFContent = (doc: jsPDF, incubator: Incubator) => {
+    let yPos = 30;
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text(incubator.name, 14, yPos);
+    yPos += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(80, 80, 80);
+    if (incubator.rating !== undefined && incubator.rating !== null && incubator.rating > 0) {
+      doc.text(`Rating: ${incubator.rating}`, 14, yPos);
+      yPos += 6;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    const locationStr = incubator.city || incubator.state ? `${incubator.city || ''}${incubator.city && incubator.state ? ", " : ""}${incubator.state || ''}` : 'Unknown';
+    doc.text(`${locationStr} • ${(incubator.type || []).join(", ")}`, 14, yPos);
+    yPos += 12;
+
+    if (incubator.description) {
+      doc.setFontSize(11);
+      doc.setTextColor(0, 0, 0);
+      const splitText = doc.splitTextToSize(incubator.description, 180);
+      doc.text(splitText, 14, yPos);
+      yPos += (splitText.length * 5) + 10;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Contact Information', 14, yPos);
+    yPos += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Email: ${incubator.contactEmail || "N/A"}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Phone: ${incubator.contactPhone || "N/A"}`, 14, yPos);
+    yPos += 10;
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Metrics Overview', 14, yPos);
+    yPos += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    const m = incubator.metrics || {};
+    doc.text(`Startups Supported: ${m.startupsSupported || "0"}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Funded Startups: ${m.fundedStartupsPercent || "0%"}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Startups Outside Location: ${m.startupsOutsideLocationPercent || "0%"}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Total Funding Raised: ${(m.totalFundingRaised || "0").replace('₹', 'Rs. ')}`, 14, yPos);
+    yPos += 10;
+
+    if (incubator.focus && incubator.focus.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Focus Areas', 14, yPos);
+      yPos += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      const focusText = doc.splitTextToSize(incubator.focus.join(", "), 180);
+      doc.text(focusText, 14, yPos);
+      yPos += (focusText.length * 5) + 5;
+    }
+
+    if (incubator.partners && incubator.partners.length > 0) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Recognised and Funded by', 14, yPos);
+      yPos += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      const partnerText = doc.splitTextToSize(incubator.partners.join(", "), 180);
+      doc.text(partnerText, 14, yPos);
+      yPos += (partnerText.length * 5) + 5;
+    }
+
+    if (incubator.startups && incubator.startups.length > 0) {
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Startups Supported Detailed', 14, yPos);
+      yPos += 4;
+      const tableData = incubator.startups.map((s: any) => [
+        s.name || '-',
+        s.city || '-',
+        s.founded_year || '-',
+        (s.sector || []).join(', '),
+        s.is_funded ? 'Yes' : 'No',
+        s.funding_raised ? `Rs. ${s.funding_raised}` : '-'
+      ]);
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Startup Name', 'City', 'Founded Year', 'Sectors', 'Funded?', 'Funding Raised']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+    }
+
+    doc.save(`${incubator.name.replace(/\s+/g, '_')}_Profile.pdf`);
+    toast({ title: 'Success', description: 'PDF generated successfully!' });
   };
 
+  if (isLoading || isAuthChecking) {
+    return <LoadingSkeleton />;
+  }
+
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="max-w-5xl mx-auto">
+        <Terminal className="h-4 w-4" />
+        <AlertTitle>Error Fetching Incubators</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
-    <>
-      <div className="flex-grow w-full flex flex-col p-0">
-        <div className="flex-grow">
-          {!allowAccess && !isLoggedIn ? (
-            <LoginPrompt setActiveView={setActiveView} contentType="incubators" />
-          ) : isLoading ? (
-            <LoadingSkeleton />
-          ) : error ? (
-            <Alert variant="destructive">
-              <Terminal className="h-4 w-4" />
-              <AlertTitle>Error Fetching Incubators</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" >
-              {incubators.map((incubator, index) => {
-                return (
-                  <Card key={index} onClick={() => handleViewDetails(incubator)} className="cursor-pointer flex flex-col relative overflow-hidden bg-gradient-to-br from-card to-card/60 backdrop-blur-xl border-border/40 hover:border-primary/50 transition-all duration-500 group shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(var(--primary-rgb),0.1)] h-full">
-                    {/* Suble background dynamic glow */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-0 pointer-events-none" />
+    <div className="flex-grow w-full flex flex-col p-0 max-w-6xl mx-auto px-4 md:px-6 mb-16 pt-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 bg-primary/5 p-6 rounded-2xl border border-primary/10">
+        <div>
+          <h2 className="text-3xl font-extrabold tracking-tight text-primary">Innovate & Connect</h2>
+          <p className="text-muted-foreground mt-2 max-w-lg font-medium leading-relaxed">
+            Have a groundbreaking idea? Submit it to our admin team. Once reviewed, we&apos;ll match you with the best incubator to help bring your vision to life.
+          </p>
 
-                    <CardHeader className="p-0 relative h-28 bg-gradient-to-b from-primary/10 via-card to-card flex items-center justify-center border-b border-white/5 z-10 overflow-hidden">
-                      {/* Decorative background circle */}
-                      <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/20 rounded-full blur-[40px] group-hover:bg-primary/30 transition-all duration-700" />
-                      <div className="absolute -bottom-8 -left-8 w-20 h-20 bg-accent/20 rounded-full blur-[30px] group-hover:bg-accent/30 transition-all duration-700" />
-
-                      <div className="absolute top-3 right-3 z-10">
-                        <Badge variant="secondary" className="bg-background/80 backdrop-blur-md border border-primary/20 text-primary shadow-sm uppercase tracking-widest text-[8px] font-bold py-0.5 px-2 group-hover:border-primary/40 transition-colors">
-                          {incubator.type[0] || 'Incubator'}
-                        </Badge>
-                      </div>
-                      <div className="relative w-16 h-16 transition-all duration-700 ease-out group-hover:scale-110 group-hover:-translate-y-1 drop-shadow-xl z-10">
-                        {incubator.image ? (
-                          <Image
-                            src={'/icons/corporate-incu.png'}
-                            alt={incubator.name}
-                            fill
-                            className="object-contain filter saturate-150 drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl border border-primary/20 shadow-inner group-hover:border-primary/40 transition-all">
-                            <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-br from-primary to-accent drop-shadow-sm">{incubator.name.charAt(0)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="flex-grow p-4 space-y-3.5 z-10">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg font-black font-headline transition-colors uppercase tracking-tight group-hover:text-primary drop-shadow-sm line-clamp-1">{incubator.name}</CardTitle>
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mt-1">
-                          <MapPin className="h-3 w-3 text-primary/80" />
-                        {(incubator.city || incubator.state) && (
-                          <span className="line-clamp-1">{incubator.city}{incubator.city && incubator.state ? ", " : ""}{incubator.state}</span>
-                        )}
-                        </div>
-                      </div>
-
-                      <CardDescription className="text-xs line-clamp-2 text-muted-foreground/90 font-medium leading-relaxed">
-                        {incubator.description}
-                      </CardDescription>
-
-                      <div className="flex flex-wrap gap-1.5 pt-0.5">
-                        {incubator.focus.map(area => (
-                          <Badge key={area} variant="outline" className="text-[9px] py-0.5 px-2 rounded-md border-primary/20 bg-primary/5 text-primary/90 font-bold uppercase tracking-wider group-hover:bg-primary/10 hover:border-primary/40 transition-colors">
-                            {area}
-                          </Badge>
-                        ))}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2.5 mt-2 pt-3 border-t border-border/40">
-                        <div className="text-left bg-muted/40 rounded-lg p-2.5 border border-border/40 group-hover:border-primary/20 transition-colors duration-300">
-                          <p className="text-[8px] text-muted-foreground/80 font-black uppercase tracking-widest mb-1">Supported</p>
-                          <p className="text-base font-black font-headline text-foreground tracking-tight">{incubator.metrics.startupsSupported}</p>
-                        </div>
-                        <div className="text-left bg-muted/40 rounded-lg p-2.5 border border-border/40 group-hover:border-primary/20 transition-colors duration-300">
-                          <p className="text-[8px] text-muted-foreground/80 font-black uppercase tracking-widest mb-1">Funded (%)</p>
-                          <p className="text-base font-black font-headline bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent tracking-tight">{incubator.metrics.fundedStartupsPercent}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-
-                    <CardFooter className="p-4 pt-0 z-10">
-                      <Button
-                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs tracking-widest uppercase transition-all duration-500 shadow-[0_4px_12px_-4px_rgba(var(--primary-rgb),0.4)] hover:shadow-[0_12px_20px_-4px_rgba(var(--primary-rgb),0.6)] group-hover:-translate-y-0.5 h-10 rounded-lg border-none relative overflow-hidden"
-                        onClick={() => handleViewDetails(incubator)}
-                      >
-                        <span className="relative z-10 flex items-center justify-center gap-1.5">
-                          Explore <span className="opacity-50 font-normal">|</span> {incubator.rating || 0} ★ <span className="opacity-50 font-normal">|</span> {incubator.reviews || 0}
-                        </span>
-                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+        </div>
+        <div className="relative w-28 h-28 md:w-36 md:h-36 border rounded-full z-10 hidden sm:block">
+          <Image
+            src="/hustloop_logo.png"
+            alt="Hustloop Logo"
+            fill
+            className="object-contain rounded-lg"
+          />
         </div>
       </div>
-      <IncubatorDetails
-        incubator={selectedIncubator}
-        onOpenChange={(isOpen) => !isOpen && setSelectedIncubator(null)}
-        isLoggedIn={isLoggedIn}
-        hasSubscription={hasSubscription}
+
+      <div className="flex flex-col gap-8 w-full">
+        {paginatedIncubators.map((incubator) => (
+          <Card key={incubator.id} className="flex flex-col bg-card border-border/60 shadow-lg hover:shadow-xl transition-shadow w-full rounded-xl overflow-hidden">
+            <CardContent className="p-6 md:p-8 space-y-8">
+
+              {/* Header Section */}
+              <div className="flex flex-col md:flex-row gap-6 items-start justify-between">
+                <div className="flex gap-6 items-start">
+                  <div className="relative w-24 h-24 md:w-32 md:h-32 shrink-0 bg-white rounded-lg border flex items-center justify-center overflow-hidden p-2">
+                    {incubator.image ? (
+                      <Image
+                        src={incubator.image || '/icons/corporate-incu.png'}
+                        alt={incubator.name}
+                        fill
+                        className="object-contain p-2"
+                      />
+                    ) : (
+                      <span className="text-3xl font-black text-muted-foreground">{incubator.name.charAt(0)}</span>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-2xl font-bold font-headline leading-tight">{incubator.name}</h3>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {(incubator.type?.length > 0 ? incubator.type : ['Incubator']).map((type, idx) => (
+                        <Badge key={idx} variant="secondary" className={`uppercase tracking-widest text-[10px] font-semibold border-none px-3 ${type.toLowerCase() === 'accelerator' ? 'bg-purple-100 text-purple-800 hover:bg-purple-200' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}`}>
+                          {type}
+                        </Badge>
+                      ))}
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
+                        <MapPin className="h-4 w-4" />
+                        <span>{incubator.city}{incubator.city && incubator.state ? ", " : ""}{incubator.state}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-muted-foreground pt-1">
+                      {incubator.contactEmail && (
+                        <div className="flex items-center gap-2">
+                          <span className="truncate max-w-[200px]">✉ {incubator.contactEmail}</span>
+                        </div>
+                      )}
+                      {incubator.contactPhone && (
+                        <div className="flex items-center gap-2">
+                          <span>📞 {incubator.contactPhone}</span>
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-4 w-full md:w-auto mt-4 md:mt-0">
+                  <div className="flex items-center gap-3 mt-auto">
+                    {/* <Button variant="outline" size="icon" className="text-primary border-primary/20 hover:bg-primary/10" onClick={() => handleDownloadPDF(incubator)}>
+                      <Download className="h-4 w-4" />
+                    </Button> */}
+                    {(() => {
+                      const isEligibleRole = (userRole === 'founder' && founderRole === 'Submit an innovative idea') || userRole === 'admin';
+
+                      const hasSubmitted = submittedIncubators.includes(incubator.id);
+
+                      let buttonDisabled = false;
+                      let tooltipText = "";
+
+                      if (isLoggedIn) {
+                        if (hasSubmitted) {
+                          buttonDisabled = true;
+                          tooltipText = "You have already submitted an idea to this incubator.";
+                        } else if (!isEligibleRole) {
+                          buttonDisabled = true;
+                          tooltipText = "Only founders submitting an innovative idea can apply.";
+                        }
+                      }
+
+                      return (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="inline-block">
+                                <Button
+                                  className={`font-semibold gap-2 ${buttonDisabled ? 'bg-gray-400 text-white cursor-not-allowed pointer-events-none' : 'bg-[#4a00e0] hover:bg-[#3a00b0] text-white'}`}
+                                  disabled={buttonDisabled}
+                                  onClick={(e) => {
+                                    if (buttonDisabled) {
+                                      e.preventDefault();
+                                      return;
+                                    }
+                                    if (!isLoggedIn) {
+                                      setActiveView('login');
+                                      return;
+                                    }
+                                    setSelectedIncubatorId(incubator.id);
+                                    setIsSubmitIdeaOpen(true);
+                                  }}
+                                >
+                                  <span>💡</span> {hasSubmitted ? "Already Submitted" : "Submit your idea"}
+                                </Button>
+                              </div>
+                            </TooltipTrigger>
+                            {buttonDisabled && (
+                              <TooltipContent>
+                                <p>{tooltipText}</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Metrics Section */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-6 border-y border-border/50">
+                <div className="text-center md:text-left space-y-1">
+                  <div className="flex items-baseline justify-center md:justify-start gap-1">
+                    <span className="text-2xl font-bold">{incubator.metrics.startupsSupported || "0"}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Key Startups Supported</p>
+                </div>
+                <div className="text-center md:text-left space-y-1">
+                  <div className="flex items-baseline justify-center md:justify-start gap-1">
+                    <span className="text-2xl font-bold">{incubator.metrics.fundedStartupsPercent || "0%"}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Funded Startups</p>
+                </div>
+                <div className="text-center md:text-left space-y-1">
+                  <div className="flex items-baseline justify-center md:justify-start gap-1">
+                    <span className="text-2xl font-bold">{incubator.metrics.startupsOutsideLocationPercent || "0%"}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Startups outside {incubator.city || 'Location'}</p>
+                </div>
+                <div className="text-center md:text-left space-y-1">
+                  <div className="flex items-baseline justify-center md:justify-start gap-1">
+                    <span className="text-2xl font-bold">{incubator.metrics.totalFundingRaised || "₹0"}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Total funding raised</p>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="text-sm text-foreground/90 leading-relaxed font-medium">
+                {incubator.description}
+              </div>
+
+              {/* Public Links */}
+              {incubator.socialLinks && Object.values(incubator.socialLinks).some(Boolean) && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-foreground">Public Links</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {incubator.socialLinks.website && (
+                      <a href={incubator.socialLinks.website} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-muted/50 hover:bg-muted border px-3 py-1.5 rounded-full text-xs font-semibold text-foreground/80 transition-colors">
+                        <FaGlobe className="text-gray-500" /> Website
+                      </a>
+                    )}
+                    {incubator.socialLinks.linkedin && (
+                      <a href={incubator.socialLinks.linkedin} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-muted/50 hover:bg-muted border px-3 py-1.5 rounded-full text-xs font-semibold text-foreground/80 transition-colors">
+                        <FaLinkedin className="text-blue-600" /> LinkedIn
+                      </a>
+                    )}
+                    {incubator.socialLinks.facebook && (
+                      <a href={incubator.socialLinks.facebook} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-muted/50 hover:bg-muted border px-3 py-1.5 rounded-full text-xs font-semibold text-foreground/80 transition-colors">
+                        <FaFacebook className="text-blue-500" /> Facebook
+                      </a>
+                    )}
+                    {incubator.socialLinks.instagram && (
+                      <a href={incubator.socialLinks.instagram} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-muted/50 hover:bg-muted border px-3 py-1.5 rounded-full text-xs font-semibold text-foreground/80 transition-colors">
+                        <FaInstagram className="text-pink-600" /> Instagram
+                      </a>
+                    )}
+                    {incubator.socialLinks.youtube && (
+                      <a href={incubator.socialLinks.youtube} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-muted/50 hover:bg-muted border px-3 py-1.5 rounded-full text-xs font-semibold text-foreground/80 transition-colors">
+                        <FaYoutube className="text-red-600" /> Youtube
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Prominent Startups Supported */}
+              {(incubator.startups && incubator.startups.length > 0) ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-foreground">Prominent Startups Supported</h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3 items-start">
+                    {incubator.startups.map((startup: any, idx: number) => {
+                      const sId = `${incubator.id}-startup-${idx}`;
+                      const isExpanded = selectedStartupId === sId;
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex flex-col rounded-xl border bg-background/50 hover:bg-muted/50 transition-all duration-300 shadow-sm hover:shadow-md group overflow-hidden ${isExpanded ? 'col-span-1 sm:col-span-2 lg:col-span-3' : ''}`}
+                        >
+                          <div
+                            onClick={() => setSelectedStartupId(isExpanded ? null : sId)}
+                            className="flex items-center gap-3 p-3 cursor-pointer"
+                          >
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 group-hover:scale-110 transition-transform">
+                              {startup.name.charAt(0)}
+                            </div>
+                            <div className="flex flex-col overflow-hidden text-left flex-grow">
+                              <span className="text-sm font-bold truncate text-foreground/90 group-hover:text-primary transition-colors">{startup.name}</span>
+                              <span className="text-[11px] font-medium text-muted-foreground truncate mt-0.5">
+                                {startup.city ? `${startup.city} • ` : ''}{(startup.sector || []).join(', ')}
+                              </span>
+                            </div>
+                          </div>
+
+                          {isExpanded && (
+                            <div className="p-4 pt-0 mt-2 border-t border-border/50 bg-muted/20 animate-in slide-in-from-top-2 fade-in-20">
+                              <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div className="space-y-1.5">
+                                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Founded</span>
+                                  <p className="text-sm font-bold text-foreground/90">{startup.founded_year || '-'}</p>
+                                </div>
+                                {
+                                  startup.funding_raised ? (
+                                    <div className="space-y-1.5">
+                                      <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Funding Raised</span>
+                                      <p className="text-sm font-bold text-foreground/90">₹
+                                        {startup.funding_raised.toLocaleString()}</p>
+                                    </div>
+                                  ) : null
+                                }
+                                <div className="space-y-1.5">
+                                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Funded</span>
+                                  <div>
+                                    {startup.is_funded ? (
+                                      <Badge variant="secondary" className="bg-muted-foreground/15 text-foreground hover:bg-muted-foreground/25 border-none px-3 py-0.5 rounded-full font-bold">Yes</Badge>
+                                    ) : (
+                                      <Badge variant="secondary" className="bg-muted-foreground/10 text-muted-foreground border-none px-3 py-0.5 rounded-full font-bold hover:bg-muted-foreground/20">No</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              {startup.sector && startup.sector.length > 0 && (
+                                <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
+                                  <h4 className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Sectors</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {startup.sector.map((sec: string, i: number) => (
+                                      <Badge key={i} variant="outline" className="bg-background rounded-full px-3 py-0.5 text-[10px] border-border/60 shadow-sm">{sec}</Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Key Focus Areas */}
+              {incubator.focus && incubator.focus.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-foreground">Key Focus Areas of supported Startups</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {incubator.focus.map((area, idx) => (
+                      <Badge key={idx} variant="secondary" className="bg-muted text-foreground/80 font-medium px-4 py-1.5 border hover:bg-muted/80">
+                        {area}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Institutions Financing */}
+              {incubator.partners && incubator.partners.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-foreground">Institutions Financing the supported Startups</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {incubator.partners.map((partner, idx) => (
+                      <Badge key={idx} variant="secondary" className="bg-muted flex items-center gap-2 px-3 py-1.5 border text-xs font-medium text-foreground/80">
+                        <span className="w-4 h-4 rounded-full bg-red-400 text-white flex items-center justify-center text-[8px] font-bold">{partner.charAt(0)}</span>
+                        {partner}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-10">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="rounded-full w-8 h-8 hover:bg-muted"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <div className="flex gap-1">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <Button
+                key={i}
+                variant={currentPage === i + 1 ? "default" : "outline"}
+                className={`w-8 h-8 rounded-full ${currentPage === i + 1 ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="rounded-full w-8 h-8 hover:bg-muted"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
+      <StartupSubmissionForm
+        open={isSubmitIdeaOpen}
+        onOpenChange={setIsSubmitIdeaOpen}
+        selectedIncubatorId={selectedIncubatorId}
+        onSuccess={(incubatorId) => {
+          // Add the newly submitted incubator to the local list immediately
+          // (no need to re-fetch – incubatorId is already known)
+          setSubmittedIncubators((prev) => [...prev, incubatorId]);
+        }}
       />
-    </>
+    </div>
   );
 }

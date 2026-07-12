@@ -37,7 +37,7 @@ interface BloggerDashboardProps {
 export default function BloggerDashboard({ onEdit, onCreate, onPreview }: BloggerDashboardProps) {
     const [blogs, setBlogs] = useState<BlogPost[]>([]);
     const [loading, setLoading] = useState(true);
-    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
 
     // Reject modal state
@@ -79,7 +79,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
     }, [fetchBlogs]);
 
     // BLOGGER: delete own draft/rejected
-    const handleBloggerDelete = async (id: number) => {
+    const handleBloggerDelete = async (id: string) => {
         if (!token) return;
         try {
             await bloggerDeleteBlog(id, token);
@@ -93,7 +93,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
     };
 
     // ADMIN: force delete any blog
-    const handleAdminDelete = async (id: number) => {
+    const handleAdminDelete = async (id: string) => {
         if (!token) return;
         try {
             await deleteBlog(id, token);
@@ -107,7 +107,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
     };
 
     // BLOGGER: submit for review
-    const handleSubmit = async (id: number) => {
+    const handleSubmit = async (id: string) => {
         if (!token) return;
         try {
             await submitForReview(id, token);
@@ -123,7 +123,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
     };
 
     // ADMIN: publish
-    const handlePublish = async (id: number) => {
+    const handlePublish = async (id: string) => {
         if (!token) return;
         try {
             await publishBlog(id, token);
@@ -135,7 +135,7 @@ export default function BloggerDashboard({ onEdit, onCreate, onPreview }: Blogge
     };
 
     // ADMIN: unpublish
-    const handleUnpublish = async (id: number) => {
+    const handleUnpublish = async (id: string) => {
         if (!token) return;
         try {
             await unpublishBlog(id, token);

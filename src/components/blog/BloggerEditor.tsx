@@ -9,18 +9,20 @@ import Image from "@tiptap/extension-image";
 import Typography from "@tiptap/extension-typography";
 import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
-import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
     Save, ChevronLeft, Send, Trash2, UploadCloud, Image as ImageIcon,
     Globe, Linkedin, Twitter, Instagram, Youtube, User2
 } from "lucide-react";
+import LinkPreview from "./LinkPreview";
 import EditorBubbleMenu from "./EditorBubbleMenu";
 import {
     bloggerCreateBlog, bloggerUpdateBlog, submitForReview,
@@ -65,6 +67,43 @@ const formatYoutubeEmbedUrl = (url: string) => {
         // Ignore parsing errors
     }
     return url;
+};
+
+const formatLinkedinEmbedUrl = (url: string) => {
+    if (!url) return '';
+    if (url.includes('/embed/')) return url;
+    const match = url.match(/-activity-(\d+)-/);
+    if (match && match[1]) {
+        return `https://www.linkedin.com/embed/feed/update/urn:li:activity:${match[1]}`;
+    }
+    const shareMatch = url.match(/urn:li:share:(\d+)/);
+    if (shareMatch && shareMatch[1]) {
+        return `https://www.linkedin.com/embed/feed/update/urn:li:share:${shareMatch[1]}`;
+    }
+    const ugcMatch = url.match(/urn:li:ugcPost:(\d+)/);
+    if (ugcMatch && ugcMatch[1]) {
+        return `https://www.linkedin.com/embed/feed/update/urn:li:ugcPost:${ugcMatch[1]}`;
+    }
+    return url;
+};
+
+const getMapEmbedUrl = (address: string) => {
+    if (!address) return '';
+
+    if (address.includes('<iframe')) {
+        const match = address.match(/src="([^"]+)"/);
+        return match ? match[1] : '';
+    }
+
+    if (address.startsWith('https://www.google.com/maps/embed')) {
+        return address;
+    }
+
+    if (address.startsWith('http://') || address.startsWith('https://')) {
+        return address;
+    }
+
+    return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
 };
 
 function CharCounter({ current, max }: { current: number; max: number }) {
@@ -142,13 +181,22 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
     // ── Social / website links (stored on the blog post) ───────────────────
     const [websiteUrl, setWebsiteUrl] = useState(initialData?.website_url || "");
     const [linkedinUrl, setLinkedinUrl] = useState(initialData?.linkedin_url || "");
+    const [linkedinPostUrl, setLinkedinPostUrl] = useState(initialData?.linkedin_post_url || "");
     const [twitterUrl, setTwitterUrl] = useState(initialData?.x_url || "");
     const [instagramUrl, setInstagramUrl] = useState(initialData?.instagram_url || "");
     const [youtubeUrl, setYoutubeUrl] = useState(initialData?.youtube_url || "");
 
+    // ── Contact Information ─────────────────────────────────────────────────
+    const [companyName, setCompanyName] = useState(initialData?.company_name || "");
+    const [companyEmail, setCompanyEmail] = useState(initialData?.company_email || "");
+    const [companyPhone, setCompanyPhone] = useState(initialData?.company_phone || "");
+    const [companyAddress, setCompanyAddress] = useState(initialData?.company_address || "");
+    const [isCtaEnabled, setIsCtaEnabled] = useState(initialData?.is_cta_enabled ?? true);
+
     // ── Image ───────────────────────────────────────────────────────────────
     const [featuredImagePreview, setFeaturedImagePreview] = useState<string>(initialData?.featured_image_url || "");
     const [featuredImageFile, setFeaturedImageFile] = useState<File | null>(null);
+    const [sessionUploadedImages, setSessionUploadedImages] = useState<string[]>([]);
 
     // ── UI state ────────────────────────────────────────────────────────────
     const [saving, setSaving] = useState(false);
@@ -165,12 +213,16 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
         extensions: [
             StarterKit,
             Placeholder.configure({ placeholder: "Write your story here..." }),
-            Link.configure({ openOnClick: false }),
+            Link.configure({ 
+                openOnClick: false, 
+                HTMLAttributes: { 
+                    class: 'underline text-primary underline-offset-4 hover:opacity-80 transition-opacity cursor-pointer' 
+                } 
+            }),
             Image,
             Typography,
             Highlight,
             TextAlign.configure({ types: ["heading", "paragraph"] }),
-            TaskList,
             TaskItem.configure({ nested: true }),
         ],
         content: initialData?.content || "",
@@ -209,15 +261,20 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
         if (editor && editor.getText().trim() === "") errs.content = "Content is required.";
 
         if (tags) {
-            if (tags.length > LIMITS.tags) {
+            const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
+            const cleanedTags = tagList.join(',');
+            if (cleanedTags.length > LIMITS.tags) {
                 errs.tags = `Tags cannot exceed ${LIMITS.tags} characters.`;
-            } else {
-                const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
-                if (tagList.length > 10) {
-                    errs.tags = "Maximum 10 tags allowed.";
-                } else if (tagList.some(t => t.length > 30)) {
-                    errs.tags = "Each tag must be 30 characters or less.";
-                }
+            } else if (tagList.length > 10) {
+                errs.tags = "Maximum 10 tags allowed.";
+            } else if (tagList.some(t => t.length > 30)) {
+                errs.tags = "Each tag must be 30 characters or less.";
+            }
+        }
+
+        if (companyEmail && companyEmail.trim() !== "") {
+            if (!/^\S+@\S+\.\S+$/.test(companyEmail)) {
+                errs.companyEmail = "Must be a valid email address.";
             }
         }
 
@@ -239,6 +296,29 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
+    const formatUrl = (url?: string, platform?: 'instagram' | 'linkedin' | 'x' | 'youtube' | 'website') => {
+        if (!url || url.trim() === "") return undefined;
+        let formattedUrl = url.trim();
+        
+        // If it looks like a full URL (has dot and no spaces, or starts with http), just ensure protocol
+        if (formattedUrl.startsWith("http://") || formattedUrl.startsWith("https://") || (formattedUrl.includes('.') && !formattedUrl.includes(' '))) {
+            if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+                formattedUrl = `https://${formattedUrl}`;
+            }
+            return formattedUrl;
+        }
+
+        // Otherwise, treat as a handle/username
+        const handle = formattedUrl.replace(/^@/, ''); // Remove leading @ if typed
+        switch (platform) {
+            case 'instagram': return `https://instagram.com/${handle}`;
+            case 'linkedin': return `https://linkedin.com/in/${handle}`;
+            case 'x': return `https://x.com/${handle}`;
+            case 'youtube': return `https://youtube.com/@${handle}`;
+            default: return `https://${handle}`; // Fallback
+        }
+    };
+
     const buildData = (): CreateBlogData => {
         const data: CreateBlogData = {
             title,
@@ -246,16 +326,23 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
             tagline,
             tagline_color: taglineColor,
             tagline_shine_color: taglineShineColor,
-            content: editor!.getHTML(),
-            tags,
+            content: editor!.getHTML().replace(/(<p><\/p>|<p><br><\/p>|<p>&nbsp;<\/p>|\s)+$/g, ''),
+            tags: tags.split(',').map(t => t.trim()).filter(Boolean).join(','),
             meta_title: metaTitle,
             meta_description: metaDescription,
             youtube_embed_url: youtubeEmbedUrl,
-            website_url: websiteUrl || undefined,
-            instagram_url: instagramUrl || undefined,
-            linkedin_url: linkedinUrl || undefined,
-            x_url: twitterUrl || undefined,
-            youtube_url: youtubeUrl || undefined,
+            website_url: formatUrl(websiteUrl, 'website'),
+            instagram_url: formatUrl(instagramUrl, 'instagram'),
+            linkedin_url: formatUrl(linkedinUrl, 'linkedin'),
+            linkedin_post_url: formatUrl(linkedinPostUrl),
+            x_url: formatUrl(twitterUrl, 'x'),
+            youtube_url: formatUrl(youtubeUrl, 'youtube'),
+            company_name: companyName || undefined,
+            company_email: companyEmail || undefined,
+            company_phone: companyPhone || undefined,
+            company_address: companyAddress || undefined,
+            is_cta_enabled: isCtaEnabled,
+            session_uploaded_images: sessionUploadedImages.length > 0 ? sessionUploadedImages : undefined,
         };
         if (featuredImageFile) {
             data.featured_image = featuredImageFile;
@@ -291,7 +378,7 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
             setSaving(true);
             let savedBlog: BlogPost;
             if (initialData) {
-                const res = await bloggerUpdateBlog(initialData.id, buildData(), token);
+                const res = await bloggerUpdateBlog(initialData?.id, buildData(), token);
                 savedBlog = res.blog;
                 toast({ title: "Updated", description: "Blog post saved." });
             } else {
@@ -386,12 +473,20 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
 
                     {/* Editor */}
                     <div className="editor-wrapper">
-                        <EditorBubbleMenu editor={editor} />
+                        <EditorBubbleMenu editor={editor} onImageUploaded={(url) => setSessionUploadedImages(prev => [...prev, url])} />
                         <div className={`border rounded-none bg-card/50 ${errors.content ? "border-destructive" : "border-border/50"}`}>
                             <EditorContent editor={editor} />
                         </div>
                         <InlineError message={errors.content} />
                     </div>
+
+                    {/* LinkedIn Preview on the left side */}
+                    {linkedinPostUrl && (
+                        <div className="mt-4 pt-4 border-t border-border/50">
+                            <h3 className="text-sm font-semibold mb-3">LinkedIn Post Preview</h3>
+                            <LinkPreview url={linkedinPostUrl} title={title} />
+                        </div>
+                    )}
                 </div>
 
                 {/* ── Right: Sticky sidebar ─────────────────────────────────── */}
@@ -477,6 +572,18 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                             }
                         </div>
 
+                        {/* LinkedIn Post URL */}
+                        <div className="space-y-2">
+                            <FieldLabel label="LinkedIn Post URL" current={linkedinPostUrl.length} max={500} />
+                            <Input
+                                placeholder="Paste LinkedIn post link or embed URL..."
+                                value={linkedinPostUrl}
+                                maxLength={500}
+                                onChange={(e) => setLinkedinPostUrl(formatLinkedinEmbedUrl(e.target.value))}
+                                className={`bg-background`}
+                            />
+                        </div>
+
                         {/* SEO */}
                         <div className="border-t border-border/50 pt-4 space-y-4">
                             <h3 className="text-sm font-semibold">SEO Metadata</h3>
@@ -488,6 +595,52 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                                 <SmallLabel label="Meta Description" current={metaDescription.length} max={LIMITS.metaDescription} required />
                                 <Textarea placeholder="SEO Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} maxLength={LIMITS.metaDescription} className="bg-background resize-none h-20" />
                             </div>
+                        </div>
+                    </Card>
+
+                    {/* Contact Information card */}
+                    <Card className="p-5 space-y-4 bg-muted/20 border-border/50 shadow-sm">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold">Contact Information</h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground -mt-2">Optional for your blog post.</p>
+
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">Company Name</label>
+                            <Input placeholder="Company Name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={`bg-background text-sm ${errors.companyName ? "border-destructive" : ""}`} />
+                            <InlineError message={errors.companyName} />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">Company Email</label>
+                            <Input placeholder="email@company.com" value={companyEmail} onChange={(e) => setCompanyEmail(e.target.value)} className={`bg-background text-sm ${errors.companyEmail ? "border-destructive" : ""}`} />
+                            <InlineError message={errors.companyEmail} />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">Company Phone</label>
+                            <Input placeholder="+1 234 567 890" value={companyPhone} onChange={(e) => setCompanyPhone(e.target.value)} className={`bg-background text-sm ${errors.companyPhone ? "border-destructive" : ""}`} />
+                            <InlineError message={errors.companyPhone} />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">Company Address</label>
+                            <Textarea placeholder="Full Address or Map Link" value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} className={`bg-background text-sm resize-none h-20 ${errors.companyAddress ? "border-destructive" : ""}`} />
+                            <InlineError message={errors.companyAddress} />
+                            {companyAddress && (() => {
+                                const mapUrl = getMapEmbedUrl(companyAddress);
+                                const isEmbeddable = mapUrl.includes('output=embed') || mapUrl.includes('/embed');
+                                return isEmbeddable ? (
+                                    <div className="mt-2 rounded-lg overflow-hidden border border-border">
+                                        <iframe src={mapUrl} width="100%" height="200" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"></iframe>
+                                    </div>
+                                ) : (
+                                    <div className="mt-2">
+                                        <LinkPreview url={mapUrl} isLinkedin={false} />
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                            <label className="text-sm font-semibold text-foreground">Enable CTA Banner</label>
+                            <Switch checked={isCtaEnabled} onCheckedChange={setIsCtaEnabled} />
                         </div>
                     </Card>
 

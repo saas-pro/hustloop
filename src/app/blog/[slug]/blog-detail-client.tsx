@@ -1,6 +1,6 @@
 "use client";
 
-import { type BlogPost, publishBlog, unpublishBlog, rejectBlog, API_BASE_URL } from "@/lib/api";
+import { type BlogPost, publishBlog, unpublishBlog, rejectBlog, API_BASE_URL, trackBlogClick } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,15 @@ import {
     Calendar, User, Share2, ArrowLeft, Sun, Moon, Palette, Check,
     Home, CheckCircle, XCircle, FileText, ExternalLink,
     ChevronDown, Eye, LogIn, ShieldCheck, X, EyeOff,
-    ChevronRight, Clock, Globe, Linkedin, Twitter, Instagram
+    ChevronRight, Clock, Globe, Linkedin, Twitter, Instagram,
+    MapPin, Phone, Mail, Building
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import ShinyText from "@/components/ShinyText";
 import BrandLogo from "@/components/blog/brand-logo";
+import LinkPreview from "@/components/blog/LinkPreview";
+import LineSidebar from "@/components/LineSidebar";
 import { useTheme } from "next-themes";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -59,6 +62,21 @@ function ThemeToggleDropdown() {
     );
 }
 
+const getMapEmbedUrl = (address: string) => {
+    if (!address) return '';
+    if (address.includes('<iframe')) {
+        const match = address.match(/src="([^"]+)"/);
+        return match ? match[1] : '';
+    }
+    if (address.startsWith('https://www.google.com/maps/embed')) {
+        return address;
+    }
+    if (address.startsWith('http://') || address.startsWith('https://')) {
+        return address;
+    }
+    return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+};
+
 interface BlogDetailClientProps {
     blog: BlogPost;
     nextBlogs?: BlogPost[] | null;
@@ -79,9 +97,92 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
         setToken(localStorage.getItem('token'));
     }, []);
 
+    const [viewCount, setViewCount] = useState(blog.views || 0);
+
+    useEffect(() => {
+        if (!isClient) return;
+
+        const viewKey = `hustloop_blog_view_${blog.id}`;
+        const lastViewed = localStorage.getItem(viewKey);
+        const now = Date.now();
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+        if (!lastViewed || now - parseInt(lastViewed, 10) > TWENTY_FOUR_HOURS) {
+            fetch(`${API_BASE_URL}/api/blog-posts/${blog.slug}/view`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.views !== undefined) {
+                        setViewCount(data.views);
+                        localStorage.setItem(viewKey, now.toString());
+                    }
+                })
+                .catch(err => console.error("Error recording view:", err));
+        }
+    }, [isClient, blog.id, blog.slug]);
+
+    const [headings, setHeadings] = useState<{ id: string; text: string }[]>([]);
+
+    useEffect(() => {
+        if (!isClient) return;
+
+        setTimeout(() => {
+            const articleElement = document.getElementById("article-content");
+            if (articleElement) {
+                const elements = Array.from(articleElement.querySelectorAll("h2, h3"));
+                const parsedHeadings = elements.map((el, index) => {
+                    const text = el.textContent || "";
+                    const id = el.id || `heading-${index}`;
+                    return { id, text };
+                });
+                setHeadings(parsedHeadings);
+            }
+        }, 100);
+    }, [isClient, blog.content]);
+
+    const [activeHeadingIndex, setActiveHeadingIndex] = useState<number | null>(null);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (headings.length === 0) return;
+            const scrollPosition = window.scrollY + 150;
+
+            const articleElement = document.getElementById("article-content");
+            const elements = articleElement ? Array.from(articleElement.querySelectorAll("h2, h3")) : [];
+
+            let currentActiveIndex = -1;
+            for (let i = headings.length - 1; i >= 0; i--) {
+                const el = elements[i];
+                if (el) {
+                    const elementTop = el.getBoundingClientRect().top + window.scrollY;
+                    if (elementTop <= scrollPosition) {
+                        currentActiveIndex = i;
+                        break;
+                    }
+                }
+            }
+            if (currentActiveIndex !== -1) {
+                setActiveHeadingIndex(currentActiveIndex);
+            } else {
+                setActiveHeadingIndex(0);
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        handleScroll();
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [headings]);
+
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
     const [scrollProgress, setScrollProgress] = useState(0);
+
+    const handleCtaClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        // We let the link navigation happen natively, but track the click asynchronously
+        trackBlogClick(blog.id);
+    };
 
     // Blog status local state for instant feedback
     const [blogStatus, setBlogStatus] = useState<BlogPost['status']>(blog.status);
@@ -500,7 +601,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
 
             {/* ===== BLOG CONTENT ===== */}
             <div className="min-h-screen bg-background">
-                <div className="container mx-auto px-4 py-8">
+                <div className="max-w-[1400px] lg:max-w-[1400px] xl:max-w-[1600px] mx-auto lg:px-8 px-4 xl:px-4 py-8">
                     <Link href="/blog">
                         <Button variant="ghost" className="mb-6">
                             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -508,12 +609,41 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                         </Button>
                     </Link>
 
-                    {/* Two-column layout on lg screens */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+                    {/* Multi-column layout on lg screens */}
+                    <div className="flex flex-col lg:flex-row gap-6 xl:gap-7 items-start w-full">
+
+                        {/* Left Sidebar (LineSidebar) */}
+                        <div className="hidden lg:block w-[280px] xl:w-[280px] shrink-0 sticky top-[100px] left-0 self-start z-[10000]">
+                            {headings.length > 0 && (
+                                <div className="py-4">
+                                    <LineSidebar
+                                        items={headings.map(h => h.text)}
+                                        activeIndex={activeHeadingIndex}
+                                        onItemClick={(idx) => {
+                                            const articleElement = document.getElementById("article-content");
+                                            const elements = articleElement ? Array.from(articleElement.querySelectorAll("h2, h3")) : [];
+                                            const target = elements[idx];
+                                            if (target) {
+                                                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                setActiveHeadingIndex(idx);
+                                            }
+                                        }}
+                                        accentColor="hsl(var(--primary))"
+                                        textColor="hsl(var(--muted-foreground))"
+                                        markerColor="hsl(var(--border))"
+                                        fontSize={1.2}
+                                        maxShift={40}
+                                        itemGap={32}
+                                        markerLength={80}
+                                        proximityRadius={150}
+                                    />
+                                </div>
+                            )}
+                        </div>
 
                         {/* Main Article Column */}
-                        <div className="lg:col-span-8">
-                            <article>
+                        <div className="w-full max-w-[850px] flex-1 shrink">
+                            <article className="w-full">
                                 <header className="mb-8">
                                     <h1 className="text-4xl md:text-5xl font-bold mb-4">{blog.title}</h1>
 
@@ -587,10 +717,199 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
 
                                 <div className="mb-8 p-1">
                                     <div
-                                        className="blog-content max-w-none text-foreground"
-                                        dangerouslySetInnerHTML={{ __html: blog.content }}
+                                        id="article-content"
+                                        className="blog-content max-w-none text-foreground [&_h2]:scroll-mt-[100px] [&_h3]:scroll-mt-[100px]"
+                                        dangerouslySetInnerHTML={{ __html: blog.content?.replace(/(<p><\/p>|<p><br><\/p>|<p>&nbsp;<\/p>|\s)+$/g, '') || '' }}
                                     />
+
                                 </div>
+
+                                {blog.linkedin_post_url && (
+                                    <LinkPreview url={blog.linkedin_post_url} title={blog.title} />
+                                )}
+
+                                <div className="lg:hidden sm:block self-start space-y-4">
+
+                                    {/* Contact Details Card */}
+                                    {(blog.company_name || blog.company_email || blog.company_phone || blog.company_address) && (
+                                        <Card className="overflow-hidden border-border/60 shadow-sm bg-muted/10">
+                                            <div className="p-4 border-b border-border/40 bg-muted/30">
+                                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                                    <Building className="h-3.5 w-3.5" /> Contact Details
+                                                </p>
+                                            </div>
+                                            <div className="p-4 space-y-4 mb-2">
+                                                {blog.company_name && (
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">Company</p>
+                                                        <p className="text-sm font-medium">{blog.company_name}</p>
+                                                    </div>
+                                                )}
+                                                {blog.company_email && (
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">Email</p>
+                                                        <a href={`mailto:${blog.company_email}`} className="text-sm text-primary hover:underline flex items-center gap-2">
+                                                            <Mail className="h-4 w-4 text-muted-foreground" />
+                                                            {blog.company_email}
+                                                        </a>
+                                                    </div>
+                                                )}
+                                                {blog.company_phone && (
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">Phone</p>
+                                                        <a href={`tel:${blog.company_phone}`} className="text-sm text-primary hover:underline flex items-center gap-2">
+                                                            <Phone className="h-4 w-4 text-muted-foreground" />
+                                                            {blog.company_phone}
+                                                        </a>
+                                                    </div>
+                                                )}
+                                                {blog.company_address && (
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">Address</p>
+                                                        <div className="text-sm flex items-start gap-2">
+                                                            <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                                                            {(() => {
+                                                                const mapUrl = getMapEmbedUrl(blog.company_address);
+                                                                const isEmbeddable = mapUrl.includes('output=embed') || mapUrl.includes('/embed');
+                                                                return isEmbeddable ? (
+                                                                    <div className="mt-0.5 rounded-lg overflow-hidden border border-border/40">
+                                                                        <iframe src={mapUrl} width="100%" height="150" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="transition-all duration-500 [.theme-dark_&]:invert [.theme-dark_&]:hue-rotate-180 [.theme-purple_&]:invert [.theme-purple_&]:hue-rotate-180 [.theme-orange_&]:invert [.theme-orange_&]:hue-rotate-180 [.theme-blue-gray_&]:invert [.theme-blue-gray_&]:hue-rotate-180"></iframe>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="mt-0.5">
+                                                                        <LinkPreview url={mapUrl} isLinkedin={false} />
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                        </div>
+
+                                                        {(blog.linkedin_url || blog.x_url || blog.instagram_url || blog.website_url || blog.youtube_url) && (
+                                                            <div className="mt-6 pt-5 border-t border-border/40">
+                                                                <p className="text-xs font-bold text-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                                    <span className="h-px w-4 bg-primary"></span>
+                                                                    Follow Their Journey
+                                                                </p>
+                                                                <div className="flex flex-wrap items-center gap-2.5">
+                                                                    {blog.linkedin_url && (
+                                                                        <a href={blog.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#0A66C2]/10 text-muted-foreground hover:text-[#0A66C2] transition-all hover:scale-110" title="LinkedIn">
+                                                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
+                                                                        </a>
+                                                                    )}
+                                                                    {blog.x_url && (
+                                                                        <a href={blog.x_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-black/10 [.theme-dark_&]:hover:bg-white/10 text-muted-foreground hover:text-black [.theme-dark_&]:hover:text-white transition-all hover:scale-110" title="X / Twitter">
+                                                                            <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 fill-current">
+                                                                                <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.931L18.901 1.153Zm-1.653 19.57h2.608L6.856 2.597H4.062l13.185 18.126Z" />
+                                                                            </svg>
+                                                                        </a>
+                                                                    )}
+                                                                    {blog.instagram_url && (
+                                                                        <a href={blog.instagram_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#E1306C]/10 text-muted-foreground hover:text-[#E1306C] transition-all hover:scale-110" title="Instagram">
+                                                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
+                                                                        </a>
+                                                                    )}
+                                                                    {blog.youtube_url && (
+                                                                        <a href={blog.youtube_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#FF0000]/10 text-muted-foreground hover:text-[#FF0000] transition-all hover:scale-110" title="YouTube">
+                                                                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
+                                                                        </a>
+                                                                    )}
+                                                                    {blog.website_url && (
+                                                                        <a href={blog.website_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all hover:scale-110" title="Website">
+                                                                            <Globe className="h-4 w-4" />
+                                                                        </a>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <div className="mt-8 pt-4 border-t border-border/40">
+                                                            <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 shadow-sm">
+                                                                <div className="relative flex h-3 w-3">
+                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                                                                </div>
+                                                                <span className="text-sm font-medium text-foreground">
+                                                                    <span className="font-bold text-primary">{viewCount}</span> {viewCount === 1 ? 'curious mind exploring' : 'curious minds exploring'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                )}
+
+
+
+                                            </div>
+
+
+
+                                        </Card>
+                                    )}
+
+                                    {nextBlogs && nextBlogs.length > 0 ? (
+                                        <Card className="overflow-hidden border-border/60 shadow-sm">
+                                            <div className="p-4 border-b border-border/40 bg-muted/30">
+                                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                                    <ChevronRight className="h-3.5 w-3.5" /> Suggested Blogs
+                                                </p>
+                                            </div>
+
+                                            <div className="flex flex-col divide-y divide-border/40">
+                                                {nextBlogs.map((nb) => (
+                                                    <Link key={nb.id} href={`/blog/${nb.slug}`} className="block group hover:bg-muted/30 transition-colors p-4">
+                                                        <div className="space-y-2">
+                                                            {nb.tags && nb.tags.length > 0 && (
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {nb.tags.slice(0, 3).map((tag) => (
+                                                                        <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">{tag}</Badge>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            <h3 className="font-bold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                                                                {nb.title}
+                                                            </h3>
+
+                                                            {nb.excerpt && (
+                                                                <p className="text-xs text-muted-foreground line-clamp-2">{nb.excerpt}</p>
+                                                            )}
+
+                                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-1">
+                                                                <span>{new Date(nb.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </Card>
+                                    ) : (
+                                        <Card className="p-6 text-center border-border/60 shadow-sm bg-muted/20">
+                                            <p className="text-sm text-muted-foreground">You&apos;ve reached the latest article!</p>
+                                            <Link href="/blog">
+                                                <Button variant="outline" size="sm" className="mt-3">
+                                                    <ArrowLeft className="mr-2 h-3 w-3" /> All Articles
+                                                </Button>
+                                            </Link>
+                                        </Card>
+                                    )}
+                                </div>
+
+                                {/* CTA Banner */}
+                                {blog.is_cta_enabled !== false && (
+                                    <Card className="mb-12 mt-4 overflow-hidden border-primary/20 bg-primary/5 shadow-md">
+                                        <CardContent className="p-8 md:p-10 text-center">
+                                            <h3 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
+                                                Ready to turn your vision into reality?
+                                            </h3>
+                                            <p className="text-muted-foreground mb-8 text-lg max-w-2xl mx-auto">
+                                                Visit our platform to explore how we can help you build, launch, and scale your next big idea.
+                                            </p>
+                                            <Link href="https://hustloop.com/" target="_blank">
+                                                <Button size="lg" className="text-lg px-8 py-6 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" onClick={handleCtaClick}>
+                                                    Explore Our Ecosystem
+                                                </Button>
+                                            </Link>
+                                        </CardContent>
+                                    </Card>
+                                )}
 
                                 {/* Tags and Social Media at Bottom */}
                                 <div className="mb-8">
@@ -602,38 +921,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                         </div>
                                     )}
 
-                                    {(blog.linkedin_url || blog.x_url || blog.instagram_url || blog.website_url || blog.youtube_url) && (
-                                        <div className="flex items-center gap-4 pt-6 border-t border-border/40">
-                                            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Follow the Startup</span>
-                                            <div className="flex items-center gap-3">
-                                                {blog.linkedin_url && (
-                                                    <a href={blog.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="LinkedIn">
-                                                        <Linkedin className="h-5 w-5" />
-                                                    </a>
-                                                )}
-                                                {blog.x_url && (
-                                                    <a href={blog.x_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="X / Twitter">
-                                                        <Twitter className="h-5 w-5" />
-                                                    </a>
-                                                )}
-                                                {blog.instagram_url && (
-                                                    <a href={blog.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="Instagram">
-                                                        <Instagram className="h-5 w-5" />
-                                                    </a>
-                                                )}
-                                                {blog.youtube_url && (
-                                                    <a href={blog.youtube_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="YouTube">
-                                                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
-                                                    </a>
-                                                )}
-                                                {blog.website_url && (
-                                                    <a href={blog.website_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors" title="Website">
-                                                        <Globe className="h-5 w-5" />
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
+
                                 </div>
 
                                 {/* Hustloop Branding Card */}
@@ -653,7 +941,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                                 </div>
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
-                                                <p className="text-sm font-medium">Follow us for more blogs</p>
+                                                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Stay in the loop</p>
                                                 <div className="flex items-center gap-3">
                                                     <a href="https://linkedin.com/company/hustloop" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-[#0A66C2] transition-colors">
                                                         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
@@ -735,7 +1023,116 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                         </div>
 
                         {/* Right Sidebar — sticky "Suggested Blogs" panel */}
-                        <div className="lg:col-span-4 hidden lg:block sticky top-[89px] self-start space-y-4">
+                        <div className="hidden lg:block w-[320px] xl:w-[320px] shrink-0 sticky top-[89px] self-start space-y-4">
+
+                            {/* Contact Details Card */}
+                            {(blog.company_name || blog.company_email || blog.company_phone || blog.company_address) && (
+                                <Card className="overflow-hidden border-border/60 shadow-sm bg-muted/10">
+                                    <div className="p-4 border-b border-border/40 bg-muted/30">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                            <Building className="h-3.5 w-3.5" /> Contact Details
+                                        </p>
+                                    </div>
+                                    <div className="p-4 space-y-4 mb-2">
+                                        {blog.company_name && (
+                                            <div>
+                                                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">Company</p>
+                                                <p className="text-sm font-medium">{blog.company_name}</p>
+                                            </div>
+                                        )}
+                                        {blog.company_email && (
+                                            <div>
+                                                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">Email</p>
+                                                <a href={`mailto:${blog.company_email}`} className="text-sm text-primary hover:underline flex items-center gap-2">
+                                                    <Mail className="h-4 w-4 text-muted-foreground" />
+                                                    {blog.company_email}
+                                                </a>
+                                            </div>
+                                        )}
+                                        {blog.company_phone && (
+                                            <div>
+                                                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">Phone</p>
+                                                <a href={`tel:${blog.company_phone}`} className="text-sm text-primary hover:underline flex items-center gap-2">
+                                                    <Phone className="h-4 w-4 text-muted-foreground" />
+                                                    {blog.company_phone}
+                                                </a>
+                                            </div>
+                                        )}
+                                        {blog.company_address && (
+                                            <div>
+                                                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1">Address</p>
+                                                <div className="text-sm flex items-start gap-2">
+                                                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                                                    {(() => {
+                                                        const mapUrl = getMapEmbedUrl(blog.company_address);
+                                                        const isEmbeddable = mapUrl.includes('output=embed') || mapUrl.includes('/embed');
+                                                        return isEmbeddable ? (
+                                                            <div className="mt-0.5 rounded-lg overflow-hidden border border-border/40">
+                                                                <iframe src={mapUrl} width="100%" height="150" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="transition-all duration-500 [.theme-dark_&]:invert [.theme-dark_&]:hue-rotate-180 [.theme-purple_&]:invert [.theme-purple_&]:hue-rotate-180 [.theme-orange_&]:invert [.theme-orange_&]:hue-rotate-180 [.theme-blue-gray_&]:invert [.theme-blue-gray_&]:hue-rotate-180"></iframe>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="mt-0.5">
+                                                                <LinkPreview url={mapUrl} isLinkedin={false} />
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
+
+                                                {(blog.linkedin_url || blog.x_url || blog.instagram_url || blog.website_url || blog.youtube_url) && (
+                                                    <div className="mt-2 pt-2 border-t border-border/40">
+                                                        <p className="text-xs font-bold text-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                            <span className="h-px w-4 bg-primary"></span>
+                                                            Follow Their Journey
+                                                        </p>
+                                                        <div className="flex flex-wrap items-center gap-2.5">
+                                                            {blog.linkedin_url && (
+                                                                <a href={blog.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#0A66C2]/10 text-muted-foreground hover:text-[#0A66C2] transition-all hover:scale-110" title="LinkedIn">
+                                                                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
+                                                                </a>
+                                                            )}
+                                                            {blog.x_url && (
+                                                                <a href={blog.x_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-black/10 [.theme-dark_&]:hover:bg-white/10 text-muted-foreground hover:text-black [.theme-dark_&]:hover:text-white transition-all hover:scale-110" title="X / Twitter">
+                                                                    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 fill-current">
+                                                                        <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.931L18.901 1.153Zm-1.653 19.57h2.608L6.856 2.597H4.062l13.185 18.126Z" />
+                                                                    </svg>
+                                                                </a>
+                                                            )}
+                                                            {blog.instagram_url && (
+                                                                <a href={blog.instagram_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#E1306C]/10 text-muted-foreground hover:text-[#E1306C] transition-all hover:scale-110" title="Instagram">
+                                                                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
+                                                                </a>
+                                                            )}
+                                                            {blog.youtube_url && (
+                                                                <a href={blog.youtube_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#FF0000]/10 text-muted-foreground hover:text-[#FF0000] transition-all hover:scale-110" title="YouTube">
+                                                                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
+                                                                </a>
+                                                            )}
+                                                            {blog.website_url && (
+                                                                <a href={blog.website_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all hover:scale-110" title="Website">
+                                                                    <Globe className="h-4 w-4" />
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <div className="mt-8 pt-4 border-t border-border/40">
+                                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 shadow-sm">
+                                                        <div className="relative flex h-3 w-3">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                                            <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                                                        </div>
+                                                        <span className="text-sm font-medium text-foreground">
+                                                            <span className="font-bold text-primary">{viewCount}</span> {viewCount === 1 ? 'curious mind exploring' : 'curious minds exploring'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                </Card>
+                            )}
+
                             {nextBlogs && nextBlogs.length > 0 ? (
                                 <Card className="overflow-hidden border-border/60 shadow-sm">
                                     <div className="p-4 border-b border-border/40 bg-muted/30">

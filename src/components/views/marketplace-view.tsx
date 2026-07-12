@@ -240,18 +240,6 @@ export default function MarketplaceView({ isOpen, onOpenChange, setActiveView, i
           />
         )
       }
-
-      {/* {
-        internalView === 'incubators' && (
-          <IncubatorsView
-            isOpen={true}
-            onOpenChange={handleInternalViewClose('incubators')}
-            isLoggedIn={isLoggedIn}
-            hasSubscription={hasSubscription}
-            setActiveView={setActiveView}
-          />
-        )
-      } */}
     </>
   );
 }

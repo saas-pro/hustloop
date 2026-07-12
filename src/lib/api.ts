@@ -9,7 +9,7 @@ const getApiBaseUrl = () => {
 export const API_BASE_URL = getApiBaseUrl();
 
 export interface BlogPost {
-    id: number;
+    id: string;
     title: string;
     slug: string;
     excerpt?: string;
@@ -23,6 +23,7 @@ export interface BlogPost {
     website_url?: string;
     instagram_url?: string;
     linkedin_url?: string;
+    linkedin_post_url?: string;
     x_url?: string;
     youtube_url?: string;
     meta_title?: string;
@@ -40,6 +41,13 @@ export interface BlogPost {
     created_at: string;
     updated_at: string;
     deleted_at?: string;
+    company_name?: string;
+    company_email?: string;
+    company_phone?: string;
+    company_address?: string;
+    is_cta_enabled?: boolean;
+    cta_clicks?: number;
+    views?: number;
 }
 
 export interface BlogListResponse {
@@ -121,7 +129,7 @@ export async function getPublicBlogs(
  * - No token (or non-admin token): returns published blogs only.
  * - Admin token: returns blog of any status (draft, pending, rejected, published).
  */
-export async function getBlogBySlug(slug: string, token?: string): Promise<BlogResponse> {
+export async function getBlogBySlug(slug: string, token?: string, incrementViews?: boolean): Promise<BlogResponse> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
@@ -154,7 +162,8 @@ export async function getBlogBySlug(slug: string, token?: string): Promise<BlogR
             });
         }
 
-        const response = await fetch(`${API_BASE_URL}/api/blogs/${slug}`, {
+        const queryParams = incrementViews ? '?increment_views=true' : '';
+        const response = await fetch(`${API_BASE_URL}/api/blogs/${slug}${queryParams}`, {
             signal: controller.signal,
             headers,
             cache: 'no-store'
@@ -175,6 +184,28 @@ export async function getBlogBySlug(slug: string, token?: string): Promise<BlogR
         throw error;
     } finally {
         clearTimeout(timeoutId);
+    }
+}
+
+/**
+ * Track a click on the CTA button in a blog post
+ */
+export async function trackBlogClick(blogId: string): Promise<{ success: boolean; clicks?: number }> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}/click`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+        });
+        if (!response.ok) {
+            throw new Error('Failed to track click');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error tracking blog click:', error);
+        return { success: false };
     }
 }
 
@@ -235,7 +266,7 @@ export async function getMyBlogs(
 /**
  * Get a single blog by ID (owner only)
  */
-export async function getMyBlog(blogId: number, token: string): Promise<BlogResponse> {
+export async function getMyBlog(blogId: string, token: string): Promise<BlogResponse> {
     const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}`, {
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -278,7 +309,7 @@ export async function bloggerCreateBlog(data: CreateBlogData, token: string): Pr
 /**
  * Update a blog post as a blogger
  */
-export async function bloggerUpdateBlog(blogId: number, data: UpdateBlogData, token: string): Promise<BlogResponse> {
+export async function bloggerUpdateBlog(blogId: string, data: UpdateBlogData, token: string): Promise<BlogResponse> {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
@@ -304,7 +335,7 @@ export async function bloggerUpdateBlog(blogId: number, data: UpdateBlogData, to
 /**
  * Delete a blog post as a blogger
  */
-export async function bloggerDeleteBlog(blogId: number, token: string): Promise<{ success: boolean; message: string }> {
+export async function bloggerDeleteBlog(blogId: string, token: string): Promise<{ success: boolean; message: string }> {
     const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}`, {
         method: 'DELETE',
         headers: {
@@ -322,7 +353,7 @@ export async function bloggerDeleteBlog(blogId: number, token: string): Promise<
 /**
  * Request blog deletion as a blogger
  */
-export async function requestDeleteBlog(blogId: number, token: string): Promise<BlogResponse> {
+export async function requestDeleteBlog(blogId: string, token: string): Promise<BlogResponse> {
     const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}/request-delete`, {
         method: 'PUT',
         headers: {
@@ -340,7 +371,7 @@ export async function requestDeleteBlog(blogId: number, token: string): Promise<
 /**
  * Submit a blog for review
  */
-export async function submitForReview(blogId: number, token: string): Promise<BlogResponse> {
+export async function submitForReview(blogId: string, token: string): Promise<BlogResponse> {
     const response = await fetch(`${API_BASE_URL}/api/blogs/${blogId}/submit`, {
         method: 'PUT',
         headers: {
@@ -370,11 +401,18 @@ export interface CreateBlogData {
     website_url?: string;
     instagram_url?: string;
     linkedin_url?: string;
+    linkedin_post_url?: string;
     x_url?: string;
     youtube_url?: string;
     meta_title?: string;
     meta_description?: string;
     tags?: string;
+    company_name?: string;
+    company_email?: string;
+    company_phone?: string;
+    company_address?: string;
+    session_uploaded_images?: string[];
+    is_cta_enabled?: boolean;
 }
 
 export interface UpdateBlogData extends Partial<CreateBlogData> { }
@@ -412,7 +450,7 @@ export async function createBlog(
  * Update an existing blog post (admin only)
  */
 export async function updateBlog(
-    blogId: number,
+    blogId: string,
     data: UpdateBlogData,
     token: string
 ): Promise<BlogResponse> {
@@ -442,7 +480,7 @@ export async function updateBlog(
  * Delete a blog post (admin only)
  */
 export async function deleteBlog(
-    blogId: number,
+    blogId: string,
     token: string
 ): Promise<{ success: boolean; message: string }> {
     const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}`, {
@@ -463,7 +501,7 @@ export async function deleteBlog(
  * Publish a blog post (admin only)
  */
 export async function publishBlog(
-    blogId: number,
+    blogId: string,
     token: string
 ): Promise<BlogResponse> {
     const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}/publish`, {
@@ -484,7 +522,7 @@ export async function publishBlog(
  * Reject a blog post (admin only)
  */
 export async function rejectBlog(
-    blogId: number,
+    blogId: string,
     reason: string,
     token: string
 ): Promise<BlogResponse> {
@@ -508,7 +546,7 @@ export async function rejectBlog(
  * Approve a blog deletion request (admin only)
  */
 export async function approveDeleteRequest(
-    blogId: number,
+    blogId: string,
     token: string
 ): Promise<BlogResponse> {
     const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}/delete-requests/approve`, {
@@ -529,7 +567,7 @@ export async function approveDeleteRequest(
  * Reject a blog deletion request (admin only)
  */
 export async function rejectDeleteRequest(
-    blogId: number,
+    blogId: string,
     token: string
 ): Promise<BlogResponse> {
     const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}/delete-requests/reject`, {
@@ -550,7 +588,7 @@ export async function rejectDeleteRequest(
  * Unpublish a blog post (admin only)
  */
 export async function unpublishBlog(
-    blogId: number,
+    blogId: string,
     token: string
 ): Promise<BlogResponse> {
     const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}/unpublish`, {
@@ -602,7 +640,7 @@ export async function getAdminBlogs(
  * Get a single blog for admin (including drafts)
  */
 export async function getAdminBlog(
-    blogId: number,
+    blogId: string,
     token: string
 ): Promise<BlogResponse> {
     const response = await fetch(`${API_BASE_URL}/api/admin/blogs/${blogId}`, {

@@ -114,7 +114,7 @@ export default function BlogDashboard({ token }: BlogDashboardProps) {
         fetchBlogs();
     }, [page, statusFilter, fetchBlogs]);
 
-    const handlePublish = async (blogId: number) => {
+    const handlePublish = async (blogId: string) => {
         try {
             await publishBlog(blogId, token);
             toast({ title: "Success", description: "Blog published successfully" });
@@ -124,7 +124,7 @@ export default function BlogDashboard({ token }: BlogDashboardProps) {
         }
     };
 
-    const handleUnpublish = async (blogId: number) => {
+    const handleUnpublish = async (blogId: string) => {
         try {
             await unpublishBlog(blogId, token);
             toast({ title: "Success", description: "Blog unpublished successfully" });
@@ -134,7 +134,7 @@ export default function BlogDashboard({ token }: BlogDashboardProps) {
         }
     };
 
-    const handleDelete = async (blogId: number) => {
+    const handleDelete = async (blogId: string) => {
         if (!confirm("Are you sure you want to permanently delete this blog?")) return;
         try {
             await deleteBlog(blogId, token);

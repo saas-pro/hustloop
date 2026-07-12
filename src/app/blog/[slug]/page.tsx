@@ -99,6 +99,7 @@ export default async function BlogDetailPage({ params, searchParams }: BlogPageP
 
     try {
         // SSR fetch: no token available server-side → returns published blog only
+        // Removed server-side view increment since we now track views client-side
         const response = await getBlogBySlug(slug);
 
         if (response?.blog) {

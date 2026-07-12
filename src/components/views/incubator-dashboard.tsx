@@ -1,6 +1,8 @@
 
 "use client";
 
+import Image from "next/image";
+
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { io, Socket } from "socket.io-client";
 import { StartupSubmission, StartupIdeaStatus } from "./founder-ideas-view";
@@ -24,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import SubmissionDetailsModal from "./submission-details-modal";
+import StartupSubmissionDetailsModal from "./startup-submission-details-modal";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { API_BASE_URL } from "@/lib/api";
 import PasswordChangeForm from './password-change-form';
@@ -35,7 +38,7 @@ import { X, Download, Star } from "lucide-react";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FaGlobe, FaLinkedin, FaTwitter, FaInstagram, FaYoutube } from 'react-icons/fa';
-import { State, City } from 'country-state-city';
+import { getAllStates, getDistricts } from "india-state-district";
 
 
 
@@ -235,19 +238,18 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
     });
 
     const watchedStartupsStr = JSON.stringify(profileForm.watch("startups") || []);
-    const watchedState = profileForm.watch("state") || "";
-    const watchedCity = profileForm.watch("city") || "";
+    const watchedState = profileForm.watch("state");
 
-    const indianStates = useMemo(() => State.getStatesOfCountry('IN'), []);
+    const indianStates = useMemo(() => getAllStates(), []);
 
-    const selectedStateIso = useMemo(() => {
+    const selectedStateCode = useMemo(() => {
         const s = indianStates.find(state => state.name === watchedState);
-        return s ? s.isoCode : "";
+        return s ? s.code : "";
     }, [watchedState, indianStates]);
 
     const availableCities = useMemo(() => {
-        return selectedStateIso ? City.getCitiesOfState('IN', selectedStateIso) : [];
-    }, [selectedStateIso]);
+        return selectedStateCode ? getDistricts(selectedStateCode) : [];
+    }, [selectedStateCode]);
 
     const metricsData = useMemo(() => {
         const startups = JSON.parse(watchedStartupsStr);
@@ -266,7 +268,7 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
         const outside = startups.filter((s: any) => {
             if (!s.city) return false;
             const sCity = s.city.toLowerCase().trim();
-            const incCity = watchedCity.toLowerCase().trim();
+            const incCity = profileForm.watch("city").toLowerCase().trim();
             return sCity !== "" && incCity !== "" && !incCity.includes(sCity) && !sCity.includes(incCity);
         }).length;
 
@@ -292,7 +294,7 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
             startupsOutsideLocationPercent: total > 0 ? `${Math.round((outside / total) * 100)}%` : "0%",
             totalFundingRaised: `₹${formatFunding(totalFunding)}`,
         };
-    }, [watchedStartupsStr, watchedCity, watchedState]);
+    }, [watchedStartupsStr, profileForm]);
 
     const handleDownloadPDF = () => {
         if (!selectedMyIncubator) return;
@@ -300,7 +302,7 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
 
         // Add Logo
         const logoUrl = '/logo.png';
-        const img = new Image();
+        const img = new window.Image();
         img.src = logoUrl;
         img.onload = () => {
             doc.addImage(img, 'PNG', 14, 10, 30, 10);
@@ -760,7 +762,7 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                 setEditingIncubatorId(null);
                 profileForm.reset(emptyProfile);
                 await fetchMyIncubators();
-                setActiveTab("submissions");
+                setActiveTab("settings");
             } else {
                 const errorData = await response.json();
                 toast({
@@ -800,28 +802,28 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
         setActiveTab("profile");
     };
 
-    const handleDeleteIncubator = async (id: string) => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+    // const handleDeleteIncubator = async (id: string) => {
+    //     const token = localStorage.getItem('token');
+    //     if (!token) return;
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/incubators/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+    //     try {
+    //         const response = await fetch(`${API_BASE_URL}/api/incubators/${id}`, {
+    //             method: 'DELETE',
+    //             headers: {
+    //                 'Authorization': `Bearer ${token}`,
+    //             },
+    //         });
 
-            if (response.ok) {
-                toast({ title: 'Profile Deleted', description: 'Incubator profile has been deleted.' });
-                await fetchMyIncubators();
-            } else {
-                toast({ variant: 'destructive', title: 'Delete Failed', description: 'Could not delete profile.' });
-            }
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'A network error occurred.' });
-        }
-    };
+    //         if (response.ok) {
+    //             toast({ title: 'Profile Deleted', description: 'Incubator profile has been deleted.' });
+    //             await fetchMyIncubators();
+    //         } else {
+    //             toast({ variant: 'destructive', title: 'Delete Failed', description: 'Could not delete profile.' });
+    //         }
+    //     } catch (error) {
+    //         toast({ variant: 'destructive', title: 'Error', description: 'A network error occurred.' });
+    //     }
+    // };
 
     async function onSettingsSubmit(data: SettingsFormValues) {
         const token = localStorage.getItem('token');
@@ -889,7 +891,7 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                             <TabsList className="grid w-full grid-cols-4">
                                 <TabsTrigger value="overview"><LayoutDashboard className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
                                 <TabsTrigger value="submissions"><FileText className="mr-2 h-4 w-4" /> Submissions</TabsTrigger>
-                                <TabsTrigger value="profile"><User className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
+                                <TabsTrigger value="profile"><Edit className="mr-2 h-4 w-4" /> Edit Profile</TabsTrigger>
                                 <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
                             </TabsList>
                             <ScrollArea className="flex-grow mt-4">
@@ -944,117 +946,36 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                         </CardContent>
                                     </Card>
                                 </TabsContent>
-                                <TabsContent value="submissions" className="mt-5 space-y-8 mr-4">
-                                    <section>
-                                        <div className="flex justify-between items-center mb-5">
-                                            <h3 className="text-xl font-bold font-headline">My Incubator Profiles</h3>
-                                            {myIncubators.length === 0 && (
-                                                <Button size="sm" onClick={() => { setEditingIncubatorId(null); profileForm.reset(emptyProfile); setActiveTab("profile"); }}>
-                                                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Profile
-                                                </Button>
-                                            )}
-                                        </div>
-
-                                        {isFetchingMyIncubators ? (
-                                            <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                                        ) : myIncubators.length > 0 ? (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                {myIncubators.map((inc) => (
-                                                    <Card key={inc.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors relative group">
-                                                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    <DropdownMenuItem onClick={() => handleEditIncubator(inc)}>
-                                                                        <Edit className="mr-2 h-4 w-4" /> Edit Profile
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteIncubator(inc.id)}>
-                                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Profile
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
+                                <TabsContent value="submissions" className="mt-5 space-y-6 mr-4">
+                                    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                                        <CardHeader>
+                                            <CardTitle>Assigned Startup Ideas</CardTitle>
+                                            <CardDescription>Review the startup ideas assigned to your incubator.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {submissions.length === 0 ? (
+                                                <div className="text-center py-8 text-muted-foreground">No submissions found.</div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    {submissions.map((sub) => (
+                                                        <div key={sub.id} className="flex justify-between items-center p-4 rounded-lg border border-border/50 bg-background/50 hover:bg-muted/50 transition-colors">
+                                                            <div className="space-y-1">
+                                                                <h4 className="font-semibold text-lg">{sub.startup_name}</h4>
+                                                                <div className="flex gap-2 items-center text-sm text-muted-foreground">
+                                                                    <Badge variant="outline" className="text-[10px]">{sub.industry_sector}</Badge>
+                                                                    <span>•</span>
+                                                                    <span>{new Date(sub.created_at).toLocaleDateString()}</span>
+                                                                </div>
+                                                            </div>
+                                                            <Button size="sm" onClick={() => setSelectedSubmission(sub)}>View Details</Button>
                                                         </div>
-                                                        <CardHeader onClick={() => setSelectedMyIncubator(inc)} className="cursor-pointer pb-2">
-                                                            <CardTitle className="text-lg pr-8 truncate">{inc.name}</CardTitle>
-                                                            <CardDescription className="flex items-center gap-1">
-                                                                <span className="truncate font-medium font-sans">{inc.location}</span>
-                                                            </CardDescription>
-                                                        </CardHeader>
-                                                        <CardContent onClick={() => setSelectedMyIncubator(inc)} className="cursor-pointer space-y-3">
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {(inc.type || []).map((t: string, index: number) => (
-                                                                    <span key={`${t}-${index}`} className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-medium uppercase tracking-wider">{t}</span>
-                                                                ))}
-                                                            </div>
-                                                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{inc.description}</p>
-                                                            <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-2 border-t border-border/30">
-                                                                <span>{inc.metrics?.startupsSupported || 0} Startups</span>
-                                                                <span>{inc.rating || 0} ⭐</span>
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <Card className="text-center text-muted-foreground py-12 border-dashed">
-                                                <CardContent>
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <User className="h-8 w-8 opacity-20" />
-                                                        <p>You have not created any incubator profiles yet.</p>
-                                                        <Button variant="link" size="sm" onClick={() => setActiveTab("profile")}>Create your first profile</Button>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        )}
-                                    </section>
-
-                                    <Separator className="opacity-50" />
-
-                                    <section>
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-xl font-bold font-headline">Incoming Submissions</h3>
-                                            <Button variant="outline" size="sm" onClick={fetchSubmissions}>
-                                                <RefreshCcw className="mr-2 h-4 w-4" /> Refresh
-                                            </Button>
-                                        </div>
-                                        {submissions.length > 0 ? (
-                                            <div className="flex flex-col gap-4 max-h-[600px] overflow-y-auto pr-2">
-                                                {submissions.map((sub) => (
-                                                    <Card key={sub.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors">
-                                                        <CardHeader>
-                                                            <div className="flex justify-between items-start">
-                                                                <div>
-                                                                    <CardTitle className="text-lg">{sub.startup_name}</CardTitle>
-                                                                    <CardDescription>Submitted by {sub.founder_name}</CardDescription>
-                                                                </div>
-                                                                <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
-                                                                    <span className="text-primary">{sub.status}</span>
-                                                                </div>
-                                                            </div>
-                                                        </CardHeader>
-                                                        <CardContent>
-                                                            <p className="text-sm text-muted-foreground line-clamp-3">{sub.description}</p>
-                                                            <div className="mt-3">
-                                                                <span className="px-2 py-1 bg-secondary rounded-md text-xs font-medium text-secondary-foreground">
-                                                                    Industry: {sub.industry_sector}
-                                                                </span>
-                                                            </div>
-                                                        </CardContent>
-                                                        <CardFooter className="flex justify-between items-center">
-                                                            <p className="text-sm text-muted-foreground">Submitted on {new Date(sub.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                                                        </CardFooter>
-                                                    </Card>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <Card className="text-center text-muted-foreground py-16">
-                                                <CardContent>You have not received any submissions yet.</CardContent>
-                                            </Card>
-                                        )}
-                                    </section>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
                                 </TabsContent>
+
                                 <TabsContent value="profile" className="mt-0 mr-4">
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                         <CardHeader>
@@ -1081,10 +1002,10 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                                 <div className="flex flex-col gap-4 mt-2">
                                                                     {logoPreview && (
                                                                         <div className="relative w-32 h-32 rounded-md overflow-hidden border border-border shrink-0 self-center md:self-start">
-                                                                            <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover" />
+                                                                            <Image src={logoPreview} alt="Logo Preview" fill unoptimized className="object-cover" />
                                                                         </div>
                                                                     )}
-                                                                    <div 
+                                                                    <div
                                                                         className={`flex-1 border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors cursor-pointer text-center ${isDraggingLogo ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
                                                                         onDragOver={(e) => {
                                                                             e.preventDefault();
@@ -1114,11 +1035,11 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                                         <UploadCloud className="h-8 w-8 text-muted-foreground mb-3" />
                                                                         <p className="text-sm font-medium mb-1">Click or drag & drop to upload</p>
                                                                         <p className="text-xs text-muted-foreground mb-3">JPG, PNG or WEBP (max. 1MB)</p>
-                                                                        <Input 
+                                                                        <Input
                                                                             id="logo-upload-input"
-                                                                            type="file" 
+                                                                            type="file"
                                                                             className="hidden"
-                                                                            accept="image/png, image/jpeg, image/webp" 
+                                                                            accept="image/png, image/jpeg, image/webp"
                                                                             onChange={(e) => {
                                                                                 const file = e.target.files?.[0];
                                                                                 if (file) {
@@ -1130,7 +1051,7 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                                                     setLogoPreview(URL.createObjectURL(file));
                                                                                     field.onChange(file.name); // Set string value for Zod
                                                                                 }
-                                                                            }} 
+                                                                            }}
                                                                         />
                                                                         <Button type="button" variant="outline" size="sm">Select File</Button>
                                                                     </div>
@@ -1168,10 +1089,10 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                             )} />
                                                             <div className="grid grid-cols-2 gap-4">
                                                                 <FormField control={profileForm.control} name="state" render={({ field }) => (
-                                                                    <FormItem><FormLabel>State <span className="text-destructive">*</span></FormLabel><Select onValueChange={(val) => { field.onChange(val); profileForm.setValue("city", ""); }} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="State" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{indianStates.map((s) => <SelectItem key={s.isoCode} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                                                    <FormItem><FormLabel>State <span className="text-destructive">*</span></FormLabel><Select onValueChange={(val) => { field.onChange(val); profileForm.setValue("city", ""); }} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="State" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{indianStates.map((s) => <SelectItem key={s.code} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                                                 )} />
                                                                 <FormField control={profileForm.control} name="city" render={({ field }) => (
-                                                                    <FormItem><FormLabel>City <span className="text-destructive">*</span></FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!watchedState}><FormControl><SelectTrigger><SelectValue placeholder="City" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{availableCities.map((c) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                                                    <FormItem><FormLabel>City <span className="text-destructive">*</span></FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!watchedState}><FormControl><SelectTrigger><SelectValue placeholder="City" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{availableCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                                                 )} />
                                                             </div>
                                                         </div>
@@ -1224,15 +1145,15 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                                                         )} />
                                                                         {(() => {
                                                                             const startupStateName = profileForm.watch(`startups.${index}.state`) || "";
-                                                                            const startupStateIso = indianStates.find(s => s.name === startupStateName)?.isoCode || "";
-                                                                            const startupCities = startupStateIso ? City.getCitiesOfState('IN', startupStateIso) : [];
+                                                                            const startupStateCode = indianStates.find(s => s.name === startupStateName)?.code || "";
+                                                                            const startupDistricts = startupStateCode ? getDistricts(startupStateCode) : [];
                                                                             return (
                                                                                 <>
                                                                                     <FormField control={profileForm.control} name={`startups.${index}.state`} render={({ field }) => (
-                                                                                        <FormItem><FormLabel>State <span className="text-destructive">*</span></FormLabel><Select onValueChange={(val) => { field.onChange(val); profileForm.setValue(`startups.${index}.city`, ""); }} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="State" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{indianStates.map((s) => <SelectItem key={s.isoCode} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                                                                        <FormItem><FormLabel>State <span className="text-destructive">*</span></FormLabel><Select onValueChange={(val) => { field.onChange(val); profileForm.setValue(`startups.${index}.city`, ""); }} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="State" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{indianStates.map((s) => <SelectItem key={s.code} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                                                                     )} />
                                                                                     <FormField control={profileForm.control} name={`startups.${index}.city`} render={({ field }) => (
-                                                                                        <FormItem><FormLabel>City <span className="text-destructive">*</span></FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!startupStateName}><FormControl><SelectTrigger><SelectValue placeholder="City" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{startupCities.map((c) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                                                                        <FormItem><FormLabel>City <span className="text-destructive">*</span></FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!startupStateName}><FormControl><SelectTrigger><SelectValue placeholder="City" /></SelectTrigger></FormControl><SelectContent className="max-h-56">{startupDistricts.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                                                                                     )} />
                                                                                 </>
                                                                             );
@@ -1504,7 +1425,74 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                         </CardContent>
                                     </Card>
                                 </TabsContent>
-                                <TabsContent value="settings" className="mt-0">
+                                <TabsContent value="settings" className="mt-0 space-y-6 mr-4">
+                                    <Card className="bg-card/50 border-border/50">
+                                        <CardHeader>
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <CardTitle>My Incubator Profiles</CardTitle>
+                                                    <CardDescription>Manage the profiles you have created.</CardDescription>
+                                                </div>
+                                                {myIncubators.length === 0 && (
+                                                    <Button size="sm" onClick={() => { setEditingIncubatorId(null); profileForm.reset(emptyProfile); setActiveTab("profile"); }}>
+                                                        <PlusCircle className="mr-2 h-4 w-4" /> Add New Profile
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {isFetchingMyIncubators ? (
+                                                <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                                            ) : myIncubators.length > 0 ? (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                    {myIncubators.map((inc) => (
+                                                        <Card key={inc.id} className="bg-card/50 border-border/50 hover:border-primary/50 transition-colors relative group">
+                                                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end">
+                                                                        <DropdownMenuItem onClick={() => handleEditIncubator(inc)}>
+                                                                            <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                                                                        </DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            </div>
+                                                            <CardHeader onClick={() => setSelectedMyIncubator(inc)} className="cursor-pointer pb-2">
+                                                                <CardTitle className="text-lg pr-8 truncate">{inc.name}</CardTitle>
+                                                                <CardDescription className="flex items-center gap-1">
+                                                                    <span className="truncate font-medium font-sans">{inc.location}</span>
+                                                                </CardDescription>
+                                                            </CardHeader>
+                                                            <CardContent onClick={() => setSelectedMyIncubator(inc)} className="cursor-pointer space-y-3">
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {(inc.type || []).map((t: string, index: number) => (
+                                                                        <span key={`${t}-${index}`} className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-medium uppercase tracking-wider">{t}</span>
+                                                                    ))}
+                                                                </div>
+                                                                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{inc.description}</p>
+                                                                <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-2 border-t border-border/30">
+                                                                    <span>{inc.metrics?.startupsSupported || 0} Startups</span>
+                                                                    <span>{inc.rating || 0} ⭐</span>
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <Card className="text-center text-muted-foreground py-12 border-dashed">
+                                                    <CardContent>
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <User className="h-8 w-8 opacity-20" />
+                                                            <p>You have not created any incubator profiles yet.</p>
+                                                            <Button variant="link" size="sm" onClick={() => setActiveTab("profile")}>Create your first profile</Button>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            )}
+                                        </CardContent>
+                                    </Card>
                                     <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                                         <CardHeader>
                                             <CardTitle>Account Settings</CardTitle>
@@ -1691,6 +1679,13 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <StartupSubmissionDetailsModal
+                submission={selectedSubmission}
+                onClose={() => setSelectedSubmission(null)}
+                userRole="incubator"
+                onStatusUpdate={() => { }}
+            />
             <Dialog open={!!selectedMyIncubator} onOpenChange={(open) => !open && setSelectedMyIncubator(null)}>
                 <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
                     {selectedMyIncubator && (
@@ -1699,7 +1694,7 @@ export default function IncubatorDashboardView({ isOpen, setUser, onOpenChange, 
                                 <div className="flex justify-between items-start pr-8">
                                     <div className="flex gap-4 items-start">
                                         {selectedMyIncubator.image && (
-                                            <img src={selectedMyIncubator.image} alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-border/50" />
+                                            <Image src={selectedMyIncubator.image} alt="Logo" width={64} height={64} unoptimized className="w-16 h-16 rounded-xl object-cover border border-border/50 shrink-0" />
                                         )}
                                         <div>
                                             <DialogTitle className="text-2xl font-bold font-headline">

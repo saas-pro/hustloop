@@ -1,11 +1,11 @@
 
 export type View = "home" | "blog" | "mentors" | "incubators" | "submitIP" | "pricing" | "msmes" | "solveChallenges" | "dashboard" | "login" | "signup" | "education" | "contact" | "complete-profile" | "joinasanMSME" | "browseTech" | "marketplace" | "browseMSME" | "early-bird";
-export type DashboardTab = "overview" | "msmes" | "events" | "ip/technologies" | "incubators" | "engagements" | "registration" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" | "aignite" | "connex" | "pitch-details" | "plans";
+export type DashboardTab = "overview" | "msmes" | "events" | "ip/technologies" | "incubators" | "engagements" | "registration" | "mentors" | "submission" | "settings" | "users" | "blog" | "sessions" | "subscribers" | "aignite" | "connex" | "pitch-details" | "plans" | "blog-cta";
 export type MentorDashboardTab = "overview" | "mentees" | "schedule" | "profile" | "settings";
 export type SolveChallengeTab = "overview" | "submission" | "team" | "settings"
 export type TechTransferTab = "overview" | "submission" | "engagements" | "settings"
 export type InnovativeIdeaTab = "overview" | "incubators" | "mentors" | "submission" | "settings"
-export type IncubatorDashboardTab = "overview" | "submissions" | "profile" | "settings";
+export type IncubatorDashboardTab = "overview" | "submissions" | "profiles" | "profile" | "settings";
 export type MsmeDashboardTab = "overview" | "submissions" | "profile" | "engagement" | "settings";
 export type UserRole = "admin" | "mentor" | "incubator" | "organisation" | "founder" | "blogger" ;
 export type founderRole = "Solve Organisation's challenge" | "List a technology for licensing" | "Submit an innovative idea"

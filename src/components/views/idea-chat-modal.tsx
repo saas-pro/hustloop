@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Loader2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Loader2, Reply, Pencil, Trash2, X, MoreHorizontal } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 import { jwtDecode } from 'jwt-decode';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -34,6 +35,8 @@ interface IdeaMessage {
     message: string;
     created_at: string;
     submission_id: string;
+    parent_id?: string | null;
+    is_updated?: boolean;
 }
 
 interface IdeaChatModalProps {
@@ -51,8 +54,23 @@ export function IdeaChatModal({ submission, onOpenChange }: IdeaChatModalProps) 
     const [messages, setMessages] = useState<IdeaMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [replyingTo, setReplyingTo] = useState<IdeaMessage | null>(null);
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [editMessageContent, setEditMessageContent] = useState('');
+    const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
     const textareaId = useId();
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const scrollToMessage = (id: string) => {
+        const element = document.getElementById(`message-${id}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setHighlightedMessageId(id);
+            setTimeout(() => {
+                setHighlightedMessageId(null);
+            }, 3000);
+        }
+    };
 
     const isCommentsDisabled = submission?.status === 'REJECTED' || submission?.status === 'FUNDED';
 
@@ -114,11 +132,25 @@ export function IdeaChatModal({ submission, onOpenChange }: IdeaChatModalProps) 
             setTimeout(scrollToBottom, 150);
         };
 
+        const handleEditMessage = (msg: IdeaMessage) => {
+            if (msg.submission_id !== submissionId) return;
+            setMessages((prev) => prev.map(m => m.id === msg.id ? msg : m));
+        };
+
+        const handleDeleteMessage = (data: { id: string, submission_id: string }) => {
+            if (data.submission_id !== submissionId) return;
+            setMessages((prev) => prev.filter(m => m.id !== data.id));
+        };
+
         socket.on('new_idea_message', handleNewMessage);
+        socket.on('idea_message_edited', handleEditMessage);
+        socket.on('idea_message_deleted', handleDeleteMessage);
 
         return () => {
             socket.emit('leave_idea_chat', { submissionId });
             socket.off('new_idea_message', handleNewMessage);
+            socket.off('idea_message_edited', handleEditMessage);
+            socket.off('idea_message_deleted', handleDeleteMessage);
         };
     }, [submission?.id, scrollToBottom, submission]);
 
@@ -131,11 +163,66 @@ export function IdeaChatModal({ submission, onOpenChange }: IdeaChatModalProps) 
         socket.emit('send_idea_message', {
             submissionId: submission!.id,
             senderId: userId,
-            message: newMessage.trim()
+            message: newMessage.trim(),
+            parent_id: replyingTo ? replyingTo.id : null
         });
 
         setNewMessage('');
+        setReplyingTo(null);
         setIsLoading(false);
+    };
+
+    const submitEditMessage = async () => {
+        if (!editMessageContent.trim() || !editingMessageId) return;
+        const userId = getCurrentUserId();
+        socket.emit('edit_idea_message', {
+            messageId: editingMessageId,
+            senderId: userId,
+            message: editMessageContent.trim()
+        });
+        setEditingMessageId(null);
+        setEditMessageContent('');
+    };
+
+    const confirmDeleteMessage = (messageId: string) => {
+        const userId = getCurrentUserId();
+        socket.emit('delete_idea_message', {
+            messageId,
+            senderId: userId
+        });
+    };
+
+    const getCurrentUserRoles = (): string[] => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const payload: { role?: string[] } = jwtDecode(token);
+                return payload.role || [];
+            } catch (e) {
+                return [];
+            }
+        }
+        return [];
+    };
+
+    const getMessageActions: any = (msg: IdeaMessage) => {
+        const currentUserId = getCurrentUserId();
+        const currentUserRoles = getCurrentUserRoles();
+        const isAuthor = currentUserId !== null && currentUserId === msg.sender_id;
+        const isAdmin = currentUserRoles.includes('admin');
+        const createdAt = new Date(msg.created_at);
+        const now = new Date();
+        const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+
+        const canEdit = (isAuthor && isAdmin) || (isAuthor && diffMinutes <= 15);
+        const canDelete = isAdmin || (isAuthor && diffMinutes <= 5);
+
+        return { canEdit, canDelete };
+    };
+
+    const findParentMessage = (parentId: string | null | undefined): IdeaMessage | undefined => {
+        if (!parentId) return undefined;
+        return messages.find(m => m.id === parentId);
     };
 
     if (!submission) return null;
@@ -180,7 +267,9 @@ export function IdeaChatModal({ submission, onOpenChange }: IdeaChatModalProps) 
                     {/* TIMELINE WRAPPER */}
                     <div className="relative pl-2 space-y-4">
                         {/* GLOBAL TIMELINE LINE that scrolls correctly */}
-                        <div className="absolute left-[28px] top-1 bottom-1 w-px bg-muted-foreground"></div>
+                        {messages.length > 0 && (
+                            <div className="absolute left-[28px] top-1 bottom-1 w-px bg-muted-foreground"></div>
+                        )}
 
                         {/* ===================== DESCRIPTION CARD ===================== */}
                         <Card className="rounded-none border-none shadow-none bg-transparent relative">
@@ -212,38 +301,97 @@ export function IdeaChatModal({ submission, onOpenChange }: IdeaChatModalProps) 
                             <p className="text-center text-muted-foreground mt-10">No messages yet. Be the first to chat!</p>
                         ) : (
                             messages.map((msg) => {
+                                const { canEdit, canDelete } = getMessageActions(msg);
+                                const parentMsg = findParentMessage(msg.parent_id);
                                 return (
                                     <div
                                         key={msg.id}
                                         id={`message-${msg.id}`}
-                                        className="relative flex gap-3 p-2 items-start bg-transparent transition-all duration-300"
+                                        className={`relative flex gap-3 p-2 items-start transition-all duration-500 rounded-md ${highlightedMessageId === msg.id ? 'bg-primary/10 ring-1 ring-primary shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-transparent'}`}
                                     >
-                                        {/* Avatar aligned to timeline */}
-                                        <Avatar className="h-8 w-8 relative z-10">
-                                            <AvatarFallback className="font-semibold">
+                                        <Avatar className="h-8 w-8 relative z-10 mt-1">
+                                            <AvatarFallback className="font-semibold text-xs">
                                                 {msg.sender_name ? msg.sender_name.charAt(0) : 'U'}
                                             </AvatarFallback>
                                         </Avatar>
 
-                                        {/* MESSAGE BODY */}
-                                        <div className="flex-1 min-w-0 mt-1">
-                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-1 gap-2">
-                                                <div className='flex flex-col sm:flex-row gap-1 sm:gap-2 sm:items-center flex-wrap'>
-                                                    <p className="font-semibold text-sm flex items-center gap-2 flex-wrap">
-                                                        <span className="text-foreground break-words">{msg.sender_name || 'Unknown User'}</span>
-                                                        {msg.sender_role && (
-                                                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
-                                                                {msg.sender_role.toLowerCase() === 'admin' ? 'Triager' : msg.sender_role.toUpperCase()}
-                                                            </span>
-                                                        )}
-                                                    </p>
-                                                    <small className="text-xs text-muted-foreground whitespace-nowrap">
+                                        <div className="flex-1 min-w-0">
+                                            <div className='flex justify-between'>
+                                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                    <span className="font-semibold text-sm text-foreground">{msg.sender_name || 'Unknown User'}</span>
+                                                    {msg.sender_role && (
+                                                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                                            {msg.sender_role.toLowerCase() === 'admin' ? 'Triager' : msg.sender_role.toUpperCase()}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-xs text-muted-foreground">
                                                         {formatTime(msg.created_at)}
-                                                    </small>
+                                                    </span>
+                                                    {msg.is_updated && (
+                                                        <span className="text-[10px] text-muted-foreground italic">(edited)</span>
+                                                    )}
                                                 </div>
+
+                                                {!editingMessageId && (
+                                                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                                                        <button onClick={() => { setReplyingTo(msg); document.getElementById(textareaId)?.focus(); }} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                                                            <Reply className="w-3.5 h-3.5" /> Reply
+                                                        </button>
+                                                        {(canEdit || canDelete) && (
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <button className="flex items-center gap-1 hover:text-foreground transition-colors outline-none focus:outline-none">
+                                                                        <MoreHorizontal className="w-4 h-4" />
+                                                                    </button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="start" className="w-32">
+                                                                    {canEdit && (
+                                                                        <DropdownMenuItem onClick={() => { setEditingMessageId(msg.id); setEditMessageContent(msg.message); }}>
+                                                                            <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                    {canDelete && (
+                                                                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => confirmDeleteMessage(msg.id)}>
+                                                                            <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            <p className="break-words whitespace-pre-wrap overflow-wrap-anywhere text-sm bg-accent/30 p-3 rounded-lg border border-border/50 inline-block w-full">{msg.message}</p>
+
+                                            {parentMsg && (
+                                                <div
+                                                    onClick={() => scrollToMessage(parentMsg.id)}
+                                                    className="bg-muted/50 border-l-2 border-primary/50 pl-2 py-1 mb-2 rounded-r flex flex-col text-xs text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
+                                                >
+                                                    <span className="font-semibold mb-0.5">Replying to {parentMsg.sender_name || 'Unknown User'}:</span>
+                                                    <span className="line-clamp-2">{parentMsg.message}</span>
+                                                </div>
+                                            )}
+
+                                            {editingMessageId === msg.id ? (
+                                                <div className="mt-1">
+                                                    <Textarea
+                                                        value={editMessageContent}
+                                                        onChange={(e) => setEditMessageContent(e.target.value)}
+                                                        className="w-full resize-none bg-background text-sm mb-2"
+                                                        rows={2}
+                                                        autoFocus
+                                                    />
+                                                    <div className="flex gap-2 justify-end">
+                                                        <Button variant="ghost" size="sm" onClick={() => setEditingMessageId(null)}>Cancel</Button>
+                                                        <Button size="sm" onClick={submitEditMessage}>Save</Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-sm text-foreground mb-1 whitespace-pre-wrap break-words">{msg.message}</div>
+                                            )}
+
+
                                         </div>
                                     </div>
                                 );
@@ -254,7 +402,7 @@ export function IdeaChatModal({ submission, onOpenChange }: IdeaChatModalProps) 
                 </div>
 
                 {/* Input area */}
-                <div className="p-4 border-t bg-muted/30 flex flex-col">
+                <div className="p-4 border-t bg-muted/30 flex flex-col relative">
                     {isCommentsDisabled ? (
                         <div className="text-center py-4 text-muted-foreground bg-muted/50 rounded-md border border-dashed">
                             <p className="text-sm font-medium">Chat is closed</p>
@@ -264,6 +412,17 @@ export function IdeaChatModal({ submission, onOpenChange }: IdeaChatModalProps) 
                         </div>
                     ) : (
                         <>
+                            {replyingTo && (
+                                <div className="flex items-center justify-between bg-muted/50 border-l-2 border-primary/50 pl-3 pr-2 py-2 mb-2 rounded text-xs text-muted-foreground">
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="font-semibold text-foreground mb-0.5">Replying to {replyingTo.sender_name || 'Unknown User'}</span>
+                                        <span className="truncate max-w-[500px]">{replyingTo.message}</span>
+                                    </div>
+                                    <button onClick={() => setReplyingTo(null)} className="p-1 hover:text-foreground hover:bg-muted rounded-full transition-colors ml-2">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
                             <Textarea
                                 id={textareaId}
                                 placeholder="Type a message..."

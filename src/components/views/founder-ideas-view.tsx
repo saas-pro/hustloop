@@ -2,12 +2,13 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Download, CheckCircle, Clock, XCircle, Search, MessageCircle, Filter, ArrowUpDown, ChevronDown, Save } from "lucide-react";
+import { Loader2, Download, CheckCircle, Clock, XCircle, Search, MessageCircle, Filter, ArrowUpDown, ChevronDown, Save, Info } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { io, Socket } from "socket.io-client";
 import { IdeaChatModal } from "./idea-chat-modal";
 import { useAuth } from "@/providers/AuthContext";
@@ -25,6 +26,7 @@ export interface StartupSubmission {
   recommended_incubators?: any[];
   founder_name?: string;
   incubator_name?: string;
+  assigned_incubator_id?: string;
 }
 
 export function FounderIdeasView() {
@@ -36,6 +38,14 @@ export function FounderIdeasView() {
   // SPA Modal state
   const [selectedIdea, setSelectedIdea] = useState<StartupSubmission | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+
+  // Reassignment state
+  const [incubators, setIncubators] = useState<any[]>([]);
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
+  const [reassignSubmissionId, setReassignSubmissionId] = useState<string | null>(null);
+  const [reassignTargetIncubatorId, setReassignTargetIncubatorId] = useState<string>("");
+  const [isReassigning, setIsReassigning] = useState(false);
+  const [isFetchingMatches, setIsFetchingMatches] = useState(false);
 
   // Filters & Sorting state
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
@@ -69,6 +79,28 @@ export function FounderIdeasView() {
     }
   };
 
+  const fetchMatchingIncubators = async (submissionId: string) => {
+    setIsFetchingMatches(true);
+    setIncubators([]);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/founder-ideas/${submissionId}/match-incubators`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIncubators(data || []);
+        if (data.length > 0) {
+          setReassignTargetIncubatorId(data[0].incubator_id);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch matching incubators", err);
+    } finally {
+      setIsFetchingMatches(false);
+    }
+  };
+
   useEffect(() => {
     fetchIdeas();
 
@@ -93,15 +125,57 @@ export function FounderIdeasView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIdea, toast]);
 
-  const handleStatusChange = (id: string, newStatus: string) => {
-    if (socketRef.current) {
-      socketRef.current.emit('update_idea_status', {
-        submissionId: id,
-        status: newStatus,
-        actorId: getUserId()
+  const handleReassign = async () => {
+    if (!reassignSubmissionId || !reassignTargetIncubatorId) return;
+    setIsReassigning(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/founder-ideas/${reassignSubmissionId}/assign-incubator`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ assigned_incubator_id: reassignTargetIncubatorId })
       });
-    } else {
-      toast({ title: "Error", description: "Not connected to server", variant: "destructive" });
+      if (res.ok) {
+        const updatedIdea = await res.json();
+        setIdeas(prev => prev.map(idea => idea.id === updatedIdea.id ? updatedIdea : idea));
+        toast({ title: "Success", description: "Incubator reassigned successfully." });
+        setReassignDialogOpen(false);
+      } else {
+        toast({ title: "Error", description: "Failed to reassign incubator", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to reassign incubator", variant: "destructive" });
+    } finally {
+      setIsReassigning(false);
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    // Optimistic UI update
+    setIdeas(prev => prev.map(idea => idea.id === id ? { ...idea, status: newStatus as StartupIdeaStatus } : idea));
+    
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/founder-ideas/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        const updatedIdea = await res.json();
+        setIdeas(prev => prev.map(idea => idea.id === id ? updatedIdea : idea));
+        toast({ title: "Status Updated", description: `Status successfully updated.` });
+      } else {
+        toast({ title: "Error", description: "Failed to update status on server.", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Network error while updating status.", variant: "destructive" });
     }
   };
 
@@ -333,7 +407,7 @@ export function FounderIdeasView() {
 
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">
-                            Your submission is currently <strong>{idea.status.replace('_', ' ').toLowerCase()}</strong>.
+                            Your submission is currently <strong className="font-headline font-extrabold">{idea.status.replace('_', ' ').toLowerCase()}</strong>.
                           </p>
                           {idea.status === 'REJECTED' && idea.recommended_incubators && idea.recommended_incubators.length > 0 && (
                             <div className="bg-muted p-4 rounded-md text-sm mt-4 border border-border/50">
@@ -407,6 +481,16 @@ export function FounderIdeasView() {
                                     <XCircle className="mr-2 h-4 w-4" />
                                     <span>Rejected</span>
                                   </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => {
+                                    e.stopPropagation();
+                                    setReassignSubmissionId(idea.id);
+                                    setReassignTargetIncubatorId(idea.assigned_incubator_id || "");
+                                    setReassignDialogOpen(true);
+                                    fetchMatchingIncubators(idea.id);
+                                  }}>
+                                    <ArrowUpDown className="mr-2 h-4 w-4 text-blue-500" />
+                                    <span>Reassign Incubator</span>
+                                  </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
@@ -421,6 +505,58 @@ export function FounderIdeasView() {
           </Accordion>
         )}
       </div>
+
+      {/* Reassign Dialog */}
+      <Dialog open={reassignDialogOpen} onOpenChange={setReassignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reassign Incubator</DialogTitle>
+            <DialogDescription>
+              Select a new incubator for this startup idea.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {isFetchingMatches ? (
+              <div className="flex items-center justify-center p-4">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <span className="ml-2 text-sm text-muted-foreground">Analyzing compatibility...</span>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <Select value={reassignTargetIncubatorId} onValueChange={setReassignTargetIncubatorId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Incubator" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {incubators.map(inc => (
+                      <SelectItem key={inc.incubator_id} value={inc.incubator_id}>
+                        {inc.name} ({inc.compatibility_score}% Match)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {reassignTargetIncubatorId && (
+                  <div className="flex items-start gap-2 p-3 bg-blue-50/50 dark:bg-blue-900/10 text-blue-800 dark:text-blue-200 rounded-md border border-blue-100 dark:border-blue-800/30 text-sm">
+                    <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-500" />
+                    <div>
+                      <span className="font-semibold block mb-1">Match Reasoning:</span>
+                      {incubators.find(i => i.incubator_id === reassignTargetIncubatorId)?.match_reason || "No reasoning provided."}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReassignDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleReassign} disabled={isReassigning || !reassignTargetIncubatorId}>
+              {isReassigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* SPA Idea Chat Modal */}
       {selectedIdea && (

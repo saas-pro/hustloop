@@ -146,29 +146,28 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
         }
     }, [userProfile, plans, activeSubscription]);
 
-    const isPlanAllowed = (planName: string) => {
+    // Check if a plan is allowed for the user's role
+    const isPlanAllowed = (planNumber: number) => {
         // If no user profile, allow access (will be handled by auth)
-        if (!userProfile?.role) return true;
-        // Incubator and mentor roles can only see the "Enterprise" plan
-        if (['incubator', 'mentor'].includes(userProfile.role)) {
-            return false;
-        }
+        if (!userProfile) return true;
         // Organization role - can see all plans but can't buy
         if (userProfile.role === 'organisation') {
-            return planName === "Enterprise"; // Disable all buy buttons for organizations
+            return planNumber === 3; // Disable all buy buttons for organizations
+        }
+        // Non-founder roles can't access any plans
+        if (userProfile.role !== 'founder') {
+            return false;
         }
         // Founder role specific access
-        if (userProfile.role === 'founder') {
-            if (!userProfile.founder_role) return true;
-            const founderPlanMap: Record<string, string> = {
-                "List a technology for licensing": "Free",
-                "Solve Organisation's challenge": "Premium",
-                "Submit an innovative idea": "Standard"
-            };
-            return founderPlanMap[userProfile.founder_role] === planName;
-        }
-        // Default to allowing access for other roles (like admin)
-        return true;
+        const founderPlanMap: Record<string, number> = {
+            "List a technology for licensing": 0,
+            "Submit an innovative idea": 1,
+            "Solve Organisation's challenge": 2
+        };
+        // If founder role is not in the map, default to allowing access
+        if (!userProfile.founder_role) return true;
+        // Check if the plan matches the allowed plan for this founder role
+        return founderPlanMap[userProfile.founder_role] === planNumber;
     };
     // Add a helper function to check if the plan is for founders only
     const isFounderOnlyPlan = (planName: string) => {
@@ -362,7 +361,7 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
                                                 activeSubscription && activeSubscription.plan_id === plan.id ? "border-2 border-green-500" : "",
                                                 userProfile?.role && ['incubator', 'mentor'].includes(userProfile.role)
                                                     ? "opacity-70 blur-[1px] transition-all duration-300"
-                                                    : !isPlanAllowed(plan.name)
+                                                    : !isPlanAllowed(plan.id)
                                                         ? "opacity-60"
                                                         : ""
                                             )}
@@ -375,7 +374,7 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
                                             )}
                                             {/* Role Restriction Badge */}
 
-                                            {!isPlanAllowed(plan.name) && (
+                                            {!isPlanAllowed(plan.id) && (
                                                 <Badge className="absolute top-[-12px] left-4 bg-red-500 text-white hover:bg-red-600">
                                                     Not Available for Your Role
                                                 </Badge>
@@ -428,7 +427,7 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
                                                 <Button
                                                     onClick={() => handlePlanClick(idx)}
                                                     disabled={
-                                                        !isPlanAllowed(plan.name) ||
+                                                        !isPlanAllowed(plan.id) ||
                                                         (activeSubscription && activeSubscription.plan_id === plan.id) ||
                                                         isProcessing === plan.id
                                                     }
@@ -437,7 +436,7 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
                                                         plan.primary
                                                             ? "bg-accent text-accent-foreground hover:bg-accent/90"
                                                             : "bg-primary text-primary-foreground hover:bg-primary/90",
-                                                        !isPlanAllowed(plan.name) ? "opacity-60 cursor-not-allowed" : ""
+                                                        !isPlanAllowed(plan.id) ? "opacity-60 cursor-not-allowed" : ""
                                                     )}
                                                 >
                                                     {isProcessing === plan.id ? (
@@ -445,7 +444,7 @@ export default function PricingAccordion({ setActiveView }: PricingAccordion) {
                                                     ) : null}
                                                     {activeSubscription && activeSubscription.plan_id === plan.id
                                                         ? "Current Plan"
-                                                        : !isPlanAllowed(plan.name)
+                                                        : !isPlanAllowed(plan.id)
                                                             ? (userProfile?.role === 'incubator' || userProfile?.role === 'mentor')
                                                                 ? "For Founders Only"
                                                                 : "Not Available"
