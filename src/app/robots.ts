@@ -16,6 +16,8 @@ export default function robots(): MetadataRoute.Robots {
                     '/pitching-form/*',
                     '/metrics/*',
                     '/unauthorized',
+                    '/admin/*',
+                    '/blogger/*',
                 ],
             },
         ],

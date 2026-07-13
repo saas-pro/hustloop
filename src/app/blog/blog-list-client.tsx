@@ -10,6 +10,7 @@ import { Search, Calendar, User, ArrowRight, Sun, Moon, Palette, Check, Home, Ey
 import Link from "next/link";
 import Image from "next/image";
 import BrandLogo from "@/components/blog/brand-logo";
+import Breadcrumbs from "@/components/ui/breadcrumbs";
 import { useTheme } from "next-themes";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/providers/AuthContext";
@@ -141,6 +142,7 @@ export default function BlogListClient() {
 
             <div className="container mx-auto px-4 py-16">
                 <div className="max-w-6xl mx-auto">
+                    <Breadcrumbs items={[{ name: "Blog" }]} className="mb-6" />
                     {/* Header */}
                     <div className="text-center mb-12">
                         <h1 className="text-4xl md:text-5xl font-bold mb-4">Blog</h1>

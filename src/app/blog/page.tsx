@@ -26,8 +26,25 @@ export const metadata: Metadata = {
 };
 
 export default function BlogPage() {
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: "Hustloop Blog",
+        description: "Read the latest insights, tips, and stories from the Hustloop community.",
+        url: "https://hustloop.com/blog",
+        publisher: {
+            "@type": "Organization",
+            name: "Hustloop",
+            url: "https://hustloop.com"
+        }
+    };
+
     return (
         <div className="min-h-screen bg-background">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             <Suspense fallback={<BlogListSkeleton />}>
                 <BlogListClient />
             </Suspense>

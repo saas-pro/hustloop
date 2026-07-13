@@ -109,41 +109,86 @@ export default async function BlogDetailPage({ params, searchParams }: BlogPageP
             const blog = response.blog;
 
             const canonicalUrl = `${BASE_URL}/blog/${slug}`;
-            const jsonLd = {
-                "@context": "https://schema.org",
-                "@type": "Article",
-                mainEntityOfPage: {
-                    "@type": "WebPage",
-                    "@id": canonicalUrl,
+            
+            const breadcrumbItems = [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": BASE_URL
                 },
-                headline: blog.meta_title || blog.title,
-                description:
-                    blog.meta_description ||
-                    blog.excerpt ||
-                    blog.content?.replace(/<[^>]*>/g, "").substring(0, 160) ||
-                    "Read this article on Hustloop.",
-                image: [
-                    blog.featured_image_url || `${BASE_URL}/default-blog-image.jpg`
-                ],
-                datePublished: blog.created_at,
-                dateModified: blog.updated_at || blog.created_at,
-                author: [{
-                    "@type": "Person",
-                    name: blog.author?.name || "Hustloop Team",
-                    url: blog.website_url || blog.linkedin_url || blog.x_url || BASE_URL,
-                }],
-                publisher: {
-                    "@type": "Organization",
-                    name: "Hustloop",
-                    url: BASE_URL,
-                    logo: {
-                        "@type": "ImageObject",
-                        url: `${BASE_URL}/logo.png`,
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Blog",
+                    "item": `${BASE_URL}/blog`
+                }
+            ];
+
+            if (blog.tags && blog.tags.length > 0) {
+                breadcrumbItems.push({
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": blog.tags[0],
+                    "item": `${BASE_URL}/blog?tags=${encodeURIComponent(blog.tags[0])}`
+                });
+                breadcrumbItems.push({
+                    "@type": "ListItem",
+                    "position": 4,
+                    "name": blog.title,
+                    "item": canonicalUrl
+                });
+            } else {
+                breadcrumbItems.push({
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": blog.title,
+                    "item": canonicalUrl
+                });
+            }
+
+            const jsonLd = [
+                {
+                    "@context": "https://schema.org",
+                    "@type": "BlogPosting",
+                    mainEntityOfPage: {
+                        "@type": "WebPage",
+                        "@id": canonicalUrl,
                     },
+                    headline: blog.meta_title || blog.title,
+                    description:
+                        blog.meta_description ||
+                        blog.excerpt ||
+                        blog.content?.replace(/<[^>]*>/g, "").substring(0, 160) ||
+                        "Read this article on Hustloop.",
+                    image: [
+                        blog.featured_image_url || `${BASE_URL}/default-blog-image.jpg`
+                    ],
+                    datePublished: blog.created_at,
+                    dateModified: blog.updated_at || blog.created_at,
+                    author: {
+                        "@type": "Person",
+                        name: blog.author?.name || "Hustloop Team",
+                        url: blog.website_url || blog.linkedin_url || blog.x_url || BASE_URL,
+                    },
+                    publisher: {
+                        "@type": "Organization",
+                        name: "Hustloop",
+                        url: BASE_URL,
+                        logo: {
+                            "@type": "ImageObject",
+                            url: `${BASE_URL}/logo.png`,
+                        },
+                    },
+                    keywords: blog.tags?.join(", "),
+                    url: canonicalUrl,
                 },
-                keywords: blog.tags?.join(", "),
-                url: canonicalUrl,
-            };
+                {
+                    "@context": "https://schema.org",
+                    "@type": "BreadcrumbList",
+                    itemListElement: breadcrumbItems
+                }
+            ];
 
             // Blog is published → normal render
             return (

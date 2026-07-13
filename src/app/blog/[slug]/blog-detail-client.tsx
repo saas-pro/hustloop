@@ -20,10 +20,11 @@ import ShinyText from "@/components/ShinyText";
 import BrandLogo from "@/components/blog/brand-logo";
 import LinkPreview from "@/components/blog/LinkPreview";
 import LineSidebar from "@/components/LineSidebar";
+import Breadcrumbs from "@/components/ui/breadcrumbs";
 import { useTheme } from "next-themes";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/providers/AuthContext";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
@@ -143,9 +144,11 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
     }, [isClient, blog.content]);
 
     const [activeHeadingIndex, setActiveHeadingIndex] = useState<number | null>(null);
+    const isManualScroll = useRef(false);
 
     useEffect(() => {
         const handleScroll = () => {
+            if (isManualScroll.current) return;
             if (headings.length === 0) return;
             const scrollPosition = window.scrollY + 150;
 
@@ -602,12 +605,13 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
             {/* ===== BLOG CONTENT ===== */}
             <div className="min-h-screen bg-background">
                 <div className="max-w-[1400px] lg:max-w-[1400px] xl:max-w-[1600px] mx-auto lg:px-8 px-4 xl:px-4 py-8">
-                    <Link href="/blog">
-                        <Button variant="ghost" className="mb-6">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Blog
-                        </Button>
-                    </Link>
+                    <Breadcrumbs
+                        items={[
+                            { name: "Blog", href: "/blog" },
+                            { name: blog.title }
+                        ]}
+                        className="mb-6"
+                    />
 
                     {/* Multi-column layout on lg screens */}
                     <div className="flex flex-col lg:flex-row gap-6 xl:gap-7 items-start w-full">
@@ -624,17 +628,21 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                             const elements = articleElement ? Array.from(articleElement.querySelectorAll("h2, h3")) : [];
                                             const target = elements[idx];
                                             if (target) {
+                                                isManualScroll.current = true;
                                                 target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                                 setActiveHeadingIndex(idx);
+                                                setTimeout(() => {
+                                                    isManualScroll.current = false;
+                                                }, 1000);
                                             }
                                         }}
                                         accentColor="hsl(var(--primary))"
                                         textColor="hsl(var(--muted-foreground))"
                                         markerColor="hsl(var(--border))"
                                         fontSize={1.2}
-                                        maxShift={40}
+                                        maxShift={15}
                                         itemGap={32}
-                                        markerLength={80}
+                                        markerLength={70}
                                         proximityRadius={150}
                                     />
                                 </div>
@@ -827,7 +835,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                                                     <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
                                                                 </div>
                                                                 <span className="text-sm font-medium text-foreground">
-                                                                    <span className="font-bold text-primary">{viewCount}</span> {viewCount === 1 ? 'curious mind exploring' : 'curious minds exploring'}
+                                                                    <span className="font-bold text-primary">{viewCount}</span> {viewCount === 1 ? 'curious mind explored' : 'curious minds explored'}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -1122,7 +1130,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                                             <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
                                                         </div>
                                                         <span className="text-sm font-medium text-foreground">
-                                                            <span className="font-bold text-primary">{viewCount}</span> {viewCount === 1 ? 'curious mind exploring' : 'curious minds exploring'}
+                                                            <span className="font-bold text-primary">{viewCount}</span> {viewCount === 1 ? 'curious mind explored' : 'curious minds explored'}
                                                         </span>
                                                     </div>
                                                 </div>
