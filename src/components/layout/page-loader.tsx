@@ -38,10 +38,10 @@ const PageLoader = () => {
         }
 
         // Random increment for a more organic feel, max 99 until video loads
-        const increment = 6;
+        const increment = prev < 80 ? Math.floor(Math.random() * 15) + 5 : Math.floor(Math.random() * 3) + 1;
         return Math.min(prev + increment, 99);
       });
-    }, 200);
+    }, 150);
 
     return () => clearInterval(interval);
   }, [videoLoaded]);

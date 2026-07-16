@@ -171,7 +171,14 @@ export async function getBlogBySlug(slug: string, token?: string, incrementViews
 
         if (!response.ok) {
             if (response.status === 404) {
-                throw new Error('Blog not found');
+                const error = new Error('Blog not found');
+                (error as any).status = 404;
+                throw error;
+            }
+            if (response.status === 403) {
+                const error = new Error('Blog not published');
+                (error as any).status = 403;
+                throw error;
             }
             throw new Error(`Failed to fetch blog: ${response.status} ${response.statusText}`);
         }

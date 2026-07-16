@@ -21,6 +21,9 @@ export default function robots(): MetadataRoute.Robots {
                 ],
             },
         ],
-        sitemap: 'https://hustloop.com/sitemap.xml',
+        sitemap: [
+            'https://hustloop.com/sitemap.xml',
+            'https://hustloop.com/sitemap-blog.xml',
+        ],
     };
 }

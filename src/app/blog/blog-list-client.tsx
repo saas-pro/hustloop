@@ -129,11 +129,6 @@ export default function BlogListClient() {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <BrandLogo />
-                            <Link href="/">
-                                <Button variant="ghost" size="icon" className="rounded-full">
-                                    <Home className="h-5 w-5" />
-                                </Button>
-                            </Link>
                         </div>
                         <ThemeToggleDropdown />
                     </div>
@@ -259,14 +254,14 @@ function BlogCard({ blog, isAdmin }: { blog: BlogPost; isAdmin?: boolean }) {
                             </Badge>
                         )}
                     </div>
-                    <CardTitle className="line-clamp-2 group-hover:text-black transition-colors leading-tight">
+                    <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors leading-tight">
                         {blog.title}
                     </CardTitle>
                     <div className="mt-4 flex flex-col gap-4 bg-background/60 backdrop-blur-md p-4 rounded-xl border border-border/40 shadow-sm">
                         <p className="line-clamp-3 text-sm text-foreground/90 leading-relaxed">
                             {blog.excerpt || blog.content.replace(/<[^>]*>/g, "").substring(0, 150) + "..."}
                         </p>
-                        
+
                         <div className="flex flex-col gap-3 pt-3 border-t border-border/50">
                             {/* Author & Date */}
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -308,7 +303,7 @@ function BlogCard({ blog, isAdmin }: { blog: BlogPost; isAdmin?: boolean }) {
 
                         {/* Read More */}
                         <div className="flex items-center justify-end gap-1.5 mt-1 text-primary font-semibold text-sm group-hover:text-primary/80 transition-colors">
-                            {isPublished ? 'Read article' : isAdmin ? 'Preview' : 'Read article'} 
+                            {isPublished ? 'Read article' : isAdmin ? 'Preview' : 'Read article'}
                             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </div>
                     </div>

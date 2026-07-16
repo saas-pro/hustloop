@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { getBlogBySlug, getNextBlogs } from "@/lib/api";
 import BlogDetailClient from "./blog-detail-client";
 import BlogAdminGateway from "./blog-admin-gateway";
+import { notFound } from "next/navigation";
 
 // ISR: revalidate every 60 seconds so Google sees fresh content
 // while still getting a pre-rendered HTML response on every crawl.
@@ -201,12 +202,12 @@ export default async function BlogDetailPage({ params, searchParams }: BlogPageP
                 </>
             );
         }
-    } catch {
-        // Blog not found or not published — fall through
+    } catch (error: any) {
+        if (error.status === 404 || error.status === 403) {
+            notFound();
+        }
     }
 
-    // Blog not found in public feed (likely draft/pending/rejected).
-    // Render the client-side gateway: it reads the token from localStorage,
-    // retries with admin auth, and shows login modal if not authenticated.
-    return <BlogAdminGateway slug={slug} />;
+    // Fallback if needed
+    notFound();
 }

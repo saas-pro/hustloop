@@ -22,13 +22,9 @@ function Number({ mv, number, height }) {
 
 function Digit({ place, value, height, digitStyle }) {
   let valueRoundedToPlace = Math.floor(value / place);
-  let animatedValue = useSpring(valueRoundedToPlace, { stiffness: 200, damping: 40 });
+  let animatedValue = useSpring(valueRoundedToPlace);
   useEffect(() => {
-    if (Math.abs(animatedValue.get() - valueRoundedToPlace) >= 5) {
-      animatedValue.jump(valueRoundedToPlace);
-    } else {
-      animatedValue.set(valueRoundedToPlace);
-    }
+    animatedValue.set(valueRoundedToPlace);
   }, [animatedValue, valueRoundedToPlace]);
   return (
     <div className="counter-digit" style={{ height, ...digitStyle }}>

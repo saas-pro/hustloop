@@ -213,15 +213,19 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
         extensions: [
             StarterKit,
             Placeholder.configure({ placeholder: "Write your story here..." }),
-            Link.configure({ 
-                openOnClick: false, 
-                HTMLAttributes: { 
-                    class: 'underline text-primary underline-offset-4 hover:opacity-80 transition-opacity cursor-pointer' 
-                } 
+            Link.configure({
+                openOnClick: false,
+                HTMLAttributes: {
+                    class: 'underline text-primary underline-offset-4 hover:opacity-80 transition-opacity cursor-pointer'
+                }
             }),
             Image,
             Typography,
-            Highlight,
+            Highlight.configure({
+                HTMLAttributes: {
+                    style: 'background-color: hsl(var(--primary) / 0.5); color: inherit; padding: 0.125rem 0.25rem; border-radius: 0.25rem;',
+                },
+            }),
             TextAlign.configure({ types: ["heading", "paragraph"] }),
             TaskItem.configure({ nested: true }),
         ],
@@ -299,7 +303,7 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
     const formatUrl = (url?: string, platform?: 'instagram' | 'linkedin' | 'x' | 'youtube' | 'website') => {
         if (!url || url.trim() === "") return undefined;
         let formattedUrl = url.trim();
-        
+
         // If it looks like a full URL (has dot and no spaces, or starts with http), just ensure protocol
         if (formattedUrl.startsWith("http://") || formattedUrl.startsWith("https://") || (formattedUrl.includes('.') && !formattedUrl.includes(' '))) {
             if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {

@@ -5,7 +5,7 @@ import { Editor } from "@tiptap/react";
 import {
     Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2,
     Undo, Redo, Link as LinkIcon, Image as ImageIcon,
-    AlignLeft, AlignCenter, AlignRight, ListTodo,
+    AlignLeft, AlignCenter, AlignRight, ListTodo, Highlighter,
 } from "lucide-react";
 
 interface EditorBubbleMenuProps {
@@ -234,6 +234,10 @@ export default function EditorBubbleMenu({ editor, onImageUploaded }: EditorBubb
             <Btn title="Italic (⌘I)" active={editor.isActive("italic")}
                 onClick={() => editor.chain().focus().toggleItalic().run()}>
                 <Italic size={14} strokeWidth={2.5} />
+            </Btn>
+            <Btn title="Highlight" active={editor.isActive("highlight")}
+                onClick={() => editor.chain().focus().toggleHighlight().run()}>
+                <Highlighter size={14} strokeWidth={2.5} />
             </Btn>
 
             <Sep />
