@@ -219,8 +219,8 @@ function BlogCard({ blog, isAdmin }: { blog: BlogPost; isAdmin?: boolean }) {
     const statusBadge = !isPublished && isAdmin ? (
         <Badge
             variant={blog.status === 'rejected' ? 'destructive' : 'outline'}
-            className={`text-xs absolute top-2 right-2 z-10 ${blog.status === 'pending_review'
-                ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
+            className={`text-xs absolute top-3 right-3 z-20 shadow-md ${blog.status === 'pending_review'
+                ? 'bg-yellow-500 text-white border-none'
                 : ''
                 }`}
         >
@@ -231,80 +231,75 @@ function BlogCard({ blog, isAdmin }: { blog: BlogPost; isAdmin?: boolean }) {
     ) : null;
 
     return (
-        <Link href={href}>
-            <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer group relative overflow-hidden ${!isPublished && isAdmin ? 'border-dashed opacity-80 hover:opacity-100' : ''
-                }`}>
-                {statusBadge}
-                {blog.featured_image_url && (
-                    <div className="absolute inset-0 z-0 pointer-events-none">
+        <Link href={href} className="group block h-full">
+            <Card className={`h-full flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border-border/60 bg-card/40 backdrop-blur-sm ${!isPublished && isAdmin ? 'border-dashed opacity-80 hover:opacity-100' : ''}`}>
+                {/* Image Section */}
+                <div className="relative w-full aspect-[16/10] overflow-hidden bg-muted/30 shrink-0">
+                    {statusBadge}
+                    {blog.featured_image_url ? (
                         <Image
                             src={blog.featured_image_url}
                             alt={blog.title}
                             fill
-                            className="object-cover opacity-85 group-hover:opacity-75 group-hover:scale-105 transition-all duration-500"
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-b from-card/60 via-card/80 to-card backdrop-blur-sm"></div>
-                    </div>
-                )}
-                <CardHeader className="relative z-10 pt-8">
-                    <div className="flex items-center gap-2 mb-2">
-                        {blog.tags && blog.tags.length > 0 && (
-                            <Badge variant="secondary" className="text-xs">
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/30">
+                            <FileText className="h-10 w-10" />
+                        </div>
+                    )}
+                    {/* Tag floating on image */}
+                    {blog.tags && blog.tags.length > 0 && (
+                        <div className="absolute bottom-3 left-3 z-10">
+                            <Badge variant="secondary" className="bg-background/95 backdrop-blur text-foreground border-none shadow-sm hover:bg-background/100 text-[11px] px-2.5 py-0.5 font-medium uppercase tracking-wider">
                                 {blog.tags[0]}
                             </Badge>
-                        )}
-                    </div>
-                    <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors leading-tight">
+                        </div>
+                    )}
+                </div>
+
+                {/* Content Section */}
+                <CardHeader className="flex-1 flex flex-col p-5 pt-5 pb-5">
+                    <CardTitle className="text-xl line-clamp-2 group-hover:text-primary transition-colors leading-snug mb-3">
                         {blog.title}
                     </CardTitle>
-                    <div className="mt-4 flex flex-col gap-4 bg-background/60 backdrop-blur-md p-4 rounded-xl border border-border/40 shadow-sm">
-                        <p className="line-clamp-3 text-sm text-foreground/90 leading-relaxed">
-                            {blog.excerpt || blog.content.replace(/<[^>]*>/g, "").substring(0, 150) + "..."}
-                        </p>
-
-                        <div className="flex flex-col gap-3 pt-3 border-t border-border/50">
-                            {/* Author & Date */}
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                {blog.author?.name && (
-                                    <div className="flex items-center gap-1.5 font-medium">
+                    <p className="line-clamp-2 text-sm text-muted-foreground leading-relaxed flex-1">
+                        {blog.excerpt || blog.content.replace(/<[^>]*>/g, "").substring(0, 150) + "..."}
+                    </p>
+                    
+                    <div className="mt-5 pt-4 border-t border-border/50 flex flex-col gap-3.5">
+                        {/* Meta Data: Author & Date */}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+                            {blog.author?.name ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
                                         <User className="h-3.5 w-3.5" />
-                                        <span>{blog.author?.name}</span>
                                     </div>
-                                )}
-                                <div className="flex items-center gap-1.5">
-                                    <Calendar className="h-3.5 w-3.5" />
-                                    <span>{new Date(blog.created_at).toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric"
-                                    })}</span>
+                                    <span className="truncate max-w-[120px]">{blog.author?.name}</span>
                                 </div>
-                            </div>
-
-                            {/* Read Time & Views */}
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <div className="flex items-center gap-1.5">
-                                    <Clock className="h-3.5 w-3.5" />
-                                    <span>{calculateReadTime(
-                                        blog.content,
-                                        blog.featured_image_url ? 1 : 0
-                                    )} min read</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-background text-primary font-medium shadow-sm border border-primary/20">
-                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <line x1="18" y1="20" x2="18" y2="10" />
-                                        <line x1="12" y1="20" x2="12" y2="4" />
-                                        <line x1="6" y1="20" x2="6" y2="14" />
-                                    </svg>
-                                    <span>{blog.views || 0} views</span>
-                                </div>
+                            ) : <div></div>}
+                            <div className="flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5" />
+                                <span>{new Date(blog.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                             </div>
                         </div>
 
-                        {/* Read More */}
-                        <div className="flex items-center justify-end gap-1.5 mt-1 text-primary font-semibold text-sm group-hover:text-primary/80 transition-colors">
-                            {isPublished ? 'Read article' : isAdmin ? 'Preview' : 'Read article'}
-                            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        {/* Meta Data: Read Time & Views */}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-1.5">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    <span>{calculateReadTime(blog.content, blog.featured_image_url ? 1 : 0)} min</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Eye className="h-3.5 w-3.5" />
+                                    <span>{blog.views || 0}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1 text-primary group-hover:translate-x-1 transition-transform font-bold">
+                                <span>{isPublished ? 'Read' : 'Preview'}</span>
+                                <ArrowRight className="h-3.5 w-3.5" />
+                            </div>
                         </div>
                     </div>
                 </CardHeader>

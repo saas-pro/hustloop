@@ -156,6 +156,28 @@ const LineSidebar = ({
     startLoop();
   }, [activeIndex, startLoop]);
 
+  useEffect(() => {
+    if (activeIndex !== null && itemRefs.current[activeIndex]) {
+      const activeEl = itemRefs.current[activeIndex];
+      let parent = activeEl.parentElement;
+      while (parent && parent !== document.body) {
+        const style = window.getComputedStyle(parent);
+        if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+          const elRect = activeEl.getBoundingClientRect();
+          const parentRect = parent.getBoundingClientRect();
+          
+          if (elRect.top < parentRect.top) {
+             parent.scrollBy({ top: elRect.top - parentRect.top - 20, behavior: 'smooth' });
+          } else if (elRect.bottom > parentRect.bottom) {
+             parent.scrollBy({ top: elRect.bottom - parentRect.bottom + 20, behavior: 'smooth' });
+          }
+          break;
+        }
+        parent = parent.parentElement;
+      }
+    }
+  }, [activeIndex]);
+
   useEffect(
     () => () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);

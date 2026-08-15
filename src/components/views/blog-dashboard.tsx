@@ -453,6 +453,7 @@ function BlogFormDialog({
 }: BlogFormDialogProps) {
     const [formData, setFormData] = useState<CreateBlogData>({
         title: "",
+        slug: "",
         excerpt: "",
         content: "",
         tags: "",
@@ -471,6 +472,7 @@ function BlogFormDialog({
         if (blog && isOpen) {
             setFormData({
                 title: blog.title,
+                slug: blog.slug || "",
                 excerpt: blog.excerpt || "",
                 content: blog.content,
                 youtube_embed_url: blog.youtube_embed_url || "",
@@ -483,6 +485,7 @@ function BlogFormDialog({
         } else if (!blog && isOpen) {
             setFormData({
                 title: "",
+                slug: "",
                 excerpt: "",
                 content: "",
                 youtube_embed_url: "",
@@ -646,6 +649,18 @@ function BlogFormDialog({
                             rows={10}
                             required
                             className="font-mono text-sm"
+                        />
+                    </div>
+
+                    {/* Slug */}
+                    <div className="space-y-2">
+                        <Label htmlFor="slug">URL Slug</Label>
+                        <Input
+                            id="slug"
+                            placeholder="custom-url-slug"
+                            value={formData.slug}
+                            onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') })}
+                            required
                         />
                     </div>
 

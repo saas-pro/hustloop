@@ -397,6 +397,7 @@ export async function submitForReview(blogId: string, token: string): Promise<Bl
 
 export interface CreateBlogData {
     title: string;
+    slug: string;
     excerpt?: string;
     tagline?: string;
     tagline_color?: string;
@@ -699,7 +700,7 @@ export async function updateBloggerProfile(
     token: string
 ): Promise<{ success: boolean; message: string; user: Record<string, unknown> }> {
     const response = await fetch(`${API_BASE_URL}/api/blogger/profile`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,

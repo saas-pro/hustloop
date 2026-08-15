@@ -38,6 +38,7 @@ interface BloggerEditorProps {
 
 const LIMITS = {
     title: 200,
+    slug: 150,
     tags: 300,
     excerpt: 500,
     tagline: 255,
@@ -169,6 +170,7 @@ function SocialInput({
 export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: BloggerEditorProps) {
     // ── Content fields ──────────────────────────────────────────────────────
     const [title, setTitle] = useState(initialData?.title || "");
+    const [slug, setSlug] = useState(initialData?.slug || "");
     const [excerpt, setExcerpt] = useState(initialData?.excerpt || "");
     const [tagline, setTagline] = useState(initialData?.tagline || "");
     const [taglineColor, setTaglineColor] = useState(initialData?.tagline_color || "#b5b5b5");
@@ -255,6 +257,13 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
     const validateFields = () => {
         const errs: Record<string, string> = {};
         if (!title.trim()) errs.title = "Title is required.";
+        if (!companyName.trim()) errs.companyName = "Company Name is required.";
+
+        if (!slug.trim()) {
+            errs.slug = "Slug is required.";
+        } else if (!/^[a-z0-9-]+$/.test(slug)) {
+            errs.slug = "Slug can only contain lowercase letters, numbers, and hyphens.";
+        }
 
         if (!youtubeEmbedUrl.trim()) {
             errs.youtubeEmbedUrl = "YouTube Embed URL is required.";
@@ -301,7 +310,7 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
     };
 
     const formatUrl = (url?: string, platform?: 'instagram' | 'linkedin' | 'x' | 'youtube' | 'website') => {
-        if (!url || url.trim() === "") return undefined;
+        if (!url || url.trim() === "") return "";
         let formattedUrl = url.trim();
 
         // If it looks like a full URL (has dot and no spaces, or starts with http), just ensure protocol
@@ -326,6 +335,7 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
     const buildData = (): CreateBlogData => {
         const data: CreateBlogData = {
             title,
+            slug: slug.trim(),
             excerpt,
             tagline,
             tagline_color: taglineColor,
@@ -341,10 +351,10 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
             linkedin_post_url: formatUrl(linkedinPostUrl),
             x_url: formatUrl(twitterUrl, 'x'),
             youtube_url: formatUrl(youtubeUrl, 'youtube'),
-            company_name: companyName || undefined,
-            company_email: companyEmail || undefined,
-            company_phone: companyPhone || undefined,
-            company_address: companyAddress || undefined,
+            company_name: companyName || "",
+            company_email: companyEmail || "",
+            company_phone: companyPhone || "",
+            company_address: companyAddress || "",
             is_cta_enabled: isCtaEnabled,
             session_uploaded_images: sessionUploadedImages.length > 0 ? sessionUploadedImages : undefined,
         };
@@ -352,7 +362,7 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
             data.featured_image = featuredImageFile;
         } else if (featuredImagePreview) {
             data.featured_image_url = featuredImagePreview;
-        }
+        } else { data.featured_image_url = ""; }
         return data;
     };
 
@@ -592,6 +602,11 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                         <div className="border-t border-border/50 pt-4 space-y-4">
                             <h3 className="text-sm font-semibold">SEO Metadata</h3>
                             <div className="space-y-2">
+                                <SmallLabel label="URL Slug" required current={slug.length} max={LIMITS.slug} />
+                                <Input placeholder="custom-url-slug" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-'))} maxLength={LIMITS.slug} className={`bg-background ${errors.slug ? "border-destructive" : ""}`} />
+                                <InlineError message={errors.slug} />
+                            </div>
+                            <div className="space-y-2">
                                 <SmallLabel label="Meta Title" current={metaTitle.length} max={LIMITS.metaTitle} required />
                                 <Input placeholder="SEO Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} maxLength={LIMITS.metaTitle} className="bg-background" />
                             </div>
@@ -610,7 +625,7 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                         <p className="text-xs text-muted-foreground -mt-2">Optional for your blog post.</p>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">Company Name</label>
+                            <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">Company Name<span className="text-destructive ml-0.5">*</span></label>
                             <Input placeholder="Company Name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={`bg-background text-sm ${errors.companyName ? "border-destructive" : ""}`} />
                             <InlineError message={errors.companyName} />
                         </div>

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import type { UserRole, founderRole } from '@/app/types';
+import { usePathname } from 'next/navigation';
 
 interface User {
     name: string;
@@ -32,6 +33,7 @@ interface AuthData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+    const pathname = usePathname();
     const [user, setUser] = useState<User | null>(null);
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const [founderRole, setFounderRole] = useState<founderRole | null>(null);
@@ -68,6 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const checkToken = useCallback(async () => {
         if (typeof window === 'undefined') return;
+
+        if (pathname === '/wefill' || pathname?.startsWith('/wefill/')) {
+            setIsLoading(false);
+            return;
+        }
 
         const token = localStorage.getItem('token');
         if (!token) {
@@ -108,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error("Auth hydration failed:", error);
             setIsLoading(false);
         }
-    }, [setAuthData, logout]);
+    }, [setAuthData, logout, pathname]);
 
     useEffect(() => {
         checkToken();

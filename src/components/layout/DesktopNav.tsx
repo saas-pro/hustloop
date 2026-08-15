@@ -110,7 +110,7 @@ const DesktopNav = ({ navOpen, setNavOpen, activeView, heroVisible, setActiveVie
         }
     };
     const hideMarketplace =
-        pathname === "/privacy-policy" || pathname === "/terms-of-service" || pathname === "/sif-aignite";
+        pathname === "/privacy-policy" || pathname === "/terms-of-service" || pathname === "/sif-aignite" || pathname === "/wefill";
     const handleScrollToSection = (e: React.MouseEvent<any>, sectionId: string) => {
         e.preventDefault();
         if (pathname !== '/') {

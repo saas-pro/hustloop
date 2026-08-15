@@ -589,6 +589,114 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
     const [totalPages, setTotalPages] = useState(1);
     const itemsPerPage = 10;
     const [registrations, setRegistrations] = useState<RegistrationAignite[]>([]);
+
+    const [wefillRegistrations, setWefillRegistrations] = useState<any[]>([]);
+    const [totalWefillRegistrations, setTotalWefillRegistrations] = useState(0);
+
+    const fetchWefillRegistrations = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/api/wefill/`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setWefillRegistrations(data.items);
+                setTotalWefillRegistrations(data.total);
+            } else {
+                console.error("Failed to fetch wefill registrations");
+            }
+        } catch (error) {
+            console.error("Error fetching wefill registrations", error);
+        } finally { setIsLoading(false); }
+    }, []);
+    const [selectedWefillApp, setSelectedWefillApp] = useState<any>(null);
+    const [isWefillModalOpen, setIsWefillModalOpen] = useState(false);
+
+    const handleExportWefillCSV = () => {
+        if (!wefillRegistrations || wefillRegistrations.length === 0) {
+            toast({
+                title: "No data",
+                description: "No WeFill registrations to export.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const headers = [
+            "Legal Name", "Brand Name", "Website", "Sector", "Stage", "Entity Type",
+            "Incorp Date", "CIN", "GST", "PAN", "Udyam", "Address",
+            "Founder Name", "Founder Role", "Founder Email", "Founder Phone", "Founder LinkedIn",
+            "Team Size", "Founder Bio", "Co-founders",
+            "One Liner", "Problem", "Solution", "Tech Stack", "IP & Patents",
+            "Revenue", "Users/Clients", "Growth", "Total Raised", "Current Round", "Round Size",
+            "Pitch Deck URL", "One Pager URL", "Financials URL", "ID Proof URL", "Incorp Cert URL", "GST/PAN URL", "Udyam Cert URL",
+            "Created At"
+        ];
+
+        const rows = wefillRegistrations.map((reg: any) => [
+            reg.legal_name || "",
+            reg.brand_name || "",
+            reg.website || "",
+            reg.sector || "",
+            reg.stage || "",
+            reg.entity_type || "",
+            reg.incorp_date || "",
+            reg.reg_cin || "",
+            reg.reg_gst || "",
+            reg.reg_pan || "",
+            reg.reg_udyam || "",
+            reg.address || "",
+            reg.founder_name || "",
+            reg.founder_role || "",
+            reg.founder_email || "",
+            reg.founder_phone || "",
+            reg.founder_linkedin || "",
+            reg.team_size || "",
+            reg.founder_bio || "",
+            reg.cofounders || "",
+            reg.one_liner || "",
+            reg.problem || "",
+            reg.solution || "",
+            reg.tech_stack || "",
+            reg.ip_patents || "",
+            reg.revenue || "",
+            reg.users || "",
+            reg.growth || "",
+            reg.funding_raised || "",
+            reg.current_round || "",
+            reg.round_size || "",
+            reg.doc_pitch_deck || "",
+            reg.doc_one_pager || "",
+            reg.doc_financials || "",
+            reg.doc_id_proof || "",
+            reg.doc_incorp_cert || "",
+            reg.doc_gst_pan || "",
+            reg.doc_udyam_cert || "",
+            new Date(reg.created_at).toLocaleString()
+        ]);
+
+        const csvContent = [headers, ...rows]
+            .map((row) => row.map((field: any) => `"${String(field).replace(/"/g, '""')}"`).join(","))
+            .join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `wefill_registrations.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const openWefillModal = (app: any) => {
+        setSelectedWefillApp(app);
+        setIsWefillModalOpen(true);
+    };
+
+
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingFormUsers, setIsLoadingFormUsers] = useState(false)
     const [perPage] = useState(10);
@@ -1361,6 +1469,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
             }
             if (activeTab === 'users') fetchUsers(1, 10);
             if (activeTab === 'registration') fetchRegistrations(1);
+            if (activeTab === 'wefill') fetchWefillRegistrations();
             // if (activeTab === 'connex') fetchConnex(1);
             if (activeTab === 'blog') fetchBlogPosts();
             if (activeTab === 'sessions') fetchEducationPrograms();
@@ -1369,7 +1478,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
             if (activeTab === 'pitch-details') fetchPitchingDetails();
             if (activeTab === 'events') fetchEvents();
         }
-    }, [activeTab, userRole, fetchUsers, fetchPitchingDetails, fetchBlogPosts, fetchEvents, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations, fetchDashboardStats]);
+    }, [activeTab, userRole, fetchUsers, fetchPitchingDetails, fetchBlogPosts, fetchEvents, fetchEducationPrograms, fetchSubscribers, fetchIps, fetchRegistrations, fetchDashboardStats, fetchWefillRegistrations]);
 
 
     const togglePitchSelect = (id: string) => {
@@ -1771,6 +1880,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
 
         // Group 5
         "registration",
+        "wefill",
         "events",
 
         "divider4",  // Fourth divider after fifth group
@@ -2541,6 +2651,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                         users: "Users",
                                                         "ip/technologies": "FileSignature",
                                                         registration: "Zap",
+                                                        wefill: "Briefcase",
                                                         engagement: "Handshake",
                                                         plans: "Crown",
                                                         "pitch-details": "Presentation",
@@ -4154,6 +4265,155 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                                 There are no newsletter subscribers yet.
                                                             </p>
                                                         )}
+                                                    </CardContent>
+                                                </Card>
+                                            </TabsContent>
+
+
+                                            <TabsContent value="wefill" className="mt-0">
+                                                <Card>
+                                                    <CardHeader>
+                                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                                            <div>
+                                                                <CardTitle>WeFill Registrations</CardTitle>
+                                                                <CardDescription>
+                                                                    Total WeFill Profiles: {isLoading ? (
+                                                                        <LucideIcons.Loader2 className="h-4 w-4 animate-spin inline-block ml-2" />
+                                                                    ) : totalWefillRegistrations}
+                                                                </CardDescription>
+                                                            </div>
+                                                            <Button variant="outline" className="mt-4 sm:mt-0" onClick={handleExportWefillCSV}>
+                                                                <LucideIcons.Download className="mr-2 h-4 w-4" /> Export CSV
+                                                            </Button>
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardContent>
+                                                        {isLoading && wefillRegistrations.length === 0 ? (
+                                                            <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                                                        ) : wefillRegistrations.length > 0 ? (
+                                                            <div className="rounded-md border border-border">
+                                                                <Table>
+                                                                    <TableHeader>
+                                                                        <TableRow>
+                                                                            <TableHead>Brand Name</TableHead>
+                                                                            <TableHead>Founder</TableHead>
+                                                                            <TableHead>Email</TableHead>
+                                                                            <TableHead>Sector</TableHead>
+                                                                            <TableHead>Stage</TableHead>
+                                                                            <TableHead>Date</TableHead>
+                                                                        </TableRow>
+                                                                    </TableHeader>
+                                                                    <TableBody>
+                                                                        {wefillRegistrations.map((reg) => (
+                                                                            <TableRow key={reg.id} onClick={() => openWefillModal(reg)} className="cursor-pointer hover:bg-accent/50">
+                                                                                <TableCell className="font-medium">{reg.brand_name || reg.legal_name}</TableCell>
+                                                                                <TableCell>{reg.founder_name}</TableCell>
+                                                                                <TableCell>{reg.founder_email}</TableCell>
+                                                                                <TableCell>{reg.sector}</TableCell>
+                                                                                <TableCell>{reg.stage}</TableCell>
+                                                                                <TableCell>{new Date(reg.created_at).toLocaleDateString()}</TableCell>
+                                                                            </TableRow>
+                                                                        ))}
+                                                                    </TableBody>
+                                                                </Table>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-center py-8 text-muted-foreground">
+                                                                <LucideIcons.Briefcase className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                                                                <p>No WeFill registrations yet</p>
+                                                            </div>
+                                                        )}
+
+                                                        <Dialog open={isWefillModalOpen} onOpenChange={setIsWefillModalOpen}>
+                                                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                                                <DialogHeader>
+                                                                    <DialogTitle>{selectedWefillApp?.brand_name || selectedWefillApp?.legal_name} - Full Application</DialogTitle>
+                                                                </DialogHeader>
+                                                                {selectedWefillApp && (
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                                                        {/* Company Details */}
+                                                                        <div className="space-y-4">
+                                                                            <h3 className="text-lg font-semibold border-b pb-2">Company Details</h3>
+                                                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                                                <span className="font-semibold">Legal Name:</span> <span>{selectedWefillApp.legal_name || '-'}</span>
+                                                                                <span className="font-semibold">Brand Name:</span> <span>{selectedWefillApp.brand_name || '-'}</span>
+                                                                                <span className="font-semibold">Website:</span> <span>{selectedWefillApp.website ? <a href={selectedWefillApp.website} target="_blank" className="text-primary underline">{selectedWefillApp.website}</a> : '-'}</span>
+                                                                                <span className="font-semibold">Sector:</span> <span>{selectedWefillApp.sector || '-'}</span>
+                                                                                <span className="font-semibold">Stage:</span> <span>{selectedWefillApp.stage || '-'}</span>
+                                                                                <span className="font-semibold">Entity Type:</span> <span>{selectedWefillApp.entity_type || '-'}</span>
+                                                                                <span className="font-semibold">Incorp Date:</span> <span>{selectedWefillApp.incorp_date || '-'}</span>
+                                                                                <span className="font-semibold">CIN:</span> <span>{selectedWefillApp.reg_cin || '-'}</span>
+                                                                                <span className="font-semibold">GST:</span> <span>{selectedWefillApp.reg_gst || '-'}</span>
+                                                                                <span className="font-semibold">PAN:</span> <span>{selectedWefillApp.reg_pan || '-'}</span>
+                                                                                <span className="font-semibold">Udyam:</span> <span>{selectedWefillApp.reg_udyam || '-'}</span>
+                                                                                <span className="font-semibold">Address:</span> <span className="col-span-2 mt-1">{selectedWefillApp.address || '-'}</span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Founder Details */}
+                                                                        <div className="space-y-4">
+                                                                            <h3 className="text-lg font-semibold border-b pb-2">Founder Details</h3>
+                                                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                                                <span className="font-semibold">Name:</span> <span>{selectedWefillApp.founder_name || '-'}</span>
+                                                                                <span className="font-semibold">Role:</span> <span>{selectedWefillApp.founder_role || '-'}</span>
+                                                                                <span className="font-semibold">Email:</span> <span>{selectedWefillApp.founder_email || '-'}</span>
+                                                                                <span className="font-semibold">Phone:</span> <span>{selectedWefillApp.founder_phone || '-'}</span>
+                                                                                <span className="font-semibold">LinkedIn:</span> <span>{selectedWefillApp.founder_linkedin ? <a href={selectedWefillApp.founder_linkedin} target="_blank" className="text-primary underline">Profile</a> : '-'}</span>
+                                                                                <span className="font-semibold">Team Size:</span> <span>{selectedWefillApp.team_size || '-'}</span>
+                                                                            </div>
+                                                                            <div className="text-sm">
+                                                                                <p className="font-semibold">Bio:</p>
+                                                                                <p className="text-muted-foreground mt-1">{selectedWefillApp.founder_bio || '-'}</p>
+                                                                            </div>
+                                                                            <div className="text-sm">
+                                                                                <p className="font-semibold">Co-founders:</p>
+                                                                                <p className="text-muted-foreground mt-1">{selectedWefillApp.cofounders || '-'}</p>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Product & Market */}
+                                                                        <div className="space-y-4 col-span-1 md:col-span-2">
+                                                                            <h3 className="text-lg font-semibold border-b pb-2">Product & Market</h3>
+                                                                            <div className="space-y-3 text-sm">
+                                                                                <div><span className="font-semibold block mb-1">One Liner:</span> <p className=" p-2 rounded">{selectedWefillApp.one_liner || '-'}</p></div>
+                                                                                <div><span className="font-semibold block mb-1">Problem:</span> <p className="p-2 rounded">{selectedWefillApp.problem || '-'}</p></div>
+                                                                                <div><span className="font-semibold block mb-1">Solution:</span> <p className=" p-2 rounded">{selectedWefillApp.solution || '-'}</p></div>
+                                                                                <div><span className="font-semibold block mb-1">Tech Stack:</span> <p className=" p-2 rounded">{selectedWefillApp.tech_stack || '-'}</p></div>
+                                                                                <div><span className="font-semibold block mb-1">IP & Patents:</span> <p className=" p-2 rounded">{selectedWefillApp.ip_patents || '-'}</p></div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Financials & Metrics */}
+                                                                        <div className="space-y-4 col-span-1 md:col-span-2">
+                                                                            <h3 className="text-lg font-semibold border-b pb-2">Metrics & Funding</h3>
+                                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm p-4 rounded-lg">
+                                                                                <div><span className="font-semibold block text-muted-foreground mb-1">Revenue</span> <span className="font-medium">{selectedWefillApp.revenue || '-'}</span></div>
+                                                                                <div><span className="font-semibold block text-muted-foreground mb-1">Users/Clients</span> <span className="font-medium">{selectedWefillApp.users || '-'}</span></div>
+                                                                                <div><span className="font-semibold block text-muted-foreground mb-1">Growth</span> <span className="font-medium">{selectedWefillApp.growth || '-'}</span></div>
+                                                                                <div><span className="font-semibold block text-muted-foreground mb-1">Total Raised</span> <span className="font-medium">{selectedWefillApp.funding_raised || '-'}</span></div>
+                                                                                <div><span className="font-semibold block text-muted-foreground mb-1">Current Round</span> <span className="font-medium">{selectedWefillApp.current_round || '-'}</span></div>
+                                                                                <div><span className="font-semibold block text-muted-foreground mb-1">Round Size</span> <span className="font-medium">{selectedWefillApp.round_size || '-'}</span></div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Documents */}
+                                                                        <div className="space-y-4 col-span-1 md:col-span-2">
+                                                                            <h3 className="text-lg font-semibold border-b pb-2">Attached Documents</h3>
+                                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                                                                {selectedWefillApp.doc_pitch_deck && <a href={selectedWefillApp.doc_pitch_deck} target="_blank" className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary p-2 rounded transition-colors"><LucideIcons.FileText className="h-4 w-4" /> Pitch Deck</a>}
+                                                                                {selectedWefillApp.doc_one_pager && <a href={selectedWefillApp.doc_one_pager} target="_blank" className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary p-2 rounded transition-colors"><LucideIcons.File className="h-4 w-4" /> One Pager</a>}
+                                                                                {selectedWefillApp.doc_financials && <a href={selectedWefillApp.doc_financials} target="_blank" className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary p-2 rounded transition-colors"><LucideIcons.BarChart2 className="h-4 w-4" /> Financials</a>}
+                                                                                {selectedWefillApp.doc_id_proof && <a href={selectedWefillApp.doc_id_proof} target="_blank" className="flex items-center gap-2 bg-accent hover:bg-accent/80 p-2 rounded transition-colors"><LucideIcons.User className="h-4 w-4" /> ID Proof</a>}
+                                                                                {selectedWefillApp.doc_incorp_cert && <a href={selectedWefillApp.doc_incorp_cert} target="_blank" className="flex items-center gap-2 bg-accent hover:bg-accent/80 p-2 rounded transition-colors"><LucideIcons.Award className="h-4 w-4" /> Incorp Cert</a>}
+                                                                                {selectedWefillApp.doc_gst_pan && <a href={selectedWefillApp.doc_gst_pan} target="_blank" className="flex items-center gap-2 bg-accent hover:bg-accent/80 p-2 rounded transition-colors"><LucideIcons.FileSignature className="h-4 w-4" /> GST/PAN</a>}
+                                                                                {selectedWefillApp.doc_udyam_cert && <a href={selectedWefillApp.doc_udyam_cert} target="_blank" className="flex items-center gap-2 bg-accent hover:bg-accent/80 p-2 rounded transition-colors"><LucideIcons.Briefcase className="h-4 w-4" /> Udyam Cert</a>}
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+                                                                )}
+                                                            </DialogContent>
+                                                        </Dialog>
                                                     </CardContent>
                                                 </Card>
                                             </TabsContent>
