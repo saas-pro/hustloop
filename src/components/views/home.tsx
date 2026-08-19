@@ -1058,8 +1058,8 @@ export default function HomeView({
         <section className="relative py-16 md:py-20 bg-background">
           <div className="container mx-auto px-4">
             <Card className="bg-card text-card-foreground rounded-2xl shadow-2xl shadow-primary/20 overflow-hidden relative">
-              <div className="p-8 md:p-12 relative z-10">
-                <div className="grid md:grid-cols-2 gap-8 items-center relative mb-8">
+              <div className=" relative z-10">
+                <div className="p-8 md:p-12 grid md:grid-cols-2 gap-8 items-center relative mb-8">
                   <div className="space-y-4">
                     <p className="font-semibold text-primary relative z-10">5-Minute Tour</p>
                     <h2 className="text-4xl font-bold font-headline text-card-foreground relative z-10">
@@ -1071,7 +1071,7 @@ export default function HomeView({
                   </div>
                 </div>
 
-                <div className="relative md:mt-28 mt-16 md:mb-12 mb-0">
+                <div className="relative md:mt-28 mt-16 md:mb-12 mb-0 pb-8 md:pb-12">
                   <ContainerScroll
                     titleComponent={<></>}
                   >
