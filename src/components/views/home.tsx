@@ -1075,24 +1075,18 @@ export default function HomeView({
                   <ContainerScroll
                     titleComponent={<></>}
                   >
-                    <div className="relative w-full h-full">
-                      <Image
-                        src="https://placehold.co/1280x720.png"
-                        alt="Hustloop platform screenshot"
-                        width={1280}
-                        height={720}
-                        className="w-full h-full object-cover rounded-lg"
-                        data-ai-hint="platform dashboard ui"
-                      />
-                      <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center group">
-                        <Button
-                          variant="ghost"
-                          className="w-24 h-24 rounded-full bg-background/20 backdrop-blur-sm hover:bg-background/30 transition-all duration-300 group-hover:scale-110"
-                          aria-label="Play video tour"
-                        >
-                          <PlayCircle className="w-16 h-16 text-white" />
-                        </Button>
-                      </div>
+                    <div className="relative w-full h-full aspect-video rounded-2xl overflow-hidden">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        src="https://www.youtube.com/embed/ZCwVNNvaB4c?si=AKCPaY69FF8tbame&autoplay=0&rel=0"
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allowFullScreen
+                        className="w-full h-full absolute inset-0"
+                      ></iframe>
                     </div>
                   </ContainerScroll>
                 </div>
