@@ -682,6 +682,40 @@ export default function HomeView({
     return () => window.removeEventListener("resize", checkScreen);
   }, []);
 
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting && iframeRef.current) {
+            try {
+              iframeRef.current.contentWindow?.postMessage(
+                '{"event":"command","func":"pauseVideo","args":""}',
+                '*'
+              );
+            } catch (e) {
+              console.error("Failed to pause video", e);
+            }
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentIframe = iframeRef.current;
+    if (currentIframe) {
+      observer.observe(currentIframe);
+    }
+
+    return () => {
+      if (currentIframe) {
+        observer.unobserve(currentIframe);
+      }
+    };
+  }, []);
+
+
   const whatWeOffer = [
     {
       icon: <Image src={isMobile ? "/icons/msme-sol.png" : "/icons/msme-sol.gif"} alt="msme" width={100} height={100} />,
@@ -1061,12 +1095,12 @@ export default function HomeView({
               <div className=" relative z-10">
                 <div className="p-8 md:p-12 grid md:grid-cols-2 gap-8 items-center relative mb-8">
                   <div className="space-y-4">
-                    <p className="font-semibold text-primary relative z-10">5-Minute Tour</p>
+                    <p className="font-semibold text-primary relative z-10">Introducing Hustloop</p>
                     <h2 className="text-4xl font-bold font-headline text-card-foreground relative z-10">
-                      Unlock the thriving <span className="text-primary">Ecosystem</span>
+                      Incentive-Driven <span className="text-primary">Challenge Platform</span>
                     </h2>
                     <p className="text-muted-foreground max-w-md relative z-10">
-                      Take a virtual tour and experience how the Hustloop Platform connects founders, mentors, and investors to build the future.
+                      Solve business challenges and grow 2-3x with crowdsourced innovation for real-world business growth.
                     </p>
                   </div>
                 </div>
@@ -1077,9 +1111,10 @@ export default function HomeView({
                   >
                     <div className="relative w-full h-full aspect-video rounded-2xl overflow-hidden">
                       <iframe
+                        ref={iframeRef}
                         width="100%"
                         height="100%"
-                        src="https://www.youtube.com/embed/ZCwVNNvaB4c?si=AKCPaY69FF8tbame&autoplay=0&rel=0"
+                        src="https://www.youtube.com/embed/ZCwVNNvaB4c?si=AKCPaY69FF8tbame&autoplay=0&rel=0&enablejsapi=1"
                         title="YouTube video player"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

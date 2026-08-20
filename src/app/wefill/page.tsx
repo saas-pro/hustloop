@@ -9,9 +9,12 @@ import type { View } from '@/app/types';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Check, ArrowRight, ArrowLeft, Paperclip, CheckCircle2, CornerDownLeft, Sparkles, UploadCloud, ChevronRight, Home } from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft, Paperclip, CheckCircle2, CornerDownLeft, Sparkles, UploadCloud, ChevronRight, Home, Sun, Moon, Palette } from 'lucide-react';
 import { Separator } from '@radix-ui/react-separator';
-import { ThemeToggleDropdown } from '@/components/layout/DesktopNav';
+import CurvedLoop from '@/components/CurvedLoop';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useTheme } from 'next-themes';
+import BrandLogo from '@/components/blog/brand-logo';
 
 const LETTERS = 'abcdefghi';
 
@@ -21,9 +24,9 @@ const Q = [
     sub: `A few questions about your startup. WeFill reshapes your answers into every event, hackathon, grant & scheme's format - and submits for you. Takes about 4 minutes.`,
     cta: `Start`
   },
-  { sec: 'Company', name: 'legal_name', q: `What's your startup's legal name?`, req: true, ph: `Example Technologies Pvt Ltd` },
-  { sec: 'Company', name: 'brand_name', q: `And the brand name you go by?`, req: true, ph: `ExampleBrand` },
-  { sec: 'Company', name: 'website', q: `Your website?`, sub: `Leave blank if you don't have one yet.`, input: 'url', ph: `https://example.com` },
+  { sec: 'Company', name: 'legal_name', q: `What's your startup's legal name?`, req: true, ph: `Hustloop Pvt Ltd` },
+  { sec: 'Company', name: 'brand_name', q: `And the brand name you go by?`, req: true, ph: `Hustloop` },
+  { sec: 'Company', name: 'website', q: `Your website?`, sub: `Leave blank if you don't have one yet.`, input: 'url', ph: `https://hustloop.com` },
   { sec: 'Company', name: 'entity_type', q: `How is it incorporated?`, req: true, choice: ['Private Limited', 'LLP', 'OPC', 'Partnership', 'Proprietorship', 'Not yet incorporated'] },
   { sec: 'Company', name: 'incorp_date', q: `When was it incorporated?`, input: 'date', sub: `Skip if not yet incorporated.` },
   {
@@ -88,35 +91,49 @@ const Q = [
 
 const qIdx = Q.map((q, idx) => ({ q, idx })).filter(o => !o.q.type).map(o => o.idx);
 
-
-const BrandLogo = ({ inSheet = false }: { inSheet?: boolean }) => {
-  const router = useRouter();
-  const handleLogoClick = () => {
-    router.push("/");
-  };
+function ThemeToggleDropdown() {
+  const { theme, setTheme } = useTheme();
+  const themeOptions = [
+    { value: 'light', label: 'Light', icon: Sun },
+    { value: 'dark', label: 'Dark', icon: Moon },
+    { value: 'purple', label: 'Purple', icon: Palette },
+    { value: 'blue', label: 'Blue', icon: Palette },
+    { value: 'green', label: 'Green', icon: Palette },
+    { value: 'orange', label: 'Orange', icon: Palette },
+    { value: 'blue-gray', label: 'Blue Gray', icon: Palette },
+  ];
   return (
-    <div
-      className="flex xl:flex justify-left items-center z-[1000] gap-2 absolute top-5 left-4"
-      onClick={handleLogoClick}
-    >
-      <Image
-        src="/logo.png"
-        alt="Hustloop logo"
-        width={120}
-        height={120}
-        className="w-auto min-w-[120px] max-w-[200px] h-12 md:h-16 object-contain cursor-pointer"
-      />
-      {!inSheet && (
-        <div className="flex items-center gap-2">
-          <Separator orientation="vertical" className="h-8 bg-border w-0.5" />
-          <p className="text-sm leading-tight text-muted-foreground">
-            Smart hustle. <br /> Infinite growth..
-          </p>
-        </div>
-      )}
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <Sun className="h-6 w-6 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-6 w-6 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {themeOptions.map((option) => (
+          <DropdownMenuItem key={option.value} onClick={() => setTheme(option.value)}>
+            <option.icon className="mr-2 h-4 w-4" />
+            <span>{option.label}</span>
+            {theme === option.value && <Check className="ml-auto h-4 w-4" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
-};
+}
+
+const AnimatedBackground = () => (
+  <div className="absolute top-20 inset-0 z-0 overflow-hidden pointer-events-none flex flex-col justify-center items-center opacity-30">
+    <CurvedLoop
+      marqueeText="HUSTLOOP - STARTUPS - INNOVATE - WEFILL - PITCH - "
+      speed={1.5}
+      className="text-primary opacity-80"
+    />
+    <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px]" />
+  </div>
+);
 
 export default function WeFillPage() {
   const [navOpen, setNavOpen] = React.useState(false);
@@ -602,25 +619,23 @@ export default function WeFillPage() {
 
   return (
     <div className="overflow-hidden relative flex flex-col min-h-screen bg-background">
-      <header className={"fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-transform duration-300"}>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <BrandLogo />
             </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggleDropdown />
-            </div>
+            <ThemeToggleDropdown />
           </div>
         </div>
       </header>
-      <div className={`flex-grow bg-background min-h-screen relative z-40 m-auto pointer-events-auto w-full flex flex-col justify-center py-20 md:py-24`}
+      <div className={`flex-grow bg-background min-h-screen relative z-40 m-auto pointer-events-auto w-full flex flex-col justify-center py-16 md:py-24`}
         data-alt-id="card-anchor"
         id="main-view1"
       >
 
         {/* Modern Progress Bar */}
-        <div className="fixed top-[88px] left-0 right-0 h-[3px] bg-muted z-40">
+        <div className="fixed top-[82px] left-0 right-0 h-[3px] bg-muted z-40">
           <motion.div className="h-full bg-primary origin-left" initial={{ scaleX: 0 }} animate={{ scaleX: progressWidth / 100 }} transition={{ duration: 0.5, ease: "easeOut" }} />
         </div>
 
@@ -633,6 +648,9 @@ export default function WeFillPage() {
           )}
         </div>
 
+        {/* Background Animation */}
+        <AnimatedBackground />
+
         {/* Main Content Area */}
         <div className="relative w-full max-w-4xl mx-auto h-[600px] flex-2 z-10">
           <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -643,7 +661,7 @@ export default function WeFillPage() {
               initial="enter"
               animate="center"
               exit="exit"
-              className="absolute inset-0 px-6 md:px-12 lg:px-20 overflow-y-auto no-scrollbar pb-10"
+              className="absolute inset-0 px-6 md:px-12 lg:px-20 overflow-y-auto no-scrollbar pb-40"
             >
               {renderSlideContent(Q[currentStep], currentStep)}
             </motion.div>
