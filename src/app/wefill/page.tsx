@@ -125,7 +125,7 @@ function ThemeToggleDropdown() {
 }
 
 const AnimatedBackground = () => (
-  <div className="absolute top-20 inset-0 z-0 overflow-hidden pointer-events-none flex flex-col justify-center items-center opacity-30">
+  <div className="absolute top-96 md:top-32 inset-0 z-0 overflow-hidden pointer-events-none flex flex-col justify-center items-center opacity-30">
     <CurvedLoop
       marqueeText="HUSTLOOP - STARTUPS - INNOVATE - WEFILL - PITCH - "
       speed={1.5}
