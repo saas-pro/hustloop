@@ -136,8 +136,8 @@ const collaborationSchema = z.object({
     description: z
         .string()
         .min(10, { message: "Description is required." })
-        .max(5000, {
-            message: "Description must not exceed 5000 characters.",
+        .max(15000, {
+            message: "Description must not exceed 15000 characters.",
         }),
 
     rewardType: z.enum(["fixed", "range"], {

@@ -21,7 +21,7 @@ const LETTERS = 'abcdefghi';
 const Q = [
   {
     type: 'welcome', title: `Fill it <em className='not-italic text-primary'>once.</em><br>We apply everywhere.`,
-    sub: `A few questions about your startup. WeFill reshapes your answers into every event, hackathon, grant & scheme's format - and submits for you. Takes about 4 minutes.`,
+    sub: `WeFill By Hustloop`,
     cta: `Start`
   },
   { sec: 'Company', name: 'legal_name', q: `What's your startup's legal name?`, req: true, ph: `Hustloop Pvt Ltd` },
@@ -124,14 +124,107 @@ function ThemeToggleDropdown() {
   );
 }
 
-const AnimatedBackground = () => (
-  <div className="absolute top-96 md:top-32 inset-0 z-0 overflow-hidden pointer-events-none flex flex-col justify-center items-center opacity-30">
-    <CurvedLoop
-      marqueeText="HUSTLOOP - STARTUPS - INNOVATE - WEFILL - PITCH - "
-      speed={1.5}
-      className="text-primary opacity-80"
-    />
-    <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px]" />
+const RotatedCardsBackground = () => (
+  <div className="w-full overflow-visible pointer-events-none flex justify-center items-end h-[120px] translate-y-4">
+    <div className="relative w-full max-w-5xl flex justify-center scale-90 origin-bottom">
+
+      {/* Left Card - Starter */}
+      <div className="group absolute -translate-x-[300px] translate-y-12 hover:z-50 pointer-events-auto cursor-pointer">
+        {/* Trigger Card */}
+        <div className="w-[300px] h-[160px] rounded-[24px] bg-background text-foreground shadow-2xl -rotate-[10deg] flex flex-col justify-center px-8 border border-border transition-all duration-300 group-hover:-rotate-[5deg] group-hover:-translate-y-4">
+          <div className="text-[11px] font-bold tracking-widest uppercase text-emerald-500 mb-1">No monthly fee</div>
+          <div className="text-3xl font-bold tracking-tight">Starter</div>
+          <div className="text-xs text-muted-foreground mt-3 font-medium flex items-center gap-1">Hover to view plan <ChevronRight className="w-3 h-3" /></div>
+        </div>
+
+        {/* Tooltip Popup */}
+        <div className="absolute bottom-full left-1/2 -translate-x-1/4 mb-6 w-[340px] opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-400 z-50 rounded-[28px] bg-background/40 backdrop-blur-xl text-foreground shadow-2xl border border-border/50 overflow-hidden">
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-8">
+              <div className="text-[13px] font-extrabold tracking-[0.15em] uppercase text-foreground">Starter</div>
+              <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[11px] font-bold">No monthly fee</div>
+            </div>
+            <ul className="space-y-4 mb-8">
+              <li className="flex items-center gap-4"><div className="w-6 h-6 rounded-full border-2 border-emerald-500 flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-emerald-500" strokeWidth={3} /></div><span className="text-[15px] font-medium text-foreground">Startup profile</span></li>
+              <li className="flex items-center gap-4"><div className="w-6 h-6 rounded-full border-2 border-emerald-500 flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-emerald-500" strokeWidth={3} /></div><span className="text-[15px] font-medium text-foreground">One-liner</span></li>
+              <li className="flex items-center gap-4"><div className="w-6 h-6 rounded-full border-2 border-border shrink-0"></div><span className="text-[15px] font-medium text-muted-foreground">Pitch deck</span></li>
+              <li className="flex items-center gap-4"><div className="w-6 h-6 rounded-full border-2 border-border shrink-0"></div><span className="text-[15px] font-medium text-muted-foreground">Documents</span></li>
+            </ul>
+            <div className="mb-6 flex items-baseline gap-1">
+              <span className="text-5xl font-bold tracking-tight text-foreground">₹10</span>
+              <span className="text-sm font-medium text-muted-foreground">/ input</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Card - Growth */}
+      <div className="group absolute translate-x-[300px] translate-y-12 hover:z-50 pointer-events-auto cursor-pointer">
+        {/* Trigger Card */}
+        <div className="w-[300px] h-[160px] rounded-[24px] bg-background text-foreground shadow-2xl rotate-[10deg] flex flex-col justify-center px-8 border border-border transition-all duration-300 group-hover:rotate-[5deg] group-hover:-translate-y-4">
+          <div className="text-[11px] font-bold tracking-widest uppercase text-blue-500 mb-1">Most Popular</div>
+          <div className="text-3xl font-bold tracking-tight">Growth</div>
+          <div className="text-xs text-muted-foreground mt-3 font-medium flex items-center gap-1">Hover to view plan <ChevronRight className="w-3 h-3" /></div>
+        </div>
+
+        {/* Tooltip Popup */}
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 w-[340px] opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-400 z-50 rounded-[28px] bg-background/40 backdrop-blur-xl text-foreground shadow-2xl border border-border/50 overflow-hidden">
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-8">
+              <div className="text-[13px] font-extrabold tracking-[0.15em] uppercase text-foreground">Growth</div>
+            </div>
+            <ul className="space-y-4 mb-8">
+              <li className="flex items-center gap-4"><div className="w-6 h-6 rounded-full border-2 border-emerald-500 flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-emerald-500" strokeWidth={3} /></div><span className="text-[15px] font-medium text-foreground">Startup profile</span></li>
+              <li className="flex items-center gap-4"><div className="w-6 h-6 rounded-full border-2 border-emerald-500 flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-emerald-500" strokeWidth={3} /></div><span className="text-[15px] font-medium text-foreground">One-liner</span></li>
+              <li className="flex items-center gap-4"><div className="w-6 h-6 rounded-full border-2 border-emerald-500 flex items-center justify-center shrink-0"><Check className="w-3.5 h-3.5 text-emerald-500" strokeWidth={3} /></div><span className="text-[15px] font-medium text-foreground">Pitch deck</span></li>
+              <li className="flex items-center gap-4"><div className="w-6 h-6 rounded-full border-2 border-border shrink-0"></div><span className="text-[15px] font-medium text-muted-foreground">Documents</span></li>
+            </ul>
+            <div className="mb-6">
+              <div className="text-sm font-medium text-muted-foreground line-through mb-1">₹4,999 / 3 mo</div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-5xl font-bold tracking-tight text-foreground">₹1,666</span>
+                <span className="text-sm font-medium text-muted-foreground">/ month</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Center Card - Scale */}
+      <div className="group relative z-10 hover:z-50 pointer-events-auto cursor-pointer flex justify-center">
+        {/* Trigger Card */}
+        <div className="w-[340px] h-[190px] rounded-[24px] bg-background text-foreground border border-amber-500/30 shadow-[0_0_40px_rgba(245,158,11,0.15)] flex flex-col justify-center items-center px-6 transition-all duration-300 group-hover:-translate-y-4 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+          <div className="inline-block px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold uppercase tracking-widest mb-2">Best Value</div>
+          <div className="text-4xl font-bold tracking-tight mb-2">Scale</div>
+          <div className="text-xs text-muted-foreground font-medium flex items-center gap-1">Hover to view plan <ChevronRight className="w-3 h-3" /></div>
+        </div>
+
+        {/* Tooltip Popup */}
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 w-[360px] opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-400 z-50 rounded-[28px] bg-background/40 backdrop-blur-xl text-foreground shadow-[0_30px_70px_-15px_rgba(245,158,11,0.2)] border border-amber-500/30 overflow-hidden">
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-8">
+              <div className="text-[13px] font-extrabold tracking-[0.1em] text-white bg-amber-500 px-2 py-0.5 rounded shadow-sm">SCALE • 6 MONTHS</div>
+              <div className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 text-[11px] font-bold">Best value</div>
+            </div>
+            <ul className="space-y-4 mb-8">
+              <li className="flex items-start gap-4"><div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5"><Check className="w-4 h-4 text-white" strokeWidth={3} /></div><span className="text-[15px] font-bold text-foreground leading-tight">Everything in Growth, unlimited</span></li>
+              <li className="flex items-start gap-4"><div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5"><Check className="w-4 h-4 text-white" strokeWidth={3} /></div><span className="text-[15px] font-bold text-foreground leading-tight">Dedicated account manager</span></li>
+              <li className="flex items-start gap-4"><div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5"><Check className="w-4 h-4 text-white" strokeWidth={3} /></div><span className="text-[15px] font-bold text-foreground leading-tight">Priority submissions</span></li>
+              <li className="flex items-start gap-4"><div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5"><Check className="w-4 h-4 text-white" strokeWidth={3} /></div><span className="text-[15px] font-bold text-foreground leading-tight">Documents handled for you</span></li>
+            </ul>
+            <div className="mb-6">
+              <div className="text-sm font-medium text-muted-foreground line-through mb-1">₹7,999 / 6 mo</div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-5xl font-bold tracking-tight text-foreground">₹1,333</span>
+                <span className="text-sm font-medium text-muted-foreground">/ month</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 );
 
@@ -298,7 +391,7 @@ export default function WeFillPage() {
       if (e.key === 'Enter') {
         if (inTextarea && !e.shiftKey) {
           e.preventDefault();
-          advance();
+          advance(); ``
         } else if (!inTextarea) {
           e.preventDefault();
           if (q && q.type === 'review') {
@@ -352,14 +445,49 @@ export default function WeFillPage() {
 
     if (q.type === 'welcome') {
       return (
-        <div className="flex flex-col h-full justify-center">
+        <div className="flex flex-col h-full justify-center items-center text-center pb-20">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <h1 className="text-5xl md:text-6xl lg:text-[72px] font-bold leading-[1.05] tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70" dangerouslySetInnerHTML={{ __html: q.title }}></h1>
+            <h1 className="text-5xl md:text-6xl lg:text-[55px] font-bold leading-[1.05] tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 mx-auto" dangerouslySetInnerHTML={{ __html: q.title }}></h1>
           </motion.div>
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-muted-foreground text-lg md:text-xl mb-10 max-w-[56ch] leading-relaxed">
-            {q.sub}
-          </motion.p>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-wrap items-center gap-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-8 mx-auto">
+            <span className="inline-block px-5 py-2 rounded-full bg-background/40 backdrop-blur-md border border-border shadow-sm text-foreground/80 font-medium tracking-wide">
+              {q.sub}
+            </span>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 w-full max-w-[56ch] mx-auto">
+            {/* Left Card */}
+            <div className="flex-1 w-full flex items-center justify-between gap-4 p-2 pr-4 rounded-[16px] bg-card/60 backdrop-blur-sm border border-border/80 shadow-sm h-16 transition-colors hover:bg-card">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 ml-0.5">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="text-[15px] font-semibold text-foreground leading-tight text-left">30-40 hrs<br /><span className="text-xs font-normal text-muted-foreground">per month</span></span>
+              </div>
+              <div className="px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground text-xs font-semibold">
+                Saved
+              </div>
+            </div>
+
+            {/* Right Card */}
+            <div className="flex-1 w-full flex items-center justify-between gap-4 p-2 pr-5 rounded-[16px] bg-card/60 backdrop-blur-sm border border-border/80 shadow-sm h-16 transition-colors hover:bg-card">
+              <div className="flex items-center gap-3 ml-1.5">
+                <div className="flex -space-x-2">
+                  <div className="w-9 h-9 rounded-full bg-[#f6ad55] text-black flex items-center justify-center text-[11px] font-bold border-[2.5px] border-card z-30">A</div>
+                  <div className="w-9 h-9 rounded-full bg-[#68d391] text-black flex items-center justify-center text-[11px] font-bold border-[2.5px] border-card z-20">R</div>
+                  <div className="w-9 h-9 rounded-full bg-[#fc8181] text-black flex items-center justify-center text-[11px] font-bold border-[2.5px] border-card z-10">S</div>
+                  <div className="w-9 h-9 rounded-full bg-[#63b3ed] text-black flex items-center justify-center text-[11px] font-bold border-[2.5px] border-card z-0">+</div>
+                </div>
+              </div>
+              <div className="text-[13px] font-medium text-muted-foreground text-right leading-tight">
+                <span className="text-[15px] font-bold text-foreground">40+</span> teams<br />onboarded
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-wrap items-center justify-center gap-4">
             <button className="group flex items-center gap-2 text-[17px] font-semibold bg-primary text-primary-foreground border-none rounded-full px-8 py-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0" onClick={advance}>
               {q.cta}
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
@@ -648,8 +776,20 @@ export default function WeFillPage() {
           )}
         </div>
 
-        {/* Background Animation */}
-        <AnimatedBackground />
+        {/* Rotated Cards Background */}
+        <AnimatePresence>
+          {Q[currentStep]?.type === 'welcome' && (
+            <motion.div
+              className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none flex justify-center"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50, transition: { duration: 0.3 } }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <RotatedCardsBackground />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Content Area */}
         <div className="relative w-full max-w-4xl mx-auto h-[600px] flex-2 z-10">
