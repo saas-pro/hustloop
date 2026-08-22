@@ -2730,6 +2730,35 @@ export default function MsmeDashboardView({ isOpen, setUser, setActiveView, onOp
                                                                 }}
                                                             />
 
+                                                            <FormField
+                                                                control={profileForm.control}
+                                                                name="short_description"
+                                                                render={({ field }) => {
+                                                                    const value = profileForm.watch("short_description") || "";
+                                                                    return (
+                                                                        <FormItem>
+                                                                            <FormLabel>Short Description <span className="text-red-600">*</span></FormLabel>
+                                                                            <FormControl>
+                                                                                <div className="relative">
+                                                                                    <Textarea
+                                                                                        {...field}
+                                                                                        maxLength={MAX_CHARS}
+                                                                                        placeholder="A brief description of your organisation..."
+                                                                                        disabled={!isEditingProfile}
+                                                                                        className="resize-none pr-12 pb-6"
+                                                                                        rows={4}
+                                                                                    />
+                                                                                    <span className="absolute right-2 bottom-2 text-xs text-muted-foreground">
+                                                                                        {value.length}/{MAX_CHARS}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    );
+                                                                }}
+                                                            />
+
                                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                                 <FormField
                                                                     control={profileForm.control}
