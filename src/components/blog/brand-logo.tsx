@@ -19,7 +19,7 @@ export default function BrandLogo({ inSheet = false }: BrandLogoProps) {
         if (pathname === "/terms-of-service" || pathname === "/privacy-policy") {
             setIsNavigating(true);
             router.push("/");
-        } else if (pathname.startsWith("/blog")) {
+        } else if (pathname.startsWith("/blog") || pathname.startsWith("/wefill")) {
             setIsNavigating(true);
             router.push("/");
         } else {

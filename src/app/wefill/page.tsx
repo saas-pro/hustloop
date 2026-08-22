@@ -15,6 +15,124 @@ import CurvedLoop from '@/components/CurvedLoop';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTheme } from 'next-themes';
 import BrandLogo from '@/components/blog/brand-logo';
+import { Background } from '@tsparticles/engine';
+
+const ConfettiCanvas = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationId = 0;
+    let frame = 0;
+
+    const colors = [
+      '#ff6a3d',
+      '#ffb03a',
+      '#7fe3c4',
+      '#ffffff',
+      '#ffd166',
+    ];
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+
+    const resizeCanvas = () => {
+      const dpr = window.devicePixelRatio || 1;
+
+      width = window.innerWidth;
+      height = window.innerHeight;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    resizeCanvas();
+
+    window.addEventListener('resize', resizeCanvas);
+
+    const particles = Array.from({ length: 180 }, (_, i) => ({
+      x: width / 2 + (Math.random() - 0.5) * width * 0.6,
+      y: height + Math.random() * 100,
+
+      vx: (Math.random() - 0.5) * 10,
+      vy: -(Math.random() * 12 + 16),
+
+      gravity: 0.45,
+
+      width: Math.random() * 8 + 4,
+      height: Math.random() * 5 + 3,
+
+      rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 0.25,
+
+      color: colors[i % colors.length],
+    }));
+
+    const animate = () => {
+      frame++;
+
+      ctx.clearRect(0, 0, width, height);
+
+      particles.forEach((particle) => {
+        particle.vy += particle.gravity;
+
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+
+        particle.rotation += particle.rotationSpeed;
+
+        ctx.save();
+
+        ctx.translate(particle.x, particle.y);
+        ctx.rotate(particle.rotation);
+
+        ctx.globalAlpha = Math.max(0, 1 - frame / 180);
+
+        ctx.fillStyle = particle.color;
+
+        ctx.fillRect(
+          -particle.width / 2,
+          -particle.height / 2,
+          particle.width,
+          particle.height
+        );
+
+        ctx.restore();
+      });
+
+      if (frame < 180) {
+        animationId = requestAnimationFrame(animate);
+      } else {
+        ctx.clearRect(0, 0, width, height);
+      }
+    };
+
+    animate();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      aria-hidden="true"
+      className="fixed inset-0 z-[9999] pointer-events-none"
+    />
+  );
+};
 
 const LETTERS = 'abcdefghi';
 
@@ -36,16 +154,16 @@ const Q = [
   { sec: 'Company', name: 'address', q: `Registered address?`, req: true, textarea: true, ph: `Street, city, state, PIN` },
   { sec: 'Company', name: 'sector', q: `Which sector best fits you?`, req: true, choice: ['SaaS / Software', 'Fintech', 'Healthtech', 'Edtech', 'D2C / Consumer', 'Deeptech / AI', 'Climate / Energy', 'Other'] },
   { sec: 'Company', name: 'stage', q: `What stage are you at?`, req: true, choice: ['Idea', 'Pre-seed', 'Seed', 'Pre-Series A', 'Series A+'] },
-  { sec: 'Founders', name: 'founder_name', q: `Who's the primary founder?`, req: true, ph: `Full name` },
+  { sec: 'Founders', name: 'founder_name', q: `Who's the primary founder?`, req: true, ph: `Full name`, charsOnly: true },
   { sec: 'Founders', name: 'founder_role', q: `Their role?`, req: true, ph: `CEO & Co-founder` },
   {
     sec: 'Founders', name: 'contact', q: `How do we reach you?`, multi: [
       { name: 'founder_email', ph: 'Email (required)', input: 'email', req: true },
       { name: 'founder_phone', ph: 'Phone (required)', input: 'tel', req: true },
-      { name: 'founder_linkedin', ph: 'LinkedIn URL', input: 'url' }]
+      { name: 'founder_linkedin', ph: 'LinkedIn URL', input: 'url', req: true }]
   },
   { sec: 'Founders', name: 'founder_bio', q: `A one-line founder bio`, sub: `Reused across applications. Keep it punchy.`, textarea: true, max: 150, ph: `Ex-Flipkart PM. Built two 0→1 products.` },
-  { sec: 'Founders', name: 'cofounders', q: `Any co-founders?`, sub: `Comma separated. Skip if solo.`, ph: `Name - role, Name - role` },
+  { sec: 'Founders', name: 'cofounders', q: `Any co-founders?`, sub: `Comma separated. Skip if solo.`, ph: `Name - role, Name - role`, charsOnly: true },
   { sec: 'Founders', name: 'team_size', q: `How big is the team?`, req: true, choice: ['1–2', '3–5', '6–10', '11–25', '25+'] },
   { sec: 'Founders', name: 'doc_id_proof', q: `Founder ID proof`, sub: `Aadhaar or passport. Optional now - you can add later.`, upload: [{ label: 'ID proof', hint: 'PDF, JPG', accept: '.pdf,.jpg,.png', name: 'doc_id_proof' }] },
   {
@@ -131,7 +249,7 @@ const RotatedCardsBackground = () => (
       {/* Left Card - Starter */}
       <div className="group absolute -translate-x-[300px] translate-y-12 hover:z-50 pointer-events-auto cursor-pointer">
         {/* Trigger Card */}
-        <div className="w-[300px] h-[160px] rounded-[24px] bg-background text-foreground shadow-2xl -rotate-[10deg] flex flex-col justify-center px-8 border border-border transition-all duration-300 group-hover:-rotate-[5deg] group-hover:-translate-y-4">
+        <div className="w-[300px] h-[160px] rounded-[24px] bg-background text-foreground shadow-2xl rotate-[10deg] flex flex-col justify-center px-8 border border-border transition-all duration-300">
           <div className="text-[11px] font-bold tracking-widest uppercase text-emerald-500 mb-1">No monthly fee</div>
           <div className="text-3xl font-bold tracking-tight">Starter</div>
           <div className="text-xs text-muted-foreground mt-3 font-medium flex items-center gap-1">Hover to view plan <ChevronRight className="w-3 h-3" /></div>
@@ -161,7 +279,7 @@ const RotatedCardsBackground = () => (
       {/* Right Card - Growth */}
       <div className="group absolute translate-x-[300px] translate-y-12 hover:z-50 pointer-events-auto cursor-pointer">
         {/* Trigger Card */}
-        <div className="w-[300px] h-[160px] rounded-[24px] bg-background text-foreground shadow-2xl rotate-[10deg] flex flex-col justify-center px-8 border border-border transition-all duration-300 group-hover:rotate-[5deg] group-hover:-translate-y-4">
+        <div className="w-[300px] h-[160px] rounded-[24px] bg-background text-foreground shadow-2xl rotate-[10deg] flex flex-col justify-center px-8 border border-border transition-all duration-300">
           <div className="text-[11px] font-bold tracking-widest uppercase text-blue-500 mb-1">Most Popular</div>
           <div className="text-3xl font-bold tracking-tight">Growth</div>
           <div className="text-xs text-muted-foreground mt-3 font-medium flex items-center gap-1">Hover to view plan <ChevronRight className="w-3 h-3" /></div>
@@ -193,7 +311,7 @@ const RotatedCardsBackground = () => (
       {/* Center Card - Scale */}
       <div className="group relative z-10 hover:z-50 pointer-events-auto cursor-pointer flex justify-center">
         {/* Trigger Card */}
-        <div className="w-[340px] h-[190px] rounded-[24px] bg-background text-foreground border border-amber-500/30 shadow-[0_0_40px_rgba(245,158,11,0.15)] flex flex-col justify-center items-center px-6 transition-all duration-300 group-hover:-translate-y-4 relative overflow-hidden">
+        <div className="w-[340px] h-[190px] rounded-[24px] translate-y-[46px] -rotate-12 bg-background text-foreground border border-amber-500/30 shadow-[0_0_40px_rgba(245,158,11,0.15)] flex flex-col justify-center items-center px-6 transition-all duration-300 relative overflow-hidden">
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
           <div className="inline-block px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold uppercase tracking-widest mb-2">Best Value</div>
           <div className="text-4xl font-bold tracking-tight mb-2">Scale</div>
@@ -296,6 +414,15 @@ export default function WeFillPage() {
           const parsed = z.string().regex(/^\+?[0-9\s\-()]{7,15}$/, 'Please enter a valid phone number.').safeParse(val);
           if (!parsed.success) {
             newErrors[field.name] = parsed.error.issues[0].message;
+            valid = false;
+          }
+        }
+        if (field.input === 'url' || field.name.includes('website') || field.name.includes('link')) {
+          const valToCheck = val.startsWith('http') ? val : `https://${val}`;
+          const parsed = z.string().url().safeParse(valToCheck);
+          if (!parsed.success || !val.includes('.')) {
+            const example = field.name.includes('linkedin') ? 'linkedin.com/in/username' : 'hustloop.com';
+            newErrors[field.name] = `Please enter a valid URL (e.g. ${example}).`;
             valid = false;
           }
         }
@@ -445,7 +572,7 @@ export default function WeFillPage() {
 
     if (q.type === 'welcome') {
       return (
-        <div className="flex flex-col h-full justify-center items-center text-center pb-20">
+        <div className="flex flex-col items-center text-center my-auto py-12">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <h1 className="text-5xl md:text-6xl lg:text-[55px] font-bold leading-[1.05] tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 mx-auto" dangerouslySetInnerHTML={{ __html: q.title }}></h1>
           </motion.div>
@@ -502,7 +629,7 @@ export default function WeFillPage() {
 
     if (q.type === 'review') {
       return (
-        <div className="flex flex-col h-full py-4">
+        <div className="flex flex-col my-auto py-12">
           <div className="inline-flex items-center gap-2 text-primary font-semibold mb-3 tracking-wide text-sm uppercase">
             <Sparkles className="w-4 h-4" /> Almost there
           </div>
@@ -529,15 +656,15 @@ export default function WeFillPage() {
 
           <label className="flex gap-3 items-start mb-6 text-[15px] text-muted-foreground max-w-2xl cursor-pointer group">
             <div className="relative flex items-center justify-center w-5 h-5 mt-0.5">
-              <input type="checkbox" className="peer w-5 h-5 opacity-0 absolute inset-0 cursor-pointer" checked={consent} onChange={(e) => {
+              <input type="checkbox" className="peer w-5 h-5 opacity-0 absolute inset-0 cursor-pointer z-10" checked={consent} onChange={(e) => {
                 setConsent(e.target.checked);
                 setErrors((prev: any) => ({ ...prev, consent: '' }));
               }} />
-              <div className="w-5 h-5 border-2 border-muted-foreground/30 rounded flex items-center justify-center transition-colors peer-checked:border-primary peer-checked:bg-primary peer-hover:border-primary/60">
-                <Check className={`w-3.5 h-3.5 text-primary-foreground transition-transform scale-0 peer-checked:scale-100`} strokeWidth={3} />
+              <div className="w-5 h-5 rounded border-2 border-primary/50 peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
+                <Check className="w-3.5 h-3.5 text-primary-foreground opacity-0 peer-checked:opacity-100 transition-opacity" strokeWidth={4} />
               </div>
             </div>
-            <span className="group-hover:text-foreground transition-colors leading-relaxed">I authorize WeFill to reformat and submit my startup&apos;s details to matched opportunities on my behalf.</span>
+            <span className="text-[15px] text-muted-foreground leading-relaxed group-hover:text-foreground transition-colors">I authorize WeFill to reformat and submit my startup&apos;s details to matched opportunities on my behalf.</span>
           </label>
 
           {errors.consent && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-destructive text-sm font-medium mb-4">{errors.consent}</motion.div>}
@@ -558,35 +685,40 @@ export default function WeFillPage() {
 
     if (q.type === 'done') {
       return (
-        <div className="flex flex-col h-full mt-10 justify-center items-center text-center mx-auto max-w-lg">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', bounce: 0.5 }} className="w-16 h-16 rounded-full p-3 bg-primary/10 text-primary flex items-center justify-center mb-8 mx-auto">
-            <CheckCircle2 className="w-10 h-10" />
+        <div className="flex flex-col items-center text-center mx-auto max-w-lg my-auto py-6">
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', bounce: 0.5 }} className="w-14 h-14 rounded-full p-2.5 bg-primary/10 text-primary flex items-center justify-center mb-5 mx-auto">
+            <CheckCircle2 className="w-8 h-8" />
           </motion.div>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl font-bold leading-tight tracking-tight mb-5">You&apos;re in.</motion.h2>
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-muted-foreground text-[17px] mb-10 leading-relaxed">Your startup profile is saved. From here, WeFill does the filling - you just show up and pitch.</motion.p>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-3xl md:text-4xl font-bold leading-tight tracking-tight mb-3">You&apos;re in.</motion.h2>
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-muted-foreground text-[16px] mb-6 leading-relaxed">Your startup profile is saved. From here, WeFill does the filling - you just show up and pitch.</motion.p>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="grid gap-6 mt-4 w-full text-left">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="grid gap-4 mt-2 w-full text-left">
             {[
               { num: '1', title: 'We match', desc: 'events, hackathons, grants & schemes that fit your stage and sector.' },
               { num: '2', title: 'We reformat & apply', desc: '- your details reshaped into each form\'s template and submitted.' },
               { num: '3', title: 'You show up', desc: 'and pitch. We get you the entry.' }
             ].map((step, i) => (
               <div key={i} className="flex gap-4 items-start">
-                <span className="flex-none w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-sm font-bold mt-0.5">{step.num}</span>
-                <span className="text-[15px] text-muted-foreground leading-relaxed"><strong className="text-foreground font-semibold">{step.title}</strong> {step.desc}</span>
+                <span className="flex-none w-7 h-7 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-bold mt-0.5">{step.num}</span>
+                <span className="text-[14.5px] text-muted-foreground leading-snug"><strong className="text-foreground font-semibold">{step.title}</strong> {step.desc}</span>
               </div>
             ))}
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="mt-12">
-            <button className="text-[16px] font-semibold bg-secondary text-secondary-foreground border border-border/50 rounded-full px-8 py-3.5 cursor-pointer transition-all hover:bg-secondary/80 shadow-sm" onClick={() => window.location.reload()}>Register another startup</button>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="mt-8 flex flex-col items-center gap-4">
+            <a href="https://hustloop.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[15px] font-semibold bg-primary text-primary-foreground border-none rounded-full px-7 py-3 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5">
+              Explore our ecosystem <ArrowRight className="w-4 h-4" />
+            </a>
+            <div className="text-[14px] text-muted-foreground/80 bg-muted/30 px-4 py-2 rounded-xl border border-border/50">
+              ⏱ You&apos;re going to save <b className="text-foreground font-semibold">~6 hrs per application</b> — we fill it, you just pitch.
+            </div>
           </motion.div>
         </div>
       );
     }
 
     return (
-      <div className="flex flex-col w-full max-w-2xl mx-auto justify-center min-h-full py-8">
+      <div className="flex flex-col w-full max-w-2xl mx-auto my-auto py-12">
         <div className="inline-flex items-center gap-2 text-primary font-semibold mb-4 tracking-wide text-sm uppercase">
           <span className="flex items-center justify-center w-6 h-6 rounded bg-primary/15 text-primary text-xs">{qIdx.indexOf(idx) + 1}</span>
           <ChevronRight className="w-4 h-4 text-primary/50 -mx-1" />
@@ -670,15 +802,23 @@ export default function WeFillPage() {
                   {m.textarea ? (
                     <textarea className="w-full bg-transparent border-b-2 border-border/60 text-foreground text-2xl font-normal px-0 pt-2 pb-3 transition-colors duration-200 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary resize-none peer" placeholder={m.ph} maxLength={m.max} rows={1}
                       value={val} onChange={(e) => {
-                        handleInputChange(m.name, e.target.value);
+                        let v = e.target.value;
+                        if (m.charsOnly) v = v.replace(/[^a-zA-Z\s,]/g, '');
+                        handleInputChange(m.name, v);
                         e.target.style.height = 'auto';
                         e.target.style.height = e.target.scrollHeight + 'px';
                       }} />
                   ) : (
                     <input className="w-full bg-transparent border-b-2 border-border/60 text-foreground text-2xl md:text-[28px] font-normal px-0 pt-2 pb-3 transition-colors duration-200 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary peer" type={m.input || 'text'} placeholder={m.ph} maxLength={m.max}
-                      value={val} onChange={(e) => handleInputChange(m.name, e.target.value)} />
+                      value={val} onChange={(e) => {
+                        let v = e.target.value;
+                        if (m.charsOnly) v = v.replace(/[^a-zA-Z\s,]/g, '');
+                        handleInputChange(m.name, v);
+                      }} />
                   )}
-                  {val && <div className="absolute right-0 bottom-4 text-primary scale-in-center"><Check className="w-6 h-6" /></div>}
+                  <div className="text-right text-lg text-muted-foreground/60 font-medium mt-1.5">
+                    {val.length}{m.max ? ` / ${m.max}` : ''}
+                  </div>
                 </div>
               );
             })}
@@ -687,19 +827,31 @@ export default function WeFillPage() {
 
         {/* Single Input / Textarea */}
         {q.textarea && !q.multi && (
-          <div className="relative w-full">
+          <div className="relative w-full mb-6">
             <textarea className="w-full bg-transparent border-b-2 border-border/60 text-foreground text-2xl md:text-[28px] font-normal px-0 pt-2 pb-3 transition-colors duration-200 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary resize-none peer" placeholder={q.ph || ''} maxLength={q.max} rows={1}
               value={data[q.name] || ''} onChange={(e) => {
-                handleInputChange(q.name, e.target.value);
+                let v = e.target.value;
+                if (q.charsOnly) v = v.replace(/[^a-zA-Z\s,]/g, '');
+                handleInputChange(q.name, v);
                 e.target.style.height = 'auto';
                 e.target.style.height = e.target.scrollHeight + 'px';
               }} />
+            <div className="text-right text-lg text-muted-foreground/60 font-medium mt-1.5">
+              {(data[q.name] || '').length}{q.max ? ` / ${q.max}` : ''}
+            </div>
           </div>
         )}
         {!q.choice && !q.multichoice && !q.upload && !q.multi && !q.textarea && (
-          <div className="relative w-full">
-            <input className="w-full bg-transparent border-b-2 border-border/60 text-foreground text-2xl md:text-[28px] font-normal px-0 pt-2 pb-3 transition-colors duration-200 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary peer" type={q.input || 'text'} placeholder={q.ph || ''}
-              value={data[q.name] || ''} onChange={(e) => handleInputChange(q.name, e.target.value)} />
+          <div className="relative w-full mb-6">
+            <input className="w-full bg-transparent border-b-2 border-border/60 text-foreground text-2xl md:text-[28px] font-normal px-0 pt-2 pb-3 transition-colors duration-200 placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary peer" type={q.input || 'text'} placeholder={q.ph || ''} maxLength={q.max}
+              value={data[q.name] || ''} onChange={(e) => {
+                let v = e.target.value;
+                if (q.charsOnly) v = v.replace(/[^a-zA-Z\s,]/g, '');
+                handleInputChange(q.name, v);
+              }} />
+            <div className="text-right text-lg text-muted-foreground/60 font-medium mt-1.5">
+              {(data[q.name] || '').length}{q.max ? ` / ${q.max}` : ''}
+            </div>
           </div>
         )}
 
@@ -715,7 +867,7 @@ export default function WeFillPage() {
           )}
         </AnimatePresence>
 
-        <div className="flex flex-wrap justify-start gap-4 mt-8 w-full md:w-auto">
+        <div className="flex flex-wrap justify-start gap-4 mt-6 w-full md:w-auto">
           <button className="flex items-center gap-2 text-[16px] font-semibold bg-primary text-primary-foreground border-none rounded-full px-7 py-3 cursor-pointer transition-all duration-200 shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed" onClick={advance}>
             OK <Check className="w-4 h-4" />
           </button>
@@ -746,8 +898,15 @@ export default function WeFillPage() {
   }
 
   return (
-    <div className="overflow-hidden relative flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="min-h-screen bg-background flex flex-col font-sans overflow-hidden selection:bg-primary/20 selection:text-primary">
+      {/* Background */}
+
+      {/* Confetti Burst */}
+      {(Q[currentStep]?.type === 'done') && (
+        <ConfettiCanvas key={`confetti-${currentStep}`} />
+      )}
+
+      <header className="flex-none z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -757,7 +916,7 @@ export default function WeFillPage() {
           </div>
         </div>
       </header>
-      <div className={`flex-grow bg-background min-h-screen relative z-40 m-auto pointer-events-auto w-full flex flex-col justify-center py-16 md:py-24`}
+      <div className={`flex-1 bg-background relative z-40 m-auto pointer-events-auto w-full flex flex-col py-8 md:py-12 overflow-hidden`}
         data-alt-id="card-anchor"
         id="main-view1"
       >
@@ -792,7 +951,7 @@ export default function WeFillPage() {
         </AnimatePresence>
 
         {/* Main Content Area */}
-        <div className="relative w-full max-w-4xl mx-auto h-[600px] flex-2 z-10">
+        <div className="relative w-full max-w-4xl mx-auto flex-1 z-10">
           <AnimatePresence initial={false} custom={direction} mode="wait">
             <motion.div
               key={currentStep}
@@ -801,7 +960,7 @@ export default function WeFillPage() {
               initial="enter"
               animate="center"
               exit="exit"
-              className="absolute inset-0 px-6 md:px-12 lg:px-20 overflow-y-auto no-scrollbar pb-40"
+              className={`absolute inset-0 flex flex-col px-6 md:px-12 lg:px-20 overflow-y-auto no-scrollbar ${Q[currentStep]?.type === 'welcome' || Q[currentStep]?.type === 'done' ? 'pb-8' : 'pb-40'}`}
             >
               {renderSlideContent(Q[currentStep], currentStep)}
             </motion.div>
@@ -821,12 +980,6 @@ export default function WeFillPage() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Mobile progress text */}
-        <div className="fixed left-6 bottom-8 z-30 md:hidden text-xs text-muted-foreground font-semibold backdrop-blur-md bg-background/50 px-3 py-1.5 rounded-full border border-border/40">
-          {stepText}
-        </div>
-
       </div>
     </div >
   );
