@@ -80,7 +80,7 @@ export default function EditorFloatingMenu({ editor, onImageUploaded }: EditorFl
             const formData = new FormData();
             formData.append("image", file);
             const token = localStorage.getItem("token");
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+            const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api` || "http://localhost:5000/api";
 
             const res = await fetch(`${apiUrl}/blogs/upload-image`, {
                 method: "POST",
@@ -132,9 +132,9 @@ export default function EditorFloatingMenu({ editor, onImageUploaded }: EditorFl
                 <Btn title="Blockquote" onClick={() => editor.chain().focus().toggleBlockquote().run()}>
                     <Quote size={16} />
                 </Btn>
-                
+
                 <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.2)", margin: "0 4px" }} />
-                
+
                 <Btn title={isUploading ? "Uploading..." : "Insert Image"} onClick={triggerImageUpload} disabled={isUploading}>
                     <ImageIcon size={16} />
                 </Btn>

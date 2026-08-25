@@ -176,7 +176,7 @@ export default function EditorBubbleMenu({ editor, onImageUploaded }: EditorBubb
             const formData = new FormData();
             formData.append("image", file);
             const token = localStorage.getItem("token");
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+            const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api` || "http://localhost:5000/api";
 
             const res = await fetch(`${apiUrl}/blogs/upload-image`, {
                 method: "POST",
