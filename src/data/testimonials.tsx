@@ -13,7 +13,7 @@ export interface Testimonial {
 export const testimonials: Testimonial[] = [
   {
     id: 1,
-    name: "Alex Johnson",
+    name: "Karthik Natarajan",
     role: "Startup Founder",
     content: "Hustloop has transformed how we manage our projects. The intuitive interface and powerful features have saved us countless hours of work.",
     avatar: "/avatars/1.png",
@@ -21,7 +21,7 @@ export const testimonials: Testimonial[] = [
   },
   {
     id: 2,
-    name: "Sarah Williams",
+    name: "Divya Subramanian",
     role: "Product Manager",
     content: "The collaboration tools in Hustloop are exceptional. Our team's productivity has increased by 40% since we started using it.",
     avatar: "/avatars/2.png",
@@ -29,7 +29,7 @@ export const testimonials: Testimonial[] = [
   },
   {
     id: 3,
-    name: "Michael Chen",
+    name: "Arvind Krishnan",
     role: "CTO, TechCorp",
     content: "The best project management solution we've used. The analytics and reporting features are particularly impressive.",
     avatar: "/avatars/3.png",
@@ -37,7 +37,7 @@ export const testimonials: Testimonial[] = [
   },
   {
     id: 4,
-    name: "Emily Rodriguez",
+    name: "Shruti Venkatesh",
     role: "Marketing Director",
     content: "Hustloop's seamless integration with our existing tools made the transition smooth and painless. Highly recommended!",
     avatar: "/avatars/4.png",

@@ -68,6 +68,7 @@ import { TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { title } from "process";
 import BlogDashboard from "./blog-dashboard";
 import { FounderIdeasView } from "./founder-ideas-view";
+import BlogViewsManagement from "./blog-views-management";
 
 
 const settingsFormSchema = z.object({
@@ -1886,6 +1887,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
         "divider4",  // Fourth divider after fifth group
         "blog",
         "blog-cta",
+        "blog-views",
         "sessions",
 
         "divider5",
@@ -2667,6 +2669,7 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                                         events: "Calendar",
                                                         testimonials: "FileText",
                                                         "blog-cta": "MousePointerClick",
+                                                        "blog-views": "Eye",
                                                     };
 
                                                     const iconName = iconMap[tab as DashboardTab] || "HelpCircle";
@@ -4970,6 +4973,9 @@ export default function DashboardView({ isOpen, setUser, founderRole, onOpenChan
                                             </TabsContent>
                                             <TabsContent value="blog" className="mt-0 space-y-6">
                                                 <BlogDashboard token={localStorage.getItem('token') || ''} />
+                                            </TabsContent>
+                                            <TabsContent value="blog-views" className="mt-0 space-y-6">
+                                                <BlogViewsManagement token={localStorage.getItem('token') || ''} />
                                             </TabsContent>
                                             <TabsContent value="sessions" className="mt-0 space-y-6">
                                                 <Tabs value={adminContentTab} onValueChange={setAdminContentTab} className="w-full">

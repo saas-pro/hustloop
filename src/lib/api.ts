@@ -729,3 +729,24 @@ export async function getBloggerProfile(
     }
     return response.json();
 }
+
+/**
+ * Reset views count for a blog post
+ */
+export async function resetBlogViews(
+    slug: string,
+    token: string
+): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(`${API_BASE_URL}/api/blog-posts/${slug}/reset-views`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to reset views' }));
+        throw new Error(error.error || 'Failed to reset views');
+    }
+    return response.json();
+}

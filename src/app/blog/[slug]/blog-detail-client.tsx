@@ -24,7 +24,7 @@ import Breadcrumbs from "@/components/ui/breadcrumbs";
 import { useTheme } from "next-themes";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/providers/AuthContext";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
@@ -132,7 +132,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
         setTimeout(() => {
             const articleElement = document.getElementById("article-content");
             if (articleElement) {
-                const elements = Array.from(articleElement.querySelectorAll("h2, h3"));
+                const elements = Array.from(articleElement.querySelectorAll("h1, h2"));
                 const parsedHeadings = elements.map((el, index) => {
                     const text = el.textContent || "";
                     const id = el.id || `heading-${index}`;
@@ -145,7 +145,8 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
 
     const [activeHeadingIndex, setActiveHeadingIndex] = useState<number | null>(null);
     const isManualScroll = useRef(false);
-
+    const activeSpotlightRef = useRef<'article' | 'contact' | null>(null);
+    const rightSidebarRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const handleScroll = () => {
             if (isManualScroll.current) return;
@@ -153,7 +154,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
             const scrollPosition = window.scrollY + 150;
 
             const articleElement = document.getElementById("article-content");
-            const elements = articleElement ? Array.from(articleElement.querySelectorAll("h2, h3")) : [];
+            const elements = articleElement ? Array.from(articleElement.querySelectorAll("h1, h2")) : [];
 
             let currentActiveIndex = -1;
             for (let i = headings.length - 1; i >= 0; i--) {
@@ -205,6 +206,85 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
     const [loginLoading, setLoginLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    // Mouse movement tracking for the desktop cursor-follow spotlights.
+    // Keep the animation frame in a ref so rapid mouse movement cannot queue
+    // hundreds of stale animation frames.
+    const articleSpotlightRef = useRef<HTMLDivElement>(null);
+    const contactSpotlightRef = useRef<HTMLDivElement>(null);
+    const articleSpotlightFrameRef = useRef<number | null>(null);
+    const contactSpotlightFrameRef = useRef<number | null>(null);
+
+    const handleMouseMoveSpotlight = useCallback((
+        e: React.MouseEvent<HTMLDivElement>,
+        spotlightRef: React.RefObject<HTMLDivElement>,
+        frameRef: React.MutableRefObject<number | null>
+    ) => {
+        if (window.innerWidth < 1024 || !spotlightRef.current) return;
+
+        const container = e.currentTarget;
+        const rect = container.getBoundingClientRect();
+
+        // Calculate the cursor position relative to the hovered container.
+        const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
+        const y = Math.min(Math.max(e.clientY - rect.top, 0), rect.height);
+
+        // Cancel the previous frame so only the latest cursor position is rendered.
+        if (frameRef.current !== null) {
+            cancelAnimationFrame(frameRef.current);
+        }
+
+        frameRef.current = requestAnimationFrame(() => {
+            const spotlight = spotlightRef.current;
+            if (!spotlight) return;
+
+            spotlight.style.transform =
+                `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0)`;
+            spotlight.style.opacity = "1";
+            frameRef.current = null;
+        });
+    }, []);
+
+    const handleMouseLeaveSpotlight = useCallback((
+        spotlightRef: React.RefObject<HTMLDivElement>,
+        frameRef: React.MutableRefObject<number | null>
+    ) => {
+        if (window.innerWidth < 1024) return;
+
+        if (frameRef.current !== null) {
+            cancelAnimationFrame(frameRef.current);
+            frameRef.current = null;
+        }
+
+        if (spotlightRef.current) {
+            spotlightRef.current.style.opacity = "0";
+        }
+    }, []);
+
+    useEffect(() => {
+        const handleWindowBlur = () => {
+            if (document.activeElement instanceof HTMLIFrameElement) {
+                if (activeSpotlightRef.current === 'article') {
+                    handleMouseLeaveSpotlight(articleSpotlightRef, articleSpotlightFrameRef);
+                } else if (activeSpotlightRef.current === 'contact') {
+                    handleMouseLeaveSpotlight(contactSpotlightRef, contactSpotlightFrameRef);
+                }
+                activeSpotlightRef.current = null;
+            }
+        };
+        window.addEventListener('blur', handleWindowBlur);
+        return () => window.removeEventListener('blur', handleWindowBlur);
+    }, [handleMouseLeaveSpotlight]);
+
+    // useEffect(() => {
+    //     return () => {
+    //         if (articleSpotlightFrameRef.current !== null) {
+    //             cancelAnimationFrame(articleSpotlightFrameRef.current);
+    //         }
+    //         if (contactSpotlightFrameRef.current !== null) {
+    //             cancelAnimationFrame(contactSpotlightFrameRef.current);
+    //         }
+    //     };
+    // }, []);
 
 
     useEffect(() => {
@@ -230,6 +310,26 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
             } else if (currentScrollY < previousScrollPosition - 5) {
                 // Scrolling up
                 setIsHeaderVisible(true);
+            }
+
+            // Auto-scroll Right Sidebar when reaching end of article
+            const articleElement = document.getElementById("article-content");
+            if (articleElement && rightSidebarRef.current) {
+                const articleRect = articleElement.getBoundingClientRect();
+                const isAtBottom = articleRect.bottom <= window.innerHeight + 150;
+                const isScrollingUp = currentScrollY < previousScrollPosition;
+
+                if (isAtBottom) {
+                    if (rightSidebarRef.current.dataset.autoScrolled !== "true") {
+                        rightSidebarRef.current.scrollTo({ top: rightSidebarRef.current.scrollHeight, behavior: 'smooth' });
+                        rightSidebarRef.current.dataset.autoScrolled = "true";
+                    }
+                } else {
+                    if (rightSidebarRef.current.dataset.autoScrolled === "true") {
+                        rightSidebarRef.current.dataset.autoScrolled = "false";
+                        rightSidebarRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }
             }
 
             previousScrollPosition = currentScrollY;
@@ -414,7 +514,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
 
             {/* ===== ADMIN FLOATING ACTION BUTTON (FAB) ===== */}
             {isAdmin && (
-                <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col items-end gap-3">
+                <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100000] flex flex-col items-end gap-3">
 
                     {/* Expandable panel — slides up / fades in */}
                     <div
@@ -620,7 +720,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                         activeIndex={activeHeadingIndex}
                                         onItemClick={(idx) => {
                                             const articleElement = document.getElementById("article-content");
-                                            const elements = articleElement ? Array.from(articleElement.querySelectorAll("h2, h3")) : [];
+                                            const elements = articleElement ? Array.from(articleElement.querySelectorAll("h1, h2")) : [];
                                             const target = elements[idx];
                                             if (target) {
                                                 isManualScroll.current = true;
@@ -646,8 +746,25 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                         </div>
 
                         {/* Main Article Column */}
-                        <div className="w-full max-w-[850px] flex-1 shrink">
-                            <article className="w-full">
+                        <div
+                            className="w-full max-w-[850px] flex-1 shrink relative"
+                            onMouseEnter={(e) => {
+                                activeSpotlightRef.current = 'article';
+                                handleMouseMoveSpotlight(e, articleSpotlightRef, articleSpotlightFrameRef);
+                            }}
+                            onMouseMove={(e) => handleMouseMoveSpotlight(e, articleSpotlightRef, articleSpotlightFrameRef)}
+                            onMouseLeave={() => {
+                                activeSpotlightRef.current = null;
+                                handleMouseLeaveSpotlight(articleSpotlightRef, articleSpotlightFrameRef);
+                            }}
+                        >
+                            {/* Decorative spotlight element for desktop */}
+                            <div
+                                ref={articleSpotlightRef}
+                                className="pointer-events-none absolute w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] opacity-0 transition-opacity duration-300 hidden lg:block z-0"
+                                style={{ top: 0, left: 0 }}
+                            />
+                            <article className="w-full relative z-10">
                                 <header className="mb-8">
                                     <h1 className="text-4xl md:text-5xl font-bold mb-4">{blog.title}</h1>
 
@@ -722,7 +839,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                 <div className="mb-8 p-1">
                                     <div
                                         id="article-content"
-                                        className="blog-content max-w-none text-foreground [&_h2]:scroll-mt-[100px] [&_h3]:scroll-mt-[100px]"
+                                        className="blog-content max-w-none text-foreground [&_h1]:scroll-mt-[100px] [&_h2]:scroll-mt-[100px]"
                                         dangerouslySetInnerHTML={{ __html: blog.content?.replace(/(<p><\/p>|<p><br><\/p>|<p>&nbsp;<\/p>|\s)+$/g, '') || '' }}
                                     />
 
@@ -732,7 +849,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                     <LinkPreview url={blog.linkedin_post_url} title={blog.title} />
                                 )}
 
-                                <div className="lg:hidden sm:block self-start space-y-4">
+                                <div className="lg:hidden sm:block self-start space-y-4 relative z-10">
 
                                     {/* Contact Details Card */}
                                     {(blog.company_name || blog.company_email || blog.company_phone || blog.company_address) && (
@@ -795,26 +912,27 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                                             <span className="h-px w-4 bg-primary"></span>
                                                             Follow Their Journey
                                                         </p>
-                                                        <div className="flex flex-wrap items-center gap-2.5">
+                                                        <div className="flex flex-wrap items-center gap-2.5 relative z-20">
                                                             {blog.linkedin_url && (
-                                                                <a href={blog.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#0A66C2]/10 text-muted-foreground hover:text-[#0A66C2] transition-all hover:scale-110" title="LinkedIn">
+                                                                <a href={blog.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#0a66c2]/10 text-muted-foreground hover:text-[#0a66c2] transition-all hover:scale-110" title="LinkedIn">
                                                                     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
                                                                 </a>
                                                             )}
+
                                                             {blog.x_url && (
-                                                                <a href={blog.x_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-black/10 [.theme-dark_&]:hover:bg-white/10 text-muted-foreground hover:text-black [.theme-dark_&]:hover:text-white transition-all hover:scale-110" title="X / Twitter">
+                                                                <a href={blog.x_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground hover:text-black dark:hover:text-white transition-all hover:scale-110" title="X / Twitter">
                                                                     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 fill-current">
                                                                         <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.931L18.901 1.153Zm-1.653 19.57h2.608L6.856 2.597H4.062l13.185 18.126Z" />
                                                                     </svg>
                                                                 </a>
                                                             )}
                                                             {blog.instagram_url && (
-                                                                <a href={blog.instagram_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#E1306C]/10 text-muted-foreground hover:text-[#E1306C] transition-all hover:scale-110" title="Instagram">
+                                                                <a href={blog.instagram_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#e1306c]/10 text-muted-foreground hover:text-[#e1306c] transition-all hover:scale-110" title="Instagram">
                                                                     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
                                                                 </a>
                                                             )}
                                                             {blog.youtube_url && (
-                                                                <a href={blog.youtube_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#FF0000]/10 text-muted-foreground hover:text-[#FF0000] transition-all hover:scale-110" title="YouTube">
+                                                                <a href={blog.youtube_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#ff0000]/10 text-muted-foreground hover:text-[#ff0000] transition-all hover:scale-110" title="YouTube">
                                                                     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
                                                                 </a>
                                                             )}
@@ -827,7 +945,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                                     </div>
                                                 )}
                                                 <div className="mt-8 pt-4 border-t border-border/40">
-                                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 shadow-sm">
+                                                    <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/20 shadow-sm">
                                                         <div className="relative flex h-3 w-3">
                                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                                                             <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
@@ -858,13 +976,9 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                                 {nextBlogs.map((nb) => (
                                                     <Link key={nb.id} href={`/blog/${nb.slug}`} className="block group hover:bg-muted/30 transition-colors p-4">
                                                         <div className="space-y-2">
-                                                            {nb.tags && nb.tags.length > 0 && (
-                                                                <div className="flex flex-wrap gap-1">
-                                                                    {nb.tags.slice(0, 3).map((tag) => (
-                                                                        <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">{tag}</Badge>
-                                                                    ))}
-                                                                </div>
-                                                            )}
+
+                                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">{nb.slug}</Badge>
+
 
                                                             <h3 className="font-bold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                                                                 {nb.title}
@@ -930,7 +1044,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                 <Card className="mb-8 relative overflow-hidden">
                                     <div className="absolute inset-0 opacity-10">
                                         <Image src="/hustloop_logo.png" alt="Hustloop Background" fill className="object-cover object-left" />
-                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/50 to-background" />
+                                        <div className="absolute" />
                                     </div>
                                     <CardContent className="pt-6 relative z-10">
                                         <div className="flex items-center justify-between gap-6 flex-wrap">
@@ -942,7 +1056,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                                     <h3 className="font-semibold text-lg">Hustloop</h3>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col items-end gap-2">
+                                            <div className="flex flex-col items-start md:items-end gap-2 ">
                                                 <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Stay in the loop with Hustloop</p>
                                                 <div className="flex items-center gap-3">
                                                     <a href="https://linkedin.com/company/hustloop" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-[#0A66C2] transition-colors">
@@ -965,7 +1079,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                         </div>
                                     </CardContent>
                                 </Card>
-                                <div className="lg:hidden sticky top-[89px] self-start space-y-4">
+                                <div className="lg:hidden sticky top-[89px] self-start space-y-4 z-10">
                                     {nextBlogs && nextBlogs.length > 0 ? (
                                         <Card className="overflow-hidden border-border/60 shadow-sm">
                                             <div className="p-4 border-b border-border/40 bg-muted/30">
@@ -975,16 +1089,10 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                             </div>
 
                                             <div className="flex flex-col divide-y divide-border/40">
-                                                {nextBlogs.map((nb) => (
+                                                {nextBlogs.slice(0, 4).map((nb) => (
                                                     <Link key={nb.id} href={`/blog/${nb.slug}`} className="block group hover:bg-muted/30 transition-colors p-4">
                                                         <div className="space-y-2">
-                                                            {nb.tags && nb.tags.length > 0 && (
-                                                                <div className="flex flex-wrap gap-1">
-                                                                    {nb.tags.slice(0, 3).map((tag) => (
-                                                                        <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">{tag}</Badge>
-                                                                    ))}
-                                                                </div>
-                                                            )}
+                                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">{nb.slug}</Badge>
 
                                                             <h3 className="font-bold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                                                                 {nb.title}
@@ -1025,11 +1133,14 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                         </div>
 
                         {/* Right Sidebar — sticky "Suggested Blogs" panel */}
-                        <div className="hidden lg:block w-[320px] xl:w-[320px] shrink-0 sticky top-[89px] self-start space-y-4">
+                        <div
+                            ref={rightSidebarRef}
+                            className="hidden lg:block w-[320px] xl:w-[320px] shrink-0 sticky top-[89px] self-start space-y-4 z-[99998] relative max-h-[calc(100vh-10rem)] overflow-y-auto scrollbar-hide overscroll-contain "
+                        >
 
                             {/* Contact Details Card */}
                             {(blog.company_name || blog.company_email || blog.company_phone || blog.company_address) && (
-                                <Card className="overflow-hidden border-border/60 shadow-sm bg-muted/10">
+                                <Card className="overflow-hidden border-border/60 shadow-sm bg-muted/10 relative z-10">
                                     <div className="p-4 border-b border-border/40 bg-muted/30">
                                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                                             <Building className="h-3.5 w-3.5" /> Contact Details
@@ -1088,26 +1199,26 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                                     <span className="h-px w-4 bg-primary"></span>
                                                     Follow Their Journey
                                                 </p>
-                                                <div className="flex flex-wrap items-center gap-2.5">
+                                                <div className="flex flex-wrap items-center gap-2.5 relative z-[99999]">
                                                     {blog.linkedin_url && (
-                                                        <a href={blog.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#0A66C2]/10 text-muted-foreground hover:text-[#0A66C2] transition-all hover:scale-110" title="LinkedIn">
+                                                        <a href={blog.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#0a66c2]/10 text-muted-foreground hover:text-[#0a66c2] transition-all hover:scale-110" title="LinkedIn">
                                                             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
                                                         </a>
                                                     )}
                                                     {blog.x_url && (
-                                                        <a href={blog.x_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-black/10 [.theme-dark_&]:hover:bg-white/10 text-muted-foreground hover:text-black [.theme-dark_&]:hover:text-white transition-all hover:scale-110" title="X / Twitter">
+                                                        <a href={blog.x_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-black/10 dark:hover:bg-white/10 text-muted-foreground hover:text-black dark:hover:text-white transition-all hover:scale-110" title="X / Twitter">
                                                             <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 fill-current">
                                                                 <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.931L18.901 1.153Zm-1.653 19.57h2.608L6.856 2.597H4.062l13.185 18.126Z" />
                                                             </svg>
                                                         </a>
                                                     )}
                                                     {blog.instagram_url && (
-                                                        <a href={blog.instagram_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#E1306C]/10 text-muted-foreground hover:text-[#E1306C] transition-all hover:scale-110" title="Instagram">
+                                                        <a href={blog.instagram_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#e1306c]/10 text-muted-foreground hover:text-[#e1306c] transition-all hover:scale-110" title="Instagram">
                                                             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
                                                         </a>
                                                     )}
                                                     {blog.youtube_url && (
-                                                        <a href={blog.youtube_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#FF0000]/10 text-muted-foreground hover:text-[#FF0000] transition-all hover:scale-110" title="YouTube">
+                                                        <a href={blog.youtube_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#ff0000]/10 text-muted-foreground hover:text-[#ff0000] transition-all hover:scale-110" title="YouTube">
                                                             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
                                                         </a>
                                                     )}
@@ -1123,7 +1234,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                 </Card>
                             )}
                             <div className="mt-8 pt-4 border-t border-border/40">
-                                <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 shadow-sm">
+                                <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/20 shadow-sm">
                                     <div className="relative flex h-3 w-3">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
@@ -1135,7 +1246,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                             </div>
 
                             {nextBlogs && nextBlogs.length > 0 ? (
-                                <Card className="overflow-hidden border-border/60 shadow-sm">
+                                <Card className="overflow-hidden border-border/60 shadow-sm relative z-10">
                                     <div className="p-4 border-b border-border/40 bg-muted/30">
                                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                                             <ChevronRight className="h-3.5 w-3.5" /> Suggested Blogs
@@ -1143,14 +1254,12 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                     </div>
 
                                     <div className="flex flex-col divide-y divide-border/40">
-                                        {nextBlogs.map((nb) => (
+                                        {nextBlogs.slice(0, 4).map((nb) => (
                                             <Link key={nb.id} href={`/blog/${nb.slug}`} className="block group hover:bg-muted/30 transition-colors p-4">
                                                 <div className="space-y-2">
-                                                    {nb.tags && nb.tags.length > 0 && (
+                                                    {nb.slug && (
                                                         <div className="flex flex-wrap gap-1">
-                                                            {nb.tags.slice(0, 3).map((tag) => (
-                                                                <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">{tag}</Badge>
-                                                            ))}
+                                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">{nb.slug}</Badge>
                                                         </div>
                                                     )}
 
@@ -1171,7 +1280,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                     </div>
                                 </Card>
                             ) : (
-                                <Card className="p-6 text-center border-border/60 shadow-sm bg-muted/20">
+                                <Card className="p-6 text-center border-border/60 shadow-sm bg-muted/20 relative z-10">
                                     <p className="text-sm text-muted-foreground">You&apos;ve reached the latest article!</p>
                                     <Link href="/blog">
                                         <Button variant="outline" size="sm" className="mt-3">

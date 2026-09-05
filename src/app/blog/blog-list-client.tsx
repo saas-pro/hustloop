@@ -121,6 +121,10 @@ export default function BlogListClient() {
         fetchBlogs();
     }, [page, debouncedSearch, userRole]);
 
+    const filteredBlogs = blogs.filter((blog) =>
+        blog.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <>
             {/* Simple Header with Logo */}
@@ -167,7 +171,7 @@ export default function BlogListClient() {
                                 <BlogCardSkeleton key={i} />
                             ))}
                         </div>
-                    ) : blogs.length === 0 ? (
+                    ) : filteredBlogs.length === 0 ? (
                         <div className="text-center py-16">
                             <p className="text-muted-foreground text-lg">
                                 {searchQuery ? "No blogs found matching your search." : "No blogs published yet."}
@@ -176,7 +180,7 @@ export default function BlogListClient() {
                     ) : (
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {blogs.map((blog) => (
+                                {filteredBlogs.map((blog) => (
                                     <BlogCard key={blog.id} blog={blog} isAdmin={userRole === 'admin'} />
                                 ))}
                             </div>
@@ -249,10 +253,10 @@ function BlogCard({ blog, isAdmin }: { blog: BlogPost; isAdmin?: boolean }) {
                         </div>
                     )}
                     {/* Tag floating on image */}
-                    {blog.tags && blog.tags.length > 0 && (
+                    {blog.slug && (
                         <div className="absolute bottom-3 left-3 z-10">
                             <Badge variant="secondary" className="bg-background/95 backdrop-blur text-foreground border-none shadow-sm hover:bg-background/100 text-[11px] px-2.5 py-0.5 font-medium uppercase tracking-wider">
-                                {blog.tags[0]}
+                                {blog.slug}
                             </Badge>
                         </div>
                     )}
@@ -266,7 +270,7 @@ function BlogCard({ blog, isAdmin }: { blog: BlogPost; isAdmin?: boolean }) {
                     <p className="line-clamp-2 text-sm text-muted-foreground leading-relaxed flex-1">
                         {blog.excerpt || blog.content.replace(/<[^>]*>/g, "").substring(0, 150) + "..."}
                     </p>
-                    
+
                     <div className="mt-5 pt-4 border-t border-border/50 flex flex-col gap-3.5">
                         {/* Meta Data: Author & Date */}
                         <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">

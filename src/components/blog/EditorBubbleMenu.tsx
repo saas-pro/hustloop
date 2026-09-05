@@ -6,6 +6,7 @@ import {
     Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2,
     Undo, Redo, Link as LinkIcon, Image as ImageIcon,
     AlignLeft, AlignCenter, AlignRight, ListTodo, Highlighter,
+    Heading3,
 } from "lucide-react";
 
 interface EditorBubbleMenuProps {
@@ -249,6 +250,10 @@ export default function EditorBubbleMenu({ editor, onImageUploaded }: EditorBubb
             <Btn title="Heading 2" active={editor.isActive("heading", { level: 2 })}
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
                 <Heading2 size={14} />
+            </Btn>
+            <Btn title="Heading 3" active={editor.isActive("heading", { level: 3 })}
+                onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+                <Heading3 size={14} />
             </Btn>
 
             <Sep />

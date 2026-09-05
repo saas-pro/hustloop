@@ -28,20 +28,32 @@ const PageLoader = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (videoLoaded) {
+        if (prev >= 100) {
           clearInterval(interval);
           return 100;
         }
 
-        if (prev >= 99) {
-          return 99;
+        // If video is loaded, increment faster but don't jump instantly to prevent spring overshoot
+        let increment = 1;
+        if (videoLoaded) {
+          increment = Math.floor(Math.random() * 8) + 4; // 4 to 11
+        } else {
+          // Slower organic increments
+          if (prev < 40) {
+            increment = Math.floor(Math.random() * 4) + 2; // 2 to 5
+          } else if (prev < 80) {
+            increment = Math.floor(Math.random() * 3) + 1; // 1 to 3
+          } else if (prev < 99) {
+            increment = Math.random() > 0.3 ? 1 : 0; // 0 to 1, mostly 1
+          } else {
+            increment = 0; // Cap at 99 until video loads
+          }
         }
 
-        // Random increment for a more organic feel, max 99 until video loads
-        const increment = prev < 80 ? Math.floor(Math.random() * 15) + 5 : Math.floor(Math.random() * 3) + 1;
-        return Math.min(prev + increment, 99);
+        const nextProgress = prev + increment;
+        return videoLoaded ? Math.min(nextProgress, 100) : Math.min(nextProgress, 99);
       });
-    }, 150);
+    }, 200);
 
     return () => clearInterval(interval);
   }, [videoLoaded]);
