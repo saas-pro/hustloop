@@ -965,7 +965,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                     )}
 
                                     {nextBlogs && nextBlogs.length > 0 ? (
-                                        <Card className="overflow-hidden border-border/60 shadow-sm">
+                                        <Card className="hidden overflow-hidden border-border/60 shadow-sm">
                                             <div className="p-4 border-b border-border/40 bg-muted/30">
                                                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                                                     <ChevronRight className="h-3.5 w-3.5" /> Suggested Blogs
@@ -1246,7 +1246,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                             </div>
 
                             {nextBlogs && nextBlogs.length > 0 ? (
-                                <Card className="overflow-hidden border-border/60 shadow-sm relative z-10">
+                                <Card className="hidden lg:block overflow-hidden border-border/60 shadow-sm relative z-10">
                                     <div className="p-4 border-b border-border/40 bg-muted/30">
                                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                                             <ChevronRight className="h-3.5 w-3.5" /> Suggested Blogs
