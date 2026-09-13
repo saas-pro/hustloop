@@ -1092,19 +1092,19 @@ export default function HomeView({
         <section className="relative py-16 md:py-20 bg-background">
           <div className="container mx-auto px-4">
             <Card className="bg-card text-card-foreground rounded-2xl shadow-2xl shadow-primary/20 overflow-hidden relative min-h-[600px]">
-              <div className="absolute -top-42 -right-32 w-[400px] h-[400px] bg-black/30 dark:bg-white/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
+              <div className="hidden lg:block absolute -top-[168px] -right-32 w-[400px] h-[400px] bg-black/30 dark:bg-white/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
               <Image
                 src="/hustloop_transparent.png"
                 alt="Hustloop Logo Background"
-                width={500}
-                height={500}
-                className="object-cover absolute top-0 right-0 opacity-[0.1] pointer-events-none z-0"
+                width={300}
+                height={300}
+                className="hidden lg:block object-cover absolute top-10 right-10 opacity-[0.1] pointer-events-none z-0"
               />
-              <div className=" relative z-10">
-                <div className="p-8 md:p-12 flex flex-col justify-start items-start text-left relative mb-8">
+              <div className="relative z-10">
+                <div className="p-8 md:p-12 flex flex-col justify-start items-start text-left relative">
                   <div className="space-y-4 max-w-2xl">
                     <p className="font-semibold text-primary relative z-10 text-lg tracking-wider uppercase">Introducing Hustloop</p>
-                    <h2 className="text-4xl md:text-5xl font-bold font-headline text-card-foreground relative z-10">
+                    <h2 className="text-3xl md:text-5xl font-bold font-headline text-card-foreground relative z-10">
                       Incentive-Driven <span className="text-primary">Challenge Platform</span>
                     </h2>
                     <p className="text-muted-foreground relative z-10 text-lg md:text-xl">
@@ -1113,7 +1113,7 @@ export default function HomeView({
                   </div>
                 </div>
 
-                <div className="relative md:mt-16 mt-16 mb-0 pb-8 md:pb-12">
+                <div className="relative mt-4 md:mt-8 mb-0 pb-8 md:pb-12">
                   <ContainerScroll
                     titleComponent={<></>}
                   >

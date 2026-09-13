@@ -7,7 +7,7 @@ const PageLoader = () => {
   const [progress, setProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
-  const LOCAL_STORAGE_VERSION = '1.3';
+  const LOCAL_STORAGE_VERSION = '1.4';
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -20,57 +20,97 @@ const PageLoader = () => {
   }, []);
 
   useEffect(() => {
-    const handleVideoLoaded = () => setVideoLoaded(true);
-    window.addEventListener('app-video-loaded', handleVideoLoaded);
-    return () => window.removeEventListener('app-video-loaded', handleVideoLoaded);
-  }, []);
+    const controller = new AbortController();
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
+    const fetchVideo = async () => {
+      try {
+        const response = await fetch('/video/HeaderVideo.mp4', {
+          signal: controller.signal
+        });
+
+        if (!response.ok) {
+          setProgress(100);
+          setVideoLoaded(true);
+          return;
         }
 
-        // If video is loaded, increment faster but don't jump instantly to prevent spring overshoot
-        let increment = 1;
-        if (videoLoaded) {
-          increment = Math.floor(Math.random() * 8) + 4; // 4 to 11
-        } else {
-          // Slower organic increments
-          if (prev < 40) {
-            increment = Math.floor(Math.random() * 4) + 2; // 2 to 5
-          } else if (prev < 80) {
-            increment = Math.floor(Math.random() * 3) + 1; // 1 to 3
-          } else if (prev < 99) {
-            increment = Math.random() > 0.3 ? 1 : 0; // 0 to 1, mostly 1
+        const contentLength = response.headers.get('content-length');
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+        let loaded = 0;
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          setProgress(100);
+          setVideoLoaded(true);
+          return;
+        }
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            setProgress(100);
+            setVideoLoaded(true);
+            break;
+          }
+          loaded += value.length;
+          if (total) {
+            const percentComplete = (loaded / total) * 100;
+            setProgress(Math.min(percentComplete, 99));
           } else {
-            increment = 0; // Cap at 99 until video loads
+            setProgress((prev) => Math.min(prev + 10, 99));
           }
         }
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          setProgress(100);
+          setVideoLoaded(true);
+        }
+      }
+    };
 
-        const nextProgress = prev + increment;
-        return videoLoaded ? Math.min(nextProgress, 100) : Math.min(nextProgress, 99);
-      });
-    }, 200);
+    fetchVideo();
 
-    return () => clearInterval(interval);
-  }, [videoLoaded]);
+    const handleVideoLoaded = () => {
+      setProgress(100);
+      setVideoLoaded(true);
+    };
+    window.addEventListener('app-video-loaded', handleVideoLoaded);
+
+    return () => {
+      controller.abort();
+      window.removeEventListener('app-video-loaded', handleVideoLoaded);
+    };
+  }, []);
+
+  const [displayProgress, setDisplayProgress] = useState(0);
 
   useEffect(() => {
-    if (progress >= 100) {
+    const steps = [0, 10, 50, 90];
+    const currentIndex = steps.indexOf(displayProgress);
+
+    if (currentIndex < steps.length - 1) {
+      const nextStep = steps[currentIndex + 1];
+      if (progress >= nextStep) {
+        const timer = setTimeout(() => {
+          setDisplayProgress(nextStep);
+        }, 800); // Slower delay per step (max ~2.4s minimum load time)
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [progress, displayProgress]);
+
+  useEffect(() => {
+    if (displayProgress >= 100) {
       const timer = setTimeout(() => {
         window.dispatchEvent(new Event('page-loader-complete'));
-      }, 400); // Allow time for the user to see 100
+      }, 400);
       return () => clearTimeout(timer);
     }
-  }, [progress]);
+  }, [displayProgress]);
 
-  const roundedProgress = Math.round(progress);
   const getPlaces = () => {
-    if (roundedProgress >= 100) return [100, 10, 1];
-    if (roundedProgress >= 10) return [10, 1];
+    if (displayProgress >= 100) return [100, 10, 1];
+    if (displayProgress >= 10) return [10, 1];
     return [1];
   };
 
@@ -88,19 +128,18 @@ const PageLoader = () => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Responsive values
-  const fontSize = isMobile ? 120 : isTablet ? 160 : 200;
+  const fontSize = isMobile ? 120 : isTablet ? 160 : 220;
   const padding = isMobile ? 2 : isTablet ? 3 : 4;
   const gap = isMobile ? 0 : isTablet ? 0.5 : 0.5;
   const horizontalPadding = isMobile ? 2 : isTablet ? 3 : 4;
   const borderRadius = isMobile ? 4 : isTablet ? 6 : 8;
 
   return (
-    <div className="flex items-end justify-start min-h-[100dvh] bg-background py-4 px-4">
-      <div className="text-center">
+    <div className="flex items-end justify-start min-h-[100dvh] bg-background py-6 px-6 md:py-6 md:px-6">
+      <div className="text-center font-headline">
         <div className="inline-flex items-center">
           <Counter
-            value={roundedProgress}
+            value={displayProgress}
             fontSize={fontSize}
             padding={padding}
             places={getPlaces()}
