@@ -74,10 +74,10 @@ const PageLoader = () => {
           }
           loaded += value.length;
           if (total) {
-            const percentComplete = (loaded / total) * 95;
+            const percentComplete = Math.round((loaded / total) * 95);
             setProgress(Math.min(percentComplete, 95));
           } else {
-            setProgress((prev) => Math.min(prev + 10, 90));
+            setProgress((prev) => Math.min(Math.round(prev + 10), 90));
           }
         }
       } catch (error: any) {
@@ -112,7 +112,7 @@ const PageLoader = () => {
     if (displayProgress < progress) {
       const step = Math.max(1, Math.ceil((progress - displayProgress) / 5));
       const timer = setTimeout(() => {
-        setDisplayProgress((prev) => Math.min(prev + step, progress));
+        setDisplayProgress((prev) => Math.min(Math.round(prev + step), progress));
       }, 30);
       return () => clearTimeout(timer);
     }
@@ -131,7 +131,7 @@ const PageLoader = () => {
     <div className="flex items-end justify-start min-h-[100dvh] bg-background py-8 px-8 md:py-12 md:px-12 select-none">
       <div className="font-headline font-semibold text-accent leading-none tracking-tight">
         <span className="text-7xl sm:text-8xl md:text-9xl lg:text-[14rem] font-bold tabular-nums">
-          {displayProgress}
+          {Math.round(displayProgress)}
         </span>
         <span className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-medium ml-1 text-accent/80">
           %

@@ -32,7 +32,6 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
     { id: "msmes", label: "MSMEs" },
     { id: "education", label: "Education" },
     { id: "early-bird", label: "Early Bird" },
-    { id: "blog", label: "Blog's" },
     { id: "marketplace", label: "Marketplace" },
 ];
 
@@ -189,7 +188,7 @@ const MobileNav = ({ activeView, setActiveView, isLoggedIn, onLogout, isLoading,
                     ariaLabel: "View pricing"
                 },
                 {
-                    label: "Blog",
+                    label: "Blog's",
                     href: "/blog",
                     ariaLabel: "View blog"
                 },
