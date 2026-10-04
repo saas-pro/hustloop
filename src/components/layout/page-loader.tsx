@@ -6,7 +6,7 @@ const PageLoader = () => {
   const [progress, setProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
-  const LOCAL_STORAGE_VERSION = '1.4';
+  const LOCAL_STORAGE_VERSION = '1.5';
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
