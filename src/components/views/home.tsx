@@ -465,8 +465,9 @@ const DynamicHeroSection = ({ isLoggedIn, setActiveView, navOpen, scrollContaine
           autoPlay
           loop
           muted
-          preload="auto"
+          preload="metadata"
           playsInline
+          poster="/video/HeaderVideo-poster.jpg"
           ref={(el: HTMLVideoElement | null) => {
             if (el && el.paused) {
               el.play().catch(() => { });

@@ -30,7 +30,7 @@ const navItems: { id: View; label: string; loggedIn?: boolean }[] = [
     { id: "marketplace", label: "Marketplace" },
     { id: "education", label: "Education" },
     { id: "mentors", label: "Mentors" },
-    { id: "blog", label: "Blog" },
+    { id: "blog", label: "Blog's" },
     { id: "early-bird", label: "Early Bird" }
 ];
 

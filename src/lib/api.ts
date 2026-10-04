@@ -48,6 +48,11 @@ export interface BlogPost {
     is_cta_enabled?: boolean;
     cta_clicks?: number;
     views?: number;
+    has_offer?: boolean;
+    offer_title?: string;
+    offer_description?: string;
+    offer_image_url?: string;
+    offer_url?: string;
 }
 
 export interface BlogListResponse {
@@ -421,6 +426,12 @@ export interface CreateBlogData {
     company_address?: string;
     session_uploaded_images?: string[];
     is_cta_enabled?: boolean;
+    has_offer?: boolean;
+    offer_title?: string;
+    offer_description?: string;
+    offer_image?: File;
+    offer_image_url?: string;
+    offer_url?: string;
 }
 
 export interface UpdateBlogData extends Partial<CreateBlogData> { }

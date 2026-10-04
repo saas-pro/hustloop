@@ -148,6 +148,57 @@ export default function RootLayout({
             "url": "https://hustloop.com"
           })}
         </Script>
+        <Script id="sitenavigation-schema" type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Site Navigation",
+            "itemListElement": [
+              {
+                "@type": "SiteNavigationElement",
+                "position": 1,
+                "name": "Blog",
+                "description": "Read insights, startup guides, and community stories on Hustloop",
+                "url": "https://hustloop.com/blog"
+              },
+              {
+                "@type": "SiteNavigationElement",
+                "position": 2,
+                "name": "Pricing",
+                "description": "Explore Hustloop plans: Free, Standard, Premium and Enterprise",
+                "url": "https://hustloop.com/pricing"
+              },
+              {
+                "@type": "SiteNavigationElement",
+                "position": 3,
+                "name": "Incentive Challenges",
+                "description": "Join Hustloop incentive challenges to solve real-world problems and win prizes",
+                "url": "https://hustloop.com/incentive-challenge"
+              },
+              {
+                "@type": "SiteNavigationElement",
+                "position": 4,
+                "name": "Contact Us",
+                "description": "Contact Hustloop for support, partnerships, and collaborations",
+                "url": "https://hustloop.com/contact-us"
+              },
+              {
+                "@type": "SiteNavigationElement",
+                "position": 5,
+                "name": "Terms of Service",
+                "description": "Hustloop terms of service and user agreements",
+                "url": "https://hustloop.com/terms-of-service"
+              },
+              {
+                "@type": "SiteNavigationElement",
+                "position": 6,
+                "name": "Privacy Policy",
+                "description": "Hustloop privacy policy and data protection",
+                "url": "https://hustloop.com/privacy-policy"
+              }
+            ]
+          })}
+        </Script>
         <GoogleAnalytics />
         <MicrosoftClarity />
         <ZohoChatbot />

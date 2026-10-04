@@ -73,11 +73,11 @@ export default function Home() {
 
     window.addEventListener('page-loader-complete', handleLoaderComplete);
 
-    // Fallback: If video takes longer than 8 seconds, just show the site
+    // Fallback: If video or network takes longer than 8 seconds, safely dismiss the loader
     fallbackTimer = setTimeout(() => {
       window.removeEventListener('page-loader-complete', handleLoaderComplete);
       stopLoading();
-    }, 4000);
+    }, 8000);
 
     return () => {
       window.removeEventListener('page-loader-complete', handleLoaderComplete);
@@ -93,7 +93,7 @@ export default function Home() {
       </Suspense>
       {showLoader && (
         <div
-          className={`fixed font-headline inset-0 z-50 bg-background transition-transform duration-500 ease-in-out ${isAnimating ? '-translate-y-full' : 'translate-y-0'
+          className={`fixed font-headline inset-0 z-[999999999] bg-background transition-transform duration-500 ease-in-out ${isAnimating ? '-translate-y-full' : 'translate-y-0'
             }`}
         >
           <PageLoader />

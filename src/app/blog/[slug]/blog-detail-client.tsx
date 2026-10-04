@@ -4,6 +4,7 @@ import { type BlogPost, publishBlog, unpublishBlog, rejectBlog, API_BASE_URL, tr
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SilverBorderButton } from "@/components/ui/silver-border-button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ import {
     Home, CheckCircle, XCircle, FileText, ExternalLink,
     ChevronDown, Eye, LogIn, ShieldCheck, X, EyeOff,
     ChevronRight, Clock, Globe, Linkedin, Twitter, Instagram,
-    MapPin, Phone, Mail, Building
+    MapPin, Phone, Mail, Building, Tag, Sparkles
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -78,6 +79,35 @@ const getMapEmbedUrl = (address: string) => {
     return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
 };
 
+// Converts plain text containing URLs into clickable <a> links
+const renderTextWithLinks = (text: string, isLightOnDark?: boolean) => {
+    if (!text) return null;
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+    const parts = text.split(urlRegex);
+
+    return parts.map((part, index) => {
+        if (part.match(urlRegex)) {
+            const href = part.startsWith('http://') || part.startsWith('https://') ? part : `https://${part}`;
+            return (
+                <a
+                    key={index}
+                    href={href + "?utm_source=hustloop.com&utm_medium=blog"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`underline underline-offset-2 break-all font-medium transition-colors ${isLightOnDark
+                        ? "text-blue-200 hover:text-white"
+                        : "text-primary hover:text-primary/80"
+                        }`}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {part}
+                </a>
+            );
+        }
+        return part;
+    });
+};
+
 interface BlogDetailClientProps {
     blog: BlogPost;
     nextBlogs?: BlogPost[] | null;
@@ -99,6 +129,39 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
     }, []);
 
     const [viewCount, setViewCount] = useState(blog.views || 0);
+
+    // ── Special Offer / Discount Dialog State ──────────────────────────────
+    const [showOfferDialog, setShowOfferDialog] = useState(false);
+    const triggeredOffer40Ref = useRef(false);
+    const triggeredOffer80Ref = useRef(false);
+
+    useEffect(() => {
+        if (!isClient) return;
+
+        // Check if blog has an active offer configured
+        const hasActiveOffer = Boolean(
+            blog.has_offer && (blog.offer_title || blog.offer_description || blog.offer_image_url || blog.offer_url)
+        );
+
+        if (hasActiveOffer) {
+            const offerStorageKey = `hustloop_offer_${blog.id}`;
+            const offerData = {
+                id: blog.id,
+                slug: blog.slug,
+                has_offer: blog.has_offer,
+                offer_title: blog.offer_title,
+                offer_description: blog.offer_description,
+                offer_image_url: blog.offer_image_url,
+                offer_url: blog.offer_url,
+                company_name: blog.company_name
+            };
+            try {
+                sessionStorage.setItem(offerStorageKey, JSON.stringify(offerData));
+            } catch (e) {
+                console.error("Failed to save offer to sessionStorage:", e);
+            }
+        }
+    }, [isClient, blog.id, blog.slug, blog.has_offer, blog.offer_title, blog.offer_description, blog.offer_image_url, blog.offer_url, blog.company_name]);
 
     useEffect(() => {
         if (!isClient) return;
@@ -312,6 +375,21 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                 setIsHeaderVisible(true);
             }
 
+            // Trigger Offer Dialog at 40% and 80% scroll progress
+            const hasActiveOffer = Boolean(
+                blog.has_offer && (blog.offer_title || blog.offer_description || blog.offer_image_url || blog.offer_url)
+            );
+            if (hasActiveOffer && scrollHeight > 0) {
+                const currentProgress = (currentScrollY / scrollHeight) * 100;
+                if (currentProgress >= 20 && !triggeredOffer40Ref.current) {
+                    triggeredOffer40Ref.current = true;
+                    setShowOfferDialog(true);
+                } else if (currentProgress >= 80 && !triggeredOffer80Ref.current) {
+                    triggeredOffer80Ref.current = true;
+                    setShowOfferDialog(true);
+                }
+            }
+
             // Auto-scroll Right Sidebar when reaching end of article
             const articleElement = document.getElementById("article-content");
             if (articleElement && rightSidebarRef.current) {
@@ -339,7 +417,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
         handleScroll(); // Initial check
 
         return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [blog.has_offer, blog.offer_title, blog.offer_description, blog.offer_image_url, blog.offer_url]);
 
     // --- Admin Actions ---
     const handlePublish = async () => {
@@ -697,6 +775,169 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                 </DialogContent>
             </Dialog>
 
+            {/* ===== SPECIAL COMPANY OFFER / DISCOUNT DIALOG ===== */}
+            <Dialog
+                open={showOfferDialog}
+                onOpenChange={(open) => {
+                    setShowOfferDialog(open);
+                }}
+            >
+                <DialogContent
+                    className="sm:max-w-lg p-0 overflow-hidden border-border/80 shadow-2xl rounded-2xl h-auto max-h-[90vh] bg-card"
+                    closeButtonClassName={
+                        blog.offer_image_url
+                            ? "text-white opacity-90 hover:opacity-100 hover:bg-white/20 hover:text-white"
+                            : ""
+                    }
+                >
+                    {/* Background Image */}
+                    {blog.offer_image_url && (
+                        <>
+                            {/* Blurred background image */}
+                            <div className="absolute inset-0 overflow-hidden ">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    src={blog.offer_image_url}
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="absolute inset-0 w-full h-full object-cover scale-110 blur-md"
+                                />
+
+                                {/* Dark overlay to make foreground readable */}
+                                <div className="absolute inset-0 bg-black/10" />
+
+                                {/* Optional extra gradient */}
+                                <div className="absolute inset-0" />
+                            </div>
+                        </>
+                    )}
+
+                    {/* Foreground Content */}
+                    <div
+                        className={`relative z-10 p-5 sm:p-6 pr-10 sm:pr-12 flex flex-col justify-between h-auto max-h-[90vh] overflow-y-auto ${blog.offer_image_url
+                            ? "text-white"
+                            : ""
+                            }`}
+                    >
+                        <div>
+                            {/* Badge */}
+                            <div className="mb-4">
+                                <Badge
+                                    className={
+                                        blog.offer_image_url
+                                            ? "bg-primary text-primary-foreground font-semibold px-2.5 py-1 text-xs shadow-md flex items-center gap-1.5 w-fit backdrop-blur-sm"
+                                            : "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20 font-semibold px-2.5 py-1 text-xs shadow-sm flex items-center gap-1.5 w-fit"
+                                    }
+                                >
+                                    {blog.offer_image_url ? (
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                    ) : (
+                                        <Tag className="h-3.5 w-3.5" />
+                                    )}
+
+                                    {"Exclusive Offer"}
+                                </Badge>
+                            </div>
+
+                            <DialogHeader className="text-left space-y-2">
+                                {blog.company_name && (
+                                    <p
+                                        className={`text-xs uppercase tracking-wider font-bold ${blog.offer_image_url
+                                            ? "text-white/70"
+                                            : "text-muted-foreground"
+                                            }`}
+                                    >
+                                        From {blog.company_name}
+                                    </p>
+                                )}
+
+                                <DialogTitle
+                                    className={`text-2xl font-bold tracking-tight ${blog.offer_image_url
+                                        ? "text-white"
+                                        : "text-foreground"
+                                        }`}
+                                >
+                                    {blog.offer_title || "Special Company Discount"}
+                                </DialogTitle>
+
+                                {blog.offer_description && (
+                                    <DialogDescription
+                                        className={`text-sm whitespace-pre-wrap leading-relaxed pt-1 ${blog.offer_image_url
+                                            ? "text-white/80"
+                                            : "text-muted-foreground"
+                                            }`}
+                                    >
+                                        {renderTextWithLinks(blog.offer_description, Boolean(blog.offer_image_url))}
+                                    </DialogDescription>
+                                )}
+                            </DialogHeader>
+                        </div>
+
+                        {/* Buttons */}
+                        <DialogFooter
+                            className={`flex flex-col gap-2.5 pt-5 mt-auto border-t ${blog.offer_image_url
+                                ? "border-white/20"
+                                : "border-border/40"
+                                }`}
+                        >
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className={`w-full sm:w-auto ${blog.offer_image_url
+                                    ? "bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm"
+                                    : ""
+                                    }`}
+                                onClick={() => {
+                                    setShowOfferDialog(false);
+                                }}
+                            >
+                                Maybe Later
+                            </Button>
+
+                            {blog.offer_url && (
+                                <>
+                                    {/* Mobile: Normal Button */}
+                                    {/* <Button
+                                        onClick={() => {
+                                            trackBlogClick(blog.id);
+                                            setShowOfferDialog(false);
+
+                                            window.open(
+                                                blog.offer_url,
+                                                "_blank",
+                                                "noopener,noreferrer"
+                                            );
+                                        }}
+                                        className="sm:hidden w-full font-semibold px-5 py-2.5 h-10 text-sm gap-2 shadow-md bg-primary text-primary-foreground hover:bg-primary/90"
+                                    >
+                                        <span>Claim Offer / Visit Page</span>
+                                        <ExternalLink className="h-4 w-4 ml-1.5" />
+                                    </Button> */}
+
+                                    {/* Desktop: SilverBorderButton */}
+                                    <SilverBorderButton
+                                        onClick={() => {
+                                            trackBlogClick(blog.id);
+                                            setShowOfferDialog(false);
+
+                                            window.open(
+                                                blog.offer_url,
+                                                "_blank",
+                                                "noopener,noreferrer"
+                                            );
+                                        }}
+                                        className="hidden sm:inline-flex sm:w-auto relative font-semibold px-5 py-2.5 h-10 text-sm gap-2 transition-all duration-300 hover:scale-[1.02] shadow-md"
+                                    >
+                                        <span>Claim Offer / Visit Page</span>
+                                        <ExternalLink className="h-4 w-4 ml-1.5" />
+                                    </SilverBorderButton>
+                                </>
+                            )}
+                        </DialogFooter>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {/* ===== BLOG CONTENT ===== */}
             <div className="min-h-screen bg-background">
                 <div className="max-w-[1400px] lg:max-w-[1400px] xl:max-w-[1600px] mx-auto lg:px-8 px-4 xl:px-4 py-8">
@@ -712,7 +953,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                     <div className="flex flex-col lg:flex-row gap-6 xl:gap-7 items-start w-full">
 
                         {/* Left Sidebar (LineSidebar) */}
-                        <div className="hidden lg:block w-[280px] xl:w-[280px] shrink-0 sticky top-[100px] left-0 self-start z-[10000] max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide">
+                        <div className="hidden lg:block w-[280px] xl:w-[280px] shrink-0 sticky top-[100px] left-0 self-start z-20 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide">
                             {headings.length > 0 && (
                                 <div className="py-4">
                                     <LineSidebar
@@ -1135,7 +1376,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                         {/* Right Sidebar — sticky "Suggested Blogs" panel */}
                         <div
                             ref={rightSidebarRef}
-                            className="hidden lg:block w-[320px] xl:w-[320px] shrink-0 sticky top-[89px] self-start space-y-4 z-[99998] relative max-h-[calc(100vh-10rem)] overflow-y-auto scrollbar-hide overscroll-contain "
+                            className="hidden lg:block w-[320px] xl:w-[320px] shrink-0 sticky top-[89px] self-start space-y-4 z-20 relative max-h-[calc(100vh-10rem)] overflow-y-auto scrollbar-hide overscroll-contain "
                         >
 
                             {/* Contact Details Card */}
@@ -1199,7 +1440,7 @@ export default function BlogDetailClient({ blog, nextBlogs }: BlogDetailClientPr
                                                     <span className="h-px w-4 bg-primary"></span>
                                                     Follow Their Journey
                                                 </p>
-                                                <div className="flex flex-wrap items-center gap-2.5 relative z-[99999]">
+                                                <div className="flex flex-wrap items-center gap-2.5 relative">
                                                     {blog.linkedin_url && (
                                                         <a href={blog.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-muted hover:bg-[#0a66c2]/10 text-muted-foreground hover:text-[#0a66c2] transition-all hover:scale-110" title="LinkedIn">
                                                             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>

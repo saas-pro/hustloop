@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
     Save, ChevronLeft, Send, Trash2, UploadCloud, Image as ImageIcon,
-    Globe, Linkedin, Twitter, Instagram, Youtube, User2
+    Globe, Linkedin, Twitter, Instagram, Youtube, User2, Tag, Percent
 } from "lucide-react";
 import LinkPreview from "./LinkPreview";
 import EditorBubbleMenu from "./EditorBubbleMenu";
@@ -195,6 +195,15 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
     const [companyAddress, setCompanyAddress] = useState(initialData?.company_address || "");
     const [isCtaEnabled, setIsCtaEnabled] = useState(initialData?.is_cta_enabled ?? true);
 
+    // ── Company Offer / Discount Dialog ─────────────────────────────────────
+    const [hasOffer, setHasOffer] = useState(initialData?.has_offer ?? false);
+    const [offerTitle, setOfferTitle] = useState(initialData?.offer_title || "");
+    const [offerDescription, setOfferDescription] = useState(initialData?.offer_description || "");
+    const [offerUrl, setOfferUrl] = useState(initialData?.offer_url || "");
+    const [offerImagePreview, setOfferImagePreview] = useState<string>(initialData?.offer_image_url || "");
+    const [offerImageFile, setOfferImageFile] = useState<File | null>(null);
+    const offerFileInputRef = useRef<HTMLInputElement>(null);
+
     // ── Image ───────────────────────────────────────────────────────────────
     const [featuredImagePreview, setFeaturedImagePreview] = useState<string>(initialData?.featured_image_url || "");
     const [featuredImageFile, setFeaturedImageFile] = useState<File | null>(null);
@@ -239,14 +248,17 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
         },
     });
 
-    // Revoke object URL on unmount
+    // Revoke object URLs on unmount
     useEffect(() => {
         return () => {
             if (featuredImagePreview && !featuredImagePreview.startsWith('http')) {
                 URL.revokeObjectURL(featuredImagePreview);
             }
+            if (offerImagePreview && !offerImagePreview.startsWith('http')) {
+                URL.revokeObjectURL(offerImagePreview);
+            }
         };
-    }, [featuredImagePreview]);
+    }, [featuredImagePreview, offerImagePreview]);
 
     // Live re-validate after first attempt
     useEffect(() => {
@@ -309,6 +321,41 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
+    const handleOfferImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setOfferImageFile(file);
+            setOfferImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const removeOfferImage = () => {
+        setOfferImageFile(null);
+        setOfferImagePreview("");
+        if (offerFileInputRef.current) offerFileInputRef.current.value = "";
+    };
+
+    const appendUtmSource = (rawUrl?: string, source: string = "hustloop.com"): string => {
+        if (!rawUrl || rawUrl.trim() === "") return "";
+        let formatted = formatUrl(rawUrl, 'website');
+        if (!formatted) return "";
+
+        try {
+            const urlObj = new URL(formatted);
+            if (!urlObj.searchParams.has("utm_source")) {
+                urlObj.searchParams.set("utm_source", source);
+            }
+            return urlObj.toString();
+        } catch {
+            // If URL constructor fails on partially entered input
+            if (!formatted.includes("utm_source=")) {
+                const separator = formatted.includes("?") ? "&" : "?";
+                return `${formatted}${separator}utm_source=${encodeURIComponent(source)}`;
+            }
+            return formatted;
+        }
+    };
+
     const formatUrl = (url?: string, platform?: 'instagram' | 'linkedin' | 'x' | 'youtube' | 'website') => {
         if (!url || url.trim() === "") return "";
         let formattedUrl = url.trim();
@@ -356,6 +403,10 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
             company_phone: companyPhone || "",
             company_address: companyAddress || "",
             is_cta_enabled: isCtaEnabled,
+            has_offer: hasOffer,
+            offer_title: offerTitle || "",
+            offer_description: offerDescription || "",
+            offer_url: appendUtmSource(offerUrl),
             session_uploaded_images: sessionUploadedImages.length > 0 ? sessionUploadedImages : undefined,
         };
         if (featuredImageFile) {
@@ -363,6 +414,15 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
         } else if (featuredImagePreview) {
             data.featured_image_url = featuredImagePreview;
         } else { data.featured_image_url = ""; }
+
+        if (offerImageFile) {
+            data.offer_image = offerImageFile;
+        } else if (offerImagePreview) {
+            data.offer_image_url = offerImagePreview;
+        } else {
+            data.offer_image_url = "";
+        }
+
         return data;
     };
 
@@ -661,6 +721,92 @@ export default function BloggerEditor({ initialData, onBack, onSaveSuccess }: Bl
                             <label className="text-sm font-semibold text-foreground">Enable CTA Banner</label>
                             <Switch checked={isCtaEnabled} onCheckedChange={setIsCtaEnabled} />
                         </div>
+                    </Card>
+
+                    {/* Special Company Offer / Discount Card */}
+                    <Card className="p-5 space-y-4 bg-muted/20 border-border/50 shadow-sm">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Percent className="h-4 w-4 text-primary" />
+                                <h3 className="text-sm font-semibold">Special Offer / Discount</h3>
+                            </div>
+                            <Switch checked={hasOffer} onCheckedChange={setHasOffer} />
+                        </div>
+                        <p className="text-xs text-muted-foreground -mt-2">
+                            Show a popup dialog with company discount, description, and link when readers open this blog.
+                        </p>
+
+                        {hasOffer && (
+                            <div className="space-y-4 pt-2 border-t border-border/40 animate-in fade-in-50 duration-200">
+                                {/* Offer Banner Image */}
+                                <div className="space-y-2">
+                                    <FieldLabel label="Offer Banner Image" current={offerImagePreview ? 1 : 0} max={1} />
+                                    {offerImagePreview ? (
+                                        <div className="relative rounded-lg overflow-hidden border border-border group aspect-[16/9]">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={offerImagePreview} alt="Offer Banner" className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <Button variant="destructive" size="sm" onClick={removeOfferImage}>
+                                                    <Trash2 className="h-4 w-4 mr-2" /> Remove
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="border-2 border-dashed border-border rounded-lg p-5 text-center cursor-pointer hover:bg-muted/50 transition-colors aspect-[16/9] flex flex-col items-center justify-center"
+                                            onClick={() => offerFileInputRef.current?.click()}
+                                        >
+                                            <UploadCloud className="h-6 w-6 text-muted-foreground mb-1.5" />
+                                            <p className="text-xs font-medium">Click to upload discount banner</p>
+                                            <p className="text-[10px] text-muted-foreground mt-0.5">PNG, JPG, WebP (max 5 MB)</p>
+                                        </div>
+                                    )}
+                                    <input type="file" accept="image/*" className="hidden" ref={offerFileInputRef} onChange={handleOfferImageChange} />
+                                </div>
+
+                                {/* Offer / Discount Title */}
+                                <div className="space-y-1">
+                                    <FieldLabel label="Discount Title / Headline" current={offerTitle.length} max={120} />
+                                    <Input
+                                        placeholder="e.g. Flat 30% Off on All Plans"
+                                        value={offerTitle}
+                                        maxLength={120}
+                                        onChange={(e) => setOfferTitle(e.target.value)}
+                                        className="bg-background text-sm"
+                                    />
+                                </div>
+
+                                {/* Offer Description / Promo Code */}
+                                <div className="space-y-1">
+                                    <FieldLabel label="Offer Description & Code" current={offerDescription.length} max={500} />
+                                    <Textarea
+                                        placeholder="Use code HUSTLOOP20 at checkout. Valid until the end of this month."
+                                        value={offerDescription}
+                                        maxLength={500}
+                                        onChange={(e) => setOfferDescription(e.target.value)}
+                                        className="bg-background text-sm resize-none h-20"
+                                    />
+                                </div>
+
+                                {/* Company Offer Destination Webpage */}
+                                <div className="space-y-1">
+                                    <FieldLabel label="Company Offer Webpage URL" current={offerUrl.length} max={300} />
+                                    <Input
+                                        placeholder="https://company.com/offer"
+                                        value={offerUrl}
+                                        maxLength={300}
+                                        onChange={(e) => setOfferUrl(e.target.value)}
+                                        onBlur={() => {
+                                            if (offerUrl.trim()) {
+                                                setOfferUrl(appendUtmSource(offerUrl));
+                                            }
+                                        }}
+                                        className="bg-background text-sm"
+                                    />
+                                    <p className="text-[11px] text-muted-foreground">The popup button will take users to this link (automatically includes <code>utm_source=hustloop.com</code>).</p>
+                                </div>
+                            </div>
+                        )}
                     </Card>
 
                     {/* Social / Author Links card */}

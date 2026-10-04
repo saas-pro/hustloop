@@ -10,8 +10,10 @@ export async function GET() {
         { url: baseUrl, changefreq: "daily", priority: 1.0 },
         { url: `${baseUrl}/pricing`, changefreq: "monthly", priority: 0.9 },
         { url: `${baseUrl}/blog`, changefreq: "daily", priority: 0.9 },
+        { url: `${baseUrl}/incentive-challenge`, changefreq: "weekly", priority: 0.85 },
         { url: `${baseUrl}/contact-us`, changefreq: "monthly", priority: 0.8 },
-        { url: `${baseUrl}/incentive-challenge`, changefreq: "monthly", priority: 0.8 },
+        { url: `${baseUrl}/terms-of-service`, changefreq: "yearly", priority: 0.7 },
+        { url: `${baseUrl}/privacy-policy`, changefreq: "yearly", priority: 0.7 },
     ];
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import Counter from '@/components/Counter';
 
 const PageLoader = () => {
   const [progress, setProgress] = useState(0);
@@ -20,17 +19,38 @@ const PageLoader = () => {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let videoDone = false;
+    let windowDone = typeof document !== 'undefined' && document.readyState === 'complete';
+
+    const checkAllLoaded = () => {
+      if (videoDone && windowDone) {
+        setProgress(100);
+        setVideoLoaded(true);
+      }
+    };
+
+    const handleWindowLoad = () => {
+      windowDone = true;
+      checkAllLoaded();
+    };
+
+    if (typeof window !== 'undefined') {
+      if (document.readyState === 'complete') {
+        windowDone = true;
+      } else {
+        window.addEventListener('load', handleWindowLoad);
+      }
+    }
+
+    let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
 
     const fetchVideo = async () => {
       try {
-        const response = await fetch('/video/HeaderVideo.mp4', {
-          signal: controller.signal
-        });
+        const response = await fetch('/video/HeaderVideo.mp4');
 
         if (!response.ok) {
-          setProgress(100);
-          setVideoLoaded(true);
+          videoDone = true;
+          checkAllLoaded();
           return;
         }
 
@@ -38,64 +58,63 @@ const PageLoader = () => {
         const total = contentLength ? parseInt(contentLength, 10) : 0;
         let loaded = 0;
 
-        const reader = response.body?.getReader();
+        reader = response.body?.getReader();
         if (!reader) {
-          setProgress(100);
-          setVideoLoaded(true);
+          videoDone = true;
+          checkAllLoaded();
           return;
         }
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
-            setProgress(100);
-            setVideoLoaded(true);
+            videoDone = true;
+            checkAllLoaded();
             break;
           }
           loaded += value.length;
           if (total) {
-            const percentComplete = (loaded / total) * 100;
-            setProgress(Math.min(percentComplete, 99));
+            const percentComplete = (loaded / total) * 95;
+            setProgress(Math.min(percentComplete, 95));
           } else {
-            setProgress((prev) => Math.min(prev + 10, 99));
+            setProgress((prev) => Math.min(prev + 10, 90));
           }
         }
       } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          setProgress(100);
-          setVideoLoaded(true);
-        }
+        videoDone = true;
+        checkAllLoaded();
       }
     };
 
     fetchVideo();
 
     const handleVideoLoaded = () => {
-      setProgress(100);
-      setVideoLoaded(true);
+      videoDone = true;
+      checkAllLoaded();
     };
     window.addEventListener('app-video-loaded', handleVideoLoaded);
 
     return () => {
-      controller.abort();
+      if (!videoDone && reader) {
+        try {
+          reader.cancel().catch(() => {});
+        } catch {}
+      }
+      window.removeEventListener('load', handleWindowLoad);
       window.removeEventListener('app-video-loaded', handleVideoLoaded);
     };
   }, []);
 
   const [displayProgress, setDisplayProgress] = useState(0);
 
+  // Smoothly increment display progress towards the actual progress
   useEffect(() => {
-    const steps = [0, 10, 50, 90];
-    const currentIndex = steps.indexOf(displayProgress);
-
-    if (currentIndex < steps.length - 1) {
-      const nextStep = steps[currentIndex + 1];
-      if (progress >= nextStep) {
-        const timer = setTimeout(() => {
-          setDisplayProgress(nextStep);
-        }, 800); // Slower delay per step (max ~2.4s minimum load time)
-        return () => clearTimeout(timer);
-      }
+    if (displayProgress < progress) {
+      const step = Math.max(1, Math.ceil((progress - displayProgress) / 5));
+      const timer = setTimeout(() => {
+        setDisplayProgress((prev) => Math.min(prev + step, progress));
+      }, 30);
+      return () => clearTimeout(timer);
     }
   }, [progress, displayProgress]);
 
@@ -103,61 +122,20 @@ const PageLoader = () => {
     if (displayProgress >= 100) {
       const timer = setTimeout(() => {
         window.dispatchEvent(new Event('page-loader-complete'));
-      }, 400);
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [displayProgress]);
 
-  const getPlaces = () => {
-    if (displayProgress >= 100) return [100, 10, 1];
-    if (displayProgress >= 10) return [10, 1];
-    return [1];
-  };
-
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 640);
-      setIsTablet(window.innerWidth >= 640 && window.innerWidth < 1024);
-    };
-
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
-
-  const fontSize = isMobile ? 120 : isTablet ? 160 : 220;
-  const padding = isMobile ? 2 : isTablet ? 3 : 4;
-  const gap = isMobile ? 0 : isTablet ? 0.5 : 0.5;
-  const horizontalPadding = isMobile ? 2 : isTablet ? 3 : 4;
-  const borderRadius = isMobile ? 4 : isTablet ? 6 : 8;
-
   return (
-    <div className="flex items-end justify-start min-h-[100dvh] bg-background py-6 px-6 md:py-6 md:px-6">
-      <div className="text-center font-headline">
-        <div className="inline-flex items-center">
-          <Counter
-            value={displayProgress}
-            fontSize={fontSize}
-            padding={padding}
-            places={getPlaces()}
-            gap={gap}
-            borderRadius={borderRadius}
-            horizontalPadding={horizontalPadding}
-            textColor="hsl(var(--accent))"
-            fontWeight="normal"
-            gradientHeight={20}
-            gradientFrom="hsl(var(--background))"
-            gradientTo="transparent"
-            containerStyle={{}}
-            counterStyle={{}}
-            digitStyle={{}}
-            topGradientStyle={{}}
-            bottomGradientStyle={{}}
-          />
-        </div>
+    <div className="flex items-end justify-start min-h-[100dvh] bg-background py-8 px-8 md:py-12 md:px-12 select-none">
+      <div className="font-headline font-semibold text-accent leading-none tracking-tight">
+        <span className="text-7xl sm:text-8xl md:text-9xl lg:text-[14rem] font-bold tabular-nums">
+          {displayProgress}
+        </span>
+        <span className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-medium ml-1 text-accent/80">
+          %
+        </span>
       </div>
     </div>
   );

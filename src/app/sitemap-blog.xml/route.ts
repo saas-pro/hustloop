@@ -22,7 +22,7 @@ ${blogs.map((blog) => `
         <loc>${baseUrl}/blog/${blog.slug}</loc>
         <lastmod>${new Date(blog.updated_at || blog.created_at || currentDate).toISOString()}</lastmod>
         <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
+        <priority>0.6</priority>
     </url>
 `).join('')}
 </urlset>`;
