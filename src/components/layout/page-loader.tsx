@@ -97,8 +97,8 @@ const PageLoader = () => {
     return () => {
       if (!videoDone && reader) {
         try {
-          reader.cancel().catch(() => {});
-        } catch {}
+          reader.cancel().catch(() => { });
+        } catch { }
       }
       window.removeEventListener('load', handleWindowLoad);
       window.removeEventListener('app-video-loaded', handleVideoLoaded);
@@ -130,10 +130,10 @@ const PageLoader = () => {
   return (
     <div className="flex items-end justify-start min-h-[100dvh] bg-background py-8 px-8 md:py-12 md:px-12 select-none">
       <div className="font-headline font-semibold text-accent leading-none tracking-tight">
-        <span className="text-7xl sm:text-8xl md:text-9xl lg:text-[14rem] font-bold tabular-nums">
+        <span className="text-9xl sm:text-8xl md:text-9xl lg:text-[14rem] font-bold tabular-nums">
           {Math.round(displayProgress)}
         </span>
-        <span className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-medium ml-1 text-accent/80">
+        <span className="text-6xl sm:text-4xl md:text-5xl lg:text-7xl font-medium ml-1 text-accent/80">
           %
         </span>
       </div>

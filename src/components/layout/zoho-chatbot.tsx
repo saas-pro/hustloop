@@ -48,16 +48,31 @@ export default function ZohoChatbot() {
             )}
 
             <Script
-                id="zsiq-init"
-                strategy="afterInteractive"
-                dangerouslySetInnerHTML={{
-                    __html: `window.$zoho=window.$zoho || {};$zoho.salesiq=$zoho.salesiq||{ready:function(){}};`,
-                }}
-            />
-            <Script
                 id="zsiqscript"
-                src="https://salesiq.zohopublic.in/widget?wc=siq770fac757336897d739f9273d8f8f7b3aec5f63c512be52582e5f9e3440d863b"
-                strategy="afterInteractive"
+                strategy="lazyOnload"
+                dangerouslySetInnerHTML={{
+                    __html: `
+                        window.$zoho = window.$zoho || {};
+                        $zoho.salesiq = $zoho.salesiq || {
+                            ready: function() {
+                                try {
+                                    $zoho.salesiq.floatwindow.visible("hide");
+                                    $zoho.salesiq.chatwindow.close();
+                                } catch(e) {}
+                            }
+                        };
+                        if (!document.getElementById("zsiq_loaded_script")) {
+                            var d = document;
+                            var s = d.createElement("script");
+                            s.type = "text/javascript";
+                            s.id = "zsiq_loaded_script";
+                            s.defer = true;
+                            s.src = "https://salesiq.zohopublic.in/widget?wc=siq770fac757336897d739f9273d8f8f7b3aec5f63c512be52582e5f9e3440d863b";
+                            var t = d.getElementsByTagName("script")[0];
+                            t.parentNode.insertBefore(s, t);
+                        }
+                    `
+                }}
             />
         </>
     );
