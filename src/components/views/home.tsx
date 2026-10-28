@@ -2,7 +2,7 @@
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, Briefcase, PlayCircle, Globe, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins, Puzzle, Microscope, FileSearch, Layers, Network, Sprout, Instagram, Youtube } from "lucide-react";
+import { Lightbulb, Briefcase, PlayCircle, Play, Pause, Globe, Award, Link, CheckCircle, GraduationCap, Hexagon, FolderCheck, ArrowRight, Group, Library, TrendingUp, GitBranch, Scaling, Wrench, CircleDollarSign, Handshake, Search, Rocket, Target, Users, Megaphone, Gauge, BrainCircuit, BarChart, ShieldCheck, Heart, BookOpen, Building, Loader2, Send, Linkedin, Mail, Eye, Code, Settings, User, Contact, ChevronDown, HandCoins, Puzzle, Microscope, FileSearch, Layers, Network, Sprout, Instagram, Youtube } from "lucide-react";
 import { ReactTyped } from "react-typed";
 import { useState, useEffect, useCallback } from "react";
 import SolutionCard from '../SolutionCard';
@@ -684,34 +684,52 @@ export default function HomeView({
   }, []);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
+  const toggleVideoPlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+      setIsVideoPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  };
+
+  // Pause video on tab switch or when scrolled out of view
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && videoRef.current && !videoRef.current.paused) {
+        videoRef.current.pause();
+        setIsVideoPlaying(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (!entry.isIntersecting && iframeRef.current) {
-            try {
-              iframeRef.current.contentWindow?.postMessage(
-                '{"event":"command","func":"pauseVideo","args":""}',
-                '*'
-              );
-            } catch (e) {
-              console.error("Failed to pause video", e);
-            }
+          if (!entry.isIntersecting && videoRef.current && !videoRef.current.paused) {
+            videoRef.current.pause();
+            setIsVideoPlaying(false);
           }
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0.25 }
     );
 
-    const currentIframe = iframeRef.current;
-    if (currentIframe) {
-      observer.observe(currentIframe);
+    const currentVideo = videoRef.current;
+    if (currentVideo) {
+      observer.observe(currentVideo);
     }
 
     return () => {
-      if (currentIframe) {
-        observer.unobserve(currentIframe);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (currentVideo) {
+        observer.unobserve(currentVideo);
       }
     };
   }, []);
@@ -1118,8 +1136,11 @@ export default function HomeView({
                   <ContainerScroll
                     titleComponent={<></>}
                   >
-                    <div className="relative w-full h-full aspect-video rounded-2xl overflow-hidden">
-                      <iframe
+                    <div
+                      className="group relative w-full h-full aspect-video rounded-2xl overflow-hidden cursor-pointer"
+                      onClick={toggleVideoPlay}
+                    >
+                      {/* <iframe
                         ref={iframeRef}
                         width="100%"
                         height="100%"
@@ -1130,7 +1151,40 @@ export default function HomeView({
                         referrerPolicy="strict-origin-when-cross-origin"
                         allowFullScreen
                         className="w-full h-full absolute inset-0"
-                      ></iframe>
+                      ></iframe> */}
+                      <video
+                        ref={videoRef}
+                        src="/video/intro.mp4"
+                        playsInline
+                        controls={false}
+                        onPlay={() => setIsVideoPlaying(true)}
+                        onPause={() => setIsVideoPlaying(false)}
+                        className="w-full h-full object-cover absolute inset-0"
+                      />
+
+                      {/* Center Play/Pause Button */}
+                      <div
+                        className={cn(
+                          "absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-300",
+                          isVideoPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100 bg-black/20"
+                        )}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleVideoPlay();
+                          }}
+                          aria-label={isVideoPlaying ? "Pause video" : "Play video"}
+                          className="pointer-events-auto flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform duration-300 hover:scale-110 active:scale-95"
+                        >
+                          {isVideoPlaying ? (
+                            <Pause className="w-8 h-8 fill-current" />
+                          ) : (
+                            <Play className="w-8 h-8 fill-current ml-1" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </ContainerScroll>
                 </div>
