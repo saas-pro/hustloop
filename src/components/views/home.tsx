@@ -1154,9 +1154,10 @@ export default function HomeView({
                       ></iframe> */}
                       <video
                         ref={videoRef}
-                        src="/video/intro.mp4"
+                        src="https://hustloop-dev.s3.ap-southeast-2.amazonaws.com/video/intro.mp4"
                         playsInline
-                        controls={false}
+                        controlsList="nodownload"
+                        disablePictureInPicture
                         onPlay={() => setIsVideoPlaying(true)}
                         onPause={() => setIsVideoPlaying(false)}
                         className="w-full h-full object-cover absolute inset-0"
