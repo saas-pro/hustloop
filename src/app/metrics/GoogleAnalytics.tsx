@@ -17,10 +17,10 @@ const GoogleAnalytics = () => {
 
     return (
         <>
-            <Script
+            {/* <Script
                 strategy="afterInteractive"
                 src={`https://www.googletagmanager.com/gtag/js?id=G-HVTHQZ2SFM`}
-            />
+            /> */}
             <Script async src="https://www.googletagmanager.com/gtag/js?id=AW-18393251642"></Script>
 
             <Script
@@ -33,10 +33,7 @@ const GoogleAnalytics = () => {
                     gtag('js', new Date());
 
                     // Google Analytics 4
-                    gtag('config', 'G-HVTHQZ2SFM');
-
-                    // Google Ads Conversion Tracking
-                    // Replace 'AW-XXXXXXXXXX' with your Google Ads tag ID
+                    // gtag('config', 'G-HVTHQZ2SFM');
                     gtag('config', '${GOOGLE_ADS_ID}');
                     `,
                 }}
